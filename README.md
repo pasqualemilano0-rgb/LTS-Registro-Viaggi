@@ -5,6 +5,17 @@
 App web per registrare viaggi, clienti e tariffe e generare il resoconto mensile.
 Su iPhone aprire in Safari e scegliere **Condividi → Aggiungi alla schermata Home**.
 
+[Guarda il video dimostrativo](https://pasqualemilano0-rgb.github.io/LTS-Registro-Viaggi/video.mp4)
+
+Una giornata di lavoro con Marco: esempi di inserimento, seconda presa, tariffe
+e PDF. Filmato con voce sintetica italiana e dati dimostrativi.
+
+Voce: Serena medium / Piper, modello addestrato da zero sul dataset sintetico
+[Committa, serena-synthetic-it-27h](https://huggingface.co/datasets/committa/serena-synthetic-it-27h),
+licenza [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
+[Fonte del modello](https://huggingface.co/rhasspy/piper-voices/tree/main/it/it_IT/serena/medium).
+La narrazione è stata generata per questa dimostrazione.
+
 [Informativa privacy](https://pasqualemilano0-rgb.github.io/LTS-Registro-Viaggi/privacy/)
 
 Questo repository contiene soltanto i file necessari al sito e al suo promemoria.
