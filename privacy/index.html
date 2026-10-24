@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#006b7d">
+  <title>Privacy — LTS Registro Viaggi</title>
+  <meta name="description" content="Informativa privacy di LTS Registro Viaggi: registro locale, sincronizzazione online, backup e contatti.">
+  <style>
+    :root{color-scheme:light;--ink:#16343e;--muted:#526974;--teal:#006b7d;--line:#d9e5e9;--soft:#edf6f8}
+    *{box-sizing:border-box}body{margin:0;background:#f5f8fa;color:var(--ink);font:17px/1.65 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+    header,main,footer{max-width:900px;margin:auto;padding:28px 24px}header{display:flex;align-items:center;gap:20px}header img{width:120px;height:auto;max-width:30vw}header p{margin:0;color:var(--muted);font-size:14px}
+    main{background:#fff;border:1px solid var(--line);border-radius:18px;margin:0 auto 24px;padding:32px}h1{font-size:clamp(27px,5vw,38px);line-height:1.2;margin:0 0 14px}h2{font-size:23px;line-height:1.3;margin:32px 0 12px}p{margin:12px 0}a{color:var(--teal);text-underline-offset:3px}ul{padding-left:24px}li{margin:8px 0}strong{font-weight:650}.intro{padding:16px 20px;background:var(--soft);border-radius:12px}.small,footer{font-size:14px;color:var(--muted)}code{overflow-wrap:anywhere;font-size:14px}footer{padding-top:0}a:focus-visible{outline:3px solid var(--teal);outline-offset:4px}@media(max-width:600px){header{padding:22px 18px}main{border-radius:0;border-left:0;border-right:0;padding:26px 20px}body{font-size:16px}h2{font-size:21px}}
+  </style>
+</head>
+<body>
+  <header>
+    <img src="../assets/lts-logo.png" alt="Logo LTS" width="180" height="72">
+    <div><strong>LTS Registro Viaggi</strong><p>Informativa sul trattamento dei dati</p></div>
+  </header>
+  <main>
+    <h1>Privacy e dati del registro</h1>
+    <p class="small">Aggiornamento: 23 ottobre 2026. Questa informativa riguarda LTS Registro Viaggi per Android e la versione web/iPhone collegata.</p>
+    <div class="intro">
+      <p>L’app consente di registrare i viaggi di lavoro, gestire clienti e tariffe, preparare il PDF mensile e sincronizzare un archivio personale tra dispositivi collegati.</p>
+      <p><strong>La sincronizzazione online è attiva per impostazione iniziale.</strong> Quando il dispositivo è connesso, il registro viene inviato al servizio LTS per conservarne una copia e aggiornare i dispositivi collegati. Il collegamento di due dispositivi richiede una conferma esplicita; inserire lo stesso nome non collega gli archivi.</p>
+    </div>
+
+    <h2>Responsabile del progetto e contatto privacy</h2>
+    <p><strong>Pasquale Milano</strong><br>Email: <a href="mailto:pasqualemilano0@gmail.com">pasqualemilano0@gmail.com</a>.</p>
+    <p>Questo contatto riceve richieste di assistenza e richieste relative ai dati trattati da LTS Registro Viaggi.</p>
+
+    <h2>Quali dati vengono trattati</h2>
+
+    <ul>
+      <li><strong>Profilo:</strong> nome e cognome dell’autista, inseriti dall’utente e utilizzati anche nell’intestazione del PDF.</li>
+      <li><strong>Registro e contenuti inseriti:</strong> date, container, città, clienti, seconde prese, servizi extra e note facoltative dei viaggi.</li>
+      <li><strong>Rubrica:</strong> nomi dei clienti, località, indirizzi e partita IVA quando inseriti o confermati dall’utente.</li>
+      <li><strong>Tariffe e importi:</strong> valori delle trasferte e dei servizi extra, necessari ai calcoli del registro personale.</li>
+      <li><strong>Identificativi tecnici:</strong> identificativi casuali dell’archivio e del dispositivo, revisioni e informazioni necessarie a collegamento, autorizzazione e sincronizzazione. Non sono identificativi pubblicitari.</li>
+      <li><strong>Assistenza:</strong> indirizzo email e contenuto dei messaggi che l’utente decide di inviare al contatto indicato sopra.</li>
+    </ul>
+
+    <p>L’app non richiede il permesso di localizzazione GPS, accesso alla rubrica telefonica o registrazione del microfono. Il codice distribuito non integra SDK pubblicitari o analisi pubblicitarie. Gli indirizzi dei clienti sono contenuti dell’attività inseriti dall’utente, non rilevamenti GPS del telefono.</p>
+
+    <h2>Per quali finalità</h2>
+    <p>I dati servono a fornire le funzioni richieste dall’utente: registrare e modificare i viaggi, calcolare importi e tariffe, riconoscere una sola quota di SABATO TRASFERTA per data, collegare gli archivi e generare documenti e backup. Il progetto non usa il registro per pubblicità o profilazione commerciale.</p>
+    <p>Il PDF mensile include il nome dell’autista, viaggi, clienti e servizi selezionati. <strong>Importi economici e note dei viaggi restano esclusi dal PDF.</strong> Generare o condividere un documento è un’azione dell’utente; il promemoria di fine mese non invia automaticamente il PDF all’ufficio.</p>
+
+    <h2>Memoria locale e sincronizzazione online</h2>
+    <p>Android conserva l’archivio nel database privato dell’app. La versione web/iPhone usa anche lo spazio locale del proprio browser o contenitore. Questi spazi possono essere distinti: il trasferimento richiede il collegamento dei dispositivi o l’importazione confermata di un backup.</p>
+    <p>La copia online e le operazioni di sincronizzazione sono gestite dal servizio LTS sul backend HTTPS <code>lts-registro-viaggi-iphone.steadyzebra1.chatgpt.site</code>, con infrastruttura Sites/Cloudflare. Il frontend web pubblico è ospitato su GitHub Pages. I rispettivi fornitori elaborano le richieste e i dati tecnici necessari al funzionamento e alla sicurezza dei loro servizi, secondo le proprie condizioni.</p>
+    <p>Il collegamento usa identificativi casuali e codici temporanei; gli archivi non sono pubblici e il solo nome dell’autista non permette di accedervi. Le comunicazioni dell’app con il servizio di sincronizzazione usano HTTPS. Il progetto non promette cifratura da un estremo all’altro: il servizio deve elaborare il contenuto del registro per sincronizzarlo.</p>
+    <p>La sincronizzazione avviene quando l’app è aperta e connessa, dopo i salvataggi e al ritorno nell’app. La sospensione del collegamento lascia disponibili i dati locali; non costituisce una richiesta di cancellazione del registro online.</p>
+
+    <h2>Backup ed esportazioni</h2>
+    <p>PDF, CSV, JSON e ZIP esportati possono contenere dati personali o aziendali leggibili. L’utente sceglie dove salvarli e a chi condividerli. Conservare questi file in un’area privata.</p>
+    <p>Il backup automatico Android, quando abilitato e disponibile sul telefono, dipende dal servizio di backup configurato nel sistema, ad esempio Google. Android decide tempi e condizioni della copia: non è garantito un caricamento a un’ora precisa. Il ripristino usa l’account e il servizio selezionati sul dispositivo.</p>
+    <p>La copia online LTS, il backup di sistema e i file personali esportati sono copie distinte. L’app web non effettua un backup giornaliero automatico in una cartella personale Google Drive o iCloud mentre è chiusa. Le impostazioni Drive collegate a ChatGPT non configurano il backup del telefono.</p>
+
+    <h2>Google Maps e notifiche</h2>
+    <p>La lettura di un link Google Maps parte solo quando l’utente incolla un link e chiede di leggerlo. Il link viene trasmesso al servizio LTS, che contatta gli indirizzi Google consentiti per proporre nome, città e indirizzo del cliente. La proposta va controllata e confermata prima del salvataggio.</p>
+    <p>I promemoria richiedono il consenso e le autorizzazioni del dispositivo. Android usa avvisi locali; la PWA iPhone può usare Web Push, che richiede un’iscrizione tecnica sul server e dipende dai servizi push del browser. Il contenitore Apple usa invece promemoria locali propri. I promemoria ricordano di aggiornare il registro e non includono automaticamente l’elenco dei viaggi, le note o gli importi. Si possono disattivare dalle rispettive impostazioni.</p>
+
+    <h2>Conservazione e cancellazione</h2>
+    <p>I dati locali rimangono nel dispositivo finché l’utente li modifica, elimina o cancella lo spazio dell’app/browser. Disinstallare l’app può eliminare la copia locale: esportare prima un backup quando necessario.</p>
+    <p>L’eliminazione di una voce viene sincronizzata quando il collegamento è attivo. Questo non equivale alla rimozione di ogni copia precedente, esportazione o backup: i file già salvati e i backup del sistema vanno gestiti anche nei servizi in cui sono conservati. La copia online e le informazioni tecniche necessarie alla sincronizzazione rimangono fino a una richiesta di cancellazione o agli interventi di manutenzione del servizio.</p>
+    <h2 id="cancellazione">Richieste sui propri dati</h2>
+    <p>Per chiedere informazioni, accesso, correzione o cancellazione dell’archivio online, scrivere a <a href="mailto:pasqualemilano0@gmail.com?subject=Richiesta%20dati%20LTS%20Registro%20Viaggi">pasqualemilano0@gmail.com</a>, indicando che la richiesta riguarda LTS Registro Viaggi e un recapito per la risposta. La richiesta viene esaminata per identificare l’archivio e verificare la titolarità prima di intervenire sui dati.</p>
+    <p><strong>Non inviare password, chiavi di firma, codici di collegamento, capacità di accesso, liste di clienti o backup completi via email.</strong> Se servono elementi di verifica, il contatto fornirà indicazioni adeguate. Nell’app non è attualmente presente un comando che cancelli in un solo passaggio ogni archivio e backup online.</p>
+    <p>Per questioni relative al trattamento dei dati è possibile rivolgersi anche all’autorità di controllo competente, ad esempio il Garante per la protezione dei dati personali in Italia.</p>
+
+    <h2>Protezione e aggiornamenti</h2>
+    <p>Proteggere il telefono, l’account di backup e gli eventuali file esportati. Non condividere codici di collegamento o copie del registro con persone non autorizzate. Le modifiche a questa informativa verranno pubblicate su questa pagina con una nuova data di aggiornamento.</p>
+    <p><a href="../">Torna a LTS Registro Viaggi</a></p>
+  </main>
+  <footer>Questa pagina non usa script, moduli di raccolta, cookie pubblicitari o risorse di analisi. Restano applicabili i normali dati tecnici trattati dal servizio di hosting per fornire la pagina.</footer>
+</body>
+</html>

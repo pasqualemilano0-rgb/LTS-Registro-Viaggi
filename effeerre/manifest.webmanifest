@@ -1,0 +1,26 @@
+{
+  "id": "/LTS-Registro-Viaggi/effeerre/",
+  "name": "EFFE.ERRE TRASPORTI · Registro Viaggi",
+  "short_name": "EFFE.ERRE Viaggi",
+  "description": "Il tuo registro viaggi, clienti e tariffe EFFE.ERRE.",
+  "lang": "it",
+  "start_url": "/LTS-Registro-Viaggi/effeerre/",
+  "scope": "/LTS-Registro-Viaggi/effeerre/",
+  "display": "standalone",
+  "background_color": "#F3F4F5",
+  "theme_color": "#343A40",
+  "icons": [
+    {
+      "src": "/LTS-Registro-Viaggi/effeerre/assets/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/LTS-Registro-Viaggi/effeerre/assets/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

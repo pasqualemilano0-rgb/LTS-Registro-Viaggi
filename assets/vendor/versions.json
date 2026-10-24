@@ -1,0 +1,44 @@
+[
+  {
+    "package": "jspdf",
+    "version": "4.2.1",
+    "source": "https://registry.npmjs.org/jspdf/-/jspdf-4.2.1.tgz",
+    "file": "jspdf.umd.min.js",
+    "sha256": "e6551fcdc32f09d6853b2c5126d18d01d9447e0da618a41a11ebeee0f6c20d54"
+  },
+  {
+    "package": "jspdf",
+    "version": "4.2.1",
+    "source": "https://registry.npmjs.org/jspdf/-/jspdf-4.2.1.tgz",
+    "file": "jspdf.LICENSE",
+    "sha256": "dc388ec35ff463288cdde3588a36fd4ed12a45deff053243b37309acc9ef583b"
+  },
+  {
+    "package": "jspdf-autotable",
+    "version": "5.0.9",
+    "source": "https://registry.npmjs.org/jspdf-autotable/-/jspdf-autotable-5.0.9.tgz",
+    "file": "jspdf.plugin.autotable.min.js",
+    "sha256": "83dd8e5ae29436bd3d3ef4f4a915125b3951264994c25de0359d3fbd105abe15"
+  },
+  {
+    "package": "jspdf-autotable",
+    "version": "5.0.9",
+    "source": "https://registry.npmjs.org/jspdf-autotable/-/jspdf-autotable-5.0.9.tgz",
+    "file": "jspdf-autotable.LICENSE",
+    "sha256": "99a374e0385cf714d2faae5f6e02ec79217c6bcecec39bdb9e102091471b960a"
+  },
+  {
+    "package": "fflate",
+    "version": "0.8.3",
+    "source": "https://registry.npmjs.org/fflate/-/fflate-0.8.3.tgz",
+    "file": "fflate.mjs",
+    "sha256": "b7ca4450b19559a1d50eb381adcee94b82449674be4cd17789d9beba7e6122a1"
+  },
+  {
+    "package": "fflate",
+    "version": "0.8.3",
+    "source": "https://registry.npmjs.org/fflate/-/fflate-0.8.3.tgz",
+    "file": "fflate.LICENSE",
+    "sha256": "0a1df3a083d0c010560aa342e87959c8c1070e6fd54545741f083f22d0c8b551"
+  }
+]

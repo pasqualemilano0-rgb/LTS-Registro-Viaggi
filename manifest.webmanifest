@@ -1,0 +1,26 @@
+{
+  "id": "/LTS-Registro-Viaggi/",
+  "name": "LTS Registro Viaggi",
+  "short_name": "LTS Viaggi",
+  "description": "Il tuo registro viaggi, clienti e tariffe LTS.",
+  "lang": "it",
+  "start_url": "/LTS-Registro-Viaggi/",
+  "scope": "/LTS-Registro-Viaggi/",
+  "display": "standalone",
+  "background_color": "#f3f7f9",
+  "theme_color": "#006f89",
+  "icons": [
+    {
+      "src": "/LTS-Registro-Viaggi/assets/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/LTS-Registro-Viaggi/assets/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
