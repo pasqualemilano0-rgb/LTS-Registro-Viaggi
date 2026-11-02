@@ -461,6 +461,7 @@ function openProfile(required=false){
  form.append(error,first.wrap,last.wrap,el('button',{type:'submit',class:'primary-button full','data-save':true},icon('check'),required?'Inizia a registrare':'Salva profilo'));
  form.addEventListener('submit',async event=>{event.preventDefault();error.textContent='';if(!first.input.value.trim()||!last.input.value.trim()){error.textContent='Inserisci nome e cognome dell’autista.';(!first.input.value.trim()?first.input:last.input).focus();return;}try{requireCurrentEditor(expectedProfile,state.profile,'Il profilo');await persist({...state,profile:{firstName:D.normalizeText(first.input.value),lastName:D.normalizeText(last.input.value)}});dialog.close();render();toast('Profilo salvato.');}catch(err){error.textContent=err.message;}});body.append(form);
  if(required&&!store.usingAccount())body.append(button('Hai già LTS? Collega dispositivi','text',()=>{dialog.close();deviceLinkDialog();},'link',{class:'text-button full'}));
+ if(required&&!store.usingAccount()&&accountAccess.isEnabled())body.append(button('Hai un invito? Attiva account','text',()=>{dialog.close();showDriverActivation();},'lock',{class:'text-button full'}));
  if(!required){
   const importInput=el('input',{type:'file',accept:'.json,.zip,application/json,application/zip',class:'visually-hidden','aria-label':'Seleziona un backup',on:{change:async event=>{const file=event.target.files?.[0];if(!file)return;dialog.close();await importFile(file);}}});
   const installItem=menuButton('Installa app','Aggiungi LTS alla schermata Home.','download',startInstall);installItem.dataset.installTrigger='';installItem.hidden=isInstalled();
@@ -469,6 +470,11 @@ function openProfile(required=false){
   const syncInfo=store.getSyncInfo();
   if(!store.usingAccount())body.querySelector('.profile-menu').prepend(menuButton('Collega dispositivi',syncInfo.linked?'Archivio condiviso: viaggi, clienti e tariffe si aggiornano online.':'Collega iPhone e Android con un codice temporaneo.','link',()=>{dialog.close();deviceLinkDialog();}));
   if(accountAccess.isEnabled()){
+    if(store.usingAccount()&&accountAccess.getRole()==='admin'&&accountAccess.isVerified())
+      body.querySelector('.profile-menu').prepend(menuButton('Gestisci autisti',
+        'Genera inviti, controlla lo stato e disattiva gli accessi.','users',()=>{
+          dialog.close();showDriverAdmin();
+        }));
     if(store.usingAccount()){
       body.querySelector('.profile-menu').prepend(menuButton('Esci dall’account','Blocca la schermata e conserva il registro online. Prima sincronizza eventuali modifiche.','lock',()=>{
         try{
@@ -654,6 +660,7 @@ function accountLoginFields({fromGate=false}={}){
   const password=el('div',{class:'field'},el('label',{class:'field-label'},'Password'),pass);
   form.append(error,number,password,submit,el('p',{class:'field-hint'},
     'Il tuo account deve essere attivato dall’amministratore. Non inviare password tramite chat.'));
+  form.append(button('Hai un invito? Attiva account','text',showDriverActivation,'lock',{class:'text-button full'}));
   form.addEventListener('submit',async e=>{
     e.preventDefault();
     if(busy)return;
@@ -682,6 +689,112 @@ function showAccountLogin(){
     subtitle:'Apri soltanto i viaggi del tuo account. L’archivio dispositivo precedente non viene cancellato né importato automaticamente.'});
   body.append(accountLoginFields(),el('p',{class:'field-hint'},
     'Se devi recuperare viaggi precedenti, esportali prima dall’archivio dispositivo. Dopo il login usa Importa backup e conferma.'));
+}
+
+function showDriverActivation(){
+ const {dialog,body}=modal('Attiva il tuo account',{
+   subtitle:'Inserisci il numero autorizzato dall’amministratore e il codice ricevuto privatamente. Il codice dura 24 ore e si usa una sola volta.'});
+ const form=el('form',{class:'panel form-panel',novalidate:true});
+ const error=el('p',{class:'form-error',role:'alert'});
+ const phone=el('input',{type:'tel',autocomplete:'tel',inputmode:'tel',placeholder:'3XXXXXXXXX',maxlength:40,required:true,'aria-label':'Numero di cellulare'});
+ const code=el('input',{type:'text',autocomplete:'off',autocapitalize:'none',spellcheck:false,maxlength:80,required:true,'aria-label':'Codice invito'});
+ const password=el('input',{type:'password',autocomplete:'new-password',minlength:12,maxlength:128,required:true,'aria-label':'Crea password'});
+ const confirm=el('input',{type:'password',autocomplete:'new-password',minlength:12,maxlength:128,required:true,'aria-label':'Ripeti password'});
+ const submit=el('button',{type:'submit',class:'primary-button full'},'Attiva account');
+ const fieldNode=(label,node)=>el('div',{class:'field'},el('label',{class:'field-label'},label),node);
+ form.append(error,fieldNode('Numero di telefono (+39 automatico)',phone),
+   fieldNode('Codice invito monouso',code),fieldNode('Scegli la password (almeno 12 caratteri, lettere e numeri)',password),
+   fieldNode('Conferma password',confirm),submit,
+   el('p',{class:'field-hint'},'La password viene inviata via HTTPS a Supabase Auth. Non è visibile all’amministratore e non viene memorizzata nel registro. Il codice invito non costituisce una verifica SMS.'));
+ form.addEventListener('submit',async e=>{
+   e.preventDefault();error.textContent='';
+   if(password.value!==confirm.value){error.textContent='Le password non coincidono.';return;}
+   if(password.value.length<12||!/[A-Za-z]/.test(password.value)||!/\d/.test(password.value)){
+     error.textContent='Usa almeno 12 caratteri, con lettere e numeri.';return;
+   }
+   submit.disabled=true;
+   try{
+     await accountAccess.activateDriverInvitation({phone:phone.value.trim(),code:code.value.trim(),password:password.value});
+     password.value='';confirm.value='';code.value='';
+     dialog.close();
+     showAccountLogin();
+     toast('Account attivato. Accedi con il numero e la password scelta.');
+   }catch(err){error.textContent=err.message||'Attivazione non riuscita. Richiedi un nuovo invito.';}
+   finally{password.value='';confirm.value='';submit.disabled=false;}
+ });
+ body.append(form);phone.focus();
+}
+function showDriverAdmin(){
+ if(!store.usingAccount()||accountAccess.getRole()!=='admin'||!accountAccess.isVerified()){
+   toast('Accedi prima come amministratore.',true);return;
+ }
+ const {dialog,body}=modal('Gestisci autisti',{
+   subtitle:'Invita un autista già autorizzato. La password viene scelta soltanto dall’autista e non viene salvata qui.'});
+ const form=el('form',{class:'panel form-panel',novalidate:true});
+ const error=el('p',{class:'form-error',role:'alert'});
+ const first=el('input',{type:'text',autocomplete:'off',maxlength:80,required:true,'aria-label':'Nome'});
+ const last=el('input',{type:'text',autocomplete:'off',maxlength:80,required:true,'aria-label':'Cognome'});
+ const phone=el('input',{type:'tel',autocomplete:'off',inputmode:'tel',maxlength:40,required:true,placeholder:'3XXXXXXXXX','aria-label':'Cellulare autista'});
+ const submit=el('button',{type:'submit',class:'primary-button full'},'Genera invito');
+ const fieldNode=(label,node)=>el('div',{class:'field'},el('label',{class:'field-label'},label),node);
+ form.append(error,fieldNode('Nome autista',first),fieldNode('Cognome autista',last),
+   fieldNode('Telefono (+39 automatico)',phone),submit);
+ const result=el('div',{class:'panel',hidden:true});
+ const roster=el('div',{class:'driver-management-list'});
+ const listError=el('p',{class:'form-error',role:'alert'});
+ async function updateList(){
+   listError.textContent='';roster.replaceChildren(el('p',{class:'field-hint'},'Caricamento autisti…'));
+   try{
+     const info=await accountAccess.manageDrivers('list');
+     const entries=Array.isArray(info?.drivers)?info.drivers:[];
+     const labels={active:'Attivo',disabled:'Disattivato',invited:'Invito in attesa',pending:'Da invitare',
+       expired:'Invito scaduto',processing:'Attivazione in corso',revoked:'Invito annullato',completed:'Attivato'};
+     roster.replaceChildren();
+     if(!entries.length)roster.append(el('p',{class:'field-hint'},'Nessun autista ancora inserito.'));
+     for(const entry of entries){
+       const item=el('div',{class:'panel'},
+         el('strong',{},[entry.firstName,entry.lastName].filter(Boolean).join(' ')||'Autista'),
+         el('p',{class:'field-hint'},entry.phone+' · '+(labels[entry.status]||'Da verificare')));
+       if(['active','disabled'].includes(entry.status)){
+         const enabled=entry.status==='disabled';
+         item.append(button(enabled?'Riattiva':'Disattiva','secondary',async()=>{
+           if(!window.confirm((enabled?'Riattivare':'Disattivare')+' il login di '+entry.phone+'?'))return;
+           try{await accountAccess.manageDrivers('set-access',{phone:entry.phone,enabled});toast('Accesso aggiornato.');await updateList();}
+           catch(err){listError.textContent=err.message;}
+         }));
+       }else if(['invited','processing'].includes(entry.status)){
+         item.append(button(entry.status==='processing'?'Annulla attivazione':'Annulla invito','secondary',async()=>{
+           if(!window.confirm('Annullare il codice di attivazione per '+entry.phone+'? Un’attivazione in corso verrà interrotta.'))return;
+           try{await accountAccess.manageDrivers('revoke-invite',{phone:entry.phone});await updateList();}
+           catch(err){listError.textContent=err.message;}
+         }));
+       }
+       roster.append(item);
+     }
+   }catch(err){listError.textContent=err.message||'Impossibile leggere gli autisti.';}
+ }
+ form.addEventListener('submit',async e=>{
+   e.preventDefault();error.textContent='';submit.disabled=true;result.hidden=true;result.replaceChildren();
+   try{
+     const issued=await accountAccess.manageDrivers('issue',{
+       firstName:first.value.trim(),lastName:last.value.trim(),phone:phone.value.trim()});
+     const code=el('input',{type:'text',readonly:true,value:issued.code,
+       autocomplete:'off',spellcheck:false,'aria-label':'Codice invito privato'});
+     result.append(el('strong',{},'Invito creato per '+issued.firstName+' '+issued.lastName),
+       el('p',{class:'field-hint'},'Numero: '+issued.phone+'. Scade dopo 24 ore. Mostra questo codice solo alla persona autorizzata; non salvarlo nel registro.'),
+       code,button('Copia codice','secondary',async()=>{
+         try{await navigator.clipboard.writeText(issued.code);toast('Codice copiato. Consegnalo privatamente.');}
+         catch{code.focus();code.select();toast('Seleziona e copia il codice.');}
+       }),
+       el('p',{class:'field-hint'},'Consegna il codice con un canale privato. L’autista apre LTS → Attiva account e sceglie la password. Nessun SMS viene inviato automaticamente.'));
+     result.hidden=false;first.value='';last.value='';phone.value='';
+     await updateList();
+   }catch(err){error.textContent=err.message||'Impossibile creare l’invito.';}
+   finally{submit.disabled=false;}
+ });
+ body.append(form,result,el('h3',{},'Elenco autisti'),listError,roster,
+   button('Aggiorna elenco','secondary',()=>updateList(),'refresh'));
+ updateList();
 }
 function renderAccountGate(message=''){
   // Never leave an authenticated profile, document or port iframe on screen.
