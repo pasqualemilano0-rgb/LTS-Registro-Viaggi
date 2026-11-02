@@ -7,6 +7,16 @@ La sezione **Porti** integra booking CONATECO/TFG e programma navi SCT, con lo s
 
 Aggiornamento del 2 novembre 2026: modulo portuale **v0.65**, monitor Cloudflare H24, gestione offline e dati delle ricerche separati dal registro. Le opzioni e lo stato della nave non autorizzano il singolo booking.
 
+## Attivazione autisti con invito — 2 novembre 2026
+
+Il sito web/PWA iPhone include **Attiva account** per l'autista e **Profilo → Gestisci autisti** per l'amministratore autenticato. L'amministratore inserisce nome, cognome e numero di cellulare; per i numeri italiani il prefisso **+39** è automatico.
+
+L'amministratore genera un codice casuale monouso valido 24 ore e lo consegna privatamente. L'autista inserisce telefono e codice, quindi sceglie una password personale di **almeno 12 caratteri, con lettere e numeri**. La password viene gestita esclusivamente da Supabase Auth e non viene salvata in chiaro nel registro. Non è prevista la registrazione pubblica autonoma.
+
+L'amministratore può controllare gli stati, annullare inviti e disattivare/riattivare i login. **Non esistono SMS automatici o verifica OTP del numero** in questa versione: il codice consegnato personalmente non prova il possesso della SIM.
+
+Gli archivi dispositivo esistenti non vengono cancellati o trasferiti automaticamente. Questo rilascio riguarda il **sito web/PWA iPhone**, non il login nativo nell'APK Android. Le prove automatiche e le verifiche HTTP negative sono disponibili nel repository privato LTS; la prova completa con un autista reale è ancora da eseguire.
+
 ## Accesso autisti — integrazione facoltativa (2 novembre 2026)
 
 La webapp/PWA offre anche **Accedi con account autista** nel Profilo, usando l'account già abilitato dall'amministratore. L'accesso è gestito da Supabase Auth e il registro dell'account viene letto da un archivio separato: il backend verifica su ogni richiesta l'identità, il ruolo e l'abilitazione. Non è consentita la registrazione pubblica di nuovi account.
