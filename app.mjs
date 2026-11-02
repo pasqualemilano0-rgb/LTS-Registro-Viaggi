@@ -731,7 +731,7 @@ function showDriverAdmin(){
    toast('Accedi prima come amministratore.',true);return;
  }
  const {dialog,body}=modal('Gestisci autisti',{
-   subtitle:'Invita un autista già autorizzato. La password viene scelta soltanto dall’autista e non viene salvata qui.'});
+   subtitle:'Seleziona Genera invito accanto a un autista da invitare, oppure compila il modulo. La password viene scelta soltanto dall’autista.'});
  const form=el('form',{class:'panel form-panel',novalidate:true});
  const error=el('p',{class:'form-error',role:'alert'});
  const first=el('input',{type:'text',autocomplete:'off',maxlength:80,required:true,'aria-label':'Nome'});
@@ -770,6 +770,20 @@ function showDriverAdmin(){
            try{await accountAccess.manageDrivers('revoke-invite',{phone:entry.phone});await updateList();}
            catch(err){listError.textContent=err.message;}
          }));
+       }else if(['pending','expired','revoked'].includes(entry.status)){
+         item.append(button(entry.status==='pending'?'Genera invito':'Rigenera invito','secondary',()=>{
+           if(submit.disabled)return;
+           first.value=entry.firstName||'';
+           last.value=entry.lastName||'';
+           phone.value=entry.phone||'';
+           if(!first.value.trim()||!last.value.trim()||!phone.value.trim()){
+             listError.textContent='Completa i dati dell’autista nel modulo in alto.';
+             form.scrollIntoView({block:'start'});
+             return;
+           }
+           // The visible click runs the same verified admin action as the form.
+           form.requestSubmit();
+         }));
        }
        roster.append(item);
      }
@@ -791,6 +805,7 @@ function showDriverAdmin(){
        el('p',{class:'field-hint'},'Consegna il codice con un canale privato. L’autista apre LTS → Attiva account e sceglie la password. Nessun SMS viene inviato automaticamente.'));
      result.hidden=false;first.value='';last.value='';phone.value='';
      await updateList();
+     result.scrollIntoView({behavior:'smooth',block:'center'});
    }catch(err){error.textContent=err.message||'Impossibile creare l’invito.';}
    finally{submit.disabled=false;}
  });
