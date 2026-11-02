@@ -1,6 +1,7 @@
 import * as D from '/LTS-Registro-Viaggi/shared/domain.mjs';
 import * as store from '/LTS-Registro-Viaggi/client-store.mjs';
 import runtimeConfig from '/LTS-Registro-Viaggi/runtime-config.mjs';
+import * as accountAccess from '/LTS-Registro-Viaggi/account-access.mjs';
 import { appendPushSettings } from '/LTS-Registro-Viaggi/push-client.mjs';
 import { parseCustomerCsv, mergeCustomerCsv, exportCustomerCsv, MAX_CUSTOMER_CSV_BYTES } from '/LTS-Registro-Viaggi/shared/customer-csv.mjs';
 
@@ -176,7 +177,9 @@ function receiveState(record,{source}={}){
  const previous=state;state=D.validateState(record.state);refreshDraftCustomers(previous,state);user=record.user||null;pdfReport=null;
  if(changedIdentity){
   draft=newDraft();editingId=null;editingBaseline=null;document.querySelectorAll('dialog').forEach(dialog=>dialog.close());render();
-  if(!state.profile.firstName||!state.profile.lastName)openProfile(true);
+  // initialize() owns first-time account onboarding. Avoid opening two
+  // profile dialogs after switching from a legacy device archive.
+  if(source!=='account'&&(!state.profile.firstName||!state.profile.lastName))openProfile(true);
   return;
  }
  const brandName=document.querySelector('.brand-title');if(brandName)brandName.textContent=name()||'Il tuo registro';
@@ -457,18 +460,37 @@ function openProfile(required=false){
  const form=el('form',{novalidate:true});const error=el('div',{class:'form-error',role:'alert'});const first=field('Nome','firstName',state.profile.firstName,{placeholder:'Il tuo nome',autocomplete:'given-name',required:true,maxlength:200});const last=field('Cognome','lastName',state.profile.lastName,{placeholder:'Il tuo cognome',autocomplete:'family-name',required:true,maxlength:200});
  form.append(error,first.wrap,last.wrap,el('button',{type:'submit',class:'primary-button full','data-save':true},icon('check'),required?'Inizia a registrare':'Salva profilo'));
  form.addEventListener('submit',async event=>{event.preventDefault();error.textContent='';if(!first.input.value.trim()||!last.input.value.trim()){error.textContent='Inserisci nome e cognome dell’autista.';(!first.input.value.trim()?first.input:last.input).focus();return;}try{requireCurrentEditor(expectedProfile,state.profile,'Il profilo');await persist({...state,profile:{firstName:D.normalizeText(first.input.value),lastName:D.normalizeText(last.input.value)}});dialog.close();render();toast('Profilo salvato.');}catch(err){error.textContent=err.message;}});body.append(form);
- if(required)body.append(button('Hai già LTS? Collega dispositivi','text',()=>{dialog.close();deviceLinkDialog();},'link',{class:'text-button full'}));
+ if(required&&!store.usingAccount())body.append(button('Hai già LTS? Collega dispositivi','text',()=>{dialog.close();deviceLinkDialog();},'link',{class:'text-button full'}));
  if(!required){
   const importInput=el('input',{type:'file',accept:'.json,.zip,application/json,application/zip',class:'visually-hidden','aria-label':'Seleziona un backup',on:{change:async event=>{const file=event.target.files?.[0];if(!file)return;dialog.close();await importFile(file);}}});
   const installItem=menuButton('Installa app','Aggiungi LTS alla schermata Home.','download',startInstall);installItem.dataset.installTrigger='';installItem.hidden=isInstalled();
   body.append(el('div',{class:'profile-separator'}),el('p',{class:'section-label'},'I tuoi dati'),el('div',{class:'profile-menu'},menuButton('Sincronizza adesso','Invia online le modifiche salvate sul telefono.','cloud',async()=>{try{const result=await store.syncPending();if(result?.state)state=D.validateState(result.state);dialog.close();render();toast('Sincronizzazione completata.');}catch(err){toast(err.message||'Sincronizzazione non riuscita.',true);}}),menuButton('Esporta backup','Salva una copia in File o su Google Drive.','download',()=>downloadBackup()),menuButton('Importa backup','Backup web JSON o archivio Android ZIP.','upload',()=>importInput.click()),menuButton('Ricarica dati online','Recupera la versione online dopo aver conservato un backup.','refresh',()=>{dialog.close();confirmAction('Ricaricare i dati online?','Prima esporta un backup. Le modifiche non sincronizzate sul telefono saranno sostituite dai dati online.',async()=>{const result=await store.loadState({preferRemote:true});state=D.validateState(result.state);user=result.user||null;draft=newDraft();editingId=null;editingBaseline=null;render();toast('Registro online ricaricato.');},'Ricarica');}),installItem,importInput));
   appendPushSettings(body,{apiRequest:store.pushRequest,toast});
   const syncInfo=store.getSyncInfo();
-  body.querySelector('.profile-menu').prepend(menuButton('Collega dispositivi',syncInfo.linked?'Archivio condiviso: viaggi, clienti e tariffe si aggiornano online.':'Collega iPhone e Android con un codice temporaneo.','link',()=>{dialog.close();deviceLinkDialog();}));
+  if(!store.usingAccount())body.querySelector('.profile-menu').prepend(menuButton('Collega dispositivi',syncInfo.linked?'Archivio condiviso: viaggi, clienti e tariffe si aggiornano online.':'Collega iPhone e Android con un codice temporaneo.','link',()=>{dialog.close();deviceLinkDialog();}));
+  if(accountAccess.isEnabled()){
+    if(store.usingAccount()){
+      body.querySelector('.profile-menu').prepend(menuButton('Esci dall’account','Blocca la schermata e conserva il registro online. Prima sincronizza eventuali modifiche.','lock',()=>{
+        try{
+          store.leaveAccountView();
+          accountAccess.signOut();
+          dialog.close();
+          document.querySelectorAll('dialog[open]').forEach(node=>node.close());
+          renderAccountGate('Sei uscito dal tuo account.');
+        }catch(error){toast(error.message,true);}
+      }));
+    }else{
+      body.querySelector('.profile-menu').prepend(menuButton('Accedi con account autista','Numero di telefono e password; l’archivio attuale non viene trasferito automaticamente.','lock',()=>{
+        dialog.close();showAccountLogin();
+      }));
+    }
+  }
   if(syncInfo.conflict)body.querySelector('.profile-menu').prepend(menuButton('Risolvi sincronizzazione','Controlla le due copie: nessuna modifica viene scartata automaticamente.','info',()=>{dialog.close();syncConflictDialog();}));
   body.querySelector('.profile-menu').append(menuButton('Esporta per Android','ZIP compatibile da importare nell’app LTS Android.','download',downloadAndroidBackup));
   body.append(el('div',{class:'info-note',style:'margin-top:17px;margin-bottom:0'},icon('lock'),'Il PDF mensile contiene viaggi e servizi. Le tariffe e gli importi restano solo nell’app.'));
-  body.append(el('p',{class:'subtle-footer'},syncInfo.linked?'Dispositivi collegati allo stesso archivio. Le modifiche si sincronizzano quando l’app è aperta e connessa. Conserva un backup prima di cancellare i dati di Safari.':'Accesso libero, senza password. Collega i dispositivi con un codice per condividere il tuo archivio. Lo stesso nome autista non collega automaticamente i dati.'));
+  body.append(el('p',{class:'subtle-footer'},store.usingAccount()
+    ?'Registro dell’account verificato. I viaggi degli altri account non sono accessibili. Non condividere la password; conserva un backup prima di cambiare telefono.'
+    :syncInfo.linked?'Dispositivi collegati allo stesso archivio. Le modifiche si sincronizzano quando l’app è aperta e connessa. Conserva un backup prima di cancellare i dati di Safari.':'Accesso libero del dispositivo, senza password. Puoi passare all’account autista senza trasferimenti automatici dei viaggi.'));
   if(user?.email)body.append(el('p',{class:'subtle-footer'},user.email));
  }
  if(required)first.input.focus();
@@ -615,9 +637,102 @@ function installDialog(){
  const copy=button('Copia link','secondary',async()=>{try{if(!navigator.clipboard?.writeText)throw new Error();await navigator.clipboard.writeText(url);copy.textContent='Link copiato';}catch{link.focus();link.select();toast('Tieni premuto sul link e scegli Copia.');}},'link');
  body.append(el('div',{class:'install-link'},link,copy),button('Torna al registro','text',()=>dialog.close(),null,{class:'text-button full'}));
 }
+/**
+ * Login is opt-in for existing device archives. Logging into Supabase never
+ * copies or reassigns their records. Users can explicitly export/import a ZIP.
+ */
+function accountLoginFields({fromGate=false}={}){
+  const form=el('form',{class:'panel form-panel account-login-form',novalidate:true});
+  const error=el('p',{class:'form-error',role:'alert'});
+  const tel=el('input',{type:'tel',name:'phone',inputmode:'tel',autocomplete:'username',
+    placeholder:'+39 3XX XXX XXXX',required:true,maxlength:40,'aria-label':'Telefono'});
+  const pass=el('input',{type:'password',name:'password',autocomplete:'current-password',
+    required:true,maxlength:256,'aria-label':'Password'});
+  const submit=el('button',{type:'submit',class:'primary-button full'},icon('lock'),'Accedi al registro');
+  const number=el('div',{class:'field'},el('label',{class:'field-label'},'Numero di cellulare'),tel,
+    el('p',{class:'field-hint'},'Per i numeri italiani puoi scrivere 3XXXXXXXXX: +39 viene aggiunto automaticamente.'));
+  const password=el('div',{class:'field'},el('label',{class:'field-label'},'Password'),pass);
+  form.append(error,number,password,submit,el('p',{class:'field-hint'},
+    'Il tuo account deve essere attivato dall’amministratore. Non inviare password tramite chat.'));
+  form.addEventListener('submit',async e=>{
+    e.preventDefault();
+    if(busy)return;
+    error.textContent='';busy=true;submit.disabled=true;
+    try{
+      if(!fromGate&&(store.getSyncInfo().pending||store.getSyncInfo().conflict))
+        throw new Error('Sincronizza prima le modifiche dell’archivio dispositivo oppure esporta un backup.');
+      let phone=tel.value.trim();
+      if(/^3\\d{9}$/.test(phone))phone='+39'+phone;
+      await accountAccess.login(phone,pass.value);
+      pass.value='';
+      document.querySelectorAll('dialog[open]').forEach(node=>node.close());
+      busy=false;submit.disabled=false;
+      await initialize();
+      return;
+    }catch(err){
+      error.textContent=err.message||'Impossibile accedere. Riprova.';
+      pass.value='';
+    }finally{busy=false;submit.disabled=false;}
+  });
+  return form;
+}
+function showAccountLogin(){
+  if(!accountAccess.isEnabled())return;
+  const {body}=modal('Accesso autisti',{
+    subtitle:'Apri soltanto i viaggi del tuo account. L’archivio dispositivo precedente non viene cancellato né importato automaticamente.'});
+  body.append(accountLoginFields(),el('p',{class:'field-hint'},
+    'Se devi recuperare viaggi precedenti, esportali prima dall’archivio dispositivo. Dopo il login usa Importa backup e conferma.'));
+}
+function renderAccountGate(message=''){
+  // Never leave an authenticated profile, document or port iframe on screen.
+  unmountPorti();state=D.emptyState();user=null;draft=newDraft();
+  pdfReport=null;editingId=null;editingBaseline=null;busy=false;
+  document.querySelectorAll('dialog[open]').forEach(node=>node.close());
+  const gate=el('section',{class:'boot account-gate'},
+    el('img',{src:'/LTS-Registro-Viaggi/assets/lts-logo.png',alt:'LTS Registro Viaggi'}),
+    el('h1',{},'Accesso al tuo registro'),
+    el('p',{class:'subtitle'},'Accedi con il tuo numero e la password per vedere il registro personale.'),
+    message?el('p',{class:'form-error',role:'alert'},message):null,
+    accountLoginFields({fromGate:true}),
+    accountAccess.hasSession()?button('Riprova verifica account','secondary',()=>initialize(),'refresh'):null,
+    accountAccess.hasSession()?button('Esci e cambia account','text',()=>{
+      accountAccess.signOut();
+      store.lockRevokedAccount();
+      renderAccountGate('Sessione chiusa. Puoi accedere con un altro account.');
+    }):null,
+    button('Usa l’archivio di questo dispositivo','text',()=>{
+      const answer=window.confirm('L’archivio del dispositivo è separato dagli account e potrebbe contenere dati precedenti non protetti da password. Vuoi aprirlo su questo telefono?');
+      if(!answer)return;
+      accountAccess.signOut();
+      accountAccess.chooseDeviceArchive();
+      store.lockRevokedAccount();
+      initialize();
+    },null,{class:'text-button full'}));
+  root.replaceChildren(gate);
+}
+window.addEventListener('lts-account-locked',()=>{
+  store.lockRevokedAccount();
+  renderAccountGate('Sessione non più autorizzata. Accedi nuovamente.');
+});
+
 async function initialize(){
  try{
-  const result=await store.loadState();state=D.validateState(result?.state||result);user=result?.user||null;
+  let result;
+  if(accountAccess.accountGateRequired()){
+    if(!accountAccess.hasSession()){
+      renderAccountGate();return;
+    }
+    try{
+      result=await store.activateAccountFromSession();
+    }catch(error){
+      // Never unlock an old local account archive without live verification.
+      renderAccountGate(error.offline
+        ?'Per riaprire un archivio protetto dopo il riavvio serve Internet. I dati offline precedenti restano conservati.'
+        :error.message||'Accesso account non verificato.');
+      return;
+    }
+  }else result=await store.loadState();
+  state=D.validateState(result?.state||result);user=result?.user||null;
   const subscribe=store.subscribeStatus||store.onStatus;if(subscribe)subscribe(setStatus);
   if(!subscribed&&store.subscribeState){store.subscribeState(receiveState);subscribed=true;}
   if(result?.status)setStatus(result.status);

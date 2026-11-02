@@ -87,3 +87,27 @@ h1,h2,h3{letter-spacing:-.035em}
  .app-main.view-porti{flex:1;height:auto;min-height:0;width:100%}
  .bottom-nav>.nav-item{padding-left:2px;padding-right:2px}
 }
+
+/* Optional Supabase account entry. The prior device archive remains separate. */
+.account-gate {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: max(24px, env(safe-area-inset-top)) 18px max(24px, env(safe-area-inset-bottom));
+  margin-inline: auto;
+  width: min(100%, 510px);
+  box-sizing: border-box;
+}
+.account-gate > img { width: 138px; max-width: 55%; height: auto; }
+.account-gate > h1 { font-size: clamp(23px, 6vw, 31px); text-align: center; margin: 0; }
+.account-gate > .subtitle { text-align: center; max-width: 42ch; }
+.account-gate > .form-error { max-width: 44ch; text-align: center; }
+.account-login-form { width: 100%; max-width: 490px; box-sizing: border-box; text-align: left; }
+.account-login-form .field { margin-block: 8px; }
+.account-login-form input { width: 100%; box-sizing: border-box; }
+.account-login-form .primary-button { margin-top: 10px; }
+.account-login-form .form-error:empty { display: none; }
+.account-login-form .field-hint { margin: 4px 0 0; overflow-wrap: anywhere; }
