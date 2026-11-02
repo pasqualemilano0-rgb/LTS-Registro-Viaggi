@@ -1,0 +1,47 @@
+name: QA release account Supabase LTS
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'account-access.mjs'
+      - 'client-store.mjs'
+      - 'app.mjs'
+      - 'app.css'
+      - 'runtime-config.mjs'
+      - 'sw.js'
+      - 'shell.html'
+      - 'index.html'
+      - 'tests/qa-account-release.test.mjs'
+      - '.github/workflows/qa-account-release.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'account-access.mjs'
+      - 'client-store.mjs'
+      - 'app.mjs'
+      - 'app.css'
+      - 'runtime-config.mjs'
+      - 'sw.js'
+      - 'shell.html'
+      - 'index.html'
+      - 'tests/qa-account-release.test.mjs'
+permissions:
+  contents: read
+jobs:
+  verify-account-frontend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Static JS syntax and safety assertions
+        run: |
+          node --check app.mjs
+          node --check client-store.mjs
+          node --check account-access.mjs
+          node --check sw.js
+          node --test tests/qa-account-release.test.mjs
