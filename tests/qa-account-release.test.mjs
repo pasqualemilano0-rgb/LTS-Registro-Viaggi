@@ -42,7 +42,7 @@ test('account archive ID must derive from verified session, not user input',()=>
   assert.match(store,/account[.]archiveRequest\(method, body\)/);
 });
 test('offline worker activates new cache and precaches auth code without caching server data',()=>{
-  assert.match(sw,/const CACHE = PREFIX \+ '20261102-account-required-v6'/);
+  assert.match(sw,/const CACHE = PREFIX \+ '20261102-safe-backup-v7'/);
   assert.match(sw,/\/LTS-Registro-Viaggi\/account-access[.]mjs/);
   assert.match(sw,/url[.]origin !== self[.]location[.]origin/);
   assert.match(sw,/if \(url[.]pathname[.]startsWith\(BASE \+ 'api\/'\)\) return/);
@@ -50,8 +50,8 @@ test('offline worker activates new cache and precaches auth code without caching
 });
 test('HTML entry points are identical and use the new cache buster',()=>{
   assert.equal(html,shell);
-  assert.match(html,/app[.]css[?]v=20261102-account-required-v6/);
-  assert.match(html,/app[.]mjs[?]v=20261102-account-required-v6/);
+  assert.match(html,/app[.]css[?]v=20261102-safe-backup-v7/);
+  assert.match(html,/app[.]mjs[?]v=20261102-safe-backup-v7/);
   assert.match(html,/<script type="module"/);
 });
 test('ports section stays integrated, untouched backups and no new bundled private backend',()=>{
@@ -177,4 +177,40 @@ test('credentials are mandatory and pre-registration data stays recoverable',()=
  assert.ok(app.includes('Recupera archivio precedente'));
  assert.ok(app.includes("result.pending?'Dati recuperati sul telefono."));
  assert.doesNotMatch(store,/meta[.]delete\('active'\)/);
+});
+
+test('external file import cannot replace account data silently',()=>{
+ const source=app;
+ assert.ok(source.includes("unionStates(previous,imported,{prefer:null})"));
+ assert.ok(source.includes("unionStates(D.validateState(state),imported,{prefer:null})"));
+ assert.ok(source.includes('Scarica backup del registro attuale'));
+ assert.ok(source.includes('Unisci i due registri'));
+ assert.ok(source.includes("await accountAccess.verifySession()"));
+ assert.ok(source.includes("JSON.stringify(D.validateState(state))!==originalFingerprint"));
+ assert.ok(source.includes("acknowledge.checked&&backupStarted"));
+ assert.doesNotMatch(source,/Sostituirà il registro attuale/);
+ assert.doesNotMatch(source,/await persist\(imported\)/);
+});
+
+test('external backup merges old and new trips, clients and tariffs without changing source objects',async()=>{
+  const {emptyState,upsertTariff,createTrip,exportBackup,importBackup}=await import('../shared/domain.mjs');
+  const {unionStates,SyncConflictError}=await import('../shared/sync-merge.mjs');
+  const named=()=>({...emptyState(),profile:{firstName:'MARIO',lastName:'ROSSI'}});
+  const account=upsertTariff(named(),{id:'account-tariff',client:'AZIENDA A',city:'NAPOLI',cents:5000});
+  const backup=upsertTariff(named(),{id:'backup-tariff',client:'AZIENDA B',city:'SALERNO',cents:6400});
+  account.trips=[createTrip({id:'account-trip',date:'2026-10-17',client:'AZIENDA A',city:'NAPOLI',container:'BILICO'},account)];
+  backup.trips=[createTrip({id:'backup-trip',date:'2026-10-18',client:'AZIENDA B',city:'SALERNO',container:'REEFER'},backup)];
+  const originalAccount=JSON.stringify(account),originalBackup=JSON.stringify(backup);
+  const imported=importBackup(exportBackup(backup));
+  const merged=unionStates(account,imported,{prefer:null});
+  assert.equal(merged.trips.length,2);
+  assert.equal(merged.customers.length,2);
+  assert.equal(merged.tariffs.length,2);
+  assert.deepEqual(new Set(merged.trips.map(x=>x.id)),new Set(['account-trip','backup-trip']));
+  assert.deepEqual(new Set(merged.tariffs.map(x=>x.cents)),new Set([5000,6400]));
+  assert.equal(JSON.stringify(account),originalAccount);
+  assert.equal(JSON.stringify(backup),originalBackup);
+  const conflict=upsertTariff(named(),{id:'same-rate',client:'AZIENDA A',city:'NAPOLI',cents:9999});
+  assert.throws(()=>unionStates(account,conflict,{prefer:null}),SyncConflictError);
+  assert.equal(JSON.stringify(account),originalAccount);
 });
