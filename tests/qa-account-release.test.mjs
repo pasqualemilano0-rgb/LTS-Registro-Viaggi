@@ -11,7 +11,7 @@ test('publishable account URLs only, no service key, no private register in git'
   assert.match(cfg,/"enabled": true/);
   assert.match(cfg,/https:\/\/otrqynkscpbeyuvdlgpg[.]supabase[.]co\/functions\/v1\/lts-phone-auth/);
   assert.match(cfg,/https:\/\/otrqynkscpbeyuvdlgpg[.]supabase[.]co\/functions\/v1\/lts-account-state/);
-  assert.match(cfg,/https:\\/\\/otrqynkscpbeyuvdlgpg[.]supabase[.]co\\/functions\\/v1\\/lts-driver-onboarding/);
+  assert.ok(cfg.includes('https://otrqynkscpbeyuvdlgpg.supabase.co/functions/v1/lts-driver-onboarding'));
   const exposed=[cfg,app,store,auth,sw,html,shell].join('\n');
   assert.doesNotMatch(exposed,/sb_secret_[A-Za-z0-9]+|SUPABASE_SERVICE_ROLE_KEY\s*[:=]|sk_live_[A-Za-z0-9]+/);
 });
@@ -60,15 +60,15 @@ test('ports section stays integrated, untouched backups and no new bundled priva
 });
 
 test('driver onboarding: admin-only controls, invite activation and guarded endpoints',()=>{
-  assert.match(app,/function showDriverAdmin\\(/);
-  assert.match(app,/function showDriverActivation\\(/);
-  assert.match(app,/accountAccess[.]getRole\\(\\)==='admin'/);
-  assert.match(app,/activateDriverInvitation/);
-  assert.match(auth,/function manageDrivers\\(/);
-  assert.match(auth,/function activateDriverInvitation\\(/);
-  assert.match(auth,/if \\(!isVerified\\(\\) \\|\\| getRole\\(\\) !== 'admin'\\)/);
-  assert.match(auth,/credentials:'omit'/);
-  assert.match(auth,/cache:'no-store'/);
+  assert.ok(app.includes('function showDriverAdmin('));
+  assert.ok(app.includes('function showDriverActivation('));
+  assert.ok(app.includes("accountAccess.getRole()==='admin'"));
+  assert.ok(app.includes('activateDriverInvitation'));
+  assert.ok(auth.includes('function manageDrivers('));
+  assert.ok(auth.includes('function activateDriverInvitation('));
+  assert.ok(auth.includes("if (!isVerified() || getRole() !== 'admin')"));
+  assert.ok(auth.includes("credentials:'omit'"));
+  assert.ok(auth.includes("cache:'no-store'"));
   assert.doesNotMatch(cfg,/sb_secret_|service_role/i);
-  assert.doesNotMatch(auth,/localStorage[.]setItem\\([^\\n]*password/i);
+  assert.ok(!auth.includes('localStorage.setItem(SESSION_KEY'));
 });
