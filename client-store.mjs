@@ -246,6 +246,8 @@ async function reconcile(source) {
   catch (error) { if (!error.offline && ![500, 502, 503, 504].includes(error.status)) throw error; }
 }
 async function loadRecord(options = {}, source = 'load') {
+  if (account.isEnabled() && (!accountOwner || !account.isVerified()))
+    throw new Error('Accesso al registro consentito solo dopo verifica credenziali.');
   // Never consult the global 'active' pointer for an authenticated account.
   let local = await localGet(accountOwner);
   let remote;
@@ -319,6 +321,62 @@ export function activateAccountFromSession() {
   });
 }
 export function usingAccount() { return Boolean(accountOwner); }
+// Legacy archives remain untouched under the original IndexedDB key. They are
+// only visible to a freshly verified account owner using this browser profile.
+async function legacyRecordForVerifiedAccount() {
+  if (!accountOwner || !account.isVerified())
+    throw new Error('Accedi prima al tuo account per recuperare il vecchio archivio.');
+  const record = await localGet(); // original device pointer, NOT the account record
+  if (!record?.user?.id || record.user.id.startsWith('account:')) return null;
+  const state = validateState(record.state);
+  const meaningful = state.trips.length || state.customers.length || state.tariffs.length ||
+    state.profile.firstName || state.profile.lastName;
+  return meaningful ? {record,state} : null;
+}
+export async function previewLegacyArchive() {
+  const legacy = await legacyRecordForVerifiedAccount();
+  if (!legacy) return null;
+  const {record,state} = legacy;
+  return {
+    name: [state.profile.firstName,state.profile.lastName].filter(Boolean).join(' '),
+    trips: state.trips.length,customers: state.customers.length,tariffs: state.tariffs.length,
+    // Never expose an archive token, revision or local storage ID.
+    hasData: true
+  };
+}
+export async function exportLegacyBackup() {
+  const legacy = await legacyRecordForVerifiedAccount();
+  if (!legacy) throw new Error('Nessun archivio precedente disponibile su questo dispositivo.');
+  return JSON.stringify({schemaVersion:legacy.state.schemaVersion,...legacy.state});
+}
+const LEGACY_IMPORTED_PREFIX='lts-legacy-imported-v1:';
+export function hasImportedLegacyArchive() {
+  if (!accountOwner || !account.isVerified()) return false;
+  try { return localStorage.getItem(LEGACY_IMPORTED_PREFIX+accountOwner)==='yes'; }
+  catch { return false; }
+}
+export async function importLegacyArchive() {
+  // The caller has explicitly confirmed this is their old register.
+  const legacy = await legacyRecordForVerifiedAccount();
+  if (!legacy) throw new Error('Non è stato trovato un vecchio archivio su questo dispositivo.');
+  await account.verifySession(); // fail closed if access was revoked or is offline
+  if (!active || !accountOwner || active.user.id!==accountOwner)
+    throw new Error('Il registro account non è pronto.');
+  if (active.pending || blocked || active.conflict)
+    throw new Error('Sincronizza o risolvi prima le modifiche del registro account.');
+  // Only merge the validated snapshot after authentication; never overwrite
+  // the old device entry. Conflicting account data are not resolved silently.
+  const existing = validateState(active.state);
+  const emptyTarget = existing.trips.length===0 && existing.customers.length===0 &&
+    existing.tariffs.length===0 && !existing.profile.firstName && !existing.profile.lastName;
+  let combined;
+  try { combined = unionStates(existing,legacy.state,{prefer:emptyTarget?'local':null}); }
+  catch { throw new Error('Sono presenti dati in conflitto: nessun dato è stato sovrascritto. Esporta entrambi i backup prima di procedere.'); }
+  const result = await saveState(combined);
+  try { localStorage.setItem(LEGACY_IMPORTED_PREFIX+accountOwner,'yes'); }catch{}
+  return result;
+}
+
 /** An identity revoked server-side must disappear from the screen immediately.
  * Its unsynchronized offline copy is retained under its account key for later
  * recovery by the same verified account, never shown to the next login. */
@@ -477,6 +535,8 @@ export function resolveSyncConflict(choice, expectedRevision) {
   });
 }
 export function saveState(value) {
+  if (account.isEnabled() && (!accountOwner || !account.isVerified()))
+    throw new Error('Accedi con le tue credenziali per salvare nel registro.');
   const state = reconcileTripTariffs(validateState(value));
   const expectedVersion = recordVersion(active);
   return enqueue(async () => {
