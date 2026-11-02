@@ -4,6 +4,8 @@ on:
     branches: [main]
     paths:
       - 'account-access.mjs'
+      - 'recupera-password.mjs'
+      - 'recupera-password.html'
       - 'client-store.mjs'
       - 'app.mjs'
       - 'app.css'
@@ -17,6 +19,8 @@ on:
     branches: [main]
     paths:
       - 'account-access.mjs'
+      - 'recupera-password.mjs'
+      - 'recupera-password.html'
       - 'client-store.mjs'
       - 'app.mjs'
       - 'app.css'
@@ -43,5 +47,6 @@ jobs:
           node --check app.mjs
           node --check client-store.mjs
           node --check account-access.mjs
+          node --check recupera-password.mjs
           node --check sw.js
           node --test tests/qa-account-release.test.mjs
