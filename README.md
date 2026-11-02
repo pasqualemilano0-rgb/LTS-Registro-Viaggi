@@ -40,3 +40,16 @@ La narrazione è stata generata per questa dimostrazione.
 
 Questo repository contiene soltanto i file necessari al sito e al suo promemoria.
 I registri personali non sono pubblici e non sono inclusi nel repository.
+
+## Impostazione password amministratore via Gmail (2 novembre 2026)
+
+Il primo amministratore era stato provisionato in Supabase Auth con un hash password, ma il titolare non aveva scelto una password nota; quindi non è appropriato tentare password casuali né crearne una in chat. La webapp espone ora **«Imposta o recupera password via Gmail»** nella schermata di login e la pagina **/LTS-Registro-Viaggi/recupera-password.html**.
+
+Il titolare digita **solo sul sito HTTPS** la Gmail associata all'account: Supabase Auth invia un link che apre la pagina LTS, verifica il token di recupero e consente di sostituire la password. Il token vive solo in memoria del tab ed è rimosso immediatamente dall'URL. La nuova password va da 12 a 128 caratteri con lettere e numeri e viene controllata contro il database gratuito HIBP per mezzo dei **primi 5 caratteri dell'hash SHA-1**, con richiesta padding. Nessuna password viene scritta in backup, localStorage, GitHub o Drive; la password è inviata esclusivamente alla Auth API di Supabase.
+
+**Configurazione necessaria da parte del proprietario**, prima di inviare email:
+1. Supabase Dashboard → Authentication → URL Configuration: https://supabase.com/dashboard/project/otrqynkscpbeyuvdlgpg/auth/url-configuration
+2. Configurare la **Site URL** pubblica HTTPS e aggiungere fra le **Redirect URLs** consentite l'indirizzo esatto `https://pasqualemilano0-rgb.github.io/LTS-Registro-Viaggi/recupera-password.html`.
+3. Verificare che i messaggi Auth arrivino alla casella registrata (alcuni progetti Free necessitano SMTP personalizzato o hanno limiti di invio); controllare Spam. Non inviare link, OTP, password o token in chat.
+
+**Limiti:** non è ancora eseguito un vero recupero via Gmail né un login admin su telefono. Il controllo HIBP in questa schermata è un controllo **client-side**, non l'opzione integrata Supabase Auth Leaked Password Protection, che resta non disponibile nel piano Free. Gli inviti autisti restano protetti da verifica server-side separata; il warning Advisor rimane. Nessun utente/registro modificato da questo rilascio.
