@@ -88,6 +88,21 @@ class TestMirror(unittest.TestCase):
         self.responses[mirror.FEEDS["tfg"]["endpoint"]]["stale"] = True
         self.assert_rejected_without_partial_writes("stale TFG")
 
+    def test_healthy_terminals_continue_when_cnt_is_unavailable(self):
+        self.responses[mirror.FEEDS["cnt"]["endpoint"]]["mode"] = "github_verified_fallback"
+        old_cnt = (self.root / mirror.FEEDS["cnt"]["file"]).read_bytes()
+        with self.assertRaises(mirror.SnapshotRejected):
+            mirror.collect(root=self.root, now=NOW,
+                           fetcher=lambda path: self.responses[path], terminals=("cnt",))
+        for terminal in ("tfg", "sct"):
+            result = mirror.collect(root=self.root, now=NOW,
+                                    fetcher=lambda path: self.responses[path],
+                                    terminals=(terminal,))
+            self.assertTrue(result[terminal]["updated"])
+        self.assertEqual((self.root / mirror.FEEDS["cnt"]["file"]).read_bytes(), old_cnt)
+        self.assertEqual(json.loads((self.root / mirror.FEEDS["tfg"]["file"]).read_text())["acquired_at"], ts())
+        self.assertEqual(json.loads((self.root / mirror.FEEDS["sct"]["file"]).read_text())["acquired_at"], ts())
+
     def test_fallback_is_never_republished_as_new_acquisition(self):
         self.responses[mirror.FEEDS["cnt"]["endpoint"]]["mode"] = "github_verified_fallback"
         self.assert_rejected_without_partial_writes("GitHub fallback")
