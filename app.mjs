@@ -662,6 +662,7 @@ function accountLoginFields({fromGate=false}={}){
   form.append(error,number,password,submit,el('p',{class:'field-hint'},
     'Il tuo account deve essere attivato dall’amministratore. Non inviare password tramite chat.'));
   form.append(button('Hai un invito? Attiva account','text',showDriverActivation,'lock',{class:'text-button full'}));
+  form.append(el('a',{href:'/LTS-Registro-Viaggi/recupera-password.html',target:'_blank',rel:'noopener noreferrer',class:'text-button full'},'Imposta o recupera password via Gmail'));
   form.addEventListener('submit',async e=>{
     e.preventDefault();
     if(busy)return;
