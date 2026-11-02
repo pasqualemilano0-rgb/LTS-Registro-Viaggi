@@ -1,0 +1,83 @@
+name: LTS Porti — aggiorna snapshot pubblici dal monitor Cloudflare
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/refresh_porti_from_worker.py'
+      - 'tests/test_refresh_porti_from_worker.py'
+      - '.github/workflows/refresh-lts-porti-snapshots.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/refresh_porti_from_worker.py'
+      - 'tests/test_refresh_porti_from_worker.py'
+      - '.github/workflows/refresh-lts-porti-snapshots.yml'
+  workflow_dispatch:
+  schedule:
+    # Dopo il monitor Cloudflare (00,15,30,45 UTC); no direct terminal polling.
+    - cron: '8,23,38,53 * * * *'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: lts-public-snapshot-refresh
+  cancel-in-progress: false
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Syntax and offline fail-closed regression tests
+        run: |
+          python -m py_compile scripts/refresh_porti_from_worker.py tests/test_refresh_porti_from_worker.py
+          python -m unittest discover -s tests -p 'test_refresh_porti_from_worker.py' -v
+
+  publish:
+    if: github.event_name != 'pull_request'
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Fast-forward before collecting new public snapshots
+        run: git pull --ff-only origin main
+      - name: Read current Cloudflare monitoring and publish only 3 vetted JSON files
+        run: |
+          python scripts/refresh_porti_from_worker.py
+          git diff --check -- porti/data/conateco.json porti/data/tfg_schedule.json porti/data/sct.json
+      - name: Publish only changed official public vessel schedules
+        run: |
+          set -eu
+          git add -- porti/data/conateco.json porti/data/tfg_schedule.json porti/data/sct.json
+          if git diff --cached --quiet; then
+            echo "Nessuno snapshot più recente da pubblicare"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git diff --cached --name-only | while IFS= read -r path; do
+            case "$path" in
+              porti/data/conateco.json|porti/data/tfg_schedule.json|porti/data/sct.json) ;;
+              *) echo "FILE NON CONSENTITO: $path"; exit 1 ;;
+            esac
+          done
+          git commit -m "LTS Porti: aggiorna programmi navi verificati dal monitor Cloudflare"
+          git push origin HEAD:main
