@@ -5,6 +5,7 @@ import { readFileSync, existsSync } from 'node:fs';
 const read=name=>readFileSync(new URL('../'+name,import.meta.url),'utf8');
 const cfg=read('runtime-config.mjs'),app=read('app.mjs'),store=read('client-store.mjs');
 const auth=read('account-access.mjs'),sw=read('sw.js'),html=read('index.html'),shell=read('shell.html');
+const recovery=read('recupera-password.mjs'), recoveryHtml=read('recupera-password.html');
 const base='/LTS-Registro-Viaggi/';
 test('publishable account URLs only, no service key, no private register in git',()=>{
   assert.match(cfg,/"basePath": "\/LTS-Registro-Viaggi\/"/);
@@ -41,7 +42,7 @@ test('account archive ID must derive from verified session, not user input',()=>
   assert.match(store,/account[.]archiveRequest\(method, body\)/);
 });
 test('offline worker activates new cache and precaches auth code without caching server data',()=>{
-  assert.match(sw,/const CACHE = PREFIX \+ '20261102-drivers-v3'/);
+  assert.match(sw,/const CACHE = PREFIX \+ '20261102-drivers-v4'/);
   assert.match(sw,/\/LTS-Registro-Viaggi\/account-access[.]mjs/);
   assert.match(sw,/url[.]origin !== self[.]location[.]origin/);
   assert.match(sw,/if \(url[.]pathname[.]startsWith\(BASE \+ 'api\/'\)\) return/);
@@ -49,8 +50,8 @@ test('offline worker activates new cache and precaches auth code without caching
 });
 test('HTML entry points are identical and use the new cache buster',()=>{
   assert.equal(html,shell);
-  assert.match(html,/app[.]css[?]v=20261102-drivers-v3/);
-  assert.match(html,/app[.]mjs[?]v=20261102-drivers-v3/);
+  assert.match(html,/app[.]css[?]v=20261102-drivers-v4/);
+  assert.match(html,/app[.]mjs[?]v=20261102-drivers-v4/);
   assert.match(html,/<script type="module"/);
 });
 test('ports section stays integrated, untouched backups and no new bundled private backend',()=>{
@@ -122,4 +123,24 @@ test('network-first account modules show latest UI while keeping offline fallbac
   online=false;
   assert.equal(await readPath(appPath),'NEW_APP_JS');
   assert.equal(calls.length,2);
+});
+
+test('Gmail password recovery is linked, safe and never copies account data',()=>{
+  assert.ok(app.includes('Imposta o recupera password via Gmail'));
+  assert.ok(app.includes('/LTS-Registro-Viaggi/recupera-password.html'));
+  assert.match(recovery,/auth\\/v1\\//);
+  assert.ok(recovery.includes('recover?redirect_to='));
+  assert.ok(recovery.includes("hash.get('type')!=='recovery'"));
+  assert.ok(recovery.includes("history.replaceState(null,'',window.location.pathname)"));
+  assert.ok(recovery.includes("requestApi('user',{method:'PUT',body:{password:pass},token:recoveryToken})"));
+  assert.ok(recovery.includes("credentials:'omit'"));
+  assert.ok(recovery.includes("compromisedPassword(pass)"));
+  assert.ok(recovery.includes("https://api.pwnedpasswords.com/range/"));
+  assert.ok(recovery.includes("slice(0,5)"));
+  assert.ok(recovery.includes("!validPassword(pass)"));
+  assert.ok(recoveryHtml.includes('Content-Security-Policy'));
+  assert.ok(recoveryHtml.includes('no-referrer'));
+  assert.ok(recoveryHtml.includes('type="password"'));
+  assert.doesNotMatch(recovery,/SUPABASE_SERVICE_ROLE_KEY|sb_secret_|localStorage[.]setItem|sessionStorage[.]setItem/);
+  assert.doesNotMatch(recoveryHtml,/<script[^>]+src="https:/i);
 });
