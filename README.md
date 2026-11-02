@@ -15,6 +15,12 @@ La webapp/PWA offre anche **Accedi con account autista** nel Profilo, usando l'a
 
 **Sicurezza e limiti:** i token dell'account rimangono nella sessione del browser, non nei backup o nei file pubblici. È necessaria una verifica online iniziale; senza connessione e senza una sessione già verificata, l'archivio protetto non viene aperto. Gli archivi dispositivo preesistenti restano un modello diverso, non protetto da account. L'APK Android nativo v14 non incorpora ancora il login Supabase; questo rilascio riguarda il sito/PWA. Restano da collaudare login con un utente reale e trasferimento di backup reale.
 
+### Attivazione autisti con invito (web/iPhone)
+
+L'amministratore gia autenticato vede **Profilo → Gestisci autisti**: può emettere un codice monouso di 24 ore, consultare i propri autisti, revocare inviti e disattivare o riattivare un autista. Il codice va consegnato privatamente dal titolare; **nessun SMS viene inviato automaticamente**. L'autista usa **Hai un invito? Attiva account**, il proprio telefono e il codice, e sceglie la password personale in Supabase Auth. La nuova password non viene mostrata all'amministratore né salvata nel registro.
+
+**Requisiti attuali:** 12–128 caratteri con lettere e numeri, non 6. Un invito non prova il possesso della SIM; il numero non è verificato tramite OTP. Prima della prima emissione reale, l'amministratore deve effettuare un login verificato; il collegamento completo non è ancora collaudato con utenti reali. L'APK Android nativo resta fuori da questo rilascio. Nessun archivio precedente viene cancellato, migrato o unito automaticamente.
+
 La documentazione tecnica e i test sono nel repository **privato** `LTS`, in `progetto-web-completo/docs-internal/account-supabase-integration-v1.md`. Non distribuire qui sorgenti backend, chiavi Supabase o registri personali.
 
 Su iPhone aprire in Safari e scegliere **Condividi → Aggiungi alla schermata Home**.
