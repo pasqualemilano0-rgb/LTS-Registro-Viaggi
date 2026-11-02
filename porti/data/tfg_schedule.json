@@ -1,6 +1,6 @@
 {
   "source": "https://tfg.bucci.it/@/TFGW_TP_ETA",
-  "source_updated_at": "2026-10-31T12:40:26+01:00",
+  "source_updated_at": "2026-11-02T13:55:55.000Z",
   "rows": [
     {
       "vessel": "CATHERINEC",
@@ -9,7 +9,7 @@
       "eta": "25/10/26 06:00",
       "acceptance": "NAVE CHIUSA",
       "custom_close_time": "26/10/26 10:00:00",
-      "fast_corridor_cut_off": "26/10/26 09:09:00",
+      "fast_corridor_cut_off": "26/10/2609:09:00",
       "gate_cut_off": "",
       "destination": "INTERNO PORTO"
     },
@@ -31,7 +31,7 @@
       "eta": "25/10/26 21:00",
       "acceptance": "NAVE CHIUSA",
       "custom_close_time": "26/10/26 15:00:00",
-      "fast_corridor_cut_off": "26/10/26 11:00:00",
+      "fast_corridor_cut_off": "26/10/2611:00:00",
       "gate_cut_off": "",
       "destination": "INTERNO PORTO"
     },
@@ -42,7 +42,7 @@
       "eta": "26/10/26 08:00",
       "acceptance": "NAVE CHIUSA",
       "custom_close_time": "27/10/26 15:00:00",
-      "fast_corridor_cut_off": "26/10/26 10:30:00",
+      "fast_corridor_cut_off": "26/10/2610:30:00",
       "gate_cut_off": "",
       "destination": "INTERNO PORTO"
     },
@@ -53,7 +53,7 @@
       "eta": "26/10/26 17:00",
       "acceptance": "NAVE CHIUSA",
       "custom_close_time": "27/10/26 15:00:00",
-      "fast_corridor_cut_off": "23/10/26 10:00:00",
+      "fast_corridor_cut_off": "23/10/2610:00:00",
       "gate_cut_off": "",
       "destination": "INTERNO PORTO"
     },
@@ -64,7 +64,7 @@
       "eta": "29/10/26 06:00",
       "acceptance": "NAVE CHIUSA",
       "custom_close_time": "29/10/26 15:00:00",
-      "fast_corridor_cut_off": "28/10/26 15:00:00",
+      "fast_corridor_cut_off": "28/10/2615:00:00",
       "gate_cut_off": "",
       "destination": "INTERNO PORTO"
     },
@@ -73,9 +73,9 @@
       "arrival_voyage": "0HWL8E1MA",
       "departure_voyage": "0HWL8E1MA",
       "eta": "02/11/26 07:00",
-      "acceptance": "ACCETTA CARICO",
+      "acceptance": "NAVE CHIUSA",
       "custom_close_time": "02/11/26 15:00:00",
-      "fast_corridor_cut_off": "30/10/26 11:00:00",
+      "fast_corridor_cut_off": "30/10/2611:00:00",
       "gate_cut_off": "",
       "destination": "INTERNO PORTO"
     },
@@ -83,9 +83,20 @@
       "vessel": "HENNEKE RAMBOW",
       "arrival_voyage": "AGA020S19",
       "departure_voyage": "AGA020S19",
-      "eta": "03/11/26",
-      "acceptance": "ACCETTA CARICO",
+      "eta": "02/11/26 11:00",
+      "acceptance": "NAVE CHIUSA",
       "custom_close_time": "02/11/26 15:00:00",
+      "fast_corridor_cut_off": "",
+      "gate_cut_off": "",
+      "destination": "INTERNO PORTO"
+    },
+    {
+      "vessel": "MSC GRETA III",
+      "arrival_voyage": "AC641R",
+      "departure_voyage": "AC641R",
+      "eta": "03/11/26 06:00",
+      "acceptance": "NON ACCETTA CARICO",
+      "custom_close_time": "&nbsp;",
       "fast_corridor_cut_off": "",
       "gate_cut_off": "",
       "destination": "INTERNO PORTO"
@@ -96,7 +107,7 @@
       "departure_voyage": "645W",
       "eta": "05/11/26",
       "acceptance": "ACCETTA CARICO",
-      "custom_close_time": "",
+      "custom_close_time": "&nbsp;",
       "fast_corridor_cut_off": "",
       "gate_cut_off": "",
       "destination": "INTERNO PORTO"
@@ -107,7 +118,7 @@
       "departure_voyage": "018",
       "eta": "07/11/26",
       "acceptance": "ACCETTA CARICO",
-      "custom_close_time": "",
+      "custom_close_time": "&nbsp;",
       "fast_corridor_cut_off": "",
       "gate_cut_off": "",
       "destination": "INTERNO PORTO"
@@ -118,7 +129,7 @@
       "departure_voyage": "AGA040S19",
       "eta": "09/11/26",
       "acceptance": "CARICO DAL 03/11/26 08:00:00",
-      "custom_close_time": "",
+      "custom_close_time": "&nbsp;",
       "fast_corridor_cut_off": "",
       "gate_cut_off": "",
       "destination": "INTERNO PORTO"
@@ -129,7 +140,7 @@
       "departure_voyage": "0HWLAE1MA",
       "eta": "10/11/26",
       "acceptance": "CARICO DAL 03/11/26 08:00:00",
-      "custom_close_time": "",
+      "custom_close_time": "&nbsp;",
       "fast_corridor_cut_off": "",
       "gate_cut_off": "",
       "destination": "INTERNO PORTO"
@@ -140,7 +151,7 @@
       "departure_voyage": "646W",
       "eta": "12/11/26",
       "acceptance": "NON ACCETTA CARICO",
-      "custom_close_time": "",
+      "custom_close_time": "&nbsp;",
       "fast_corridor_cut_off": "",
       "gate_cut_off": "",
       "destination": "INTERNO PORTO"
@@ -151,7 +162,7 @@
       "departure_voyage": "019",
       "eta": "14/11/26",
       "acceptance": "NON ACCETTA CARICO",
-      "custom_close_time": "",
+      "custom_close_time": "&nbsp;",
       "fast_corridor_cut_off": "",
       "gate_cut_off": "",
       "destination": "INTERNO PORTO"
@@ -162,7 +173,7 @@
       "departure_voyage": "AGA060S19",
       "eta": "16/11/26",
       "acceptance": "NON ACCETTA CARICO",
-      "custom_close_time": "",
+      "custom_close_time": "&nbsp;",
       "fast_corridor_cut_off": "",
       "gate_cut_off": "",
       "destination": "INTERNO PORTO"
@@ -173,7 +184,7 @@
       "departure_voyage": "0HWLCE1MA",
       "eta": "17/11/26",
       "acceptance": "NON ACCETTA CARICO",
-      "custom_close_time": "",
+      "custom_close_time": "&nbsp;",
       "fast_corridor_cut_off": "",
       "gate_cut_off": "",
       "destination": "INTERNO PORTO"
@@ -184,7 +195,7 @@
       "departure_voyage": "647W",
       "eta": "19/11/26",
       "acceptance": "NON ACCETTA CARICO",
-      "custom_close_time": "",
+      "custom_close_time": "&nbsp;",
       "fast_corridor_cut_off": "",
       "gate_cut_off": "",
       "destination": "INTERNO PORTO"
@@ -195,7 +206,7 @@
       "departure_voyage": "AGA080S19",
       "eta": "23/11/26",
       "acceptance": "NON ACCETTA CARICO",
-      "custom_close_time": "",
+      "custom_close_time": "&nbsp;",
       "fast_corridor_cut_off": "",
       "gate_cut_off": "",
       "destination": "INTERNO PORTO"
@@ -206,7 +217,7 @@
       "departure_voyage": "0HWLEE1MA",
       "eta": "24/11/26",
       "acceptance": "NON ACCETTA CARICO",
-      "custom_close_time": "",
+      "custom_close_time": "&nbsp;",
       "fast_corridor_cut_off": "",
       "gate_cut_off": "",
       "destination": "INTERNO PORTO"
@@ -217,11 +228,11 @@
       "departure_voyage": "648W",
       "eta": "26/11/26",
       "acceptance": "NON ACCETTA CARICO",
-      "custom_close_time": "",
+      "custom_close_time": "&nbsp;",
       "fast_corridor_cut_off": "",
       "gate_cut_off": "",
       "destination": "INTERNO PORTO"
     }
   ],
-  "acquired_at": "2026-11-02T10:58:50.491015+00:00"
+  "acquired_at": "2026-11-02T21:15:16.787Z"
 }
