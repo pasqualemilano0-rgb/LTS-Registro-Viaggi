@@ -21,6 +21,7 @@ let syncWarning = false;
 let pdfReport = null;
 let toastTimer;
 let refreshView = null;
+let portiFrame = null;
 let subscribed = false;
 let installPrompt = null;
 const standaloneMode = window.matchMedia('(display-mode: standalone)');
@@ -30,7 +31,7 @@ window.addEventListener('beforeinstallprompt',event=>{event.preventDefault();ins
 function updateInstallButtons(){document.querySelectorAll('[data-install-trigger]').forEach(node=>node.hidden=isInstalled());}
 window.addEventListener('appinstalled',()=>{installPrompt=null;document.querySelector('[data-install-dialog]')?.close();updateInstallButtons();});
 standaloneMode.addEventListener?.('change',updateInstallButtons);
-const tabs = [{id:'insert',label:'Inserisci viaggio',icon:'addTrip'},{id:'register',label:'Registro viaggi',icon:'calendar'},{id:'customers',label:'Clienti',icon:'users'},{id:'tariffs',label:'Tariffe',icon:'wallet'}];
+const tabs = [{id:'insert',label:'Inserisci viaggio',icon:'addTrip'},{id:'register',label:'Registro viaggi',icon:'calendar'},{id:'customers',label:'Clienti',icon:'users'},{id:'tariffs',label:'Tariffe',icon:'wallet'},{id:'porti',label:'Porti',icon:'ship'}];
 
 function newDraft() { return {date:today(),client:'',city:'',container:'',secondClient:'',secondCity:'',services:[],second:false,note:'',noteOpen:false,servicesOpen:false}; }
 const editorVersion = value => JSON.stringify(value ?? null);
@@ -73,6 +74,7 @@ function icon(name) {
     share:['M12 16V3','m7 8 5-5 5 5','M7 10H4v11h16V10h-3'], info:['M12 11v6','M12 7h.01'],
     link:['M10 13a5 5 0 0 0 7 .5l3-3a5 5 0 0 0-7-7l-2 2','M14 11a5 5 0 0 0-7-.5l-3 3a5 5 0 0 0 7 7l2-2'],
     truck:['M1 3h14v13H1z','M15 8h4l3 4v4h-7','M3 16v2','M17 16v2'],
+    ship:['M5 11V6h14v5','M9 6V3h6v3','m3 12 9-3 9 3-3 7H6z','M12 9v10','M2 21c2 1 3 1 5 0s3-1 5 0 3 1 5 0 3-1 5 0'],
     sliders:['M4 6h6','M14 6h6','M4 12h10','M18 12h2','M4 18h2','M10 18h10','M10 3v6','M14 9v6','M6 15v6'],
     arrow:['M5 12h14','m13 6 6 6-6 6'], refresh:['M20 6v5h-5','M4 18v-5h5','M6 6a8 8 0 0 1 13 2','M18 18A8 8 0 0 1 5 16'],
   };
@@ -133,7 +135,12 @@ function refreshDraftCustomers(previous,next){
  const nextById=new Map(next.customers.map(customer=>[customer.id,customer]));
  for(const customer of previous.customers){const current=nextById.get(customer.id);if(current&&customer.name!==current.name)for(const field of ['client','secondClient'])if(D.normalizeText(draft[field])===customer.name)draft[field]=current.name;}
 }
-function navigate(next){tab=next;searchValue='';render();const scroll=document.querySelector('.app-scroll');if(scroll)scroll.scrollTop=0;window.scrollTo({top:0,behavior:'auto'});}
+function unmountPorti(){
+ if(!portiFrame)return;
+ // Leaving Porti stops its polling and discards the in-frame booking query.
+ portiFrame.src='about:blank';portiFrame.remove();portiFrame=null;
+}
+function navigate(next){if(tab==='porti'&&next!==tab)unmountPorti();tab=next;searchValue='';render();const scroll=document.querySelector('.app-scroll');if(scroll)scroll.scrollTop=0;window.scrollTo({top:0,behavior:'auto'});}
 function render(){
  const scrollTop=document.querySelector('.app-scroll')?.scrollTop||0;
  refreshView=null;
@@ -141,11 +148,25 @@ function render(){
  const header=el('header',{class:'topbar'},el('div',{class:'brand'},el('img',{src:'/LTS-Registro-Viaggi/assets/lts-logo.png',alt:'LTS',width:116,height:46}),el('div',{class:'brand-copy'},el('p',{class:'eyebrow'},'Registro viaggi'),el('p',{class:'brand-title'},name()||'Il tuo registro'))),el('div',{class:'header-actions'},el('button',{class:'install-icon-button',type:'button','data-install-trigger':true,hidden:isInstalled(),'aria-label':'Installa app',title:'Installa LTS sul telefono',on:{click:startInstall}},icon('download')),el('button',{class:'profile-button',type:'button','aria-label':`Profilo di ${name()||'autista'}`,title:'Profilo e backup',on:{click:()=>openProfile()}},initials())));
  const main=el('main',{class:`app-main view-${tab}`,id:'main-content'});
  const nav=el('nav',{class:'bottom-nav','aria-label':'Navigazione principale'},tabs.map(item=>el('button',{type:'button',class:`nav-item${tab===item.id?' active':''}`,'aria-current':tab===item.id?'page':null,on:{click:()=>navigate(item.id)}},icon(item.icon),el('span',{},item.label))));
+ // Detaching an iframe, even if the same node is appended again, resets its
+ // browsing context. Refresh the shell around the connected Porti document.
+ if(tab==='porti'&&portiFrame?.isConnected){
+  document.querySelector('.topbar').replaceWith(header);
+  document.querySelector('.bottom-nav').replaceWith(nav);
+  document.querySelector('#sync-status')?.replaceWith(syncNode());
+  return;
+ }
+ unmountPorti();
  const scroll=el('div',{class:'app-scroll'},header,main);
  frame.append(scroll,nav);root.replaceChildren(frame);
- if(tab==='insert')renderInsert(main); else if(tab==='register')renderRegister(main);else if(tab==='customers')renderCustomers(main);else renderTariffs(main);
- main.append(syncNode());
+ if(tab==='insert')renderInsert(main); else if(tab==='register')renderRegister(main);else if(tab==='customers')renderCustomers(main);else if(tab==='porti')renderPorti(main);else renderTariffs(main);
+ if(tab!=='porti')main.append(syncNode());
  scroll.scrollTop=scrollTop;
+}
+function renderPorti(main){
+ const url=(runtimeConfig.basePath??'/')+'porti/index.html';
+ portiFrame=el('iframe',{class:'porti-frame',src:url,title:'Porti e booking',referrerpolicy:'no-referrer'});
+ main.append(el('div',{class:'porti-heading'},el('h1',{},'Porti'),el('a',{class:'porti-open-link',href:url},'Apri Porti')),portiFrame);
 }
 function receiveState(record,{source}={}){
  // Local saves finish in persist(); background changes update the open view

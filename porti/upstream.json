@@ -1,0 +1,162 @@
+{
+  "schema": 2,
+  "upstream": {
+    "repository": "https://github.com/pasqualemilano0-rgb/container-booking-web-",
+    "commit": "56708cfca46ddc75d758d56a0db609022ccb898a",
+    "code_commit": "893e61e01b567cfd7921330a3c6ed81ef0d73b8b",
+    "version": "0.65"
+  },
+  "integration": {
+    "theme": {
+      "path": "porti-theme/lts.css",
+      "sha256": "33bc69621077082fadd3596c9fd244e9396fe759aa3c8758a8291f2845a64796",
+      "bundled_css": "driver-ui.css"
+    }
+  },
+  "policy": "Public frontend and vessel snapshots only; shared Cloudflare backend; LTS owns code updates and offline cache.",
+  "files": [
+    {
+      "path": "index.html",
+      "upstream_sha256": "04dc66b4b865e06abd833421952b06dda786d981b970b638462f5e984ce90998",
+      "sha256": "16d1166a9248e95ed13afefaeccc52d01c8c867c6760207f8b56b0d59bae25f8",
+      "adaptations": [
+        "remove-standalone-manifest-and-updater",
+        "lts-section-title-brand-footer",
+        "generic-booking-placeholder"
+      ]
+    },
+    {
+      "path": "app.js",
+      "upstream_sha256": "1642155424c97511dd58a2012ac1793f2c34e0709005dea5a70c278a36f4999b",
+      "sha256": "a475e6b64cc55a641119fe618c9059d44b03f7739016e1d258ed63d07b3d4ef0",
+      "adaptations": [
+        "remove-standalone-cache-reset-and-reload-handler",
+        "reevaluate-terminal-immediately-on-offline"
+      ]
+    },
+    {
+      "path": "driver-ui.mjs",
+      "upstream_sha256": "9a1844f196d5fdd9e00397d6319cc380106accf6522e117e67d7b99addb47485",
+      "sha256": "d84bc270a96c513de5a7b981a69df63c7af7ec373a46d16eed76779bedaa3471",
+      "adaptations": [
+        "scope-lts-embedded-heading"
+      ]
+    },
+    {
+      "path": "styles.css",
+      "upstream_sha256": "9a7a1e117d0abe807a7e58cbc3be173144214a1df92f22165629b1081a857837",
+      "sha256": "9a7a1e117d0abe807a7e58cbc3be173144214a1df92f22165629b1081a857837",
+      "adaptations": []
+    },
+    {
+      "path": "driver-ui.css",
+      "upstream_sha256": "723a0751bc861f96a55a7b891557944eb62ef700aace97c870d4bd0aec12ae1a",
+      "sha256": "5707f586748ece24599a953ad345db20beb5329dba4bbdefc54813eb61b70ca9",
+      "adaptations": [
+        "append-lts-registro-viaggi-theme"
+      ]
+    },
+    {
+      "path": "booking_search.mjs",
+      "upstream_sha256": "a2ec632d275e2ffb96a85be9dc9ef9caea3168c6ce9994caf32a88c8d334dd15",
+      "sha256": "a2ec632d275e2ffb96a85be9dc9ef9caea3168c6ce9994caf32a88c8d334dd15",
+      "adaptations": []
+    },
+    {
+      "path": "conateco_booking.mjs",
+      "upstream_sha256": "9c6b4421cab7ffa51c456ded406f0f593db63ebb8d048b271ab003a557fdf01c",
+      "sha256": "9c6b4421cab7ffa51c456ded406f0f593db63ebb8d048b271ab003a557fdf01c",
+      "adaptations": []
+    },
+    {
+      "path": "conateco_fleet.mjs",
+      "upstream_sha256": "b5d399d8b5b43b00422d4918a1a6696638065d7718048aa3c1d62263c3ff3d0a",
+      "sha256": "b5d399d8b5b43b00422d4918a1a6696638065d7718048aa3c1d62263c3ff3d0a",
+      "adaptations": []
+    },
+    {
+      "path": "conateco_rules.mjs",
+      "upstream_sha256": "a19d893a0b6fb4caab10a3c3f27c9ab4cacf4bda6f886bc7632f90f1aadcfe5d",
+      "sha256": "a19d893a0b6fb4caab10a3c3f27c9ab4cacf4bda6f886bc7632f90f1aadcfe5d",
+      "adaptations": []
+    },
+    {
+      "path": "delivery_location.mjs",
+      "upstream_sha256": "1f8e5ea97032bef259ef781a09c4603f869bdebb246eb0a13800d155c95f7875",
+      "sha256": "1f8e5ea97032bef259ef781a09c4603f869bdebb246eb0a13800d155c95f7875",
+      "adaptations": []
+    },
+    {
+      "path": "rules.mjs",
+      "upstream_sha256": "0e208d8880da5579ac5f1adc00d1007a9b0630967d67a49980f53f3ca08f502e",
+      "sha256": "0e208d8880da5579ac5f1adc00d1007a9b0630967d67a49980f53f3ca08f502e",
+      "adaptations": []
+    },
+    {
+      "path": "tfg.mjs",
+      "upstream_sha256": "ed76d58c38afb2b5160647a483582f95fd077b2748257383c7b6cc665bc54d5f",
+      "sha256": "ed76d58c38afb2b5160647a483582f95fd077b2748257383c7b6cc665bc54d5f",
+      "adaptations": []
+    },
+    {
+      "path": "tfg_booking.mjs",
+      "upstream_sha256": "5e320b57d96a30213518275f014cdc7c4d0e5573e491c07fc4026d01bf8a52ca",
+      "sha256": "5e320b57d96a30213518275f014cdc7c4d0e5573e491c07fc4026d01bf8a52ca",
+      "adaptations": []
+    },
+    {
+      "path": "tfg_schedule.mjs",
+      "upstream_sha256": "0ed7e771964ca68627bfc23c5b33286195c6eb047979d16010a7efebfd587bf1",
+      "sha256": "0ed7e771964ca68627bfc23c5b33286195c6eb047979d16010a7efebfd587bf1",
+      "adaptations": []
+    },
+    {
+      "path": "favicon.svg",
+      "upstream_sha256": "f6506cf0f2ebc88255621f3fcb1c57f552c455f7d035aa7759001196ff960c1c",
+      "sha256": "f6506cf0f2ebc88255621f3fcb1c57f552c455f7d035aa7759001196ff960c1c",
+      "adaptations": []
+    },
+    {
+      "path": "assets/lts-logo.png",
+      "upstream_sha256": "b10dd53b14ab4be105a4e32c726b7f6ee5413fb1e66d364deb801be57b556998",
+      "sha256": "b10dd53b14ab4be105a4e32c726b7f6ee5413fb1e66d364deb801be57b556998",
+      "adaptations": []
+    },
+    {
+      "path": "assets/terminal-logos/conateco.png",
+      "upstream_sha256": "86d834b5b59f35c121af3848000b397e6e2501fabc902ef8c32bfc2adda616e1",
+      "sha256": "86d834b5b59f35c121af3848000b397e6e2501fabc902ef8c32bfc2adda616e1",
+      "adaptations": []
+    },
+    {
+      "path": "assets/terminal-logos/tfg-portal.png",
+      "upstream_sha256": "5dd41804589e5d6fbc57513069f01ad2858e26a244e296c905ab75f945fd8b66",
+      "sha256": "5dd41804589e5d6fbc57513069f01ad2858e26a244e296c905ab75f945fd8b66",
+      "adaptations": []
+    },
+    {
+      "path": "assets/terminal-logos/sct-compact.png",
+      "upstream_sha256": "98d8120573abddeed6fee2e2918c6f374638de98bfee9ed228cc64b445b342ab",
+      "sha256": "98d8120573abddeed6fee2e2918c6f374638de98bfee9ed228cc64b445b342ab",
+      "adaptations": []
+    },
+    {
+      "path": "data/conateco.json",
+      "upstream_sha256": "c88a8bc1f9999eceb727aa0ee04b3c3bc54e3ccfce9c356dd56db67d373ac430",
+      "sha256": "c88a8bc1f9999eceb727aa0ee04b3c3bc54e3ccfce9c356dd56db67d373ac430",
+      "adaptations": []
+    },
+    {
+      "path": "data/tfg_schedule.json",
+      "upstream_sha256": "ad315ca7664a752011faecbd90c7cfa26e2101ce90b284b9c927cf3199007bbe",
+      "sha256": "ad315ca7664a752011faecbd90c7cfa26e2101ce90b284b9c927cf3199007bbe",
+      "adaptations": []
+    },
+    {
+      "path": "data/sct.json",
+      "upstream_sha256": "9262ff7dc21078618b17bb1864763519ef49b3b33d07980d91151ef51d8d900f",
+      "sha256": "9262ff7dc21078618b17bb1864763519ef49b3b33d07980d91151ef51d8d900f",
+      "adaptations": []
+    }
+  ]
+}

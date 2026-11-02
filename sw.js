@@ -1,6 +1,6 @@
 const BASE = "/LTS-Registro-Viaggi/";
 const PREFIX = "lts-iphone-pages-0aa8d087d02b-";
-const CACHE = PREFIX + 'cf28a77a8aee8fec';
+const CACHE = PREFIX + 'd234c4b1e2ed90e0';
 const CORE = [
   "/LTS-Registro-Viaggi/app.css",
   "/LTS-Registro-Viaggi/app.mjs",
@@ -15,6 +15,26 @@ const CORE = [
   "/LTS-Registro-Viaggi/client-store.mjs",
   "/LTS-Registro-Viaggi/index.html",
   "/LTS-Registro-Viaggi/manifest.webmanifest",
+  "/LTS-Registro-Viaggi/porti/app.js",
+  "/LTS-Registro-Viaggi/porti/assets/lts-logo.png",
+  "/LTS-Registro-Viaggi/porti/assets/terminal-logos/conateco.png",
+  "/LTS-Registro-Viaggi/porti/assets/terminal-logos/sct-compact.png",
+  "/LTS-Registro-Viaggi/porti/assets/terminal-logos/tfg-portal.png",
+  "/LTS-Registro-Viaggi/porti/booking_search.mjs",
+  "/LTS-Registro-Viaggi/porti/conateco_booking.mjs",
+  "/LTS-Registro-Viaggi/porti/conateco_fleet.mjs",
+  "/LTS-Registro-Viaggi/porti/conateco_rules.mjs",
+  "/LTS-Registro-Viaggi/porti/delivery_location.mjs",
+  "/LTS-Registro-Viaggi/porti/driver-ui.css",
+  "/LTS-Registro-Viaggi/porti/driver-ui.mjs",
+  "/LTS-Registro-Viaggi/porti/favicon.svg",
+  "/LTS-Registro-Viaggi/porti/index.html",
+  "/LTS-Registro-Viaggi/porti/rules.mjs",
+  "/LTS-Registro-Viaggi/porti/styles.css",
+  "/LTS-Registro-Viaggi/porti/tfg_booking.mjs",
+  "/LTS-Registro-Viaggi/porti/tfg_schedule.mjs",
+  "/LTS-Registro-Viaggi/porti/tfg.mjs",
+  "/LTS-Registro-Viaggi/privacy/index.html",
   "/LTS-Registro-Viaggi/push-client.mjs",
   "/LTS-Registro-Viaggi/push-worker.js",
   "/LTS-Registro-Viaggi/runtime-config.mjs",
@@ -28,6 +48,7 @@ const CORE = [
   "/LTS-Registro-Viaggi/shared/vendor/fflate.mjs",
   "/LTS-Registro-Viaggi/shell.html"
 ];
+const PORT_BASE = BASE + 'porti/';
 self.addEventListener('install', event => {
   event.waitUntil((async () => {
     const cache = await caches.open(CACHE);
@@ -50,8 +71,20 @@ self.addEventListener('fetch', event => {
   const url = new URL(request.url);
   // The API is on a separate origin. Never cache personal records or API calls.
   if (url.origin !== self.location.origin || request.method !== 'GET' || !url.pathname.startsWith(BASE)) return;
+  if (url.pathname.startsWith(BASE + 'api/')) return;
+  const isPort = url.pathname === PORT_BASE.slice(0, -1) || url.pathname.startsWith(PORT_BASE);
+  if (isPort && (url.pathname.startsWith(PORT_BASE + 'data/') || url.pathname.endsWith('.json'))) return;
   if (request.mode === 'navigate') {
-    event.respondWith(fetch(request).catch(async () => (await caches.match(BASE + 'index.html', { ignoreVary: true })) || Response.error()));
+    event.respondWith(fetch(request).catch(async () => {
+      if (isPort) {
+        const page = await caches.match(PORT_BASE + 'index.html', { ignoreVary: true });
+        if (!page) return Response.error();
+        if (url.pathname !== PORT_BASE && url.pathname !== PORT_BASE + 'index.html')
+          return Response.redirect(url.origin + PORT_BASE + 'index.html', 302);
+        return page;
+      }
+      return (await caches.match(BASE + 'index.html', { ignoreVary: true })) || Response.error();
+    }));
     return;
   }
   if (CORE.includes(url.pathname)) {
