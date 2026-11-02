@@ -51,7 +51,8 @@ function saveSession(data){
 function locked(){try{return localStorage.getItem(MODE_KEY)==='account';}catch{return false}}
 export function hasSession(){return Boolean(readStored());}
 // All installations require account authentication, including older device archives.
-export function accountGateRequired(){return isEnabled();}
+// Fail closed even if runtime auth configuration is temporarily missing.
+export function accountGateRequired(){return true;}
 export function isVerified(){return verified&&Boolean(session);}
 export function getAccountId(){return session?'account:'+session.user_id:null;}
 export function getRole(){return session?.role??null;}
