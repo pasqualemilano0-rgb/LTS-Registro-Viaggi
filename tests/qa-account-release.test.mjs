@@ -42,7 +42,7 @@ test('account archive ID must derive from verified session, not user input',()=>
   assert.match(store,/account[.]archiveRequest\(method, body\)/);
 });
 test('offline worker activates new cache and precaches auth code without caching server data',()=>{
-  assert.match(sw,/const CACHE = PREFIX \+ '20261102-drivers-v4'/);
+  assert.match(sw,/const CACHE = PREFIX \+ '20261102-drivers-v5'/);
   assert.match(sw,/\/LTS-Registro-Viaggi\/account-access[.]mjs/);
   assert.match(sw,/url[.]origin !== self[.]location[.]origin/);
   assert.match(sw,/if \(url[.]pathname[.]startsWith\(BASE \+ 'api\/'\)\) return/);
@@ -50,8 +50,8 @@ test('offline worker activates new cache and precaches auth code without caching
 });
 test('HTML entry points are identical and use the new cache buster',()=>{
   assert.equal(html,shell);
-  assert.match(html,/app[.]css[?]v=20261102-drivers-v4/);
-  assert.match(html,/app[.]mjs[?]v=20261102-drivers-v4/);
+  assert.match(html,/app[.]css[?]v=20261102-drivers-v5/);
+  assert.match(html,/app[.]mjs[?]v=20261102-drivers-v5/);
   assert.match(html,/<script type="module"/);
 });
 test('ports section stays integrated, untouched backups and no new bundled private backend',()=>{
@@ -143,4 +143,18 @@ test('Gmail password recovery is linked, safe and never copies account data',()=
   assert.ok(recoveryHtml.includes('type="password"'));
   assert.doesNotMatch(recovery,/SUPABASE_SERVICE_ROLE_KEY|sb_secret_|localStorage[.]setItem|sessionStorage[.]setItem/);
   assert.doesNotMatch(recoveryHtml,/<script[^>]+src="https:/i);
+});
+
+test('pending driver can be invited directly from the admin roster',()=>{
+  assert.ok(app.includes("['pending','expired','revoked'].includes(entry.status)"));
+  assert.ok(app.includes("entry.status==='pending'?'Genera invito':'Rigenera invito'"));
+  assert.ok(app.includes("first.value=entry.firstName||''"));
+  assert.ok(app.includes("last.value=entry.lastName||''"));
+  assert.ok(app.includes("phone.value=entry.phone||''"));
+  assert.ok(app.includes('if(submit.disabled)return;'));
+  assert.ok(app.includes('form.requestSubmit();'));
+  assert.ok(app.includes("accountAccess.manageDrivers('issue'"));
+  assert.ok(app.includes("result.scrollIntoView({behavior:'smooth',block:'center'})"));
+  assert.ok(app.includes("['active','disabled'].includes(entry.status)"));
+  assert.ok(app.includes("['invited','processing'].includes(entry.status)"));
 });
