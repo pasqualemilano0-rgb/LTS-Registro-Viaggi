@@ -246,7 +246,7 @@ async function reconcile(source) {
   catch (error) { if (!error.offline && ![500, 502, 503, 504].includes(error.status)) throw error; }
 }
 async function loadRecord(options = {}, source = 'load') {
-  if (account.isEnabled() && (!accountOwner || !account.isVerified()))
+  if (!account.isEnabled() || !accountOwner || !account.isVerified())
     throw new Error('Accesso al registro consentito solo dopo verifica credenziali.');
   // Never consult the global 'active' pointer for an authenticated account.
   let local = await localGet(accountOwner);
@@ -535,7 +535,7 @@ export function resolveSyncConflict(choice, expectedRevision) {
   });
 }
 export function saveState(value) {
-  if (account.isEnabled() && (!accountOwner || !account.isVerified()))
+  if (!account.isEnabled() || !accountOwner || !account.isVerified())
     throw new Error('Accedi con le tue credenziali per salvare nel registro.');
   const state = reconcileTripTariffs(validateState(value));
   const expectedVersion = recordVersion(active);
