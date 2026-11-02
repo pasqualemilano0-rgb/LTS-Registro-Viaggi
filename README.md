@@ -6,6 +6,17 @@ App web per registrare viaggi, clienti e tariffe e generare il resoconto mensile
 La sezione **Porti** integra booking CONATECO/TFG e programma navi SCT, con lo stesso stile LTS. Con depot esterni OK, CONATECO mostra **INTERNO PORTO / DRYPORT**.
 
 Aggiornamento del 2 novembre 2026: modulo portuale **v0.65**, monitor Cloudflare H24, gestione offline e dati delle ricerche separati dal registro. Le opzioni e lo stato della nave non autorizzano il singolo booking.
+
+## Accesso autisti — integrazione facoltativa (2 novembre 2026)
+
+La webapp/PWA offre anche **Accedi con account autista** nel Profilo, usando l'account già abilitato dall'amministratore. L'accesso è gestito da Supabase Auth e il registro dell'account viene letto da un archivio separato: il backend verifica su ogni richiesta l'identità, il ruolo e l'abilitazione. Non è consentita la registrazione pubblica di nuovi account.
+
+**Compatibilità:** l'archivio precedente del dispositivo resta disponibile e non viene sostituito né unito automaticamente dopo il login. Per trasferirlo, esportare un backup, entrare nell'account e importarlo **manualmente con conferma**. Non eliminare i dati del browser prima di aver verificato una copia completa del registro. Se si esce dall'account, la copia personale rimane nel database e i dati dell'altro utente non vengono aperti automaticamente.
+
+**Sicurezza e limiti:** i token dell'account rimangono nella sessione del browser, non nei backup o nei file pubblici. È necessaria una verifica online iniziale; senza connessione e senza una sessione già verificata, l'archivio protetto non viene aperto. Gli archivi dispositivo preesistenti restano un modello diverso, non protetto da account. L'APK Android nativo v14 non incorpora ancora il login Supabase; questo rilascio riguarda il sito/PWA. Restano da collaudare login con un utente reale e trasferimento di backup reale.
+
+La documentazione tecnica e i test sono nel repository **privato** `LTS`, in `progetto-web-completo/docs-internal/account-supabase-integration-v1.md`. Non distribuire qui sorgenti backend, chiavi Supabase o registri personali.
+
 Su iPhone aprire in Safari e scegliere **Condividi → Aggiungi alla schermata Home**.
 
 [Guarda il video dimostrativo](https://pasqualemilano0-rgb.github.io/LTS-Registro-Viaggi/video.mp4)
