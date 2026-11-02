@@ -1,4 +1,4 @@
-import { validateState, reconcileTripTariffs } from '/LTS-Registro-Viaggi/shared/domain.mjs';
+import { validateState, reconcileTripTariffs, exportBackup } from '/LTS-Registro-Viaggi/shared/domain.mjs';
 import { mergeStates, unionStates, resolveMergeStates } from '/LTS-Registro-Viaggi/shared/sync-merge.mjs';
 import runtime from '/LTS-Registro-Viaggi/runtime-config.mjs';
 import * as account from '/LTS-Registro-Viaggi/account-access.mjs';
@@ -310,8 +310,8 @@ export function loadState(options = {}) { return enqueue(() => loadRecord(option
  */
 export function activateAccountFromSession() {
   return enqueue(async () => {
-    if (active?.pending || blocked) {
-      throw new Error('Prima completa la sincronizzazione del registro attuale o esporta un backup. Non è sicuro cambiare account con modifiche in sospeso.');
+    if (accountOwner && (active?.pending || blocked)) {
+      throw new Error('Prima completa la sincronizzazione del registro account corrente. Le modifiche restano salvate.');
     }
     const identity = await account.verifySession();
     const nextOwner = 'account:' + identity.user_id;
@@ -347,7 +347,7 @@ export async function previewLegacyArchive() {
 export async function exportLegacyBackup() {
   const legacy = await legacyRecordForVerifiedAccount();
   if (!legacy) throw new Error('Nessun archivio precedente disponibile su questo dispositivo.');
-  return JSON.stringify({schemaVersion:legacy.state.schemaVersion,...legacy.state});
+  return exportBackup(legacy.state);
 }
 const LEGACY_IMPORTED_PREFIX='lts-legacy-imported-v1:';
 export function hasImportedLegacyArchive() {
