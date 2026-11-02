@@ -29,9 +29,9 @@ test('legacy device record remains isolated and is not silently merged',()=>{
   assert.match(store,/localGet\(accountOwner\)/);
   assert.match(store,/if \(accountOwner && remote[.]user[.]id !== accountOwner\)/);
   assert.match(app,/accountAccess[.]accountGateRequired\(\)/);
-  assert.match(app,/accountAccess[.]chooseDeviceArchive\(\)/);
+  assert.doesNotMatch(app,/accountAccess[.]chooseDeviceArchive\(\)/);
   assert.match(app,/renderAccountGate\(/);
-  assert.match(auth,/accountGateRequired\(\)\{return isEnabled\(\)&&\(hasSession\(\)\|\|locked\(\)\)/);
+  assert.match(auth,/accountGateRequired\(\)\{return isEnabled\(\)/);
   assert.match(auth,/sessionStorage[.]setItem\(SESSION_KEY/);
   assert.doesNotMatch(auth,/localStorage[.]setItem\(SESSION_KEY/);
 });
@@ -42,7 +42,7 @@ test('account archive ID must derive from verified session, not user input',()=>
   assert.match(store,/account[.]archiveRequest\(method, body\)/);
 });
 test('offline worker activates new cache and precaches auth code without caching server data',()=>{
-  assert.match(sw,/const CACHE = PREFIX \+ '20261102-drivers-v5'/);
+  assert.match(sw,/const CACHE = PREFIX \+ '20261102-account-required-v6'/);
   assert.match(sw,/\/LTS-Registro-Viaggi\/account-access[.]mjs/);
   assert.match(sw,/url[.]origin !== self[.]location[.]origin/);
   assert.match(sw,/if \(url[.]pathname[.]startsWith\(BASE \+ 'api\/'\)\) return/);
@@ -50,8 +50,8 @@ test('offline worker activates new cache and precaches auth code without caching
 });
 test('HTML entry points are identical and use the new cache buster',()=>{
   assert.equal(html,shell);
-  assert.match(html,/app[.]css[?]v=20261102-drivers-v5/);
-  assert.match(html,/app[.]mjs[?]v=20261102-drivers-v5/);
+  assert.match(html,/app[.]css[?]v=20261102-account-required-v6/);
+  assert.match(html,/app[.]mjs[?]v=20261102-account-required-v6/);
   assert.match(html,/<script type="module"/);
 });
 test('ports section stays integrated, untouched backups and no new bundled private backend',()=>{
@@ -157,4 +157,24 @@ test('pending driver can be invited directly from the admin roster',()=>{
   assert.ok(app.includes("result.scrollIntoView({behavior:'smooth',block:'center'})"));
   assert.ok(app.includes("['active','disabled'].includes(entry.status)"));
   assert.ok(app.includes("['invited','processing'].includes(entry.status)"));
+});
+
+test('credentials are mandatory and pre-registration data stays recoverable',()=>{
+ assert.match(auth,/accountGateRequired\(\)\{return isEnabled\(\)/);
+ assert.ok(auth.includes("chooseDeviceArchive(){throw new Error("));
+ assert.ok(app.includes('accountLoginFields({fromGate:true})'));
+ assert.doesNotMatch(app,/Usa l’archivio di questo dispositivo/);
+ assert.ok(store.includes("if (account.isEnabled() && (!accountOwner || !account.isVerified()))"));
+ assert.ok(store.includes("await account.verifySession(); // fail closed"));
+ assert.ok(store.includes("const record = await localGet(); // original device pointer"));
+ assert.ok(store.includes("return exportBackup(legacy.state);"));
+ assert.ok(store.includes("const result = await saveState(combined);"));
+ assert.ok(store.includes("emptyTarget?'local':null"));
+ assert.ok(app.includes('Scarica backup dei dati precedenti'));
+ assert.ok(app.includes('Unisci nel mio account'));
+ assert.ok(app.includes("restore.disabled=true"));
+ assert.ok(app.includes("showLegacyArchiveRecovery(previous)"));
+ assert.ok(app.includes('Recupera archivio precedente'));
+ assert.ok(app.includes("result.pending?'Dati recuperati sul telefono."));
+ assert.doesNotMatch(store,/meta[.]delete\('active'\)/);
 });
