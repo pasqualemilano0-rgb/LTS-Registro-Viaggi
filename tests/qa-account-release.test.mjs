@@ -11,6 +11,7 @@ test('publishable account URLs only, no service key, no private register in git'
   assert.match(cfg,/"enabled": true/);
   assert.match(cfg,/https:\/\/otrqynkscpbeyuvdlgpg[.]supabase[.]co\/functions\/v1\/lts-phone-auth/);
   assert.match(cfg,/https:\/\/otrqynkscpbeyuvdlgpg[.]supabase[.]co\/functions\/v1\/lts-account-state/);
+  assert.match(cfg,/https:\\/\\/otrqynkscpbeyuvdlgpg[.]supabase[.]co\\/functions\\/v1\\/lts-driver-onboarding/);
   const exposed=[cfg,app,store,auth,sw,html,shell].join('\n');
   assert.doesNotMatch(exposed,/sb_secret_[A-Za-z0-9]+|SUPABASE_SERVICE_ROLE_KEY\s*[:=]|sk_live_[A-Za-z0-9]+/);
 });
@@ -39,7 +40,7 @@ test('account archive ID must derive from verified session, not user input',()=>
   assert.match(store,/account[.]archiveRequest\(method, body\)/);
 });
 test('offline worker activates new cache and precaches auth code without caching server data',()=>{
-  assert.match(sw,/const CACHE = PREFIX \+ '20261102-account-v1'/);
+  assert.match(sw,/const CACHE = PREFIX \+ '20261102-drivers-v1'/);
   assert.match(sw,/\/LTS-Registro-Viaggi\/account-access[.]mjs/);
   assert.match(sw,/url[.]origin !== self[.]location[.]origin/);
   assert.match(sw,/if \(url[.]pathname[.]startsWith\(BASE \+ 'api\/'\)\) return/);
@@ -47,8 +48,8 @@ test('offline worker activates new cache and precaches auth code without caching
 });
 test('HTML entry points are identical and use the new cache buster',()=>{
   assert.equal(html,shell);
-  assert.match(html,/app[.]css[?]v=20261102-account-v1/);
-  assert.match(html,/app[.]mjs[?]v=20261102-account-v1/);
+  assert.match(html,/app[.]css[?]v=20261102-drivers-v1/);
+  assert.match(html,/app[.]mjs[?]v=20261102-drivers-v1/);
   assert.match(html,/<script type="module"/);
 });
 test('ports section stays integrated, untouched backups and no new bundled private backend',()=>{
@@ -56,4 +57,18 @@ test('ports section stays integrated, untouched backups and no new bundled priva
   assert.ok(existsSync(new URL('../porti/index.html',import.meta.url)));
   assert.ok(existsSync(new URL('../porti/data/tfg_schedule.json',import.meta.url)));
   assert.ok(existsSync(new URL('../push-worker.js',import.meta.url)));
+});
+
+test('driver onboarding: admin-only controls, invite activation and guarded endpoints',()=>{
+  assert.match(app,/function showDriverAdmin\\(/);
+  assert.match(app,/function showDriverActivation\\(/);
+  assert.match(app,/accountAccess[.]getRole\\(\\)==='admin'/);
+  assert.match(app,/activateDriverInvitation/);
+  assert.match(auth,/function manageDrivers\\(/);
+  assert.match(auth,/function activateDriverInvitation\\(/);
+  assert.match(auth,/if \\(!isVerified\\(\\) \\|\\| getRole\\(\\) !== 'admin'\\)/);
+  assert.match(auth,/credentials:'omit'/);
+  assert.match(auth,/cache:'no-store'/);
+  assert.doesNotMatch(cfg,/sb_secret_|service_role/i);
+  assert.doesNotMatch(auth,/localStorage[.]setItem\\([^\\n]*password/i);
 });
