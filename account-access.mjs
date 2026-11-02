@@ -21,7 +21,7 @@ function url(which){
  if(result.protocol!=='https:'||
      result.hostname!=='otrqynkscpbeyuvdlgpg.supabase.co'||
      result.username||result.password||result.search||result.hash||
-     !['/functions/v1/lts-phone-auth','/functions/v1/lts-account-state'].includes(result.pathname))
+     !['/functions/v1/lts-phone-auth','/functions/v1/lts-account-state','/functions/v1/lts-driver-onboarding'].includes(result.pathname))
    throw new Error('Servizio account non configurato in modo sicuro.');
  return result.href;
 }
@@ -161,4 +161,32 @@ export async function archiveRequest(method,body){
    revoke();throw new Error('Il servizio ha restituito un archivio appartenente a un altro account.');
  }
  return result;
+}
+
+/** The server independently checks the Supabase JWT, admin role and enabled flag. */
+export async function manageDrivers(action, data = {}) {
+ if (!isVerified() || getRole() !== 'admin') throw new Error('Accesso riservato all’amministratore.');
+ if (!['list', 'issue', 'set-access', 'revoke-invite'].includes(action))
+   throw new Error('Operazione non disponibile.');
+ const payload = {action, ...data};
+ try { return await api('onboardingEndpoint', payload, readStored().access_token); }
+ catch (error) {
+   if (error.status === 401) {
+     await refresh();
+     await verifySession();
+     if (getRole() !== 'admin') throw new Error('Permesso amministratore non valido.');
+     return api('onboardingEndpoint', payload, readStored().access_token);
+   }
+   if (error.status === 403) revoke();
+   throw error;
+ }
+}
+export async function activateDriverInvitation({phone, code, password} = {}) {
+ if (!isEnabled()) throw new Error('Attivazione non disponibile.');
+ if (hasSession()) throw new Error('Esci dal tuo account prima di attivarne uno nuovo.');
+ if (typeof phone !== 'string' || phone.length > 40 ||
+     typeof code !== 'string' || code.length > 80 ||
+     typeof password !== 'string' || password.length < 12 || password.length > 128)
+   throw new Error('Inserisci numero, invito e una password di almeno 12 caratteri.');
+ return api('onboardingEndpoint', {action:'redeem', phone, code, password});
 }
