@@ -64,7 +64,7 @@ test('ports section stays integrated, untouched backups and no new bundled priva
 test('driver onboarding: admin-only controls, invite activation and guarded endpoints',()=>{
   assert.ok(app.includes('function showDriverAdmin('));
   assert.ok(app.includes('function showDriverActivation('));
-  assert.ok(app.includes("if(required&&!store.usingAccount()&&accountAccess.isEnabled())body.append(button('Hai già un account? Accedi'"));
+  assert.ok(app.includes("if(required&&store.usingAccount())body.append(button('Recupera vecchi viaggi'"));
   assert.ok(app.includes("dialog.close();showAccountLogin();"));
   assert.ok(app.includes("accountAccess.getRole()==='admin'"));
   assert.ok(app.includes('activateDriverInvitation'));
