@@ -1,12 +1,14 @@
 import { validateState, reconcileTripTariffs } from '/LTS-Registro-Viaggi/shared/domain.mjs';
 import { mergeStates, unionStates, resolveMergeStates } from '/LTS-Registro-Viaggi/shared/sync-merge.mjs';
 import runtime from '/LTS-Registro-Viaggi/runtime-config.mjs';
+import * as account from '/LTS-Registro-Viaggi/account-access.mjs';
 
 const DB_NAME = 'lts-registro-iphone-v1';
 const listeners = new Set();
 const stateListeners = new Set();
 const CHANGE_KEY = 'lts-registro-record-changed-v1';
 let active = null;
+let accountOwner = null; // Only set after online verification of Supabase Auth.
 let queue = Promise.resolve();
 let blocked = false;
 let refreshing = false;
@@ -85,7 +87,9 @@ async function localSet(value, { clearLinkIntent = false } = {}) {
       const meta = transaction.objectStore('meta');
       const write = () => {
         transaction.objectStore('records').put(value, value.user.id);
-        meta.put(value.user.id, 'active');
+        // A Supabase account must never replace the old device archive pointer.
+        // The previous archive remains separately recoverable.
+        if (!accountOwner) meta.put(value.user.id, 'active');
         if (clearLinkIntent) meta.delete('device-link-intent-v1');
       };
       if (clearLinkIntent) write();
@@ -159,6 +163,9 @@ async function deviceCapability() {
   } finally { db.close(); }
 }
 async function api(method, body, endpoint = null) {
+  if (accountOwner && !endpoint) return account.archiveRequest(method, body);
+  if (accountOwner && endpoint === '/api/device-link')
+    throw new Error('Il collegamento tramite codice è disponibile solo per gli archivi dispositivo. Usa il tuo account per sincronizzare più telefoni.');
   if (navigator.onLine === false) {
     const error = new Error('Sei offline: la copia sul telefono è conservata e verrà sincronizzata quando torni online.');
     error.offline = true; throw error;
@@ -239,7 +246,8 @@ async function reconcile(source) {
   catch (error) { if (!error.offline && ![500, 502, 503, 504].includes(error.status)) throw error; }
 }
 async function loadRecord(options = {}, source = 'load') {
-  let local = await localGet();
+  // Never consult the global 'active' pointer for an authenticated account.
+  let local = await localGet(accountOwner);
   let remote;
   try { remote = await api('GET'); }
   catch (error) {
@@ -253,7 +261,9 @@ async function loadRecord(options = {}, source = 'load') {
   }
   remote.state = validateState(remote.state);
   if (!remote.user?.id || !Number.isSafeInteger(remote.revision)) throw new Error('Il server non ha identificato il tuo registro. Riprova.');
-  const intent = runtime.deviceToken ? await linkIntent() : null;
+  if (accountOwner && remote.user.id !== accountOwner)
+    throw new Error('Il server ha restituito un registro diverso dall’account verificato. Nessun dato è stato caricato.');
+  const intent = accountOwner ? null : runtime.deviceToken ? await linkIntent() : null;
   if (intent?.targetUserId === remote.user.id && intent.sourceUserId !== remote.user.id) {
     // A successful association whose response was lost still restores the
     // explicitly confirmed union. Never merge archives merely by driver name.
@@ -292,6 +302,38 @@ async function loadRecord(options = {}, source = 'load') {
   return structuredClone(active);
 }
 export function loadState(options = {}) { return enqueue(() => loadRecord(options)); }
+
+/** Switch archive only after a fresh verification with Supabase Auth.
+ * Never merge the old device archive on first login. Import remains explicit.
+ */
+export function activateAccountFromSession() {
+  return enqueue(async () => {
+    if (active?.pending || blocked) {
+      throw new Error('Prima completa la sincronizzazione del registro attuale o esporta un backup. Non è sicuro cambiare account con modifiche in sospeso.');
+    }
+    const identity = await account.verifySession();
+    const nextOwner = 'account:' + identity.user_id;
+    accountOwner = nextOwner;
+    active = null; blocked = false; published = '';
+    return loadRecord({ requireOnline: true }, 'account');
+  });
+}
+export function usingAccount() { return Boolean(accountOwner); }
+/** An identity revoked server-side must disappear from the screen immediately.
+ * Its unsynchronized offline copy is retained under its account key for later
+ * recovery by the same verified account, never shown to the next login. */
+export function lockRevokedAccount() {
+  accountOwner = null;
+  active = null; blocked = false; published = '';
+  status({status:'error',message:'Sessione account revocata. Accedi nuovamente.'});
+}
+export function leaveAccountView() {
+  if (active?.pending || blocked)
+    throw new Error('Il registro contiene modifiche non sincronizzate. Sincronizza o esporta un backup prima di uscire.');
+  accountOwner = null;
+  active = null; blocked = false; published = '';
+}
+
 async function flush(source = 'background') {
   if (!active?.pending || blocked) return;
   status({ status: 'syncing', message: 'Salvataggio online…' });
@@ -338,6 +380,7 @@ export function getSyncInfo() {
   return { linked: Boolean(active?.linked), pending: Boolean(active?.pending), conflict: Boolean(blocked || active?.conflict), status: lastStatus.status };
 }
 function requireDeviceLink() {
+  if (accountOwner) throw new Error('I dispositivi che usano lo stesso account condividono già il proprio registro. Non usare i codici degli archivi dispositivo.');
   if (!runtime.deviceToken) throw new Error('Apri LTS dall’indirizzo GitHub per collegare i dispositivi. Il registro attuale resta conservato.');
 }
 export async function createDeviceLink() {
