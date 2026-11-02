@@ -1,4 +1,5 @@
 import test from 'node:test';
+import {runInNewContext} from 'node:vm';
 import assert from 'node:assert/strict';
 import { readFileSync, existsSync } from 'node:fs';
 const read=name=>readFileSync(new URL('../'+name,import.meta.url),'utf8');
@@ -40,7 +41,7 @@ test('account archive ID must derive from verified session, not user input',()=>
   assert.match(store,/account[.]archiveRequest\(method, body\)/);
 });
 test('offline worker activates new cache and precaches auth code without caching server data',()=>{
-  assert.match(sw,/const CACHE = PREFIX \+ '20261102-drivers-v1'/);
+  assert.match(sw,/const CACHE = PREFIX \+ '20261102-drivers-v2'/);
   assert.match(sw,/\/LTS-Registro-Viaggi\/account-access[.]mjs/);
   assert.match(sw,/url[.]origin !== self[.]location[.]origin/);
   assert.match(sw,/if \(url[.]pathname[.]startsWith\(BASE \+ 'api\/'\)\) return/);
@@ -48,8 +49,8 @@ test('offline worker activates new cache and precaches auth code without caching
 });
 test('HTML entry points are identical and use the new cache buster',()=>{
   assert.equal(html,shell);
-  assert.match(html,/app[.]css[?]v=20261102-drivers-v1/);
-  assert.match(html,/app[.]mjs[?]v=20261102-drivers-v1/);
+  assert.match(html,/app[.]css[?]v=20261102-drivers-v2/);
+  assert.match(html,/app[.]mjs[?]v=20261102-drivers-v2/);
   assert.match(html,/<script type="module"/);
 });
 test('ports section stays integrated, untouched backups and no new bundled private backend',()=>{
@@ -71,4 +72,52 @@ test('driver onboarding: admin-only controls, invite activation and guarded endp
   assert.ok(auth.includes("cache:'no-store'"));
   assert.doesNotMatch(cfg,/sb_secret_|service_role/i);
   assert.ok(!auth.includes('localStorage.setItem(SESSION_KEY'));
+});
+
+test('network-first account modules show latest UI while keeping offline fallback', async()=>{
+  const swSource=read('sw.js');
+  assert.match(swSource,/const NETWORK_FIRST_CODE = new Set/);
+  const origin='https://pasqualemilano0-rgb.github.io';
+  const appPath='/LTS-Registro-Viaggi/app.mjs';
+  const events=new Map(),assets=new Map();
+  const calls=[];
+  let online=true;
+  assets.set(appPath,new Response('OLD_APP_JS'));
+  const cache={
+    put:async(path,response)=>assets.set(path,response.clone()),
+    match:async request=>assets.get(new URL(request.url||request,origin).pathname)?.clone()
+  };
+  const self={
+    location:{origin},
+    registration:{scope:origin+'/LTS-Registro-Viaggi/'},
+    addEventListener:(name,listener)=>events.set(name,listener)
+  };
+  runInNewContext(swSource,{
+    self,URL,Response,
+    caches:{
+      open:async()=>cache,
+      match:async request=>cache.match(request),
+      keys:async()=>[]
+    },
+    fetch:async(request,options)=>{
+      calls.push({request,options});
+      if(!online)throw new Error('offline');
+      return new Response('NEW_APP_JS');
+    }
+  });
+  const readPath=async path=>{
+    let responded;
+    events.get('fetch')({
+      request:{url:origin+path,method:'GET',mode:'cors'},
+      respondWith:pending=>{responded=pending;}
+    });
+    assert.ok(responded,'service worker must handle the application script');
+    return (await responded).text();
+  };
+  assert.equal(await readPath(appPath),'NEW_APP_JS');
+  assert.equal(calls.length,1);
+  assert.equal(calls[0].options.cache,'reload');
+  online=false;
+  assert.equal(await readPath(appPath),'NEW_APP_JS');
+  assert.equal(calls.length,2);
 });

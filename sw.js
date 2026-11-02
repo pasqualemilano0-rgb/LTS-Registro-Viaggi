@@ -1,6 +1,6 @@
 const BASE = "/LTS-Registro-Viaggi/";
 const PREFIX = "lts-iphone-pages-0aa8d087d02b-";
-const CACHE = PREFIX + '20261102-drivers-v1';
+const CACHE = PREFIX + '20261102-drivers-v2';
 const CORE = [
   "/LTS-Registro-Viaggi/account-access.mjs",
   "/LTS-Registro-Viaggi/app.css",
@@ -50,6 +50,13 @@ const CORE = [
   "/LTS-Registro-Viaggi/shell.html"
 ];
 const PORT_BASE = BASE + 'porti/';
+// App and account modules are network-first: a previous offline worker must
+// not keep serving stale login controls after a secure release. Offline fallback
+// still uses only the current static cache; personal records are never cached.
+const NETWORK_FIRST_CODE = new Set([
+  BASE + 'app.mjs', BASE + 'account-access.mjs',
+  BASE + 'runtime-config.mjs', BASE + 'client-store.mjs'
+]);
 self.addEventListener('install', event => {
   event.waitUntil((async () => {
     const cache = await caches.open(CACHE);
@@ -89,6 +96,20 @@ self.addEventListener('fetch', event => {
     return;
   }
   if (CORE.includes(url.pathname)) {
+    if (NETWORK_FIRST_CODE.has(url.pathname)) {
+      event.respondWith((async () => {
+        try {
+          const fresh = await fetch(request, { cache: 'reload' });
+          if (!fresh.ok || fresh.redirected) throw new Error('Static module unavailable');
+          // Offline cache write failures must not replace a valid fresh response.
+          try { await (await caches.open(CACHE)).put(url.pathname, fresh.clone()); } catch {}
+          return fresh;
+        } catch {
+          return (await caches.match(request, { ignoreVary: true, ignoreSearch: true })) || Response.error();
+        }
+      })());
+      return;
+    }
     event.respondWith((async () => (await caches.match(request, { ignoreVary: true, ignoreSearch: true })) || fetch(request))());
   }
 });
