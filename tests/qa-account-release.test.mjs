@@ -31,7 +31,7 @@ test('legacy device record remains isolated and is not silently merged',()=>{
   assert.match(app,/accountAccess[.]accountGateRequired\(\)/);
   assert.doesNotMatch(app,/accountAccess[.]chooseDeviceArchive\(\)/);
   assert.match(app,/renderAccountGate\(/);
-  assert.match(auth,/accountGateRequired\(\)\{return isEnabled\(\)/);
+  assert.match(auth,/accountGateRequired\(\)\{return true;/);
   assert.match(auth,/sessionStorage[.]setItem\(SESSION_KEY/);
   assert.doesNotMatch(auth,/localStorage[.]setItem\(SESSION_KEY/);
 });
@@ -160,11 +160,11 @@ test('pending driver can be invited directly from the admin roster',()=>{
 });
 
 test('credentials are mandatory and pre-registration data stays recoverable',()=>{
- assert.match(auth,/accountGateRequired\(\)\{return isEnabled\(\)/);
+ assert.match(auth,/accountGateRequired\(\)\{return true;/);
  assert.ok(auth.includes("chooseDeviceArchive(){throw new Error("));
  assert.ok(app.includes('accountLoginFields({fromGate:true})'));
  assert.doesNotMatch(app,/Usa l’archivio di questo dispositivo/);
- assert.ok(store.includes("if (account.isEnabled() && (!accountOwner || !account.isVerified()))"));
+ assert.ok(store.includes("if (!account.isEnabled() || !accountOwner || !account.isVerified())"));
  assert.ok(store.includes("await account.verifySession(); // fail closed"));
  assert.ok(store.includes("const record = await localGet(); // original device pointer"));
  assert.ok(store.includes("return exportBackup(legacy.state);"));
