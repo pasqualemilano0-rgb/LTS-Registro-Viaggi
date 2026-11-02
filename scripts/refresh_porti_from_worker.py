@@ -155,7 +155,7 @@ def validate(terminal, status, payload, previous, now):
     return raw, acquired
 
 
-def collect(*, root=DEST, fetcher=fetch_json, now=None):
+def collect(*, root=DEST, fetcher=fetch_json, now=None, terminals=None):
     now = (now or datetime.now(timezone.utc)).astimezone(timezone.utc)
     monitor = fetcher("/api/monitor/status")
     if not isinstance(monitor, dict) or monitor.get("backend") != "cloudflare-workers" \
@@ -163,7 +163,11 @@ def collect(*, root=DEST, fetcher=fetch_json, now=None):
         raise SnapshotRejected("Monitor unavailable")
     candidates = {}
     status = {}
-    for terminal, spec in FEEDS.items():
+    selected = tuple(terminals) if terminals is not None else tuple(FEEDS)
+    if not selected or any(term not in FEEDS for term in selected):
+        raise SnapshotRejected('Unexpected terminal selection')
+    for terminal in selected:
+        spec = FEEDS[terminal]
         path = root / spec["file"]
         try:
             old = json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
@@ -198,10 +202,21 @@ def collect(*, root=DEST, fetcher=fetch_json, now=None):
 
 
 if __name__ == "__main__":
-    try:
-        outcome = collect()
-    except SnapshotRejected as error:
-        raise SystemExit("FAIL CLOSED: " + str(error))
-    for name, info in outcome.items():
+    # A failure at one terminal must never freeze independently healthy feeds.
+    # Every terminal retains its own last verified copy; no cross-terminal reuse.
+    outcomes = {}
+    failed = {}
+    for terminal in FEEDS:
+        try:
+            outcomes.update(collect(terminals=(terminal,)))
+        except SnapshotRejected as error:
+            failed[terminal] = str(error)
+            print(f"::warning title=LTS Porti {terminal.upper()}::"
+                  f"Programma non verificato: {error}. Conservata l'ultima copia valida.")
+    for name, info in outcomes.items():
         print(f"{name.upper()}: {info['rows']} righe, acquired_at={info['acquired_at']}, "
               f"nuova_copia={'sì' if info['updated'] else 'no'}")
+    if failed:
+        print("AVVISO: terminali non aggiornati: " + ", ".join(sorted(failed)))
+    if not outcomes:
+        raise SystemExit("FAIL CLOSED: nessuna nuova fonte verificata; nessuna pubblicazione")
