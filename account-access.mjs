@@ -50,14 +50,14 @@ function saveSession(data){
 }
 function locked(){try{return localStorage.getItem(MODE_KEY)==='account';}catch{return false}}
 export function hasSession(){return Boolean(readStored());}
-export function accountGateRequired(){return isEnabled()&&(hasSession()||locked());}
+// All installations require account authentication, including older device archives.
+// Fail closed even if runtime auth configuration is temporarily missing.
+export function accountGateRequired(){return true;}
 export function isVerified(){return verified&&Boolean(session);}
 export function getAccountId(){return session?'account:'+session.user_id:null;}
 export function getRole(){return session?.role??null;}
-export function chooseDeviceArchive(){
- if(session)throw new Error('Esci prima dall’account autista.');
- try{localStorage.removeItem(MODE_KEY);}catch{}
-}
+// The legacy device archive stays on IndexedDB for authenticated recovery only.
+export function chooseDeviceArchive(){throw new Error('Accesso senza credenziali disattivato. Accedi con il tuo account per recuperare i vecchi viaggi.');}
 export function signOut(){
  session=null;verified=false;refreshing=null;
  try{sessionStorage.removeItem(SESSION_KEY);}catch{}

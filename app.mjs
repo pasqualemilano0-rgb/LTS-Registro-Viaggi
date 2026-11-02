@@ -460,9 +460,7 @@ function openProfile(required=false){
  const form=el('form',{novalidate:true});const error=el('div',{class:'form-error',role:'alert'});const first=field('Nome','firstName',state.profile.firstName,{placeholder:'Il tuo nome',autocomplete:'given-name',required:true,maxlength:200});const last=field('Cognome','lastName',state.profile.lastName,{placeholder:'Il tuo cognome',autocomplete:'family-name',required:true,maxlength:200});
  form.append(error,first.wrap,last.wrap,el('button',{type:'submit',class:'primary-button full','data-save':true},icon('check'),required?'Inizia a registrare':'Salva profilo'));
  form.addEventListener('submit',async event=>{event.preventDefault();error.textContent='';if(!first.input.value.trim()||!last.input.value.trim()){error.textContent='Inserisci nome e cognome dell’autista.';(!first.input.value.trim()?first.input:last.input).focus();return;}try{requireCurrentEditor(expectedProfile,state.profile,'Il profilo');await persist({...state,profile:{firstName:D.normalizeText(first.input.value),lastName:D.normalizeText(last.input.value)}});dialog.close();render();toast('Profilo salvato.');}catch(err){error.textContent=err.message;}});body.append(form);
- if(required&&!store.usingAccount()&&accountAccess.isEnabled())body.append(button('Hai già un account? Accedi','text',()=>{dialog.close();showAccountLogin();},'lock',{class:'text-button full'}));
- if(required&&!store.usingAccount())body.append(button('Hai già LTS? Collega dispositivi','text',()=>{dialog.close();deviceLinkDialog();},'link',{class:'text-button full'}));
- if(required&&!store.usingAccount()&&accountAccess.isEnabled())body.append(button('Hai un invito? Attiva account','text',()=>{dialog.close();showDriverActivation();},'lock',{class:'text-button full'}));
+ if(required&&store.usingAccount())body.append(button('Recupera vecchi viaggi','text',()=>{dialog.close();showLegacyArchiveRecovery();},'download',{class:'text-button full'}));
  if(!required){
   const importInput=el('input',{type:'file',accept:'.json,.zip,application/json,application/zip',class:'visually-hidden','aria-label':'Seleziona un backup',on:{change:async event=>{const file=event.target.files?.[0];if(!file)return;dialog.close();await importFile(file);}}});
   const installItem=menuButton('Installa app','Aggiungi LTS alla schermata Home.','download',startInstall);installItem.dataset.installTrigger='';installItem.hidden=isInstalled();
@@ -477,6 +475,7 @@ function openProfile(required=false){
           dialog.close();showDriverAdmin();
         }));
     if(store.usingAccount()){
+      body.querySelector('.profile-menu').prepend(menuButton('Recupera archivio precedente','Salva il vecchio backup e importa i dati conservati su questo telefono.','download',()=>{dialog.close();showLegacyArchiveRecovery();}));
       body.querySelector('.profile-menu').prepend(menuButton('Esci dall’account','Blocca la schermata e conserva il registro online. Prima sincronizza eventuali modifiche.','lock',()=>{
         try{
           store.leaveAccountView();
@@ -813,6 +812,48 @@ function showDriverAdmin(){
    button('Aggiorna elenco','secondary',()=>updateList(),'refresh'));
  updateList();
 }
+async function showLegacyArchiveRecovery(preview=null) {
+  if(!store.usingAccount()||!accountAccess.isVerified())return;
+  try { preview=preview||await store.previewLegacyArchive(); }
+  catch(err){toast(err.message||'Impossibile controllare i vecchi dati sul dispositivo.',true);return;}
+  if(!preview){toast('Nessun archivio precedente trovato in questo browser. Per dati da un altro dispositivo usa Importa backup.');return;}
+  const {dialog,body}=modal('Recupera i viaggi precedenti',{
+    subtitle:'Questi dati erano salvati sul dispositivo prima dell’accesso con password. Importali solo se appartengono a te. Il vecchio archivio resta conservato.'});
+  const details=el('div',{class:'panel'},
+    el('strong',{},preview.name||'Vecchio registro senza nome'),
+    el('p',{class:'field-hint'},preview.trips+' viaggi · '+preview.customers+' clienti · '+preview.tariffs+' tariffe'));
+  const message=el('p',{class:'field-hint'},'Prima salva un backup. Il trasferimento non elimina la copia precedente e non sostituisce automaticamente eventuali dati dell’account.');
+  const error=el('p',{class:'form-error',role:'alert'});
+  let backupRequested=false;
+  const restore=button('Unisci nel mio account','primary',async()=>{
+    if(!backupRequested){error.textContent='Salva prima il backup del vecchio archivio.';return;}
+    if(!window.confirm('Confermi che questo vecchio registro è tuo e vuoi unirlo al tuo account? La copia sul dispositivo resta intatta.'))return;
+    restore.disabled=true;error.textContent='';
+    try{
+      const result=await store.importLegacyArchive();
+      state=D.validateState(result.state);user=result.user||null;
+      dialog.close();render();
+      toast(result.pending?'Dati recuperati sul telefono. Sincronizza appena torna Internet.':'Dati precedenti recuperati nel tuo account.');
+      if(!state.profile.firstName||!state.profile.lastName)openProfile(true);
+    }catch(e){error.textContent=e.message||'Importazione non riuscita. I dati precedenti sono conservati.';restore.disabled=false;}
+  });
+  restore.disabled=true;
+  const backup=button('Scarica backup dei dati precedenti','secondary',async()=>{
+    backup.disabled=true;error.textContent='';
+    try{
+      const data=await store.exportLegacyBackup();
+      downloadBlob(new Blob([data],{type:'application/json'}),`LTS-Backup-Prima-Account-${today()}.json`);
+      backupRequested=true;restore.disabled=false;
+      toast('Backup scaricato: verifica di averlo conservato prima di procedere.');
+    }catch(e){error.textContent=e.message||'Esportazione del vecchio archivio non riuscita.';}
+    finally{backup.disabled=false;}
+  },'download');
+  const later=button('Non ora','text',()=>{
+    dialog.close();
+    if(!state.profile.firstName||!state.profile.lastName)openProfile(true);
+  });
+  body.append(details,message,error,backup,restore,later);
+}
 function renderAccountGate(message=''){
   // Never leave an authenticated profile, document or port iframe on screen.
   unmountPorti();state=D.emptyState();user=null;draft=newDraft();
@@ -830,14 +871,7 @@ function renderAccountGate(message=''){
       store.lockRevokedAccount();
       renderAccountGate('Sessione chiusa. Puoi accedere con un altro account.');
     }):null,
-    button('Usa l’archivio di questo dispositivo','text',()=>{
-      const answer=window.confirm('L’archivio del dispositivo è separato dagli account e potrebbe contenere dati precedenti non protetti da password. Vuoi aprirlo su questo telefono?');
-      if(!answer)return;
-      accountAccess.signOut();
-      accountAccess.chooseDeviceArchive();
-      store.lockRevokedAccount();
-      initialize();
-    },null,{class:'text-button full'}));
+    el('p',{class:'field-hint'},'I dati precedenti sul telefono rimangono conservati. Dopo l’accesso potrai salvarne un backup e recuperarli nel tuo account.'));
   root.replaceChildren(gate);
 }
 window.addEventListener('lts-account-locked',()=>{
@@ -867,7 +901,15 @@ async function initialize(){
   if(!subscribed&&store.subscribeState){store.subscribeState(receiveState);subscribed=true;}
   if(result?.status)setStatus(result.status);
   const notificationTab=location.hash.slice(1);if(['insert','register'].includes(notificationTab))tab=notificationTab;
-  render();if(!state.profile.firstName||!state.profile.lastName)openProfile(true);
+  render();
+  if(store.usingAccount() && !store.hasImportedLegacyArchive() &&
+    state.trips.length===0 && state.customers.length===0 && state.tariffs.length===0) {
+    try {
+      const previous=await store.previewLegacyArchive();
+      if(previous){await showLegacyArchiveRecovery(previous);return;}
+    }catch{ /* Never block the verified account if old device storage is unavailable. */ }
+  }
+  if(!state.profile.firstName||!state.profile.lastName)openProfile(true);
   if(new URL(location.href).searchParams.get('installa')==='1'&&!isInstalled())installDialog();
  }catch(err){
   root.replaceChildren(el('div',{class:'boot'},el('img',{src:'/LTS-Registro-Viaggi/assets/lts-logo.png',alt:'LTS'}),el('div',{class:'boot-error'},el('h2',{},'Il registro non è disponibile'),el('p',{class:'subtitle'},err.message||'Controlla la connessione e riprova.'),button('Riprova','primary',()=>initialize(),'refresh'))));

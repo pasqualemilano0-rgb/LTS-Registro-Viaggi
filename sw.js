@@ -1,6 +1,6 @@
 const BASE = "/LTS-Registro-Viaggi/";
 const PREFIX = "lts-iphone-pages-0aa8d087d02b-";
-const CACHE = PREFIX + '20261102-drivers-v5';
+const CACHE = PREFIX + '20261102-account-required-v6';
 const CORE = [
   "/LTS-Registro-Viaggi/account-access.mjs",
   "/LTS-Registro-Viaggi/app.css",
