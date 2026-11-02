@@ -42,7 +42,7 @@ test('account archive ID must derive from verified session, not user input',()=>
   assert.match(store,/account[.]archiveRequest\(method, body\)/);
 });
 test('offline worker activates new cache and precaches auth code without caching server data',()=>{
-  assert.match(sw,/const CACHE = PREFIX \+ '20261102-revocation-v8'/);
+  assert.match(sw,/const CACHE = PREFIX \+ '20261102-porti-mirror-v9'/);
   assert.match(sw,/\/LTS-Registro-Viaggi\/account-access[.]mjs/);
   assert.match(sw,/url[.]origin !== self[.]location[.]origin/);
   assert.match(sw,/if \(url[.]pathname[.]startsWith\(BASE \+ 'api\/'\)\) return/);
@@ -224,4 +224,17 @@ test('denied account after refresh revokes all protected client actions',()=>{
  assert.ok(auth.includes('()=>verifySession());'));
  assert.ok(auth.includes("()=>api('onboardingEndpoint',payload,readStored()?.access_token)"));
  assert.doesNotMatch(auth,/return api\('onboardingEndpoint',payload,readStored\(\).access_token\)/);
+});
+
+test('LTS Porti fallback reads LTS public snapshots, not the old Booking repository',()=>{
+ const port=readFileSync(new URL('../porti/app.js',import.meta.url),'utf8');
+ const index=readFileSync(new URL('../porti/index.html',import.meta.url),'utf8');
+ const provenance=JSON.parse(readFileSync(new URL('../porti/upstream.json',import.meta.url),'utf8'));
+ const lts='https://raw.githubusercontent.com/pasqualemilano0-rgb/LTS-Registro-Viaggi/main/porti/data/';
+ assert.equal(port.split(lts).length-1,3);
+ assert.ok(!port.includes('raw.githubusercontent.com/pasqualemilano0-rgb/container-booking-web-/'));
+ assert.match(index,/app[.]js[?]v=20261102-lts-v66/);
+ const files=new Map(provenance.files.map(item=>[item.path,item]));
+ assert.equal(files.get('app.js').sha256,'c8b14f949c5aa1a07adac1ccec7b6dec6d4a1449adac5a336013238a14d036af');
+ assert.equal(files.get('index.html').sha256,'cb42bb8682227cd24efe03934a3287d3df43bc86c4385e07ac7a083339d89c48');
 });

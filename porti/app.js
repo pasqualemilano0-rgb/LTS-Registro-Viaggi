@@ -17,7 +17,7 @@ const urls = Object.freeze({
 });
 const terminals = {cnt:'CO.NA.TE.CO.',tfg:'Terminal Flavio Gioia',sct:'Salerno Container Terminal'};
 
-const publicTfgSnapshot='https://raw.githubusercontent.com/pasqualemilano0-rgb/container-booking-web-/main/data/tfg_schedule.json';
+const publicTfgSnapshot='https://raw.githubusercontent.com/pasqualemilano0-rgb/LTS-Registro-Viaggi/main/porti/data/tfg_schedule.json';
 /**
  * GitHub Pages is branch-deployed. Commits by Actions using GITHUB_TOKEN do
  * not trigger Pages builds, so the raw public repository file is the freshest
@@ -890,7 +890,7 @@ function renderNapoli(booking,terminal){
   return official;
 }
 
-const publicSctSnapshot='https://raw.githubusercontent.com/pasqualemilano0-rgb/container-booking-web-/main/data/sct.json';
+const publicSctSnapshot='https://raw.githubusercontent.com/pasqualemilano0-rgb/LTS-Registro-Viaggi/main/porti/data/sct.json';
 async function getSchedule(force=false){
   if(sctCache && !force)return sctCache;
   // Cloudflare cron monitors the official SCT schedule and stores the last
@@ -1306,7 +1306,7 @@ tfgList.addEventListener('click',event=>{
 
 
 /* CO.NA.TE.CO. public Berth Forecast. Booking data are never stored here. */
-const publicCntSnapshot='https://raw.githubusercontent.com/pasqualemilano0-rgb/container-booking-web-/main/data/conateco.json';
+const publicCntSnapshot='https://raw.githubusercontent.com/pasqualemilano0-rgb/LTS-Registro-Viaggi/main/porti/data/conateco.json';
 const cntList=byId('cnt-vessel-list');
 const cntShipFilter=byId('cnt-ship-filter');
 const cntAlert=byId('cnt-feed-alert');
