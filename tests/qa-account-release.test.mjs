@@ -41,7 +41,7 @@ test('account archive ID must derive from verified session, not user input',()=>
   assert.match(store,/account[.]archiveRequest\(method, body\)/);
 });
 test('offline worker activates new cache and precaches auth code without caching server data',()=>{
-  assert.match(sw,/const CACHE = PREFIX \+ '20261102-drivers-v2'/);
+  assert.match(sw,/const CACHE = PREFIX \+ '20261102-drivers-v3'/);
   assert.match(sw,/\/LTS-Registro-Viaggi\/account-access[.]mjs/);
   assert.match(sw,/url[.]origin !== self[.]location[.]origin/);
   assert.match(sw,/if \(url[.]pathname[.]startsWith\(BASE \+ 'api\/'\)\) return/);
@@ -49,8 +49,8 @@ test('offline worker activates new cache and precaches auth code without caching
 });
 test('HTML entry points are identical and use the new cache buster',()=>{
   assert.equal(html,shell);
-  assert.match(html,/app[.]css[?]v=20261102-drivers-v2/);
-  assert.match(html,/app[.]mjs[?]v=20261102-drivers-v2/);
+  assert.match(html,/app[.]css[?]v=20261102-drivers-v3/);
+  assert.match(html,/app[.]mjs[?]v=20261102-drivers-v3/);
   assert.match(html,/<script type="module"/);
 });
 test('ports section stays integrated, untouched backups and no new bundled private backend',()=>{
@@ -63,6 +63,8 @@ test('ports section stays integrated, untouched backups and no new bundled priva
 test('driver onboarding: admin-only controls, invite activation and guarded endpoints',()=>{
   assert.ok(app.includes('function showDriverAdmin('));
   assert.ok(app.includes('function showDriverActivation('));
+  assert.ok(app.includes("if(required&&!store.usingAccount()&&accountAccess.isEnabled())body.append(button('Hai già un account? Accedi'"));
+  assert.ok(app.includes("dialog.close();showAccountLogin();"));
   assert.ok(app.includes("accountAccess.getRole()==='admin'"));
   assert.ok(app.includes('activateDriverInvitation'));
   assert.ok(auth.includes('function manageDrivers('));
