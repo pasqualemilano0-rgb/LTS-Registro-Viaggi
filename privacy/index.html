@@ -20,7 +20,7 @@
   </header>
   <main>
     <h1>Privacy e dati del registro</h1>
-    <p class="small">Aggiornamento: 23 ottobre 2026. Questa informativa riguarda LTS Registro Viaggi per Android e la versione web/iPhone collegata.</p>
+    <p class="small">Aggiornamento: 2 novembre 2026. Questa informativa riguarda LTS Registro Viaggi per Android e la versione web/iPhone collegata.</p>
     <div class="intro">
       <p>L’app consente di registrare i viaggi di lavoro, gestire clienti e tariffe, preparare il PDF mensile e sincronizzare un archivio personale tra dispositivi collegati.</p>
       <p><strong>La sincronizzazione online è attiva per impostazione iniziale.</strong> Quando il dispositivo è connesso, il registro viene inviato al servizio LTS per conservarne una copia e aggiornare i dispositivi collegati. Il collegamento di due dispositivi richiede una conferma esplicita; inserire lo stesso nome non collega gli archivi.</p>
@@ -57,6 +57,12 @@
     <p>PDF, CSV, JSON e ZIP esportati possono contenere dati personali o aziendali leggibili. L’utente sceglie dove salvarli e a chi condividerli. Conservare questi file in un’area privata.</p>
     <p>Il backup automatico Android, quando abilitato e disponibile sul telefono, dipende dal servizio di backup configurato nel sistema, ad esempio Google. Android decide tempi e condizioni della copia: non è garantito un caricamento a un’ora precisa. Il ripristino usa l’account e il servizio selezionati sul dispositivo.</p>
     <p>La copia online LTS, il backup di sistema e i file personali esportati sono copie distinte. L’app web non effettua un backup giornaliero automatico in una cartella personale Google Drive o iCloud mentre è chiusa. Le impostazioni Drive collegate a ChatGPT non configurano il backup del telefono.</p>
+
+    <h2>Porti e ricerca booking</h2>
+    <p>La sezione <strong>Porti e booking</strong> consulta i programmi pubblici di CO.NA.TE.CO., Terminal Flavio Gioia e Salerno Container Terminal. I programmi vengono controllati dal servizio Cloudflare anche mentre l’app è chiusa; questo controllo non cerca né conserva booking personali.</p>
+    <p>La ricerca del booking parte soltanto dopo il comando dell’utente. Per CO.NA.TE.CO. il numero viene inviato direttamente al servizio Booking Export ufficiale, nel formato richiesto dal terminal. Per TFG viene inviato con POST al servizio Cloudflare dell’app, che consulta il modulo ufficiale. Aprendo un portale ufficiale si applicano anche le condizioni del relativo terminal e i normali dati tecnici trattati dai fornitori dei servizi.</p>
+    <p>LTS non aggiunge i booking cercati al registro viaggi, ai PDF, ai backup, al database del registro o all’archivio dei programmi navi. Il risultato resta nella schermata di consultazione e viene rimosso quando si esce dalla sezione. I dati del registro e i codici di collegamento dei dispositivi non vengono inviati ai servizi portuali.</p>
+    <p>Stato del carico e opzioni di consegna riguardano la nave e il programma indicato: l’app non certifica l’autorizzazione del singolo booking o l’ingresso al terminal. Fonte, acquisizione e aggiornamento disponibile sono consultabili nel risultato.</p>
 
     <h2>Google Maps e notifiche</h2>
     <p>La lettura di un link Google Maps parte solo quando l’utente incolla un link e chiede di leggerlo. Il link viene trasmesso al servizio LTS, che contatta gli indirizzi Google consentiti per proporre nome, città e indirizzo del cliente. La proposta va controllata e confermata prima del salvataggio.</p>

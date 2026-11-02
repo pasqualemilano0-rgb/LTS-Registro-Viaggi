@@ -3,6 +3,9 @@
 [Apri LTS Registro Viaggi](https://pasqualemilano0-rgb.github.io/LTS-Registro-Viaggi/)
 
 App web per registrare viaggi, clienti e tariffe e generare il resoconto mensile.
+La sezione **Porti** integra booking CONATECO/TFG e programma navi SCT, con lo stesso stile LTS. Con depot esterni OK, CONATECO mostra **INTERNO PORTO / DRYPORT**.
+
+Aggiornamento del 2 novembre 2026: modulo portuale **v0.65**, monitor Cloudflare H24, gestione offline e dati delle ricerche separati dal registro. Le opzioni e lo stato della nave non autorizzano il singolo booking.
 Su iPhone aprire in Safari e scegliere **Condividi → Aggiungi alla schermata Home**.
 
 [Guarda il video dimostrativo](https://pasqualemilano0-rgb.github.io/LTS-Registro-Viaggi/video.mp4)
