@@ -128,7 +128,7 @@ test('network-first account modules show latest UI while keeping offline fallbac
 test('Gmail password recovery is linked, safe and never copies account data',()=>{
   assert.ok(app.includes('Imposta o recupera password via Gmail'));
   assert.ok(app.includes('/LTS-Registro-Viaggi/recupera-password.html'));
-  assert.match(recovery,/auth\\/v1\\//);
+  assert.ok(recovery.includes("SUPABASE+'/auth/v1/'"));
   assert.ok(recovery.includes('recover?redirect_to='));
   assert.ok(recovery.includes("hash.get('type')!=='recovery'"));
   assert.ok(recovery.includes("history.replaceState(null,'',window.location.pathname)"));
