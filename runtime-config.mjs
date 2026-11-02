@@ -6,6 +6,7 @@ export default Object.freeze({
   "accountAuth": {
     "enabled": true,
     "loginEndpoint": "https://otrqynkscpbeyuvdlgpg.supabase.co/functions/v1/lts-phone-auth",
-    "archiveEndpoint": "https://otrqynkscpbeyuvdlgpg.supabase.co/functions/v1/lts-account-state"
+    "archiveEndpoint": "https://otrqynkscpbeyuvdlgpg.supabase.co/functions/v1/lts-account-state",
+    "onboardingEndpoint": "https://otrqynkscpbeyuvdlgpg.supabase.co/functions/v1/lts-driver-onboarding"
   }
 });
