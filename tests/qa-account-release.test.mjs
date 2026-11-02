@@ -180,16 +180,16 @@ test('credentials are mandatory and pre-registration data stays recoverable',()=
 });
 
 test('external file import cannot replace account data silently',()=>{
- const app=app;
- assert.ok(app.includes("unionStates(previous,imported,{prefer:null})"));
- assert.ok(app.includes("unionStates(D.validateState(state),imported,{prefer:null})"));
- assert.ok(app.includes('Scarica backup del registro attuale'));
- assert.ok(app.includes('Unisci i due registri'));
- assert.ok(app.includes("await accountAccess.verifySession()"));
- assert.ok(app.includes("JSON.stringify(D.validateState(state))!==originalFingerprint"));
- assert.ok(app.includes("acknowledge.checked&&backupStarted"));
- assert.doesNotMatch(app,/Sostituirà il registro attuale/);
- assert.doesNotMatch(app,/await persist\(imported\)/);
+ const source=app;
+ assert.ok(source.includes("unionStates(previous,imported,{prefer:null})"));
+ assert.ok(source.includes("unionStates(D.validateState(state),imported,{prefer:null})"));
+ assert.ok(source.includes('Scarica backup del registro attuale'));
+ assert.ok(source.includes('Unisci i due registri'));
+ assert.ok(source.includes("await accountAccess.verifySession()"));
+ assert.ok(source.includes("JSON.stringify(D.validateState(state))!==originalFingerprint"));
+ assert.ok(source.includes("acknowledge.checked&&backupStarted"));
+ assert.doesNotMatch(source,/Sostituirà il registro attuale/);
+ assert.doesNotMatch(source,/await persist\(imported\)/);
 });
 
 test('external backup merges old and new trips, clients and tariffs without changing source objects',async()=>{
