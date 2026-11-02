@@ -42,7 +42,7 @@ test('account archive ID must derive from verified session, not user input',()=>
   assert.match(store,/account[.]archiveRequest\(method, body\)/);
 });
 test('offline worker activates new cache and precaches auth code without caching server data',()=>{
-  assert.match(sw,/const CACHE = PREFIX \+ '20261102-safe-backup-v7'/);
+  assert.match(sw,/const CACHE = PREFIX \+ '20261102-revocation-v8'/);
   assert.match(sw,/\/LTS-Registro-Viaggi\/account-access[.]mjs/);
   assert.match(sw,/url[.]origin !== self[.]location[.]origin/);
   assert.match(sw,/if \(url[.]pathname[.]startsWith\(BASE \+ 'api\/'\)\) return/);
@@ -50,8 +50,8 @@ test('offline worker activates new cache and precaches auth code without caching
 });
 test('HTML entry points are identical and use the new cache buster',()=>{
   assert.equal(html,shell);
-  assert.match(html,/app[.]css[?]v=20261102-safe-backup-v7/);
-  assert.match(html,/app[.]mjs[?]v=20261102-safe-backup-v7/);
+  assert.match(html,/app[.]css[?]v=20261102-revocation-v8/);
+  assert.match(html,/app[.]mjs[?]v=20261102-revocation-v8/);
   assert.match(html,/<script type="module"/);
 });
 test('ports section stays integrated, untouched backups and no new bundled private backend',()=>{
@@ -213,4 +213,15 @@ test('external backup merges old and new trips, clients and tariffs without chan
   const conflict=upsertTariff(named(),{id:'same-rate',client:'AZIENDA A',city:'NAPOLI',cents:9999});
   assert.throws(()=>unionStates(account,conflict,{prefer:null}),SyncConflictError);
   assert.equal(JSON.stringify(account),originalAccount);
+});
+
+test('denied account after refresh revokes all protected client actions',()=>{
+ assert.ok(auth.includes('async function withSessionRetry(request, afterRefresh=null)'));
+ assert.ok(auth.includes('if(error.status===403){revoke();throw error;}'));
+ assert.ok(auth.includes('if([401,403].includes(error.status))revoke();'));
+ assert.ok(auth.includes("()=>api('loginEndpoint',{action:'session'},readStored()?.access_token)"));
+ assert.ok(auth.includes("()=>api('archiveEndpoint',payload,readStored()?.access_token)"));
+ assert.ok(auth.includes('()=>verifySession());'));
+ assert.ok(auth.includes("()=>api('onboardingEndpoint',payload,readStored()?.access_token)"));
+ assert.doesNotMatch(auth,/return api\('onboardingEndpoint',payload,readStored\(\).access_token\)/);
 });

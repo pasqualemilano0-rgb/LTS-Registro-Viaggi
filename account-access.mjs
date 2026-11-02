@@ -114,6 +114,23 @@ async function refresh(){
  })();
  try{return await refreshing;}finally{refreshing=null}
 }
+// A revoked account must be locked even when denial follows a token refresh.
+// Never treat an HTTP 401 as permission to retry indefinitely.
+async function withSessionRetry(request, afterRefresh=null){
+ try{return await request();}
+ catch(error){
+  if(error.status===403){revoke();throw error;}
+  if(error.status!==401)throw error;
+ }
+ try{
+  await refresh();
+  if(afterRefresh)await afterRefresh();
+  return await request();
+ }catch(error){
+  if([401,403].includes(error.status))revoke();
+  throw error;
+ }
+}
 export async function login(phone,password){
  if(!isEnabled())throw new Error('Accesso account non abilitato.');
  if(typeof phone!=='string'||phone.length>40||typeof password!=='string'||password.length>256)
@@ -130,14 +147,8 @@ export async function login(phone,password){
 export async function verifySession(){
  const s=readStored();if(!s)throw new Error('Effettua l’accesso con numero e password.');
  if(s.expires_at<Date.now()+15000)await refresh();
- let result;
- try{result=await api('loginEndpoint',{action:'session'},readStored().access_token)}
- catch(error){
-  if(error.status===401){
-   await refresh();
-   result=await api('loginEndpoint',{action:'session'},readStored().access_token);
-  }else{if(error.status===403)revoke();throw error}
- }
+ const result=await withSessionRetry(
+  ()=>api('loginEndpoint',{action:'session'},readStored()?.access_token));
  if(result?.active!==true||result.user_id!==readStored()?.user_id||
     !['admin','driver'].includes(result.role)){
    revoke();throw new Error('Identità account non verificata.');
@@ -148,14 +159,9 @@ export async function verifySession(){
 export async function archiveRequest(method,body){
  if(!verified||!readStored())throw new Error('Effettua l’accesso per consultare il registro.');
  const payload=method==='GET'?{action:'read'}:{action:'write',...body};
- let result;
- try{result=await api('archiveEndpoint',payload,readStored().access_token)}
- catch(error){
-  if(error.status===401){
-   await refresh();
-   result=await api('archiveEndpoint',payload,readStored().access_token);
-  }else{if(error.status===403)revoke();throw error}
- }
+ const result=await withSessionRetry(
+  ()=>api('archiveEndpoint',payload,readStored()?.access_token),
+  ()=>verifySession());
  if(result?.user?.id!=='account:'+readStored()?.user_id||!result.state||
     !Number.isSafeInteger(result.revision)){
    revoke();throw new Error('Il servizio ha restituito un archivio appartenente a un altro account.');
@@ -169,17 +175,12 @@ export async function manageDrivers(action, data = {}) {
  if (!['list', 'issue', 'set-access', 'revoke-invite'].includes(action))
    throw new Error('Operazione non disponibile.');
  const payload = {action, ...data};
- try { return await api('onboardingEndpoint', payload, readStored().access_token); }
- catch (error) {
-   if (error.status === 401) {
-     await refresh();
-     await verifySession();
-     if (getRole() !== 'admin') throw new Error('Permesso amministratore non valido.');
-     return api('onboardingEndpoint', payload, readStored().access_token);
-   }
-   if (error.status === 403) revoke();
-   throw error;
- }
+ return withSessionRetry(
+  ()=>api('onboardingEndpoint',payload,readStored()?.access_token),
+  async()=>{
+   await verifySession();
+   if(getRole()!=='admin')throw new Error('Permesso amministratore non valido.');
+  });
 }
 export async function activateDriverInvitation({phone, code, password} = {}) {
  if (!isEnabled()) throw new Error('Attivazione non disponibile.');
