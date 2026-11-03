@@ -1,6 +1,6 @@
 {
   "source": "https://tfg.bucci.it/@/TFGW_TP_ETA",
-  "source_updated_at": "2026-11-03T07:51:10.000Z",
+  "source_updated_at": "2026-11-03T12:53:05.000Z",
   "rows": [
     {
       "vessel": "CATHERINEC",
@@ -86,7 +86,7 @@
       "eta": "02/11/26 11:00",
       "acceptance": "NAVE CHIUSA",
       "custom_close_time": "02/11/26 15:00:00",
-      "fast_corridor_cut_off": "",
+      "fast_corridor_cut_off": "03/11/2610:00:00",
       "gate_cut_off": "",
       "destination": "INTERNO PORTO"
     },
@@ -95,8 +95,8 @@
       "arrival_voyage": "AC641R",
       "departure_voyage": "AC641R",
       "eta": "03/11/26 06:00",
-      "acceptance": "NON ACCETTA CARICO",
-      "custom_close_time": "&nbsp;",
+      "acceptance": "NAVE CHIUSA",
+      "custom_close_time": "03/11/26 14:00:00",
       "fast_corridor_cut_off": "03/11/2609:00:00",
       "gate_cut_off": "",
       "destination": "INTERNO PORTO"
@@ -105,7 +105,7 @@
       "vessel": "X PRESS SAGARMALA",
       "arrival_voyage": "644E",
       "departure_voyage": "645W",
-      "eta": "05/11/26",
+      "eta": "05/11/26 19:00",
       "acceptance": "ACCETTA CARICO",
       "custom_close_time": "&nbsp;",
       "fast_corridor_cut_off": "",
@@ -128,7 +128,7 @@
       "arrival_voyage": "AGA040S19",
       "departure_voyage": "AGA040S19",
       "eta": "09/11/26",
-      "acceptance": "CARICO DAL 03/11/26 08:00:00",
+      "acceptance": "ACCETTA CARICO",
       "custom_close_time": "&nbsp;",
       "fast_corridor_cut_off": "",
       "gate_cut_off": "",
@@ -139,7 +139,7 @@
       "arrival_voyage": "0HWLAE1MA",
       "departure_voyage": "0HWLAE1MA",
       "eta": "10/11/26",
-      "acceptance": "CARICO DAL 03/11/26 08:00:00",
+      "acceptance": "ACCETTA CARICO",
       "custom_close_time": "&nbsp;",
       "fast_corridor_cut_off": "",
       "gate_cut_off": "",
@@ -234,5 +234,5 @@
       "destination": "INTERNO PORTO"
     }
   ],
-  "acquired_at": "2026-11-03T10:45:16.965Z"
+  "acquired_at": "2026-11-03T13:30:16.489Z"
 }

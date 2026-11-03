@@ -173,20 +173,20 @@
       "source_conflict": false
     },
     {
-      "vessel": "MSC GRETA III",
-      "voyage": "AC643A",
+      "vessel": "JAN",
+      "voyage": "644S",
       "eta": "2026-11-04 00:00",
       "vessel_status": "PRE",
       "category": "PREVISTE",
-      "voyage_id": "202600358",
-      "carrier": "MEDITERRANEAN SHIPPING CO. GENEVA",
+      "voyage_id": "202600363",
+      "carrier": "DIAMOND LINE",
       "acceptance_flag": "1",
       "acceptance_icon": "ACCETTA_CARICO",
       "stop_cargo": "",
       "external_depot": "",
-      "opening": "2026-10-27 12:00",
+      "opening": "2026-11-02 06:30",
       "closing": "2026-11-04 17:00",
-      "notes": "LOAD ALSO LEVANTE CARGO",
+      "notes": "ACCETT.RETROPORTO 29/10 07:00",
       "source_conflict": false
     },
     {
@@ -204,23 +204,6 @@
       "opening": "",
       "closing": "",
       "notes": "IMPORT CALL",
-      "source_conflict": false
-    },
-    {
-      "vessel": "JAN",
-      "voyage": "644S",
-      "eta": "2026-11-05 00:00",
-      "vessel_status": "PRE",
-      "category": "PREVISTE",
-      "voyage_id": "202600363",
-      "carrier": "DIAMOND LINE",
-      "acceptance_flag": "1",
-      "acceptance_icon": "ACCETTA_CARICO",
-      "stop_cargo": "",
-      "external_depot": "",
-      "opening": "2026-11-02 06:30",
-      "closing": "2026-11-04 17:00",
-      "notes": "ACCETT.RETROPORTO 29/10 07:00",
       "source_conflict": false
     },
     {
@@ -258,20 +241,20 @@
       "source_conflict": false
     },
     {
-      "vessel": "MSC CHIARA X",
-      "voyage": "FD644A",
-      "eta": "2026-11-06 00:00",
+      "vessel": "MSC GRETA III",
+      "voyage": "AC643A",
+      "eta": "2026-11-05 00:00",
       "vessel_status": "PRE",
       "category": "PREVISTE",
-      "voyage_id": "202600375",
+      "voyage_id": "202600358",
       "carrier": "MEDITERRANEAN SHIPPING CO. GENEVA",
-      "acceptance_flag": "0",
-      "acceptance_icon": "",
+      "acceptance_flag": "1",
+      "acceptance_icon": "ACCETTA_CARICO",
       "stop_cargo": "",
-      "external_depot": "S",
-      "opening": "2026-11-03 14:00",
-      "closing": "2026-11-05 17:00",
-      "notes": "ACCETT.RETROPORTO 30/10 12:00",
+      "external_depot": "",
+      "opening": "2026-10-27 12:00",
+      "closing": "2026-11-04 17:00",
+      "notes": "LOAD ALSO LEVANTE CARGO",
       "source_conflict": false
     },
     {
@@ -289,6 +272,23 @@
       "opening": "2026-10-29 12:00",
       "closing": "2026-11-06 17:00",
       "notes": "",
+      "source_conflict": false
+    },
+    {
+      "vessel": "MSC CHIARA X",
+      "voyage": "FD644A",
+      "eta": "2026-11-07 00:00",
+      "vessel_status": "PRE",
+      "category": "PREVISTE",
+      "voyage_id": "202600375",
+      "carrier": "MEDITERRANEAN SHIPPING CO. GENEVA",
+      "acceptance_flag": "1",
+      "acceptance_icon": "ACCETTA_CARICO",
+      "stop_cargo": "",
+      "external_depot": "",
+      "opening": "2026-11-03 14:00",
+      "closing": "2026-11-05 17:00",
+      "notes": "ACCETT.RETROPORTO 30/10 12:00",
       "source_conflict": false
     },
     {
@@ -683,5 +683,5 @@
       "source_conflict": false
     }
   ],
-  "acquired_at": "2026-11-03T10:45:16.965Z"
+  "acquired_at": "2026-11-03T13:30:16.489Z"
 }
