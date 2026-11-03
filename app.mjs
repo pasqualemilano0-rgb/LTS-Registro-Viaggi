@@ -779,7 +779,7 @@ function showDriverAdmin(){
    toast('Accedi prima come amministratore.',true);return;
  }
  const {dialog,body}=modal('Gestisci autisti',{
-   subtitle:'Seleziona Genera invito accanto a un autista da invitare, oppure compila il modulo. La password viene scelta soltanto dall’autista.'});
+   subtitle:'Puoi rimuovere gli inviti non attivati. Per un autista già attivo usa Disattiva, Riattiva o Reimposta credenziali: il registro personale viene conservato.'});
  const form=el('form',{class:'panel form-panel',novalidate:true});
  const error=el('p',{class:'form-error',role:'alert'});
  const first=el('input',{type:'text',autocomplete:'off',maxlength:80,required:true,'aria-label':'Nome'});
@@ -798,7 +798,8 @@ function showDriverAdmin(){
      const info=await accountAccess.manageDrivers('list');
      const entries=Array.isArray(info?.drivers)?info.drivers:[];
      const labels={active:'Attivo',disabled:'Disattivato',invited:'Invito in attesa',pending:'Da invitare',
-       expired:'Invito scaduto',processing:'Attivazione in corso',revoked:'Invito annullato',completed:'Attivato'};
+       expired:'Invito scaduto',processing:'Attivazione in corso',revoked:'Invito annullato',completed:'Attivato',
+       resetting:'Ripristino credenziali in attesa'};
      roster.replaceChildren();
      if(!entries.length)roster.append(el('p',{class:'field-hint'},'Nessun autista ancora inserito.'));
      for(const entry of entries){
@@ -811,6 +812,36 @@ function showDriverAdmin(){
            if(!window.confirm((enabled?'Riattivare':'Disattivare')+' il login di '+entry.phone+'?'))return;
            try{await accountAccess.manageDrivers('set-access',{phone:entry.phone,enabled});toast('Accesso aggiornato.');await updateList();}
            catch(err){listError.textContent=err.message;}
+         }));
+         // Credential recovery preserves the original Supabase user_id,
+         // personal archive and Android backup, unlike deleting the Auth user.
+         item.append(button('Reimposta credenziali','secondary',async()=>{
+           if(!window.confirm('Ripristinare le credenziali di '+entry.phone+'? L’accesso corrente sarà sospeso subito; i viaggi resteranno intatti. L’autista dovrà inserire il nuovo codice in Attiva account e scegliere una nuova password.'))return;
+           try{
+             const issued=await accountAccess.manageDrivers('issue-reset',{phone:entry.phone});
+             const code=el('input',{type:'text',readonly:true,value:issued.code,
+               autocomplete:'off',spellcheck:false,'aria-label':'Codice privato di ripristino'});
+             result.replaceChildren(
+               el('strong',{},'Nuovo codice di ripristino per '+entry.phone),
+               el('p',{class:'field-hint'},'Accesso sospeso. Nessun viaggio eliminato. Consegna questo codice privatamente: scade fra 24 ore.'),
+               code,button('Copia codice','secondary',async()=>{
+                 try{await navigator.clipboard.writeText(issued.code);toast('Codice copiato.');}
+                 catch{code.focus();code.select();toast('Seleziona e copia il codice.');}
+               }),
+               el('p',{class:'field-hint'},'L’autista apre LTS → Attiva account, inserisce numero e codice e sceglie una nuova password.'));
+             result.hidden=false;
+             await updateList();
+             result.scrollIntoView({behavior:'smooth',block:'center'});
+           }catch(err){listError.textContent=err.message||'Impossibile avviare il ripristino.';}
+         }));
+       }else if(entry.status==='resetting'){
+         item.append(button('Annulla ripristino','secondary',async()=>{
+           if(!window.confirm('Annullare il ripristino per '+entry.phone+'? L’account resterà disattivato finché non lo riattivi.'))return;
+           try{
+             await accountAccess.manageDrivers('revoke-reset',{phone:entry.phone});
+             toast('Codice annullato; account ancora disattivato.');
+             await updateList();
+           }catch(err){listError.textContent=err.message||'Impossibile annullare il ripristino.';}
          }));
        }else if(['invited','processing'].includes(entry.status)){
          item.append(button(entry.status==='processing'?'Annulla attivazione':'Annulla invito','secondary',async()=>{
@@ -831,6 +862,18 @@ function showDriverAdmin(){
            }
            // The visible click runs the same verified admin action as the form.
            form.requestSubmit();
+         }));
+       }
+       // A pending candidate is not an account: removing it only revokes
+       // activation codes and hides the candidate. Future re-invites are safe.
+       if(['pending','invited','processing','expired','revoked'].includes(entry.status)){
+         item.append(button('Rimuovi autista','secondary',async()=>{
+           if(!window.confirm('Rimuovere '+entry.phone+' dall’elenco degli autisti non attivati? I codici d’invito saranno annullati. Potrai reinserire lo stesso numero in seguito.'))return;
+           try{
+             await accountAccess.manageDrivers('remove-pending',{phone:entry.phone});
+             toast('Autista rimosso. Puoi reinserire il numero.');
+             await updateList();
+           }catch(err){listError.textContent=err.message||'Impossibile rimuovere l’autista.';}
          }));
        }
        roster.append(item);
