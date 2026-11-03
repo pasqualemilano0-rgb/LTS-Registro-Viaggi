@@ -79,6 +79,19 @@ export function signOut(){
  // A pending token rotation must finish before the durable credential is erased.
  void enqueueVault(()=>clearDriverToken()).catch(()=>{});
 }
+/** User-initiated logout: clear locally immediately, then revoke this verified
+ * session on the backend. Return false for offline/server failure; never pretend
+ * that Supabase tokens have been invalidated when the request did not succeed.
+ */
+export async function logout(){
+ const previous=readStored();
+ signOut();
+ if(!previous)return {revoked:false,noSession:true};
+ try{
+   const result=await api('loginEndpoint',{action:'logout'},previous.access_token);
+   return {revoked:result?.revoked===true,authRefreshRevoked:result?.authRefreshRevoked===true};
+ }catch(error){return {revoked:false,offline:Boolean(error.offline),status:error.status||null};}
+}
 function revoke(){
  signOut();
  if(typeof window!=='undefined')window.dispatchEvent(new Event('lts-account-locked'));
@@ -231,7 +244,7 @@ export async function archiveRequest(method,body){
 /** The server independently checks the Supabase JWT, admin role and enabled flag. */
 export async function manageDrivers(action, data = {}) {
  if (!isVerified() || getRole() !== 'admin') throw new Error('Accesso riservato all’amministratore.');
- if (!['list', 'issue', 'set-access', 'revoke-invite', 'remove-pending', 'remove-activated', 'reinsert-activated', 'issue-reset', 'revoke-reset'].includes(action))
+ if (!['list', 'issue', 'set-access', 'revoke-invite', 'remove-pending', 'remove-activated', 'reinsert-activated', 'issue-reset', 'revoke-reset', 'revoke-sessions'].includes(action))
    throw new Error('Operazione non disponibile.');
  const payload = {action, ...data};
  return withSessionRetry(
