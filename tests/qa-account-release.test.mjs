@@ -42,7 +42,7 @@ test('account archive ID must derive from verified session, not user input',()=>
   assert.match(store,/account[.]archiveRequest\(method, body\)/);
 });
 test('offline worker activates new cache and precaches auth code without caching server data',()=>{
-  assert.match(sw,/const CACHE = PREFIX \+ '20261103-admin-console-v13'/);
+  assert.match(sw,/const CACHE = PREFIX \+ '20261103-driver-remember-v14'/);
   assert.match(sw,/\/LTS-Registro-Viaggi\/account-access[.]mjs/);
   assert.match(sw,/url[.]origin !== self[.]location[.]origin/);
   assert.match(sw,/if \(url[.]pathname[.]startsWith\(BASE \+ 'api\/'\)\) return/);
@@ -50,8 +50,8 @@ test('offline worker activates new cache and precaches auth code without caching
 });
 test('HTML entry points are identical and use the new cache buster',()=>{
   assert.equal(html,shell);
-  assert.match(html,/app[.]css[?]v=20261103-admin-console-v13/);
-  assert.match(html,/app[.]mjs[?]v=20261103-admin-console-v13/);
+  assert.match(html,/app[.]css[?]v=20261103-driver-remember-v14/);
+  assert.match(html,/app[.]mjs[?]v=20261103-driver-remember-v14/);
   assert.match(html,/<script type="module"/);
 });
 test('ports section stays integrated, untouched backups and no new bundled private backend',()=>{
@@ -281,4 +281,19 @@ test('dedicated admin console loads only verified administrative transport',asyn
  assert.ok(css.includes('@media(max-width:630px)'));
  assert.deepEqual(model.driverSummary([{status:'active'},{status:'disabled'}]),{total:2,active:1,blocked:1,pending:0});
  assert.ok(app.includes("new URL('amministratore/',import.meta.url).href"));
+});
+
+test('driver remembered login uses AES-GCM vault and online authorization on restart',()=>{
+ const module=read('driver-session-vault.mjs');
+ assert.match(auth,/import \{readDriverToken,writeDriverToken,clearDriverToken\} from '\/LTS-Registro-Viaggi\/driver-session-vault[.]mjs'/);
+ assert.match(module,/crypto[.]subtle[.]encrypt/);
+ assert.match(module,/crypto[.]subtle[.]decrypt/);
+ assert.doesNotMatch(module,/localStorage|sessionStorage|access_token|password/);
+ assert.match(auth,/restoreDriverSession/);
+ assert.match(auth,/if\(restored\)await verifySession\(\)/);
+ assert.match(app,/await accountAccess[.]restoreDriverSession\(\)/);
+ assert.match(sw,/\/LTS-Registro-Viaggi\/driver-session-vault[.]mjs/);
+ assert.match(sw,/BASE \+ 'driver-session-vault[.]mjs'/);
+ assert.ok(existsSync(new URL('../driver-session-vault.mjs',import.meta.url)));
+ assert.doesNotMatch(sw,/refresh_token|user_id[.]|password/);
 });
