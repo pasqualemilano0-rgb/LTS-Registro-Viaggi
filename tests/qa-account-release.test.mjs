@@ -42,7 +42,7 @@ test('account archive ID must derive from verified session, not user input',()=>
   assert.match(store,/account[.]archiveRequest\(method, body\)/);
 });
 test('offline worker activates new cache and precaches auth code without caching server data',()=>{
-  assert.match(sw,/const CACHE = PREFIX \+ '20261103-driver-access-v10'/);
+  assert.match(sw,/const CACHE = PREFIX \+ '20261103-driver-reenroll-v11'/);
   assert.match(sw,/\/LTS-Registro-Viaggi\/account-access[.]mjs/);
   assert.match(sw,/url[.]origin !== self[.]location[.]origin/);
   assert.match(sw,/if \(url[.]pathname[.]startsWith\(BASE \+ 'api\/'\)\) return/);
@@ -245,4 +245,12 @@ test('driver re-entry and credential recovery controls are available only throug
   assert.ok(app.includes("manageDrivers('revoke-reset',{phone:entry.phone})"));
   assert.ok(auth.includes("'remove-pending', 'issue-reset', 'revoke-reset'"));
   assert.match(app,/if\(\['pending','invited','processing','expired','revoked'\]\.includes\(entry\.status\)\)/);
+});
+
+
+test('driver reenrollment UI uses existing account reset, never deletes activated archives',()=>{
+  assert.ok(app.includes("Reinserisci credenziali"));
+  assert.ok(app.includes("manageDrivers('issue-reset'"));
+  assert.ok(app.includes("manageDrivers('remove-pending'"));
+  assert.ok(app.includes('Non creare un secondo account'));
 });
