@@ -9,8 +9,8 @@
   <title>LTS · Gestione autisti</title>
   <meta name="description" content="Pannello riservato all'amministratore per gestire gli autisti LTS.">
   <link rel="icon" type="image/png" href="../assets/icon-192.png">
-  <link rel="stylesheet" href="./admin.css?v=20261103-admin-mfa-resume-v20">
-  <script type="module" src="./admin.mjs?v=20261103-admin-mfa-resume-v20"></script>
+  <link rel="stylesheet" href="./admin.css?v=20261103-admin-backup-v21">
+  <script type="module" src="./admin.mjs?v=20261103-admin-backup-v21"></script>
 </head>
 <body>
   <header class="topbar">
@@ -55,6 +55,12 @@
         <p class="hint">Chiave di configurazione (da conservare riservata durante l'attivazione):</p>
         <code id="mfa-secret" class="mfa-secret"></code>
       </div>
+      <div id="mfa-factor-choice-wrap" hidden>
+        <label>Quale Authenticator vuoi usare?
+          <select id="mfa-factor-choice" autocomplete="off"></select>
+        </label>
+        <p class="hint">Se il telefono principale non è disponibile, scegli l'Authenticator di riserva registrato su un altro dispositivo.</p>
+      </div>
       <form id="mfa-verify-form" class="stack" autocomplete="off">
         <label>Codice di verifica (6 cifre)
           <input id="mfa-code" type="text" inputmode="numeric" pattern="[0-9]{6}" minlength="6" maxlength="6" autocomplete="one-time-code" spellcheck="false" required>
@@ -76,6 +82,13 @@
         <h2 id="mfa-warning-title">Proteggi l'account amministratore</h2>
         <p class="hint">La verifica a due fattori non è ancora attiva. Configura un'app Authenticator prima di affidare l'accesso a questo pannello. Dopo l'attivazione, il codice sarà necessario a ogni nuovo accesso amministrativo.</p>
         <button id="mfa-start" class="button primary" type="button">Attiva verifica a due fattori</button>
+      </section>
+      <section id="mfa-backup-card" class="surface" aria-labelledby="mfa-backup-title" hidden>
+        <h2 id="mfa-backup-title">Recupero sicuro dell’account amministratore</h2>
+        <p class="hint">Aggiungi un secondo Authenticator su un dispositivo diverso dal telefono principale. Se perdi il primo telefono, potrai accedere usando il fattore di riserva. È obbligatorio aver già verificato l’Authenticator principale prima di aggiungerne un altro.</p>
+        <p id="mfa-backup-status" class="hint" role="status" aria-live="polite">Verifica dei fattori registrati…</p>
+        <button id="mfa-backup-start" class="button primary" type="button" hidden>Configura Authenticator di riserva</button>
+        <p class="hint">Non caricare mai QR, chiavi TOTP, password o codici temporanei su Google Drive o in cartelle condivise. Il fattore di riserva deve restare accessibile anche se il telefono principale è perso.</p>
       </section>
       <section class="stat-grid" aria-label="Riepilogo autisti">
         <div class="stat"><span>Totale in elenco</span><strong id="stat-total">—</strong></div>

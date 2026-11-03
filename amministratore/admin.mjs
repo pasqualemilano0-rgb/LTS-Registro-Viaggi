@@ -1,4 +1,4 @@
-import * as account from '../account-access.mjs?v=20261103-admin-mfa-resume-v20';
+import * as account from '../account-access.mjs?v=20261103-admin-backup-v21';
 import {STATUS_LABELS,driverSummary,filterDrivers} from './model.mjs';
 
 const byId=id=>document.getElementById(id);
@@ -25,23 +25,59 @@ function clearMfa(){
  byId('mfa-code').value='';byId('mfa-secret').textContent='';
  byId('mfa-qr').removeAttribute('src');byId('mfa-qr').hidden=true;
  byId('mfa-setup-secret').hidden=true;
+ byId('mfa-factor-choice').replaceChildren();
+ byId('mfa-factor-choice-wrap').hidden=true;
  setError(byId('mfa-error'),'');
 }
-function showMfaPanel(setup=false,resumed=false){
+function showMfaPanel(setup=false,resumed=false,purpose='primary'){
  if(!setup)clearMfa();
- mfaMode=setup?'setup':'login';
+ mfaMode=setup?(purpose==='backup'?'backup':'setup'):'login';
+ const backup=mfaMode==='backup';
  loginPanel.hidden=true;dashboard.hidden=true;byId('mfa-panel').hidden=false;
  byId('logout').hidden=false;
+ byId('mfa-title').textContent=backup?'Configura Authenticator di riserva':'Verifica a due fattori';
  byId('mfa-cancel').textContent=setup?'Annulla configurazione':'Torna all’accesso';
  byId('mfa-instructions').textContent=resumed
-  ?'Configurazione recuperata: inserisci il codice LTS già aggiunto alla tua app Authenticator. Non generare un nuovo QR.'
+  ?(backup?'Configurazione della riserva recuperata: inserisci il codice del secondo Authenticator già associato.':
+    'Configurazione recuperata: inserisci il codice LTS già aggiunto alla tua app Authenticator. Non generare un nuovo QR.')
+  :backup
+  ?'Aggiungi questa chiave a un dispositivo DIFFERENTE dal telefono principale, poi conferma il codice temporaneo.'
   :setup
   ?'Collega un’app Authenticator e inserisci il suo codice di sei cifre per attivare la protezione.'
   :'Apri la tua app Authenticator e inserisci il codice temporaneo a sei cifre.';
  byId('mfa-setup-secret').hidden=!setup||resumed;
  byId('mfa-resume-help').hidden=!resumed;
+ byId('mfa-factor-choice-wrap').hidden=true;
  if(resumed)byId('mfa-cancel').textContent='Annulla e genera un nuovo QR';
  byId('mfa-code').focus();
+}
+async function loadLoginFactors(){
+ const user=account.getAccountId();
+ try{
+  const factors=await account.listAdminMfaFactors();
+  if(user!==account.getAccountId()||mfaMode!=='login'||byId('mfa-panel').hidden)return;
+  const field=byId('mfa-factor-choice');field.replaceChildren();
+  for(const item of factors){
+   const option=make('option','',item.label);
+   option.value=item.id;field.append(option);
+  }
+  byId('mfa-factor-choice-wrap').hidden=factors.length<2;
+  if(!factors.length)setError(byId('mfa-error'),'Nessun Authenticator verificato disponibile.');
+ }catch(error){setError(byId('mfa-error'),errorText(error,'Impossibile elencare gli Authenticator.'));}
+}
+async function loadBackupFactors(){
+ if(!account.isVerified()||account.getRole()!=='admin')return;
+ const user=account.getAccountId();
+ const button=byId('mfa-backup-start');button.hidden=true;
+ try{
+  const factors=await account.listAdminMfaFactors();
+  if(account.getAccountId()!==user||dashboard.hidden)return;
+  const hasBackup=factors.some(f=>f.label==='Authenticator di riserva');
+  byId('mfa-backup-status').textContent=hasBackup
+    ?'Authenticator di riserva verificato e pronto. Potrai selezionarlo alla prossima verifica di accesso.'
+    :'È presente solo l’Authenticator principale. Registra quello di riserva su un altro dispositivo.';
+  button.hidden=hasBackup;
+ }catch(error){byId('mfa-backup-status').textContent=errorText(error,'Stato backup non disponibile. Riprova online.');}
 }
 function lock(message='Accedi come amministratore per continuare.'){
  drivers=[];clearMfa();
@@ -54,6 +90,7 @@ function lock(message='Accedi come amministratore per continuare.'){
 function showDashboard(status={}){
  clearMfa();byId('mfa-panel').hidden=true;
  byId('mfa-warning').hidden=status.mfa_enrolled===true;
+ byId('mfa-backup-card').hidden=!(status.mfa_enrolled&&status.mfa_verified);
  loginPanel.hidden=true;dashboard.hidden=false;byId('logout').hidden=false;
  setError(loginError,'');inform('');
 }
@@ -66,19 +103,22 @@ async function authenticate(){
      lock('Questo account non è autorizzato come amministratore.');
      return;
    }
-   if(status.mfa_enrolled){
-     account.forgetPendingAdminMfa();
-     if(!status.mfa_verified){showMfaPanel();return;}
-   }else{
-     const pending=account.pendingAdminMfa();
-     if(pending){
-       mfaFactorId=pending;
-       showMfaPanel(true,true);
-       return;
-     }
+   if(status.mfa_enrolled&&!status.mfa_verified){
+     showMfaPanel();
+     await loadLoginFactors();
+     return;
    }
+   const pending=account.pendingAdminMfaInfo();
+   if(pending&&((pending.purpose==='primary'&&!status.mfa_enrolled)||
+      (pending.purpose==='backup'&&status.mfa_enrolled&&status.mfa_verified))){
+     mfaFactorId=pending.factor_id;
+     showMfaPanel(true,true,pending.purpose);
+     return;
+   }
+   if(pending)account.forgetPendingAdminMfa();
    showDashboard(status);
-   await loadDrivers();
+   await Promise.all([loadDrivers(),status.mfa_enrolled&&status.mfa_verified?
+     loadBackupFactors():Promise.resolve()]);
  }catch(error){
    lock(errorText(error,'Verifica dell’account non riuscita. Riprova con Internet attivo.'));
  }
@@ -217,18 +257,30 @@ byId('login-form').addEventListener('submit',async event=>{
  finally{button.disabled=false;}
 });
 
+function showNewMfaCode(result,purpose='primary'){
+ mfaFactorId=result.factor_id;
+ showMfaPanel(true,false,purpose);
+ byId('mfa-secret').textContent=result.secret;
+ if(/^data:image\/svg\+xml(?:;[^,]*)?,/.test(result.qr_code)){
+   byId('mfa-qr').src=result.qr_code;
+   byId('mfa-qr').hidden=false;
+ }
+}
+byId('mfa-backup-start').addEventListener('click',async()=>{
+ const button=byId('mfa-backup-start');if(button.disabled||busy)return;
+ button.disabled=true;inform('');
+ try{
+   const result=await account.enrollBackupAdminTotp();
+   showNewMfaCode(result,'backup');
+ }catch(error){inform(errorText(error,'Impossibile preparare l’Authenticator di riserva.'),true);}
+ finally{button.disabled=false;}
+});
 byId('mfa-start').addEventListener('click',async()=>{
  const button=byId('mfa-start');if(button.disabled||busy)return;
  button.disabled=true;inform('');
  try{
    const result=await account.enrollAdminTotp();
-   mfaFactorId=result.factor_id;
-   showMfaPanel(true);
-   byId('mfa-secret').textContent=result.secret;
-   if(/^data:image\/svg\+xml(?:;[^,]*)?,/.test(result.qr_code)){
-     byId('mfa-qr').src=result.qr_code;
-     byId('mfa-qr').hidden=false;
-   }
+   showNewMfaCode(result);
  }catch(error){inform(errorText(error,'Impossibile avviare il secondo fattore.'),true);}
  finally{button.disabled=false;}
 });
@@ -238,7 +290,8 @@ byId('mfa-verify-form').addEventListener('submit',async event=>{
  button.disabled=true;setError(byId('mfa-error'),'');
  try{
    const code=byId('mfa-code').value.trim();
-   await account.verifyAdminTotp(code,mfaFactorId);
+   const selected=mfaFactorId||byId('mfa-factor-choice').value||null;
+   await account.verifyAdminTotp(code,selected);
    clearMfa();
    await authenticate();
  }catch(error){byId('mfa-code').value='';setError(byId('mfa-error'),
@@ -246,7 +299,7 @@ byId('mfa-verify-form').addEventListener('submit',async event=>{
  finally{button.disabled=false;}
 });
 byId('mfa-cancel').addEventListener('click',()=>{
- const setup=mfaMode==='setup';
+ const setup=mfaMode==='setup'||mfaMode==='backup';
  account.forgetPendingAdminMfa();
  clearMfa();
  if(setup){void authenticate();return;}
