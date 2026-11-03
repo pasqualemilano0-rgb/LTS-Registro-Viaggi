@@ -132,7 +132,7 @@
       "vessel": "DIANE A",
       "voyage": "MAS30E26",
       "eta": "06/11/2026 00:00",
-      "closing": "04/11/2026 10:00",
+      "closing": "05/11/2026 17:00",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
@@ -237,7 +237,7 @@
       "status": "PENDING"
     }
   ],
-  "acquired_at": "2026-11-03T13:30:16.489Z",
-  "data_changed_at": "2026-11-03T11:00:16.785Z",
-  "updated_at": "2026-11-03T13:30:16.489Z"
+  "acquired_at": "2026-11-03T15:30:16.757Z",
+  "data_changed_at": "2026-11-03T15:30:16.757Z",
+  "updated_at": "2026-11-03T15:30:16.757Z"
 }
