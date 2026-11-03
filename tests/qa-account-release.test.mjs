@@ -407,7 +407,7 @@ test('Authenticator app switching preserves the existing enrollment instead of r
  assert.match(admin,/const pending=account[.]pendingAdminMfaInfo\(\)/);
  assert.match(admin,/showMfaPanel\(true,true,pending[.]purpose\)/);
  assert.match(admin,/account[.]forgetPendingAdminMfa\(\)/);
- assert.match(auth,/export function rememberPendingAdminMfa\(factorId\)/);
+ assert.match(auth,/export function rememberPendingAdminMfa\(factorId,purpose='primary'\)/);
  assert.match(auth,/export function pendingAdminMfa\(\)/);
  assert.match(auth,/export function forgetPendingAdminMfa\(\)/);
  assert.match(auth,/MFA_PENDING_MAX_AGE=30\*60\*1000/);
