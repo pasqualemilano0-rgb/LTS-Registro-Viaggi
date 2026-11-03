@@ -9,8 +9,8 @@
   <title>LTS · Gestione autisti</title>
   <meta name="description" content="Pannello riservato all'amministratore per gestire gli autisti LTS.">
   <link rel="icon" type="image/png" href="../assets/icon-192.png">
-  <link rel="stylesheet" href="./admin.css?v=20261103-admin-mfa-v18">
-  <script type="module" src="./admin.mjs?v=20261103-admin-mfa-v18"></script>
+  <link rel="stylesheet" href="./admin.css?v=20261103-admin-mfa-fix-v19">
+  <script type="module" src="./admin.mjs?v=20261103-admin-mfa-fix-v19"></script>
 </head>
 <body>
   <header class="topbar">
@@ -48,7 +48,8 @@
       <h1 id="mfa-title">Verifica a due fattori</h1>
       <p id="mfa-instructions" class="intro-copy">Inserisci il codice temporaneo generato dalla tua app Authenticator.</p>
       <div id="mfa-setup-secret" hidden>
-        <p class="hint">Scansiona il QR con un'app Authenticator. Se stai usando lo stesso telefono, aggiungi manualmente la chiave mostrata sotto. Non condividerla.</p>
+        <p class="hint">Usa esclusivamente il QR o la chiave di questa configurazione. Se hai già aggiunto LTS Authenticator in precedenza senza completare la conferma, quel vecchio codice non funzionerà. Su questo stesso telefono puoi inserire la chiave manualmente, selezionando un codice basato sull'ora.</p>
+        <p class="hint">Prima di confermare, controlla che sul telefono siano attive <strong>Data e ora automatiche</strong> e il <strong>fuso orario automatico</strong>. Usa il codice appena generato, prima che scada. Non condividere mai la chiave o il QR.</p>
         <img id="mfa-qr" alt="Codice QR di configurazione autenticatore" width="200" height="200" hidden>
         <p class="hint">Chiave di configurazione (da conservare riservata durante l'attivazione):</p>
         <code id="mfa-secret" class="mfa-secret"></code>
