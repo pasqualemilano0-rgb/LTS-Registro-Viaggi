@@ -42,7 +42,7 @@ test('account archive ID must derive from verified session, not user input',()=>
   assert.match(store,/account[.]archiveRequest\(method, body\)/);
 });
 test('offline worker activates new cache and precaches auth code without caching server data',()=>{
-  assert.match(sw,/const CACHE = PREFIX \+ '20261103-csp-main-v15'/);
+  assert.match(sw,/const CACHE = PREFIX \+ '20261103-session-revoke-v16'/);
   assert.match(sw,/\/LTS-Registro-Viaggi\/account-access[.]mjs/);
   assert.match(sw,/url[.]origin !== self[.]location[.]origin/);
   assert.match(sw,/if \(url[.]pathname[.]startsWith\(BASE \+ 'api\/'\)\) return/);
@@ -50,8 +50,8 @@ test('offline worker activates new cache and precaches auth code without caching
 });
 test('HTML entry points are identical and use the new cache buster',()=>{
   assert.equal(html,shell);
-  assert.match(html,/app[.]css[?]v=20261103-csp-main-v15/);
-  assert.match(html,/app[.]mjs[?]v=20261103-csp-main-v15/);
+  assert.match(html,/app[.]css[?]v=20261103-session-revoke-v16/);
+  assert.match(html,/app[.]mjs[?]v=20261103-session-revoke-v16/);
   assert.match(html,/<script type="module"/);
 });
 test('ports section stays integrated, untouched backups and no new bundled private backend',()=>{
@@ -326,5 +326,22 @@ test('the main register CSP is restrictive, loads before scripts, and preserves 
  const porti=read('porti/index.html');
  assert.match(porti,/https:\/\/api\.conateco\.it/);
  assert.match(porti,/https:\/\/container-booking-backend\.pasqualemilano0\.workers\.dev/);
- assert.match(sw,/const CACHE = PREFIX \+ '20261103-csp-main-v15'/);
+ assert.match(sw,/const CACHE = PREFIX \+ '20261103-session-revoke-v16'/);
+});
+
+test('logout is authenticated on the server and remote driver disconnection is admin-only',()=>{
+ const admin=read('amministratore/admin.mjs');
+ assert.match(auth,/export async function logout\(\)/);
+ assert.match(auth,/action:'logout'/);
+ assert.match(auth,/result[?][.]revoked===true/);
+ assert.match(app,/void accountAccess[.]logout\(\)/);
+ assert.match(app,/document[.]addEventListener\('visibilitychange'/);
+ assert.match(app,/await accountAccess[.]verifySession\(\)/);
+ assert.match(auth,/'revoke-sessions'/);
+ assert.match(admin,/Scollega tutti i dispositivi/);
+ assert.match(admin,/account[.]manageDrivers\(action,data\)/);
+ assert.match(admin,/account[.]logout\(\)/);
+ assert.match(admin,/Sessioni revocate/);
+ assert.match(sw,/const CACHE = PREFIX \+ '20261103-session-revoke-v16'/);
+ assert.doesNotMatch([app,auth,admin,sw].join('\n'),/SUPABASE_SERVICE_ROLE_KEY|sb_secret_[A-Za-z0-9_-]+/);
 });
