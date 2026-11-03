@@ -815,26 +815,27 @@ function showDriverAdmin(){
          }));
          // Credential recovery preserves the original Supabase user_id,
          // personal archive and Android backup, unlike deleting the Auth user.
-         item.append(button('Reimposta credenziali','secondary',async()=>{
-           if(!window.confirm('Ripristinare le credenziali di '+entry.phone+'? L’accesso corrente sarà sospeso subito; i viaggi resteranno intatti. L’autista dovrà inserire il nuovo codice in Attiva account e scegliere una nuova password.'))return;
+         item.append(button('Reinserisci credenziali','secondary',async()=>{
+           if(!window.confirm('Reinserire le credenziali di '+entry.phone+'? Il vecchio accesso sarà sospeso subito. L’autista userà un nuovo codice e sceglierà una nuova password. Il suo account e tutti i viaggi resteranno conservati. Continuare?'))return;
            try{
              const issued=await accountAccess.manageDrivers('issue-reset',{phone:entry.phone});
              const code=el('input',{type:'text',readonly:true,value:issued.code,
                autocomplete:'off',spellcheck:false,'aria-label':'Codice privato di ripristino'});
              result.replaceChildren(
-               el('strong',{},'Nuovo codice di ripristino per '+entry.phone),
+               el('strong',{},'Nuovo codice per reinserire '+entry.phone),
                el('p',{class:'field-hint'},'Accesso sospeso. Nessun viaggio eliminato. Consegna questo codice privatamente: scade fra 24 ore.'),
                code,button('Copia codice','secondary',async()=>{
                  try{await navigator.clipboard.writeText(issued.code);toast('Codice copiato.');}
                  catch{code.focus();code.select();toast('Seleziona e copia il codice.');}
                }),
-               el('p',{class:'field-hint'},'L’autista apre LTS → Attiva account, inserisce numero e codice e sceglie una nuova password.'));
+               el('p',{class:'field-hint'},'L’autista apre LTS → Attiva account, inserisce lo stesso numero, il nuovo codice e una password nuova. Non creare un secondo account: il registro esistente resta collegato.'));
              result.hidden=false;
              await updateList();
              result.scrollIntoView({behavior:'smooth',block:'center'});
            }catch(err){listError.textContent=err.message||'Impossibile avviare il ripristino.';}
          }));
        }else if(entry.status==='resetting'){
+         item.append(el('p',{class:'field-hint'},'Codice di reinserimento già emesso. Se è stato smarrito, annullalo e genera un nuovo codice. L’account resta sospeso fino al completamento.'));
          item.append(button('Annulla ripristino','secondary',async()=>{
            if(!window.confirm('Annullare il ripristino per '+entry.phone+'? L’account resterà disattivato finché non lo riattivi.'))return;
            try{
