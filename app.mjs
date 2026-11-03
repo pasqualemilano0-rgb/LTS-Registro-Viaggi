@@ -480,7 +480,9 @@ function openProfile(required=false){
       body.querySelector('.profile-menu').prepend(menuButton('Esci dall’account','Blocca la schermata e conserva il registro online. Prima sincronizza eventuali modifiche.','lock',()=>{
         try{
           store.leaveAccountView();
-          accountAccess.signOut();
+          void accountAccess.logout().then(result=>{
+            if(!result.revoked)toast('Accesso locale chiuso. Revoca online non confermata: riprova con Internet attivo.',true);
+          });
           dialog.close();
           document.querySelectorAll('dialog[open]').forEach(node=>node.close());
           renderAccountGate('Sei uscito dal tuo account.');
@@ -986,7 +988,9 @@ function renderAccountGate(message=''){
     accountLoginFields({fromGate:true}),
     button('Riprova accesso automatico','secondary',()=>initialize(),'refresh'),
     accountAccess.hasSession()?button('Esci e cambia account','text',()=>{
-      accountAccess.signOut();
+      void accountAccess.logout().then(result=>{
+        if(!result.revoked)toast('Sessione chiusa sul telefono; revoca online non confermata.',true);
+      });
       store.lockRevokedAccount();
       renderAccountGate('Sessione chiusa. Puoi accedere con un altro account.');
     }):null,
@@ -997,6 +1001,19 @@ window.addEventListener('lts-account-locked',()=>{
   store.lockRevokedAccount();
   renderAccountGate('Sessione non più autorizzata. Accedi nuovamente.');
 });
+// A suspended driver's open tab must not keep showing an authenticated record
+// after returning from background. Fail closed if online verification fails.
+let resumingVerification=false;
+document.addEventListener('visibilitychange',async()=>{
+ if(document.hidden||resumingVerification||!store.usingAccount()||!accountAccess.hasSession())return;
+ resumingVerification=true;
+ try{await accountAccess.verifySession();}
+ catch{
+   store.lockRevokedAccount();
+   renderAccountGate('Impossibile verificare la sessione. Riprova con Internet attivo.');
+ }finally{resumingVerification=false;}
+});
+
 
 async function initialize(){
  try{
