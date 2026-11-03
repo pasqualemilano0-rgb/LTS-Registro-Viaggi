@@ -1,80 +1,84 @@
-## Sicurezza delle sessioni (3 novembre 2026)
-- **Esci dall'account**: chiude la schermata sul dispositivo ed effettua una revoca della sessione LTS sul server; se non riceve conferma online mostra un avviso, senza cancellare viaggi.
-- **Gestione autisti → Scollega tutti i dispositivi**: azione riservata all'amministratore per revocare le sessioni precedenti di un autista; il successivo accesso richiede telefono e password, restando associato allo stesso account e storico.
-- Il backend controlla le sessioni Supabase anche dopo blocco/rimozione/riattivazione e prima di leggere o scrivere un archivio.
-- Se il dispositivo rimane offline con dati già aperti, nessun comando remoto può cancellare istantaneamente quanto visualizzato. All'avvio e quando torna in primo piano l'app verifica online l'autorizzazione.
-- La compatibilità dell'APK Android sarà verificata separatamente, con aggiornamenti nativi e collaudo su dispositivo.
+<div align="center">
 
-## Accesso autisti ricordato sul dispositivo
-Dopo il primo accesso con telefono e password, la webapp ricorda in modo cifrato
-**solo la sessione dell'autista** e la verifica con Supabase a ogni riapertura;
-la password non viene memorizzata. Per una verifica iniziale o dopo riapertura
-serve Internet. L'amministratore può bloccare l'account anche se la sessione
-è salvata. Toccare **Esci dall'account** elimina la credenziale salvata.
-Una cancellazione dati del browser, sessione revocata o modalità privata può
-richiedere un nuovo accesso. La funzionalità APK Android richiede implementazione
-e collaudo separati.
+<img src="assets/lts-logo.png" alt="LTS Registro Viaggi" width="180">
 
-## Pannello amministratore autisti
-Per gestire gli autisti aprire **https://pasqualemilano0-rgb.github.io/LTS-Registro-Viaggi/amministratore/**.
-Login obbligatorio con l'account amministratore LTS. Permette inviti, blocco/riattivazione,
-rimozione reversibile, reinserimento dello stesso numero e ripristino delle credenziali.
-È una pagina statica; autorizzazioni e registri sono verificati nel backend Supabase.
-Gli account e i viaggi non vengono cancellati durante la rimozione.
-La versione APK Android del pannello resta da collaudare separatamente.
+# LTS Registro Viaggi
 
-# LTS Registro Viaggi — sito pubblico
+**Gestione dei viaggi, organizzazione del lavoro e consultazione dei terminal portuali.**
 
-[Apri LTS Registro Viaggi](https://pasqualemilano0-rgb.github.io/LTS-Registro-Viaggi/)
+Una sola applicazione per gli autisti e per la gestione operativa del trasporto container.
 
-App web per registrare viaggi, clienti e tariffe e generare il resoconto mensile.
-La sezione **Porti** integra booking CONATECO/TFG e programma navi SCT, con lo stesso stile LTS. Con depot esterni OK, CONATECO mostra **INTERNO PORTO / DRYPORT**.
+[**Apri l'applicazione**](https://pasqualemilano0-rgb.github.io/LTS-Registro-Viaggi/) · [**Pannello amministratore**](https://pasqualemilano0-rgb.github.io/LTS-Registro-Viaggi/amministratore/) · [**Informativa privacy**](https://pasqualemilano0-rgb.github.io/LTS-Registro-Viaggi/privacy/)
 
-Aggiornamento del 2 novembre 2026: modulo portuale **v0.65**, monitor Cloudflare H24, gestione offline e dati delle ricerche separati dal registro. Le opzioni e lo stato della nave non autorizzano il singolo booking.
+</div>
 
-## Accesso autisti — obbligatorio nella PWA aggiornata (2 novembre 2026)
+---
 
-La webapp/PWA aggiornata richiede **numero e password di un account autorizzato** prima di aprire il registro. Gli account sono creati o attivati soltanto mediante l'amministratore. L'accesso è gestito da Supabase Auth e il registro dell'account viene letto da un archivio separato: il backend verifica su ogni richiesta l'identità, il ruolo e l'abilitazione. Non è consentita la registrazione pubblica di nuovi account.
+## Il progetto
 
-**Compatibilità:** il vecchio archivio dispositivo resta conservato ma non è più accessibile anonimamente nella PWA aggiornata. Dopo il login usare **Profilo → Recupera archivio precedente** sullo stesso browser, con backup e conferma; per un file esterno JSON/ZIP la nuova funzione **Importa backup** propone un'unione senza sostituire automaticamente viaggi, clienti o tariffe già presenti. Se trova conflitti, blocca l'importazione. Non eliminare dati del browser né la vecchia app; la migrazione reale deve ancora essere verificata. Se si esce dall'account, la copia personale rimane nel database e i dati dell'altro utente non vengono aperti automaticamente.
+**LTS Registro Viaggi** è una web app installabile su smartphone, pensata per registrare l'attività giornaliera degli autisti, gestire clienti e tariffe, consultare i programmi delle navi e produrre il riepilogo mensile.
 
-**Sicurezza e limiti:** i token dell'account rimangono nella sessione del browser, non nei backup o nei file pubblici. È necessaria una verifica online iniziale; senza connessione e senza una sessione già verificata, l'archivio protetto non viene aperto. Gli archivi dispositivo preesistenti non sono necessariamente cifrati a riposo e le vecchie PWA/APK richiedono una migrazione controllata. L'APK Android nativo v14 non incorpora ancora il login Supabase; questo rilascio riguarda il sito/PWA. **L'accesso amministratore è stato verificato sul telefono**, ma restano da collaudare l'attivazione completa dell'autista e il trasferimento di backup con dati reali.
+L'interfaccia riunisce in un unico ambiente cinque sezioni: **Inserisci viaggio, Registro viaggi, Clienti, Tariffe e Porti**. L'accesso ai registri personali richiede un account autorizzato.
 
-### Attivazione autisti con invito (web/iPhone)
+## Funzionalità
 
-L'amministratore gia autenticato vede **Profilo → Gestisci autisti**: può emettere un codice monouso di 24 ore, consultare i propri autisti, revocare inviti e disattivare o riattivare un autista. Il codice va consegnato privatamente dal titolare; **nessun SMS viene inviato automaticamente**. L'autista usa **Hai un invito? Attiva account**, il proprio telefono e il codice, e sceglie la password personale in Supabase Auth. La nuova password non viene mostrata all'amministratore né salvata nel registro.
+| Area | Cosa permette di fare |
+| --- | --- |
+| **Viaggi** | Registrazione e modifica dei trasporti, container, seconde prese, note e servizi extra |
+| **Registro** | Consultazione mensile dei viaggi, riepiloghi e generazione del resoconto PDF |
+| **Clienti** | Rubrica dedicata e gestione delle informazioni operative |
+| **Tariffe** | Tariffario per cliente e destinazione, calcolo delle trasferte e degli extra |
+| **Porti** | Ricerca booking e consultazione delle navi presso CO.NA.TE.CO., TFG e SCT |
+| **Backup e sincronizzazione** | Recupero dei dati precedenti, importazione controllata e sincronizzazione dell'archivio personale |
 
-**Requisiti attuali:** 12–128 caratteri con lettere e numeri, non 6. Un invito non prova il possesso della SIM; il numero non è verificato tramite OTP. Prima della prima emissione reale, l'amministratore deve effettuare un login verificato; il collegamento completo non è ancora collaudato con utenti reali. L'APK Android nativo resta fuori da questo rilascio. Nessun archivio precedente viene cancellato, migrato o unito automaticamente.
+I resoconti PDF riportano i dati operativi previsti dal registro; **gli importi economici non vengono inseriti nel PDF mensile**.
 
-La documentazione tecnica e i test sono nel repository **privato** `LTS`, in `progetto-web-completo/docs-internal/account-supabase-integration-v1.md`. Non distribuire qui sorgenti backend, chiavi Supabase o registri personali.
+### Porti e booking
 
-Su iPhone aprire in Safari e scegliere **Condividi → Aggiungi alla schermata Home**.
+La sezione **Porti** è parte integrante di LTS, non un'applicazione da installare separatamente.
 
-[Guarda il video dimostrativo](https://pasqualemilano0-rgb.github.io/LTS-Registro-Viaggi/video.mp4)
+- **Napoli — CO.NA.TE.CO.:** ricerca booking, programma navi e indicazioni operative su depositi e aree di consegna.
+- **Napoli — Terminal Flavio Gioia:** consultazione navi, ricerca booking e informazioni disponibili sull'accettazione.
+- **Salerno — SCT:** elenco navi, accettazione Dry/Reefer, ETA e orari di chiusura quando pubblicati dalla fonte.
 
-Una giornata di lavoro con Marco: esempi di inserimento, seconda presa, tariffe
-e PDF. Filmato con voce sintetica italiana e dati dimostrativi.
+Le informazioni provengono da fonti e servizi esterni e possono subire ritardi o indisponibilità. **Il programma navi non equivale alla conferma di un booking né autorizza l'ingresso al terminal.** Prima della consegna occorre verificare le condizioni ufficiali.
 
-Voce: Serena medium / Piper, modello addestrato da zero sul dataset sintetico
-[Committa, serena-synthetic-it-27h](https://huggingface.co/datasets/committa/serena-synthetic-it-27h),
-licenza [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
-[Fonte del modello](https://huggingface.co/rhasspy/piper-voices/tree/main/it/it_IT/serena/medium).
-La narrazione è stata generata per questa dimostrazione.
+## Accesso e gestione degli autisti
 
-[Informativa privacy](https://pasqualemilano0-rgb.github.io/LTS-Registro-Viaggi/privacy/)
+L'accesso al registro avviene mediante **numero di telefono e password personale**. L'attivazione dei nuovi account è gestita dall'amministratore tramite invito; non è prevista la registrazione pubblica libera.
 
-Questo repository contiene soltanto i file necessari al sito e al suo promemoria.
-I registri personali non sono pubblici e non sono inclusi nel repository.
+Il pannello amministrativo consente la gestione degli inviti, la disattivazione e riattivazione degli accessi, la rimozione reversibile di un autista e il recupero delle credenziali. La rimozione reversibile conserva l'account e lo storico dei viaggi.
 
-## Impostazione password amministratore via Gmail (2 novembre 2026)
+Nella versione web, la sessione dell'autista può essere ricordata sul dispositivo; l'autorizzazione viene verificata nuovamente dal servizio online. La password non viene salvata nel registro.
 
-Il primo amministratore era stato provisionato in Supabase Auth con un hash password, ma il titolare non aveva scelto una password nota; quindi non è appropriato tentare password casuali né crearne una in chat. La webapp espone ora **«Imposta o recupera password via Gmail»** nella schermata di login e la pagina **/LTS-Registro-Viaggi/recupera-password.html**.
+## Utilizzo su smartphone
 
-Il titolare digita **solo sul sito HTTPS** la Gmail associata all'account: Supabase Auth invia un link che apre la pagina LTS, verifica il token di recupero e consente di sostituire la password. Il token vive solo in memoria del tab ed è rimosso immediatamente dall'URL. La nuova password va da 12 a 128 caratteri con lettere e numeri e viene controllata contro il database gratuito HIBP per mezzo dei **primi 5 caratteri dell'hash SHA-1**, con richiesta padding. Nessuna password viene scritta in backup, localStorage, GitHub o Drive; la password è inviata esclusivamente alla Auth API di Supabase.
+**iPhone / iPad:** aprire [LTS Registro Viaggi](https://pasqualemilano0-rgb.github.io/LTS-Registro-Viaggi/) in Safari e selezionare **Condividi → Aggiungi alla schermata Home**.
 
-**Configurazione necessaria da parte del proprietario**, prima di inviare email:
-1. Supabase Dashboard → Authentication → URL Configuration: https://supabase.com/dashboard/project/otrqynkscpbeyuvdlgpg/auth/url-configuration
-2. Configurare la **Site URL** pubblica HTTPS e aggiungere fra le **Redirect URLs** consentite l'indirizzo esatto `https://pasqualemilano0-rgb.github.io/LTS-Registro-Viaggi/recupera-password.html`.
-3. Verificare che i messaggi Auth arrivino alla casella registrata (alcuni progetti Free necessitano SMTP personalizzato o hanno limiti di invio); controllare Spam. Non inviare link, OTP, password o token in chat.
+**Android:** la web app è accessibile dal browser. È disponibile anche un progetto APK dedicato, la cui compatibilità con il nuovo sistema di account richiede ancora completamento e collaudo: la versione nativa precedente non deve essere considerata equivalente alla PWA aggiornata.
 
-**Aggiornamento:** il titolare ha impostato la password e mostrato la schermata amministrativa funzionante sul telefono; un collaudo end-to-end delle email in tutti i casi di errore resta da eseguire. Il controllo HIBP in questa schermata è un controllo **client-side**, non l'opzione integrata Supabase Auth Leaked Password Protection, che resta non disponibile nel piano Free. Gli inviti autisti restano protetti da verifica server-side separata; il warning Advisor rimane. Nessun utente/registro modificato da questo rilascio.
+Per utilizzare le funzioni personali è necessaria una prima verifica online dell'account. La disponibilità dei dati offline dipende da una sessione già verificata e dalle condizioni del dispositivo; informazioni portuali non aggiornate non vengono presentate come conferme in tempo reale.
+
+## Continuità dei dati e sicurezza
+
+- Archivi personali distinti per account, con controlli di autorizzazione lato server.
+- Recupero degli archivi precedenti dopo login, con backup preventivo e conferma dell'utente.
+- Importazione JSON/ZIP che evita sovrascritture automatiche in presenza di conflitti.
+- Revoca delle sessioni e blocco dell'accesso agli account disattivati.
+- Dati dei viaggi separati dalle consultazioni dei programmi navali.
+
+La sicurezza di una web app installabile dipende anche dalla protezione del dispositivo e dei backup esportati. L'applicazione è soggetta a verifiche e miglioramenti continui.
+
+## Pubblicazione
+
+Questo repository contiene **esclusivamente la distribuzione web pubblica** di LTS Registro Viaggi: interfaccia, risorse statiche e controlli di qualità collegati al sito.
+
+Il progetto applicativo completo, i componenti server, i pacchetti Android e la documentazione operativa sono mantenuti separatamente in un archivio di sviluppo riservato. **Non pubblicare in questo repository** registri personali, password, token, chiavi di firma o esportazioni dei database.
+
+Il sito è distribuito tramite GitHub Pages:
+
+**https://pasqualemilano0-rgb.github.io/LTS-Registro-Viaggi/**
+
+---
+
+<sub>LTS Registro Viaggi · Applicazione gestionale per l'attività di trasporto · Le indicazioni dei terminali sono informative e non sostituiscono le comunicazioni ufficiali.</sub>
