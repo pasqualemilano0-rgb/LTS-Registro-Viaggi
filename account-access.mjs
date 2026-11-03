@@ -201,6 +201,34 @@ async function withSessionRetry(request, afterRefresh=null){
   throw error;
  }
 }
+
+/** These actions are only for the signed-in administrator. TOTP secrets never
+ * persist in localStorage, sessionStorage, the user archive or IndexedDB.
+ */
+export async function enrollAdminTotp(){
+ if(!readStored()||getRole()!=='admin')throw new Error('Accesso amministratore necessario.');
+ const result=await api('loginEndpoint',{action:'mfa-enroll'},readStored().access_token);
+ if(!UUID.test(result.factor_id||'')||typeof result.secret!=='string'||
+    typeof result.qr_code!=='string')
+   throw new Error('Configurazione autenticatore incompleta.');
+ return {factor_id:result.factor_id,secret:result.secret,qr_code:result.qr_code};
+}
+export async function verifyAdminTotp(code,factorId=null){
+ if(!readStored()||getRole()!=='admin')throw new Error('Accesso amministratore necessario.');
+ if(!/^\d{6}$/.test(code||''))throw new Error('Inserisci il codice a sei cifre.');
+ const original=readStored(),when=generation;
+ const result=await api('loginEndpoint',{action:'mfa-verify',code,
+   ...(factorId?{factor_id:factorId}:{})},original.access_token);
+ if(when!==generation)throw new Error('Sessione chiusa durante la verifica.');
+ if(!valid(result)||result.role!=='admin'||result.user_id!==original.user_id||
+    result.mfa_verified!==true)
+   throw new Error('Verifica a due fattori non confermata.');
+ saveSession(result);
+ const status=await verifySession();
+ if(status.mfa_verified!==true||!isVerified())
+   throw new Error('La verifica a due fattori non risulta attiva.');
+ return status;
+}
 export async function login(phone,password){
  if(!isEnabled())throw new Error('Accesso account non abilitato.');
  if(typeof phone!=='string'||phone.length>40||typeof password!=='string'||password.length>256)
@@ -209,11 +237,12 @@ export async function login(phone,password){
  const data=await api('loginEndpoint',{action:'login',phone,password});
  const next=saveSession(data);
  try{
-  await verifySession();
+  const status=await verifySession();
   // Only drivers get a durable device session; not administrative accounts.
   const remembered=next.role==='driver'?await rememberDriver(next).catch(()=>false):false;
   try{localStorage.setItem(MODE_KEY,'account');}catch{}
-  return {user_id:next.user_id,role:next.role,remembered};
+  return {user_id:next.user_id,role:next.role,remembered,
+   mfa_enrolled:status.mfa_enrolled===true,mfa_verified:status.mfa_verified===true};
  }catch(error){signOut();throw error}
 }
 export async function verifySession(){
@@ -225,8 +254,12 @@ export async function verifySession(){
     !['admin','driver'].includes(result.role)){
    revoke();throw new Error('Identità account non verificata.');
  }
- session.role=result.role;verified=true;
- return {user_id:session.user_id,role:result.role};
+ session.role=result.role;
+ const mfaEnrolled=result.role==='admin'&&result.mfa_enrolled===true;
+ const mfaVerified=result.role==='admin'&&result.mfa_verified===true;
+ verified=!mfaEnrolled||mfaVerified;
+ return {user_id:session.user_id,role:result.role,
+  mfa_enrolled:mfaEnrolled,mfa_verified:mfaVerified};
 }
 export async function archiveRequest(method,body){
  if(!verified||!readStored())throw new Error('Effettua l’accesso per consultare il registro.');

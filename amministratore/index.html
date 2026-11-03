@@ -5,12 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#006f89">
   <meta name="referrer" content="no-referrer">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src https://otrqynkscpbeyuvdlgpg.supabase.co; base-uri 'none'; form-action 'self'; object-src 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src https://otrqynkscpbeyuvdlgpg.supabase.co; base-uri 'none'; form-action 'self'; object-src 'none'">
   <title>LTS · Gestione autisti</title>
   <meta name="description" content="Pannello riservato all'amministratore per gestire gli autisti LTS.">
   <link rel="icon" type="image/png" href="../assets/icon-192.png">
-  <link rel="stylesheet" href="./admin.css">
-  <script type="module" src="./admin.mjs"></script>
+  <link rel="stylesheet" href="./admin.css?v=20261103-admin-mfa-v18">
+  <script type="module" src="./admin.mjs?v=20261103-admin-mfa-v18"></script>
 </head>
 <body>
   <header class="topbar">
@@ -42,6 +42,27 @@
       <p id="login-error" class="error-message" role="alert" hidden></p>
       <div class="login-footer"><button id="switch-account" class="text-button" type="button">Esci dalla sessione precedente</button><a href="../">Torna al registro</a></div>
     </section>
+
+    <section id="mfa-panel" class="login-wrap" aria-labelledby="mfa-title" hidden>
+      <p class="eyebrow">PROTEZIONE AMMINISTRATORE</p>
+      <h1 id="mfa-title">Verifica a due fattori</h1>
+      <p id="mfa-instructions" class="intro-copy">Inserisci il codice temporaneo generato dalla tua app Authenticator.</p>
+      <div id="mfa-setup-secret" hidden>
+        <p class="hint">Scansiona il QR con un'app Authenticator. Se stai usando lo stesso telefono, aggiungi manualmente la chiave mostrata sotto. Non condividerla.</p>
+        <img id="mfa-qr" alt="Codice QR di configurazione autenticatore" width="200" height="200" hidden>
+        <p class="hint">Chiave di configurazione (da conservare riservata durante l'attivazione):</p>
+        <code id="mfa-secret" class="mfa-secret"></code>
+      </div>
+      <form id="mfa-verify-form" class="stack" autocomplete="off">
+        <label>Codice di verifica (6 cifre)
+          <input id="mfa-code" type="text" inputmode="numeric" pattern="[0-9]{6}" minlength="6" maxlength="6" autocomplete="one-time-code" spellcheck="false" required>
+        </label>
+        <button class="button primary" type="submit">Conferma codice</button>
+      </form>
+      <p id="mfa-error" class="error-message" role="alert" hidden></p>
+      <button id="mfa-cancel" class="text-button" type="button">Annulla e torna al pannello</button>
+      <button id="mfa-exit" class="text-button" type="button">Esci dall'account</button>
+    </section>
     <div id="dashboard" hidden>
       <div class="page-intro">
         <div><p class="eyebrow">CONTROLLO ACCESSI LTS</p><h1>Gestione autisti</h1>
@@ -49,6 +70,11 @@
         </div>
         <button id="refresh" class="button outline" type="button">Aggiorna elenco</button>
       </div>
+      <section id="mfa-warning" class="surface" aria-labelledby="mfa-warning-title" hidden>
+        <h2 id="mfa-warning-title">Proteggi l'account amministratore</h2>
+        <p class="hint">La verifica a due fattori non è ancora attiva. Configura un'app Authenticator prima di affidare l'accesso a questo pannello. Dopo l'attivazione, il codice sarà necessario a ogni nuovo accesso amministrativo.</p>
+        <button id="mfa-start" class="button primary" type="button">Attiva verifica a due fattori</button>
+      </section>
       <section class="stat-grid" aria-label="Riepilogo autisti">
         <div class="stat"><span>Totale in elenco</span><strong id="stat-total">—</strong></div>
         <div class="stat"><span>Accessi attivi</span><strong id="stat-active">—</strong></div>
