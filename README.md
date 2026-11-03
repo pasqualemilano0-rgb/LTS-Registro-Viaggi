@@ -1,3 +1,13 @@
+## Accesso autisti ricordato sul dispositivo
+Dopo il primo accesso con telefono e password, la webapp ricorda in modo cifrato
+**solo la sessione dell'autista** e la verifica con Supabase a ogni riapertura;
+la password non viene memorizzata. Per una verifica iniziale o dopo riapertura
+serve Internet. L'amministratore può bloccare l'account anche se la sessione
+è salvata. Toccare **Esci dall'account** elimina la credenziale salvata.
+Una cancellazione dati del browser, sessione revocata o modalità privata può
+richiedere un nuovo accesso. La funzionalità APK Android richiede implementazione
+e collaudo separati.
+
 ## Pannello amministratore autisti
 Per gestire gli autisti aprire **https://pasqualemilano0-rgb.github.io/LTS-Registro-Viaggi/amministratore/**.
 Login obbligatorio con l'account amministratore LTS. Permette inviti, blocco/riattivazione,
