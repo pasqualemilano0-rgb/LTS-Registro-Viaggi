@@ -1,4 +1,4 @@
-import * as account from '../account-access.mjs?v=20261103-admin-mfa-fix-v19';
+import * as account from '../account-access.mjs?v=20261103-admin-mfa-resume-v20';
 import {STATUS_LABELS,driverSummary,filterDrivers} from './model.mjs';
 
 const byId=id=>document.getElementById(id);
@@ -27,16 +27,20 @@ function clearMfa(){
  byId('mfa-setup-secret').hidden=true;
  setError(byId('mfa-error'),'');
 }
-function showMfaPanel(setup=false){
+function showMfaPanel(setup=false,resumed=false){
  if(!setup)clearMfa();
  mfaMode=setup?'setup':'login';
  loginPanel.hidden=true;dashboard.hidden=true;byId('mfa-panel').hidden=false;
  byId('logout').hidden=false;
  byId('mfa-cancel').textContent=setup?'Annulla configurazione':'Torna all’accesso';
- byId('mfa-instructions').textContent=setup
+ byId('mfa-instructions').textContent=resumed
+  ?'Configurazione recuperata: inserisci il codice LTS già aggiunto alla tua app Authenticator. Non generare un nuovo QR.'
+  :setup
   ?'Collega un’app Authenticator e inserisci il suo codice di sei cifre per attivare la protezione.'
   :'Apri la tua app Authenticator e inserisci il codice temporaneo a sei cifre.';
- byId('mfa-setup-secret').hidden=!setup;
+ byId('mfa-setup-secret').hidden=!setup||resumed;
+ byId('mfa-resume-help').hidden=!resumed;
+ if(resumed)byId('mfa-cancel').textContent='Annulla e genera un nuovo QR';
  byId('mfa-code').focus();
 }
 function lock(message='Accedi come amministratore per continuare.'){
@@ -62,7 +66,17 @@ async function authenticate(){
      lock('Questo account non è autorizzato come amministratore.');
      return;
    }
-   if(status.mfa_enrolled&&!status.mfa_verified){showMfaPanel();return;}
+   if(status.mfa_enrolled){
+     account.forgetPendingAdminMfa();
+     if(!status.mfa_verified){showMfaPanel();return;}
+   }else{
+     const pending=account.pendingAdminMfa();
+     if(pending){
+       mfaFactorId=pending;
+       showMfaPanel(true,true);
+       return;
+     }
+   }
    showDashboard(status);
    await loadDrivers();
  }catch(error){
@@ -233,6 +247,7 @@ byId('mfa-verify-form').addEventListener('submit',async event=>{
 });
 byId('mfa-cancel').addEventListener('click',()=>{
  const setup=mfaMode==='setup';
+ account.forgetPendingAdminMfa();
  clearMfa();
  if(setup){void authenticate();return;}
  lock('Conferma il secondo fattore prima di gestire gli autisti.');
@@ -266,7 +281,22 @@ byId('copy-secret').addEventListener('click',async()=>{
  catch{field.focus();field.select();inform('Seleziona e copia manualmente il codice.');}
 });
 window.addEventListener('lts-account-locked',()=>lock('Sessione non più autorizzata.'));
-window.addEventListener('offline',()=>lock('Connessione assente: gestione autisti bloccata fino alla verifica online.'));
-window.addEventListener('online',authenticate);
-document.addEventListener('visibilitychange',()=>{if(!document.hidden&&account.hasSession())authenticate();});
+window.addEventListener('offline',()=>{
+ // An offline MFA tab contains no privileged records and must not lose its QR.
+ if(!byId('mfa-panel').hidden){
+   setError(byId('mfa-error'),'Connessione assente. Torna online prima di confermare il codice.');
+   return;
+ }
+ lock('Connessione assente: gestione autisti bloccata fino alla verifica online.');
+});
+function resumeWhenSafe(){
+ if(document.hidden||!account.hasSession())return;
+ // Returning from Authenticator is not a new login. The previous behavior
+ // called authenticate(), which cleared the QR and pending factor UUID.
+ // Backend verification still checks all permissions when the code is sent.
+ if(!byId('mfa-panel').hidden)return;
+ void authenticate();
+}
+window.addEventListener('online',resumeWhenSafe);
+document.addEventListener('visibilitychange',resumeWhenSafe);
 authenticate();

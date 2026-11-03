@@ -6,6 +6,8 @@ import {readDriverToken,writeDriverToken,clearDriverToken} from '/LTS-Registro-V
 
 const SESSION_KEY='lts-supabase-account-session-v1';
 const MODE_KEY='lts-supabase-account-mode-v1';
+const MFA_PENDING_KEY='lts-admin-pending-totp-v1';
+const MFA_PENDING_MAX_AGE=30*60*1000;
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const ACCESS=/^[A-Za-z0-9._-]{50,4096}$/;
 const REFRESH=/^[A-Za-z0-9._-]{8,4096}$/;
@@ -69,12 +71,37 @@ export function accountGateRequired(){return true;}
 export function isVerified(){return verified&&Boolean(session);}
 export function getAccountId(){return session?'account:'+session.user_id:null;}
 export function getRole(){return session?.role??null;}
+/** Persist only the unfinished factor UUID in this tab, never TOTP secret/QR. */
+export function rememberPendingAdminMfa(factorId){
+ const admin=readStored();
+ if(!admin||admin.role!=='admin'||!UUID.test(factorId||''))return false;
+ try{
+  sessionStorage.setItem(MFA_PENDING_KEY,JSON.stringify({
+   user_id:admin.user_id,factor_id:factorId,created_at:Date.now()
+  }));return true;
+ }catch{return false;}
+}
+export function forgetPendingAdminMfa(){
+ try{sessionStorage.removeItem(MFA_PENDING_KEY);}catch{}
+}
+export function pendingAdminMfa(){
+ const admin=readStored();
+ if(!admin||admin.role!=='admin')return null;
+ try{
+  const saved=JSON.parse(sessionStorage.getItem(MFA_PENDING_KEY)||'null');
+  if(saved?.user_id===admin.user_id&&UUID.test(saved.factor_id||'')&&
+     Number.isFinite(saved.created_at)&&saved.created_at<=Date.now()&&
+     Date.now()-saved.created_at<MFA_PENDING_MAX_AGE)return saved.factor_id;
+ }catch{}
+ forgetPendingAdminMfa();return null;
+}
 // The legacy device archive stays on IndexedDB for authenticated recovery only.
 export function chooseDeviceArchive(){throw new Error('Accesso senza credenziali disattivato. Accedi con il tuo account per recuperare i vecchi viaggi.');}
 export function signOut(){
  generation++;
  session=null;verified=false;refreshing=null;
  try{sessionStorage.removeItem(SESSION_KEY);}catch{}
+ forgetPendingAdminMfa();
  try{localStorage.setItem(MODE_KEY,'account');}catch{}
  // A pending token rotation must finish before the durable credential is erased.
  void enqueueVault(()=>clearDriverToken()).catch(()=>{});
@@ -211,6 +238,7 @@ export async function enrollAdminTotp(){
  if(!UUID.test(result.factor_id||'')||typeof result.secret!=='string'||
     typeof result.qr_code!=='string')
    throw new Error('Configurazione autenticatore incompleta.');
+ rememberPendingAdminMfa(result.factor_id);
  return {factor_id:result.factor_id,secret:result.secret,qr_code:result.qr_code};
 }
 export async function verifyAdminTotp(code,factorId=null){
@@ -227,6 +255,7 @@ export async function verifyAdminTotp(code,factorId=null){
  const status=await verifySession();
  if(status.mfa_verified!==true||!isVerified())
    throw new Error('La verifica a due fattori non risulta attiva.');
+ forgetPendingAdminMfa();
  return status;
 }
 export async function login(phone,password){
