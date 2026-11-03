@@ -103,9 +103,9 @@ test('first login survives browser restart; disabled driver cannot restore; offl
  };
  const cfg={accountAuth:{enabled:true,loginEndpoint:base+'lts-phone-auth',
    archiveEndpoint:base+'lts-account-state',onboardingEndpoint:base+'lts-driver-onboarding'}};
- const src=authSource.replace("import runtime from '/runtime-config.mjs';",
+ const src=authSource.replace("import runtime from '/LTS-Registro-Viaggi/runtime-config.mjs';",
      'const runtime='+JSON.stringify(cfg)+';')
-   .replace("import {readDriverToken,writeDriverToken,clearDriverToken} from '/driver-session-vault.mjs';",
+   .replace("import {readDriverToken,writeDriverToken,clearDriverToken} from '/LTS-Registro-Viaggi/driver-session-vault.mjs';",
      'const {readDriverToken,writeDriverToken,clearDriverToken}=globalThis.__ltsTestVault;');
  let nextModule=0;
  const loaded=()=>import('data:text/javascript;base64,'+
