@@ -172,7 +172,7 @@ export async function archiveRequest(method,body){
 /** The server independently checks the Supabase JWT, admin role and enabled flag. */
 export async function manageDrivers(action, data = {}) {
  if (!isVerified() || getRole() !== 'admin') throw new Error('Accesso riservato all’amministratore.');
- if (!['list', 'issue', 'set-access', 'revoke-invite', 'remove-pending', 'issue-reset', 'revoke-reset'].includes(action))
+ if (!['list', 'issue', 'set-access', 'revoke-invite', 'remove-pending', 'remove-activated', 'reinsert-activated', 'issue-reset', 'revoke-reset'].includes(action))
    throw new Error('Operazione non disponibile.');
  const payload = {action, ...data};
  return withSessionRetry(

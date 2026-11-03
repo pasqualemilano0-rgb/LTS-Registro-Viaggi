@@ -42,7 +42,7 @@ test('account archive ID must derive from verified session, not user input',()=>
   assert.match(store,/account[.]archiveRequest\(method, body\)/);
 });
 test('offline worker activates new cache and precaches auth code without caching server data',()=>{
-  assert.match(sw,/const CACHE = PREFIX \+ '20261103-driver-reenroll-v11'/);
+  assert.match(sw,/const CACHE = PREFIX \+ '20261103-driver-soft-remove-v12'/);
   assert.match(sw,/\/LTS-Registro-Viaggi\/account-access[.]mjs/);
   assert.match(sw,/url[.]origin !== self[.]location[.]origin/);
   assert.match(sw,/if \(url[.]pathname[.]startsWith\(BASE \+ 'api\/'\)\) return/);
@@ -50,8 +50,8 @@ test('offline worker activates new cache and precaches auth code without caching
 });
 test('HTML entry points are identical and use the new cache buster',()=>{
   assert.equal(html,shell);
-  assert.match(html,/app[.]css[?]v=20261103-driver-access-v10/);
-  assert.match(html,/app[.]mjs[?]v=20261103-driver-access-v10/);
+  assert.match(html,/app[.]css[?]v=20261103-driver-soft-remove-v12/);
+  assert.match(html,/app[.]mjs[?]v=20261103-driver-soft-remove-v12/);
   assert.match(html,/<script type="module"/);
 });
 test('ports section stays integrated, untouched backups and no new bundled private backend',()=>{
@@ -243,7 +243,7 @@ test('driver re-entry and credential recovery controls are available only throug
   assert.ok(app.includes("manageDrivers('remove-pending',{phone:entry.phone})"));
   assert.ok(app.includes("manageDrivers('issue-reset',{phone:entry.phone})"));
   assert.ok(app.includes("manageDrivers('revoke-reset',{phone:entry.phone})"));
-  assert.ok(auth.includes("'remove-pending', 'issue-reset', 'revoke-reset'"));
+  assert.ok(auth.includes("'remove-pending', 'remove-activated', 'reinsert-activated', 'issue-reset', 'revoke-reset'"));
   assert.match(app,/if\(\['pending','invited','processing','expired','revoked'\]\.includes\(entry\.status\)\)/);
 });
 
@@ -253,4 +253,13 @@ test('driver reenrollment UI uses existing account reset, never deletes activate
   assert.ok(app.includes("manageDrivers('issue-reset'"));
   assert.ok(app.includes("manageDrivers('remove-pending'"));
   assert.ok(app.includes('Non creare un secondo account'));
+});
+
+test('activated drivers can be removed and reinserted without data deletion',()=>{
+ assert.ok(app.includes("['active','disabled','resetting'].includes(entry.status)"));
+ assert.ok(app.includes("manageDrivers('remove-activated',{phone:entry.phone})"));
+ assert.ok(app.includes("manageDrivers('reinsert-activated',"));
+ assert.ok(app.includes('Reinserisci account rimosso'));
+ assert.ok(auth.includes("'remove-activated', 'reinsert-activated'"));
+ assert.doesNotMatch(app,/accountAccess[.]manageDrivers\('delete-user'/);
 });
