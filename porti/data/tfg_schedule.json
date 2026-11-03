@@ -1,6 +1,6 @@
 {
   "source": "https://tfg.bucci.it/@/TFGW_TP_ETA",
-  "source_updated_at": "2026-11-02T13:55:55.000Z",
+  "source_updated_at": "2026-11-03T07:51:10.000Z",
   "rows": [
     {
       "vessel": "CATHERINEC",
@@ -97,7 +97,7 @@
       "eta": "03/11/26 06:00",
       "acceptance": "NON ACCETTA CARICO",
       "custom_close_time": "&nbsp;",
-      "fast_corridor_cut_off": "",
+      "fast_corridor_cut_off": "03/11/2609:00:00",
       "gate_cut_off": "",
       "destination": "INTERNO PORTO"
     },
@@ -234,5 +234,5 @@
       "destination": "INTERNO PORTO"
     }
   ],
-  "acquired_at": "2026-11-03T05:00:16.962Z"
+  "acquired_at": "2026-11-03T10:30:16.940Z"
 }
