@@ -49,14 +49,14 @@
 
     <h2>Memoria locale e sincronizzazione online</h2>
     <p>Android conserva l’archivio nel database privato dell’app. La versione web/iPhone usa anche lo spazio locale del proprio browser o contenitore. Questi spazi possono essere distinti: il trasferimento richiede il collegamento dei dispositivi o l’importazione confermata di un backup.</p>
-    <p>La copia online e le operazioni di sincronizzazione sono gestite dal servizio LTS sul backend HTTPS <code>lts-registro-viaggi-iphone.steadyzebra1.chatgpt.site</code>, con infrastruttura Sites/Cloudflare. Il frontend web pubblico è ospitato su GitHub Pages. I rispettivi fornitori elaborano le richieste e i dati tecnici necessari al funzionamento e alla sicurezza dei loro servizi, secondo le proprie condizioni.</p>
+    <p>La copia online e le operazioni di sincronizzazione dipendono da un backend HTTPS esterno usato da LTS. L’accesso agli account e i relativi archivi sono gestiti tramite Supabase; l’interfaccia web pubblica è ospitata su GitHub Pages e alcuni servizi di rete si appoggiano a Cloudflare. I fornitori tecnici elaborano le richieste e i dati necessari al funzionamento e alla sicurezza dei rispettivi servizi, secondo le proprie condizioni.</p>
     <p>Il collegamento usa identificativi casuali e codici temporanei; gli archivi non sono pubblici e il solo nome dell’autista non permette di accedervi. Le comunicazioni dell’app con il servizio di sincronizzazione usano HTTPS. Il progetto non promette cifratura da un estremo all’altro: il servizio deve elaborare il contenuto del registro per sincronizzarlo.</p>
     <p>La sincronizzazione avviene quando l’app è aperta e connessa, dopo i salvataggi e al ritorno nell’app. La sospensione del collegamento lascia disponibili i dati locali; non costituisce una richiesta di cancellazione del registro online.</p>
 
     <h2>Backup ed esportazioni</h2>
     <p>PDF, CSV, JSON e ZIP esportati possono contenere dati personali o aziendali leggibili. L’utente sceglie dove salvarli e a chi condividerli. Conservare questi file in un’area privata.</p>
     <p>Il backup automatico Android, quando abilitato e disponibile sul telefono, dipende dal servizio di backup configurato nel sistema, ad esempio Google. Android decide tempi e condizioni della copia: non è garantito un caricamento a un’ora precisa. Il ripristino usa l’account e il servizio selezionati sul dispositivo.</p>
-    <p>La copia online LTS, il backup di sistema e i file personali esportati sono copie distinte. L’app web non effettua un backup giornaliero automatico in una cartella personale Google Drive o iCloud mentre è chiusa. Le impostazioni Drive collegate a ChatGPT non configurano il backup del telefono.</p>
+    <p>La copia online LTS, il backup di sistema e i file personali esportati sono copie distinte. L’app web non effettua un backup giornaliero automatico in una cartella personale Google Drive o iCloud mentre è chiusa.</p>
 
     <h2>Porti e ricerca booking</h2>
     <p>La sezione <strong>Porti e booking</strong> consulta i programmi pubblici di CO.NA.TE.CO., Terminal Flavio Gioia e Salerno Container Terminal. I programmi vengono controllati dal servizio Cloudflare anche mentre l’app è chiusa; questo controllo non cerca né conserva booking personali.</p>
