@@ -42,7 +42,7 @@ test('account archive ID must derive from verified session, not user input',()=>
   assert.match(store,/account[.]archiveRequest\(method, body\)/);
 });
 test('offline worker activates new cache and precaches auth code without caching server data',()=>{
-  assert.match(sw,/const CACHE = PREFIX \+ '20261103-driver-soft-remove-v12'/);
+  assert.match(sw,/const CACHE = PREFIX \+ '20261103-admin-console-v13'/);
   assert.match(sw,/\/LTS-Registro-Viaggi\/account-access[.]mjs/);
   assert.match(sw,/url[.]origin !== self[.]location[.]origin/);
   assert.match(sw,/if \(url[.]pathname[.]startsWith\(BASE \+ 'api\/'\)\) return/);
@@ -50,8 +50,8 @@ test('offline worker activates new cache and precaches auth code without caching
 });
 test('HTML entry points are identical and use the new cache buster',()=>{
   assert.equal(html,shell);
-  assert.match(html,/app[.]css[?]v=20261103-driver-soft-remove-v12/);
-  assert.match(html,/app[.]mjs[?]v=20261103-driver-soft-remove-v12/);
+  assert.match(html,/app[.]css[?]v=20261103-admin-console-v13/);
+  assert.match(html,/app[.]mjs[?]v=20261103-admin-console-v13/);
   assert.match(html,/<script type="module"/);
 });
 test('ports section stays integrated, untouched backups and no new bundled private backend',()=>{
@@ -262,4 +262,23 @@ test('activated drivers can be removed and reinserted without data deletion',()=
  assert.ok(app.includes('Reinserisci account rimosso'));
  assert.ok(auth.includes("'remove-activated', 'reinsert-activated'"));
  assert.doesNotMatch(app,/accountAccess[.]manageDrivers\('delete-user'/);
+});
+
+test('dedicated admin console loads only verified administrative transport',async()=>{
+ const adminHtml=readFileSync(new URL('../amministratore/index.html',import.meta.url),'utf8');
+ const adminJs=readFileSync(new URL('../amministratore/admin.mjs',import.meta.url),'utf8');
+ const css=readFileSync(new URL('../amministratore/admin.css',import.meta.url),'utf8');
+ const model=await import('../amministratore/model.mjs');
+ assert.match(adminHtml,/Content-Security-Policy/);
+ assert.match(adminHtml,/src="\.\/admin[.]mjs"/);
+ assert.match(adminJs,/import \* as account from '\.\.\/account-access[.]mjs'/);
+ assert.match(adminJs,/await account[.]verifySession\(\)/);
+ assert.match(adminJs,/account[.]getRole\(\)!=='admin'/);
+ assert.ok(adminJs.includes("account.manageDrivers('list')"));
+ assert.ok(adminJs.includes("'remove-activated'"));
+ assert.ok(adminJs.includes("'reinsert-activated'"));
+ assert.doesNotMatch(adminJs,/archiveRequest\(|deleteUser\(|innerHTML|localStorage|service_role/i);
+ assert.ok(css.includes('@media(max-width:630px)'));
+ assert.deepEqual(model.driverSummary([{status:'active'},{status:'disabled'}]),{total:2,active:1,blocked:1,pending:0});
+ assert.ok(app.includes("new URL('amministratore/',import.meta.url).href"));
 });

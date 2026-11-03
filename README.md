@@ -1,3 +1,11 @@
+## Pannello amministratore autisti
+Per gestire gli autisti aprire **https://pasqualemilano0-rgb.github.io/LTS-Registro-Viaggi/amministratore/**.
+Login obbligatorio con l'account amministratore LTS. Permette inviti, blocco/riattivazione,
+rimozione reversibile, reinserimento dello stesso numero e ripristino delle credenziali.
+È una pagina statica; autorizzazioni e registri sono verificati nel backend Supabase.
+Gli account e i viaggi non vengono cancellati durante la rimozione.
+La versione APK Android del pannello resta da collaudare separatamente.
+
 # LTS Registro Viaggi — sito pubblico
 
 [Apri LTS Registro Viaggi](https://pasqualemilano0-rgb.github.io/LTS-Registro-Viaggi/)
