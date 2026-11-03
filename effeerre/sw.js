@@ -1,6 +1,6 @@
 const BASE = "/LTS-Registro-Viaggi/effeerre/";
 const PREFIX = "effeerre-iphone-pages-0ba8c62dd013-";
-const CACHE = PREFIX + 'e4732c9e1a6c6f3d';
+const CACHE = PREFIX + 'public-content-20261103-v2';
 const CORE = [
   "/LTS-Registro-Viaggi/effeerre/app.css",
   "/LTS-Registro-Viaggi/effeerre/app.mjs",

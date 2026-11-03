@@ -3,7 +3,7 @@
 - **Gestione autisti → Scollega tutti i dispositivi**: azione riservata all'amministratore per revocare le sessioni precedenti di un autista; il successivo accesso richiede telefono e password, restando associato allo stesso account e storico.
 - Il backend controlla le sessioni Supabase anche dopo blocco/rimozione/riattivazione e prima di leggere o scrivere un archivio.
 - Se il dispositivo rimane offline con dati già aperti, nessun comando remoto può cancellare istantaneamente quanto visualizzato. All'avvio e quando torna in primo piano l'app verifica online l'autorizzazione.
-- La compatibilità dell'APK Android resta una fase separata per Codex, descritta nell'handoff privato.
+- La compatibilità dell'APK Android sarà verificata separatamente, con aggiornamenti nativi e collaudo su dispositivo.
 
 ## Accesso autisti ricordato sul dispositivo
 Dopo il primo accesso con telefono e password, la webapp ricorda in modo cifrato

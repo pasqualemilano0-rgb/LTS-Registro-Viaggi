@@ -42,7 +42,7 @@ test('account archive ID must derive from verified session, not user input',()=>
   assert.match(store,/account[.]archiveRequest\(method, body\)/);
 });
 test('offline worker activates new cache and precaches auth code without caching server data',()=>{
-  assert.match(sw,/const CACHE = PREFIX \+ '20261103-session-revoke-v16'/);
+  assert.match(sw,/const CACHE = PREFIX \+ '20261103-public-brand-v17'/);
   assert.match(sw,/\/LTS-Registro-Viaggi\/account-access[.]mjs/);
   assert.match(sw,/url[.]origin !== self[.]location[.]origin/);
   assert.match(sw,/if \(url[.]pathname[.]startsWith\(BASE \+ 'api\/'\)\) return/);
@@ -50,8 +50,8 @@ test('offline worker activates new cache and precaches auth code without caching
 });
 test('HTML entry points are identical and use the new cache buster',()=>{
   assert.equal(html,shell);
-  assert.match(html,/app[.]css[?]v=20261103-session-revoke-v16/);
-  assert.match(html,/app[.]mjs[?]v=20261103-session-revoke-v16/);
+  assert.match(html,/app[.]css[?]v=20261103-public-brand-v17/);
+  assert.match(html,/app[.]mjs[?]v=20261103-public-brand-v17/);
   assert.match(html,/<script type="module"/);
 });
 test('ports section stays integrated, untouched backups and no new bundled private backend',()=>{
@@ -326,7 +326,7 @@ test('the main register CSP is restrictive, loads before scripts, and preserves 
  const porti=read('porti/index.html');
  assert.match(porti,/https:\/\/api\.conateco\.it/);
  assert.match(porti,/https:\/\/container-booking-backend\.pasqualemilano0\.workers\.dev/);
- assert.match(sw,/const CACHE = PREFIX \+ '20261103-session-revoke-v16'/);
+ assert.match(sw,/const CACHE = PREFIX \+ '20261103-public-brand-v17'/);
 });
 
 test('logout is authenticated on the server and remote driver disconnection is admin-only',()=>{
@@ -342,6 +342,25 @@ test('logout is authenticated on the server and remote driver disconnection is a
  assert.match(admin,/account[.]manageDrivers\(action,data\)/);
  assert.match(admin,/account[.]logout\(\)/);
  assert.match(admin,/Sessioni revocate/);
- assert.match(sw,/const CACHE = PREFIX \+ '20261103-session-revoke-v16'/);
+ assert.match(sw,/const CACHE = PREFIX \+ '20261103-public-brand-v17'/);
  assert.doesNotMatch([app,auth,admin,sw].join('\n'),/SUPABASE_SERVICE_ROLE_KEY|sb_secret_[A-Za-z0-9_-]+/);
+});
+
+
+test('public-facing UI and privacy have no assistant branding while disclosing real backend services',()=>{
+ const privacy=read('privacy/index.html');
+ const archived=read('effeerre/app.mjs');
+ const readme=read('README.md');
+ for(const [label,source] of [['LTS interface',app],['EFFE.ERRE interface',archived],
+   ['privacy notice',privacy],['public README',readme]]){
+   assert.doesNotMatch(source,/ChatGPT|Codex|OpenAI/i,label+' must not show development-assistant branding');
+ }
+ assert.match(app,/browser interno di un’altra app/);
+ assert.match(archived,/browser interno di un’altra app/);
+ assert.match(privacy,/backend HTTPS esterno/);
+ assert.match(privacy,/Supabase/);
+ assert.match(privacy,/GitHub Pages/);
+ assert.match(read('effeerre/sw.js'),/public-content-20261103-v2/);
+ assert.equal(read('effeerre/index.html'),read('effeerre/shell.html'));
+ assert.match(read('effeerre/index.html'),/20261103-effeerre-cleanup-v2/);
 });
