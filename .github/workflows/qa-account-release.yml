@@ -16,6 +16,7 @@ on:
       - 'shell.html'
       - 'index.html'
       - 'tests/qa-account-release.test.mjs'
+      - 'tests/leaked-password-protection.test.mjs'
       - '.github/workflows/qa-account-release.yml'
   push:
     branches: [main]
@@ -33,6 +34,7 @@ on:
       - 'shell.html'
       - 'index.html'
       - 'tests/qa-account-release.test.mjs'
+      - 'tests/leaked-password-protection.test.mjs'
 permissions:
   contents: read
 jobs:
@@ -54,4 +56,4 @@ jobs:
           node --check driver-session-vault.mjs
           node --check recupera-password.mjs
           node --check sw.js
-          node --test tests/qa-account-release.test.mjs tests/driver-session-vault.test.mjs
+          node --test tests/qa-account-release.test.mjs tests/driver-session-vault.test.mjs tests/leaked-password-protection.test.mjs
