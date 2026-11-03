@@ -72,12 +72,13 @@ export function isVerified(){return verified&&Boolean(session);}
 export function getAccountId(){return session?'account:'+session.user_id:null;}
 export function getRole(){return session?.role??null;}
 /** Persist only the unfinished factor UUID in this tab, never TOTP secret/QR. */
-export function rememberPendingAdminMfa(factorId){
+export function rememberPendingAdminMfa(factorId,purpose='primary'){
  const admin=readStored();
  if(!admin||admin.role!=='admin'||!UUID.test(factorId||''))return false;
  try{
   sessionStorage.setItem(MFA_PENDING_KEY,JSON.stringify({
-   user_id:admin.user_id,factor_id:factorId,created_at:Date.now()
+   user_id:admin.user_id,factor_id:factorId,created_at:Date.now(),
+   ...(purpose==='backup'?{purpose:'backup'}:{})
   }));return true;
  }catch{return false;}
 }
@@ -94,6 +95,13 @@ export function pendingAdminMfa(){
      Date.now()-saved.created_at<MFA_PENDING_MAX_AGE)return saved.factor_id;
  }catch{}
  forgetPendingAdminMfa();return null;
+}
+export function pendingAdminMfaInfo(){
+ const factorId=pendingAdminMfa();if(!factorId)return null;
+ try{
+  const saved=JSON.parse(sessionStorage.getItem(MFA_PENDING_KEY)||'null');
+  return {factor_id:factorId,purpose:saved.purpose==='backup'?'backup':'primary'};
+ }catch{return null}
 }
 // The legacy device archive stays on IndexedDB for authenticated recovery only.
 export function chooseDeviceArchive(){throw new Error('Accesso senza credenziali disattivato. Accedi con il tuo account per recuperare i vecchi viaggi.');}
@@ -239,6 +247,25 @@ export async function enrollAdminTotp(){
     typeof result.qr_code!=='string')
    throw new Error('Configurazione autenticatore incompleta.');
  rememberPendingAdminMfa(result.factor_id);
+ return {factor_id:result.factor_id,secret:result.secret,qr_code:result.qr_code};
+}
+/** Only verified factor names/IDs are returned; secrets are never sent. */
+export async function listAdminMfaFactors(){
+ if(!readStored()||getRole()!=='admin')throw new Error('Accesso amministratore necessario.');
+ const result=await api('loginEndpoint',{action:'mfa-factors'},readStored().access_token);
+ if(!Array.isArray(result.factors)||result.factors.length>10||
+   result.factors.some(x=>!UUID.test(x?.id||'')||typeof x.label!=='string'||x.label.length>100))
+   throw new Error('Elenco Authenticator non valido.');
+ return result.factors;
+}
+export async function enrollBackupAdminTotp(){
+ if(!readStored()||getRole()!=='admin'||!isVerified())
+   throw new Error('Per aggiungere la riserva devi aver verificato il codice principale.');
+ const result=await api('loginEndpoint',{action:'mfa-enroll-backup'},readStored().access_token);
+ if(!UUID.test(result.factor_id||'')||typeof result.secret!=='string'||
+    typeof result.qr_code!=='string'||result.purpose!=='backup')
+   throw new Error('Configurazione Authenticator di riserva incompleta.');
+ rememberPendingAdminMfa(result.factor_id,'backup');
  return {factor_id:result.factor_id,secret:result.secret,qr_code:result.qr_code};
 }
 export async function verifyAdminTotp(code,factorId=null){
