@@ -16,7 +16,9 @@ function showRequest(message){
   if(message)say(message,'error');
 }
 function validPassword(s){
-  return typeof s==='string'&&s.length>=12&&s.length<=128&&/[A-Za-z]/.test(s)&&/[0-9]/.test(s);
+  return typeof s==='string'&&s.length>=12&&s.length<=128&&
+    s.trim()===s&&!/[\u0000-\u001f\u007f]/.test(s)&&
+    /[A-Za-z]/.test(s)&&/[0-9]/.test(s);
 }
 async function requestApi(path,{method='GET',body=null,token=null}={}){
   const headers={apikey:API_KEY,Accept:'application/json'};
