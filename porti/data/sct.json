@@ -15,7 +15,7 @@
       "vessel": "DACHAN BAY EXPRESS",
       "voyage": "16W45",
       "eta": "02/11/2026 12:00",
-      "closing": "03/11/2026 17:00",
+      "closing": "03/11/2026 17:00 CLOSED",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
@@ -69,7 +69,7 @@
       "vessel": "ARGENTINIAN",
       "voyage": "0HWL8E1MA",
       "eta": "03/11/2026 19:00",
-      "closing": "03/11/2026 17:00",
+      "closing": "03/11/2026 17:00 CLOSED",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
@@ -78,7 +78,7 @@
       "vessel": "AMELIE BORCHARD",
       "voyage": "0208",
       "eta": "04/11/2026 01:00",
-      "closing": "03/11/2026 17:00",
+      "closing": "03/11/2026 17:00 CLOSED",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
@@ -87,7 +87,7 @@
       "vessel": "KINGSTON",
       "voyage": "024W",
       "eta": "04/11/2026 01:00",
-      "closing": "03/11/2026 17:00",
+      "closing": "03/11/2026 17:00 CLOSED",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
@@ -237,7 +237,7 @@
       "status": "PENDING"
     }
   ],
-  "acquired_at": "2026-11-03T15:45:30.091Z",
-  "data_changed_at": "2026-11-03T15:30:16.757Z",
-  "updated_at": "2026-11-03T15:45:30.091Z"
+  "acquired_at": "2026-11-03T21:30:16.910Z",
+  "data_changed_at": "2026-11-03T16:00:16.878Z",
+  "updated_at": "2026-11-03T21:30:16.910Z"
 }
