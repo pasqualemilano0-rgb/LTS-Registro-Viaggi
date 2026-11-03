@@ -4,6 +4,7 @@ on:
     branches: [main]
     paths:
       - 'account-access.mjs'
+      - 'driver-session-vault.mjs'
       - 'recupera-password.mjs'
       - 'recupera-password.html'
       - 'client-store.mjs'
@@ -20,6 +21,7 @@ on:
     branches: [main]
     paths:
       - 'account-access.mjs'
+      - 'driver-session-vault.mjs'
       - 'recupera-password.mjs'
       - 'recupera-password.html'
       - 'client-store.mjs'
@@ -49,6 +51,7 @@ jobs:
           node --check app.mjs
           node --check client-store.mjs
           node --check account-access.mjs
+          node --check driver-session-vault.mjs
           node --check recupera-password.mjs
           node --check sw.js
-          node --test tests/qa-account-release.test.mjs
+          node --test tests/qa-account-release.test.mjs tests/driver-session-vault.test.mjs

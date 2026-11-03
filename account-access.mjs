@@ -1,8 +1,8 @@
-/** Account transport for LTS (opt-in). Tokens stay in this tab's
- * sessionStorage; they never enter IndexedDB, backups, URLs or service workers.
- * Online validation is mandatory before any cached account archive is shown.
+/** Driver-only remembered sign-in: no persistent passwords or access JWTs.
+ * Server verification is mandatory before opening any cached account archive.
  */
 import runtime from '/LTS-Registro-Viaggi/runtime-config.mjs';
+import {readDriverToken,writeDriverToken,clearDriverToken} from '/LTS-Registro-Viaggi/driver-session-vault.mjs';
 
 const SESSION_KEY='lts-supabase-account-session-v1';
 const MODE_KEY='lts-supabase-account-mode-v1';
@@ -12,6 +12,20 @@ const REFRESH=/^[A-Za-z0-9._-]{8,4096}$/;
 let session=null;
 let refreshing=null;
 let verified=false;
+let restoring=null,generation=0;
+let vaultQueue=Promise.resolve();
+function enqueueVault(task){
+ const result=vaultQueue.catch(()=>{}).then(task);
+ vaultQueue=result.catch(()=>{});
+ return result;
+}
+function rememberDriver(data,when=generation){
+ if(data.role!=='driver')return Promise.resolve(false);
+ return enqueueVault(()=>generation===when?writeDriverToken(data):false);
+}
+function withRefreshLock(task){
+ return navigator.locks?.request?navigator.locks.request('lts-driver-refresh-lock',task):task();
+}
 
 export function isEnabled(){return runtime.accountAuth?.enabled===true;}
 function url(which){
@@ -48,7 +62,6 @@ function saveSession(data){
  try{sessionStorage.setItem(SESSION_KEY,JSON.stringify(session));}catch{}
  return next;
 }
-function locked(){try{return localStorage.getItem(MODE_KEY)==='account';}catch{return false}}
 export function hasSession(){return Boolean(readStored());}
 // All installations require account authentication, including older device archives.
 // Fail closed even if runtime auth configuration is temporarily missing.
@@ -59,9 +72,12 @@ export function getRole(){return session?.role??null;}
 // The legacy device archive stays on IndexedDB for authenticated recovery only.
 export function chooseDeviceArchive(){throw new Error('Accesso senza credenziali disattivato. Accedi con il tuo account per recuperare i vecchi viaggi.');}
 export function signOut(){
+ generation++;
  session=null;verified=false;refreshing=null;
  try{sessionStorage.removeItem(SESSION_KEY);}catch{}
  try{localStorage.setItem(MODE_KEY,'account');}catch{}
+ // A pending token rotation must finish before the durable credential is erased.
+ void enqueueVault(()=>clearDriverToken()).catch(()=>{});
 }
 function revoke(){
  signOut();
@@ -101,18 +117,59 @@ async function api(which,body,bearer=null){
 }
 async function refresh(){
  if(refreshing)return refreshing;
- refreshing=(async()=>{
-  const s=readStored();if(!s)throw new Error('Accedi al tuo account.');
+ refreshing=withRefreshLock(async()=>{
+  const s=readStored(),when=generation;
+  if(!s)throw new Error('Accedi al tuo account.');
   try{
-   const data=await api('loginEndpoint',{action:'refresh',refresh_token:s.refresh_token});
-   if(!valid(data)||data.user_id!==s.user_id){revoke();throw new Error('L’identità dell’account non corrisponde.');}
-   return saveSession(data);
+   // Read the newest rotated token under a cross-tab lock (where supported).
+   const stored=s.role==='driver'?await readDriverToken().catch(()=>null):null;
+   const token=stored?.user_id===s.user_id?stored.refresh_token:s.refresh_token;
+   const data=await api('loginEndpoint',{action:'refresh',refresh_token:token});
+   if(!valid(data)||data.user_id!==s.user_id||data.role!==s.role){
+     revoke();throw new Error('L’identità dell’account non corrisponde.');
+   }
+   if(when!==generation)throw new Error('Sessione chiusa.');
+   const next=saveSession(data);
+   if(next.role==='driver')await rememberDriver(next,when).catch(()=>{});
+   return next;
   }catch(error){
    if([401,403].includes(error.status))revoke();
    throw error;
   }
- })();
+ });
  try{return await refreshing;}finally{refreshing=null}
+}
+/** Restore a previously verified driver only. Admins must log in each time. */
+export async function restoreDriverSession(){
+ if(readStored())return true;
+ if(restoring)return restoring;
+ const when=generation;
+ restoring=(async()=>{
+  const restored=await withRefreshLock(async()=>{
+   if(readStored())return true;
+   // A sign-out's storage cleanup wins against any pending restoration.
+   await vaultQueue.catch(()=>{});
+   if(when!==generation)return false;
+   const saved=await readDriverToken().catch(()=>null);
+   if(!saved)return false;
+   try{
+    const data=await api('loginEndpoint',{action:'refresh',refresh_token:saved.refresh_token});
+    if(!valid(data)||data.user_id!==saved.user_id||data.role!=='driver'){
+      revoke();throw new Error('Identità salvata non valida.');
+    }
+    if(when!==generation)return false;
+    const next=saveSession(data);
+    await rememberDriver(next,when).catch(()=>{});
+    return true;
+   }catch(error){
+    if([401,403].includes(error.status))revoke();
+    throw error; // Offline or temporary failures retain the credential for retry.
+   }
+  });
+  if(restored)await verifySession(); // Online server check before exposing any data.
+  return restored;
+ })();
+ try{return await restoring;}finally{restoring=null}
 }
 // A revoked account must be locked even when denial follows a token refresh.
 // Never treat an HTTP 401 as permission to retry indefinitely.
@@ -140,8 +197,10 @@ export async function login(phone,password){
  const next=saveSession(data);
  try{
   await verifySession();
+  // Only drivers get a durable device session; not administrative accounts.
+  const remembered=next.role==='driver'?await rememberDriver(next).catch(()=>false):false;
   try{localStorage.setItem(MODE_KEY,'account');}catch{}
-  return {user_id:next.user_id,role:next.role};
+  return {user_id:next.user_id,role:next.role,remembered};
  }catch(error){signOut();throw error}
 }
 export async function verifySession(){
