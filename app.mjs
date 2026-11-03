@@ -168,8 +168,15 @@ function render(){
 function renderPorti(main){
  const url=(runtimeConfig.basePath??'/')+'porti/index.html';
  portiFrame=el('iframe',{class:'porti-frame',src:url,title:'Porti e booking',referrerpolicy:'no-referrer'});
- main.append(el('div',{class:'porti-heading'},el('h1',{},'Porti'),el('a',{class:'porti-open-link',href:url},'Apri Porti')),portiFrame);
+ main.append(el('div',{class:'porti-heading'},el('h1',{},'Porti')),portiFrame);
 }
+// The port module is a subview of a verified LTS account, not a public standalone app.
+window.addEventListener('message',event=>{
+ if(event.origin!==location.origin || event.data?.type!=='lts-porti-ready')return;
+ if(tab!=='porti'||!portiFrame||event.source!==portiFrame.contentWindow)return;
+ if(!store.usingAccount()||!accountAccess.isVerified())return;
+ event.source.postMessage({type:'lts-porti-authorized'},location.origin);
+});
 function receiveState(record,{source}={}){
  // Local saves finish in persist(); background changes update the open view
  // without replacing its inputs or discarding a journey still being typed.

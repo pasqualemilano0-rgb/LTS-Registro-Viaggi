@@ -1,6 +1,6 @@
 const BASE = "/LTS-Registro-Viaggi/";
 const PREFIX = "lts-iphone-pages-0aa8d087d02b-";
-const CACHE = PREFIX + '20261103-admin-backup-v21';
+const CACHE = PREFIX + '20261103-porti-gate-v1';
 const CORE = [
   "/LTS-Registro-Viaggi/account-access.mjs",
   "/LTS-Registro-Viaggi/app.css",
@@ -17,6 +17,7 @@ const CORE = [
   "/LTS-Registro-Viaggi/driver-session-vault.mjs",
   "/LTS-Registro-Viaggi/index.html",
   "/LTS-Registro-Viaggi/manifest.webmanifest",
+  "/LTS-Registro-Viaggi/porti-access.mjs",
   "/LTS-Registro-Viaggi/porti/app.js",
   "/LTS-Registro-Viaggi/porti/assets/lts-logo.png",
   "/LTS-Registro-Viaggi/porti/assets/terminal-logos/conateco.png",
@@ -55,7 +56,7 @@ const PORT_BASE = BASE + 'porti/';
 // not keep serving stale login controls after a secure release. Offline fallback
 // still uses only the current static cache; personal records are never cached.
 const NETWORK_FIRST_CODE = new Set([
-  BASE + 'app.mjs', BASE + 'account-access.mjs', BASE + 'driver-session-vault.mjs',
+  BASE + 'app.mjs', BASE + 'porti-access.mjs', BASE + 'account-access.mjs', BASE + 'driver-session-vault.mjs',
   BASE + 'runtime-config.mjs', BASE + 'client-store.mjs'
 ]);
 self.addEventListener('install', event => {

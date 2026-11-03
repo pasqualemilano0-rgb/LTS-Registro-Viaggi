@@ -236,7 +236,7 @@ test('LTS Porti fallback reads LTS public snapshots, not the old Booking reposit
  assert.match(index,/app[.]js[?]v=20261102-lts-v66/);
  const files=new Map(provenance.files.map(item=>[item.path,item]));
  assert.equal(files.get('app.js').sha256,'c8b14f949c5aa1a07adac1ccec7b6dec6d4a1449adac5a336013238a14d036af');
- assert.equal(files.get('index.html').sha256,'cb42bb8682227cd24efe03934a3287d3df43bc86c4385e07ac7a083339d89c48');
+ assert.equal(files.get('index.html').sha256,'e214deb437467b2e43ed62f39dcfff8e40008bb8c10116dd092ec3927a058d98');
 });
 
 test('driver re-entry and credential recovery controls are available only through verified admin transport',()=>{
@@ -435,4 +435,21 @@ test('administrator has separately verified backup authenticator without bypassi
  assert.doesNotMatch(admin,/localStorage|sessionStorage|innerHTML|sb_secret_/i);
  assert.match(html,/Non caricare mai QR, chiavi TOTP/);
  assert.match(sw,/20261103-admin-backup-v21/);
+});
+
+test('Porti can start only after verified account handshake from the LTS parent',()=>{
+ const gate=read('porti-access.mjs');
+ const portal=read('porti/index.html');
+ assert.match(app,/accountAccess\.isVerified\(\)/);
+ assert.match(app,/event\.source!==portiFrame\.contentWindow/);
+ assert.doesNotMatch(app,/porti-open-link',href:url/);
+ assert.match(portal,/src="\.\.\/porti-access\.mjs/);
+ assert.match(portal,/<body hidden>/);
+ assert.doesNotMatch(portal,/<script type="module" src="app\.js/);
+ assert.match(gate,/PARENT_PATHS\.has\(window\.parent\.location\.pathname\)/);
+ assert.match(gate,/event\.source!==window\.parent/);
+ assert.match(gate,/event\.origin!==location\.origin/);
+ assert.match(gate,/event\.data\?\.type!=='lts-porti-authorized'/);
+ assert.match(gate,/import\('\.\/porti\/app\.js/);
+ assert.match(sw,/porti-access\.mjs/);
 });
