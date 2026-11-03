@@ -779,7 +779,7 @@ function showDriverAdmin(){
    toast('Accedi prima come amministratore.',true);return;
  }
  const {dialog,body}=modal('Gestisci autisti',{
-   subtitle:'Puoi rimuovere gli inviti non attivati. Per un autista già attivo usa Disattiva, Riattiva o Reimposta credenziali: il registro personale viene conservato.'});
+   subtitle:'Puoi rimuovere anche gli autisti già attivati. L’accesso viene bloccato, ma lo stesso numero, account e tutti i viaggi restano recuperabili dal reinserimento.'});
  const form=el('form',{class:'panel form-panel',novalidate:true});
  const error=el('p',{class:'form-error',role:'alert'});
  const first=el('input',{type:'text',autocomplete:'off',maxlength:80,required:true,'aria-label':'Nome'});
@@ -789,6 +789,20 @@ function showDriverAdmin(){
  const fieldNode=(label,node)=>el('div',{class:'field'},el('label',{class:'field-label'},label),node);
  form.append(error,fieldNode('Nome autista',first),fieldNode('Cognome autista',last),
    fieldNode('Telefono (+39 automatico)',phone),submit);
+ form.append(button('Reinserisci account rimosso','secondary',async()=>{
+   error.textContent='';result.hidden=true;
+   if(!first.value.trim()||!last.value.trim()||!phone.value.trim()){
+     error.textContent='Inserisci nome, cognome e lo stesso numero di telefono dell’account rimosso.';return;
+   }
+   if(!window.confirm('Reinserire l’account già attivato per '+phone.value.trim()+'? L’accesso con la password precedente sarà riabilitato e tutti i viaggi resteranno collegati allo stesso account.'))return;
+   try{
+     const restored=await accountAccess.manageDrivers('reinsert-activated',{
+       phone:phone.value.trim(),firstName:first.value.trim(),lastName:last.value.trim()});
+     result.replaceChildren(el('strong',{},'Autista reinserito: '+restored.phone),
+       el('p',{class:'field-hint'},'Lo stesso account e i viaggi sono stati conservati. L’autista può accedere con la password precedente.'));
+     result.hidden=false;first.value='';last.value='';phone.value='';await updateList();
+   }catch(err){error.textContent=err.message||'Reinserimento non riuscito.';}
+ }));
  const result=el('div',{class:'panel',hidden:true});
  const roster=el('div',{class:'driver-management-list'});
  const listError=el('p',{class:'form-error',role:'alert'});
@@ -873,6 +887,16 @@ function showDriverAdmin(){
            try{
              await accountAccess.manageDrivers('remove-pending',{phone:entry.phone});
              toast('Autista rimosso. Puoi reinserire il numero.');
+             await updateList();
+           }catch(err){listError.textContent=err.message||'Impossibile rimuovere l’autista.';}
+         }));
+       }
+       if(['active','disabled','resetting'].includes(entry.status)){
+         item.append(button('Rimuovi autista','secondary',async()=>{
+           if(!window.confirm('Rimuovere '+entry.phone+' dall’elenco? Il login sarà bloccato immediatamente. Account e viaggi NON saranno cancellati. Potrai reinserire lo stesso numero dal modulo in alto.'))return;
+           try{
+             await accountAccess.manageDrivers('remove-activated',{phone:entry.phone});
+             toast('Autista rimosso: accesso bloccato, viaggi conservati.');
              await updateList();
            }catch(err){listError.textContent=err.message||'Impossibile rimuovere l’autista.';}
          }));
