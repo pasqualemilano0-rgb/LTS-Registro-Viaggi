@@ -107,6 +107,9 @@ function renderRoster(){
      });actions.append(fill);
    }
    if(['active','disabled','resetting'].includes(entry.status))
+     addAction('Scollega tutti i dispositivi','revoke-sessions',{phone:entry.phone},
+       'Revocare tutte le sessioni salvate di '+entry.phone+'? Dovrà accedere di nuovo con la password, ma non perderà i viaggi.');
+   if(['active','disabled','resetting'].includes(entry.status))
      addAction('Rimuovi dall’elenco','remove-activated',{phone:entry.phone},
        'Rimuovere '+entry.phone+'? L’accesso sarà bloccato; lo stesso account e tutti i viaggi saranno conservati. Puoi reinserire il numero in seguito.');
    else if(['pending','invited','processing','expired','revoked'].includes(entry.status))
@@ -140,6 +143,7 @@ async function runAction(button,action,data,question){
      action==='remove-pending'?'Autista non attivato rimosso.':
      'Operazione completata.');
    await loadDrivers();
+   if(action==='revoke-sessions')inform('Sessioni revocate. L’autista deve inserire nuovamente le credenziali. I viaggi sono conservati.');
  }catch(error){setError(listError,errorText(error,'Operazione non riuscita.'));}
  finally{busy=false;button.disabled=false;}
 }
@@ -176,9 +180,13 @@ byId('login-form').addEventListener('submit',async event=>{
  finally{button.disabled=false;}
 });
 byId('switch-account').addEventListener('click',()=>{
- account.signOut();lock('Sessione precedente chiusa.');byId('login-phone').focus();
+ void account.logout().then(result=>{if(!result.revoked)inform('Accesso locale chiuso; revoca online non confermata.',true);});
+ lock('Sessione precedente chiusa.');byId('login-phone').focus();
 });
-byId('logout').addEventListener('click',()=>{account.signOut();lock('Accesso terminato.');});
+byId('logout').addEventListener('click',()=>{
+ void account.logout().then(result=>{if(!result.revoked)inform('Accesso locale terminato. Revoca online non confermata.',true);});
+ lock('Accesso terminato.');
+});
 byId('refresh').addEventListener('click',()=>{hideCode();loadDrivers();});
 byId('search').addEventListener('input',renderRoster);
 byId('status-filter').addEventListener('change',renderRoster);
