@@ -404,8 +404,8 @@ test('Authenticator app switching preserves the existing enrollment instead of r
  assert.match(admin,/if\(!byId\('mfa-panel'\)[.]hidden\)return;/);
  assert.match(admin,/document[.]addEventListener\('visibilitychange',resumeWhenSafe\)/);
  assert.match(admin,/window[.]addEventListener\('online',resumeWhenSafe\)/);
- assert.match(admin,/const pending=account[.]pendingAdminMfa\(\)/);
- assert.match(admin,/showMfaPanel\(true,true\)/);
+ assert.match(admin,/const pending=account[.]pendingAdminMfaInfo\(\)/);
+ assert.match(admin,/showMfaPanel\(true,true,pending[.]purpose\)/);
  assert.match(admin,/account[.]forgetPendingAdminMfa\(\)/);
  assert.match(auth,/export function rememberPendingAdminMfa\(factorId\)/);
  assert.match(auth,/export function pendingAdminMfa\(\)/);
