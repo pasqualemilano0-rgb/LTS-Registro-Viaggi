@@ -1,6 +1,6 @@
-<div align="center">
-
-<img src="assets/lts-logo.png" alt="LTS Registro Viaggi" width="180">
+<p align="center">
+  <img src="assets/lts-logo.png" alt="LTS Registro Viaggi" width="180">
+</p>
 
 # LTS Registro Viaggi
 
@@ -9,8 +9,6 @@
 Una sola applicazione per gli autisti e per la gestione operativa del trasporto container.
 
 [**Apri l'applicazione**](https://pasqualemilano0-rgb.github.io/LTS-Registro-Viaggi/) · [**Pannello amministratore**](https://pasqualemilano0-rgb.github.io/LTS-Registro-Viaggi/amministratore/) · [**Informativa privacy**](https://pasqualemilano0-rgb.github.io/LTS-Registro-Viaggi/privacy/)
-
-</div>
 
 ---
 
