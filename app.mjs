@@ -720,8 +720,10 @@ function accountLoginFields({fromGate=false}={}){
         throw new Error('Sincronizza prima le modifiche dell’archivio dispositivo oppure esporta un backup.');
       let phone=tel.value.trim();
       if(/^3\\d{9}$/.test(phone))phone='+39'+phone;
-      await accountAccess.login(phone,pass.value);
+      const logged=await accountAccess.login(phone,pass.value);
       pass.value='';
+      if(logged.role==='driver'&&!logged.remembered)
+        toast('Accesso riuscito. Questo browser non consente di ricordare la sessione.',true);
       document.querySelectorAll('dialog[open]').forEach(node=>node.close());
       busy=false;submit.disabled=false;
       await initialize();
@@ -979,10 +981,10 @@ function renderAccountGate(message=''){
   const gate=el('section',{class:'boot account-gate'},
     el('img',{src:'/LTS-Registro-Viaggi/assets/lts-logo.png',alt:'LTS Registro Viaggi'}),
     el('h1',{},'Accesso al tuo registro'),
-    el('p',{class:'subtitle'},'Accedi con il tuo numero e la password per vedere il registro personale.'),
+    el('p',{class:'subtitle'},'Inserisci numero e password una sola volta: su questo dispositivo l’accesso verrà ricordato senza salvare la password.'),
     message?el('p',{class:'form-error',role:'alert'},message):null,
     accountLoginFields({fromGate:true}),
-    accountAccess.hasSession()?button('Riprova verifica account','secondary',()=>initialize(),'refresh'):null,
+    button('Riprova accesso automatico','secondary',()=>initialize(),'refresh'),
     accountAccess.hasSession()?button('Esci e cambia account','text',()=>{
       accountAccess.signOut();
       store.lockRevokedAccount();
@@ -1001,7 +1003,14 @@ async function initialize(){
   let result;
   if(accountAccess.accountGateRequired()){
     if(!accountAccess.hasSession()){
-      renderAccountGate();return;
+      try{await accountAccess.restoreDriverSession();}
+      catch(error){
+        renderAccountGate(error.offline
+          ?'Serve Internet per verificare la sessione salvata. Riprova quando torna la connessione.'
+          :error.message||'Accesso automatico non riuscito.');
+        return;
+      }
+      if(!accountAccess.hasSession()){renderAccountGate();return;}
     }
     try{
       result=await store.activateAccountFromSession();
