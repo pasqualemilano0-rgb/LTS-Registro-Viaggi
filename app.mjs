@@ -472,8 +472,8 @@ function openProfile(required=false){
   if(accountAccess.isEnabled()){
     if(store.usingAccount()&&accountAccess.getRole()==='admin'&&accountAccess.isVerified())
       body.querySelector('.profile-menu').prepend(menuButton('Gestisci autisti',
-        'Genera inviti, controlla lo stato e disattiva gli accessi.','users',()=>{
-          dialog.close();showDriverAdmin();
+        'Apri il pannello amministratore con inviti, accessi, rimozioni e reinserimenti.','users',()=>{
+          dialog.close();window.location.assign(new URL('amministratore/',import.meta.url).href);
         }));
     if(store.usingAccount()){
       body.querySelector('.profile-menu').prepend(menuButton('Recupera archivio precedente','Salva il vecchio backup e importa i dati conservati su questo telefono.','download',()=>{dialog.close();showLegacyArchiveRecovery();}));
