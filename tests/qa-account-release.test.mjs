@@ -42,7 +42,7 @@ test('account archive ID must derive from verified session, not user input',()=>
   assert.match(store,/account[.]archiveRequest\(method, body\)/);
 });
 test('offline worker activates new cache and precaches auth code without caching server data',()=>{
-  assert.match(sw,/const CACHE = PREFIX \+ '20261103-driver-remember-v14'/);
+  assert.match(sw,/const CACHE = PREFIX \+ '20261103-csp-main-v15'/);
   assert.match(sw,/\/LTS-Registro-Viaggi\/account-access[.]mjs/);
   assert.match(sw,/url[.]origin !== self[.]location[.]origin/);
   assert.match(sw,/if \(url[.]pathname[.]startsWith\(BASE \+ 'api\/'\)\) return/);
@@ -50,8 +50,8 @@ test('offline worker activates new cache and precaches auth code without caching
 });
 test('HTML entry points are identical and use the new cache buster',()=>{
   assert.equal(html,shell);
-  assert.match(html,/app[.]css[?]v=20261103-driver-remember-v14/);
-  assert.match(html,/app[.]mjs[?]v=20261103-driver-remember-v14/);
+  assert.match(html,/app[.]css[?]v=20261103-csp-main-v15/);
+  assert.match(html,/app[.]mjs[?]v=20261103-csp-main-v15/);
   assert.match(html,/<script type="module"/);
 });
 test('ports section stays integrated, untouched backups and no new bundled private backend',()=>{
@@ -296,4 +296,35 @@ test('driver remembered login uses AES-GCM vault and online authorization on res
  assert.match(sw,/BASE \+ 'driver-session-vault[.]mjs'/);
  assert.ok(existsSync(new URL('../driver-session-vault.mjs',import.meta.url)));
  assert.doesNotMatch(sw,/refresh_token|user_id[.]|password/);
+});
+
+test('the main register CSP is restrictive, loads before scripts, and preserves only required services',()=>{
+ const policy=html.match(/<meta http-equiv="Content-Security-Policy" content="([^"]+)">/)?.[1];
+ assert.ok(policy,'Main LTS entrypoint must have CSP');
+ assert.ok(html.indexOf('Content-Security-Policy')<html.indexOf('<link rel="stylesheet"'));
+ assert.equal(html,shell);
+ const entries=new Map(policy.split(';').map(v=>v.trim().split(/\s+/))
+   .filter(v=>v.length>1).map(([k,...v])=>[k,v]));
+ for(const [key,required] of Object.entries({
+   'default-src':["'none'"],'base-uri':["'none'"],'object-src':["'none'"],
+   'script-src':["'self'"],'script-src-attr':["'none'"],
+   'style-src-elem':["'self'"],'style-src-attr':["'unsafe-inline'"],
+   'img-src':["'self'","data:","blob:"],
+   'connect-src':["'self'","https://otrqynkscpbeyuvdlgpg.supabase.co",
+     "https://lts-registro-viaggi-iphone.steadyzebra1.chatgpt.site"],
+   'frame-src':["'self'"],'worker-src':["'self'"],
+   'manifest-src':["'self'"],'form-action':["'self'"]
+ })){
+   assert.deepEqual(entries.get(key),required,'CSP entry not allowed for '+key);
+ }
+ assert.ok(!policy.includes("'unsafe-eval'"));
+ assert.ok(!policy.includes("frame-ancestors"));
+ assert.ok(!policy.includes("http:"));
+ assert.ok(!policy.includes("https:;"));
+ assert.match(html, /<meta name="referrer" content="no-referrer">/);
+ assert.match(app,/porti/);
+ const porti=read('porti/index.html');
+ assert.match(porti,/https:\/\/api\.conateco\.it/);
+ assert.match(porti,/https:\/\/container-booking-backend\.pasqualemilano0\.workers\.dev/);
+ assert.match(sw,/const CACHE = PREFIX \+ '20261103-csp-main-v15'/);
 });
