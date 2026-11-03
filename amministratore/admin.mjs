@@ -1,10 +1,10 @@
-import * as account from '../account-access.mjs';
+import * as account from '../account-access.mjs?v=20261103-admin-mfa-v18';
 import {STATUS_LABELS,driverSummary,filterDrivers} from './model.mjs';
 
 const byId=id=>document.getElementById(id);
 const loginPanel=byId('login-panel'), dashboard=byId('dashboard');
 const loginError=byId('login-error'),listError=byId('list-error');
-let drivers=[],busy=false;
+let drivers=[],busy=false,mfaFactorId=null,mfaMode='login';
 const errorText=(error,fallback)=>error?.message||fallback;
 function inform(message,bad=false){
  const node=byId('notice');node.textContent=message;node.hidden=!message;node.classList.toggle('danger',bad);
@@ -20,27 +20,50 @@ function hideCode(){
  byId('secret-code').value='';
  byId('secret-panel').hidden=true;
 }
+function clearMfa(){
+ mfaFactorId=null;mfaMode='login';
+ byId('mfa-code').value='';byId('mfa-secret').textContent='';
+ byId('mfa-qr').removeAttribute('src');byId('mfa-qr').hidden=true;
+ byId('mfa-setup-secret').hidden=true;
+ setError(byId('mfa-error'),'');
+}
+function showMfaPanel(setup=false){
+ if(!setup)clearMfa();
+ mfaMode=setup?'setup':'login';
+ loginPanel.hidden=true;dashboard.hidden=true;byId('mfa-panel').hidden=false;
+ byId('logout').hidden=false;
+ byId('mfa-cancel').textContent=setup?'Annulla configurazione':'Torna all’accesso';
+ byId('mfa-instructions').textContent=setup
+  ?'Collega un’app Authenticator e inserisci il suo codice di sei cifre per attivare la protezione.'
+  :'Apri la tua app Authenticator e inserisci il codice temporaneo a sei cifre.';
+ byId('mfa-setup-secret').hidden=!setup;
+ byId('mfa-code').focus();
+}
 function lock(message='Accedi come amministratore per continuare.'){
- drivers=[];
+ drivers=[];clearMfa();
  byId('roster').replaceChildren();hideCode();
+ byId('mfa-panel').hidden=true;
  dashboard.hidden=true;loginPanel.hidden=false;byId('logout').hidden=true;
  setError(listError,'');
  inform(message,Boolean(message));
 }
-function showDashboard(){
+function showDashboard(status={}){
+ clearMfa();byId('mfa-panel').hidden=true;
+ byId('mfa-warning').hidden=status.mfa_enrolled===true;
  loginPanel.hidden=true;dashboard.hidden=false;byId('logout').hidden=false;
  setError(loginError,'');inform('');
 }
 async function authenticate(){
  if(!account.hasSession()){lock('');return;}
  try{
-   await account.verifySession();
+   const status=await account.verifySession();
    if(account.getRole()!=='admin'){
      account.signOut();
      lock('Questo account non è autorizzato come amministratore.');
      return;
    }
-   showDashboard();
+   if(status.mfa_enrolled&&!status.mfa_verified){showMfaPanel();return;}
+   showDashboard(status);
    await loadDrivers();
  }catch(error){
    lock(errorText(error,'Verifica dell’account non riuscita. Riprova con Internet attivo.'));
@@ -175,10 +198,52 @@ byId('login-form').addEventListener('submit',async event=>{
    if(account.hasSession())account.signOut();
    await account.login(byId('login-phone').value.trim(),password);
    if(account.getRole()!=='admin'){account.signOut();throw new Error('Permesso amministratore non presente.');}
-   showDashboard();await loadDrivers();
+   await authenticate();
  }catch(error){lock('');setError(loginError,errorText(error,'Accesso non riuscito.'));}
  finally{button.disabled=false;}
 });
+
+byId('mfa-start').addEventListener('click',async()=>{
+ const button=byId('mfa-start');if(button.disabled||busy)return;
+ button.disabled=true;inform('');
+ try{
+   const result=await account.enrollAdminTotp();
+   mfaFactorId=result.factor_id;
+   showMfaPanel(true);
+   byId('mfa-secret').textContent=result.secret;
+   if(/^data:image\/svg\+xml(?:;[^,]*)?,/.test(result.qr_code)){
+     byId('mfa-qr').src=result.qr_code;
+     byId('mfa-qr').hidden=false;
+   }
+ }catch(error){inform(errorText(error,'Impossibile avviare il secondo fattore.'),true);}
+ finally{button.disabled=false;}
+});
+byId('mfa-verify-form').addEventListener('submit',async event=>{
+ event.preventDefault();const button=event.currentTarget.querySelector('[type=submit]');
+ if(button.disabled)return;
+ button.disabled=true;setError(byId('mfa-error'),'');
+ try{
+   const code=byId('mfa-code').value.trim();
+   await account.verifyAdminTotp(code,mfaFactorId);
+   clearMfa();
+   await authenticate();
+ }catch(error){byId('mfa-code').value='';setError(byId('mfa-error'),
+   errorText(error,'Codice non verificato. Riprova.'));}
+ finally{button.disabled=false;}
+});
+byId('mfa-cancel').addEventListener('click',()=>{
+ const setup=mfaMode==='setup';
+ clearMfa();
+ if(setup){void authenticate();return;}
+ lock('Conferma il secondo fattore prima di gestire gli autisti.');
+});
+byId('mfa-exit').addEventListener('click',()=>{
+ void account.logout().then(result=>{
+   if(!result.revoked)inform('Revoca online non confermata.',true);
+ });
+ lock('Sessione amministratore chiusa.');
+});
+
 byId('switch-account').addEventListener('click',()=>{
  void account.logout().then(result=>{if(!result.revoked)inform('Accesso locale chiuso; revoca online non confermata.',true);});
  lock('Sessione precedente chiusa.');byId('login-phone').focus();

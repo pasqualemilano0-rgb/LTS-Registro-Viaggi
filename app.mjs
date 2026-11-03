@@ -724,6 +724,10 @@ function accountLoginFields({fromGate=false}={}){
       if(/^3\\d{9}$/.test(phone))phone='+39'+phone;
       const logged=await accountAccess.login(phone,pass.value);
       pass.value='';
+      if(logged.role==='admin'&&logged.mfa_enrolled&&!logged.mfa_verified){
+        window.location.assign(new URL('amministratore/',import.meta.url).href);
+        return;
+      }
       if(logged.role==='driver'&&!logged.remembered)
         toast('Accesso riuscito. Questo browser non consente di ricordare la sessione.',true);
       document.querySelectorAll('dialog[open]').forEach(node=>node.close());

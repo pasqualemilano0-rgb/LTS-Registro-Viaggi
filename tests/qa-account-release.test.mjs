@@ -42,7 +42,7 @@ test('account archive ID must derive from verified session, not user input',()=>
   assert.match(store,/account[.]archiveRequest\(method, body\)/);
 });
 test('offline worker activates new cache and precaches auth code without caching server data',()=>{
-  assert.match(sw,/const CACHE = PREFIX \+ '20261103-public-brand-v17'/);
+  assert.match(sw,/const CACHE = PREFIX \+ '20261103-admin-mfa-v18'/);
   assert.match(sw,/\/LTS-Registro-Viaggi\/account-access[.]mjs/);
   assert.match(sw,/url[.]origin !== self[.]location[.]origin/);
   assert.match(sw,/if \(url[.]pathname[.]startsWith\(BASE \+ 'api\/'\)\) return/);
@@ -50,8 +50,8 @@ test('offline worker activates new cache and precaches auth code without caching
 });
 test('HTML entry points are identical and use the new cache buster',()=>{
   assert.equal(html,shell);
-  assert.match(html,/app[.]css[?]v=20261103-public-brand-v17/);
-  assert.match(html,/app[.]mjs[?]v=20261103-public-brand-v17/);
+  assert.match(html,/app[.]css[?]v=20261103-admin-mfa-v18/);
+  assert.match(html,/app[.]mjs[?]v=20261103-admin-mfa-v18/);
   assert.match(html,/<script type="module"/);
 });
 test('ports section stays integrated, untouched backups and no new bundled private backend',()=>{
@@ -270,8 +270,8 @@ test('dedicated admin console loads only verified administrative transport',asyn
  const css=readFileSync(new URL('../amministratore/admin.css',import.meta.url),'utf8');
  const model=await import('../amministratore/model.mjs');
  assert.match(adminHtml,/Content-Security-Policy/);
- assert.match(adminHtml,/src="\.\/admin[.]mjs"/);
- assert.match(adminJs,/import \* as account from '\.\.\/account-access[.]mjs'/);
+ assert.match(adminHtml,/src="\.\/admin[.]mjs\?v=20261103-admin-mfa-v18"/);
+ assert.match(adminJs,/import \* as account from '\.\.\/account-access[.]mjs\?v=20261103-admin-mfa-v18'/);
  assert.match(adminJs,/await account[.]verifySession\(\)/);
  assert.match(adminJs,/account[.]getRole\(\)!=='admin'/);
  assert.ok(adminJs.includes("account.manageDrivers('list')"));
@@ -326,7 +326,7 @@ test('the main register CSP is restrictive, loads before scripts, and preserves 
  const porti=read('porti/index.html');
  assert.match(porti,/https:\/\/api\.conateco\.it/);
  assert.match(porti,/https:\/\/container-booking-backend\.pasqualemilano0\.workers\.dev/);
- assert.match(sw,/const CACHE = PREFIX \+ '20261103-public-brand-v17'/);
+ assert.match(sw,/const CACHE = PREFIX \+ '20261103-admin-mfa-v18'/);
 });
 
 test('logout is authenticated on the server and remote driver disconnection is admin-only',()=>{
@@ -342,7 +342,7 @@ test('logout is authenticated on the server and remote driver disconnection is a
  assert.match(admin,/account[.]manageDrivers\(action,data\)/);
  assert.match(admin,/account[.]logout\(\)/);
  assert.match(admin,/Sessioni revocate/);
- assert.match(sw,/const CACHE = PREFIX \+ '20261103-public-brand-v17'/);
+ assert.match(sw,/const CACHE = PREFIX \+ '20261103-admin-mfa-v18'/);
  assert.doesNotMatch([app,auth,admin,sw].join('\n'),/SUPABASE_SERVICE_ROLE_KEY|sb_secret_[A-Za-z0-9_-]+/);
 });
 
@@ -363,4 +363,27 @@ test('public-facing UI and privacy have no assistant branding while disclosing r
  assert.match(read('effeerre/sw.js'),/public-content-20261103-v2/);
  assert.equal(read('effeerre/index.html'),read('effeerre/shell.html'));
  assert.match(read('effeerre/index.html'),/20261103-effeerre-cleanup-v2/);
+});
+
+test('TOTP admin flow uses verified backend session and never exposes secret in public code',()=>{
+ const html=read('amministratore/index.html');
+ const admin=read('amministratore/admin.mjs');
+ const css=read('amministratore/admin.css');
+ assert.match(html,/id="mfa-panel"/);
+ assert.match(html,/id="mfa-warning"/);
+ assert.match(html,/pattern="\[0-9\]\{6\}"/);
+ assert.match(html,/img-src 'self' data:/);
+ assert.match(html,/admin\.mjs\?v=20261103-admin-mfa-v18/);
+ assert.match(html,/admin\.css\?v=20261103-admin-mfa-v18/);
+ assert.match(admin,/account\.enrollAdminTotp/);
+ assert.match(admin,/account\.verifyAdminTotp/);
+ assert.match(auth,/export async function enrollAdminTotp\(\)/);
+ assert.match(auth,/export async function verifyAdminTotp\(code,factorId=null\)/);
+ assert.match(auth,/verified=!mfaEnrolled\|\|mfaVerified/);
+ assert.match(app,/logged\.mfa_enrolled&&!logged\.mfa_verified/);
+ assert.match(sw,/20261103-admin-mfa-v18/);
+ assert.match(css,/#mfa-setup-secret/);
+ for(const item of [html,admin,auth,app]){
+  assert.doesNotMatch(item,/SUPABASE_SERVICE_ROLE_KEY|sb_secret_[A-Za-z0-9_-]+/);
+ }
 });
