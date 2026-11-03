@@ -3,40 +3,6 @@
   "source_updated_at": null,
   "rows": [
     {
-      "vessel": "MSC JASPER VIII",
-      "voyage": "MG643W",
-      "eta": "2026-10-25 00:00",
-      "vessel_status": "ANN",
-      "category": "PARTITE",
-      "voyage_id": "202600362",
-      "carrier": "MEDITERRANEAN SHIPPING CO. GENEVA",
-      "acceptance_flag": "0",
-      "acceptance_icon": "",
-      "stop_cargo": "",
-      "external_depot": "",
-      "opening": "",
-      "closing": "",
-      "notes": "",
-      "source_conflict": false
-    },
-    {
-      "vessel": "JOLLY ROSA",
-      "voyage": "313",
-      "eta": "2026-10-25 07:25",
-      "vessel_status": "CHI",
-      "category": "PARTITE",
-      "voyage_id": "202600355",
-      "carrier": "LINEA I.MESSINA",
-      "acceptance_flag": "0",
-      "acceptance_icon": "CHIUSA",
-      "stop_cargo": "S",
-      "external_depot": "",
-      "opening": "2026-10-17 06:30",
-      "closing": "2026-10-26 14:00",
-      "notes": "ACCET.RETROPORTO 03/10 07:00",
-      "source_conflict": false
-    },
-    {
       "vessel": "MSC HARMONY III",
       "voyage": "AC642A",
       "eta": "2026-10-26 12:40",
@@ -194,7 +160,7 @@
       "voyage": "AG645A",
       "eta": "2026-11-03 00:00",
       "vessel_status": "PRE",
-      "category": "PREVISTE",
+      "category": "PRESENTI",
       "voyage_id": "202600373",
       "carrier": "MEDITERRANEAN SHIPPING CO. GENEVA",
       "acceptance_flag": "0",
@@ -717,5 +683,5 @@
       "source_conflict": false
     }
   ],
-  "acquired_at": "2026-11-02T21:15:16.787Z"
+  "acquired_at": "2026-11-03T03:00:17.077Z"
 }
