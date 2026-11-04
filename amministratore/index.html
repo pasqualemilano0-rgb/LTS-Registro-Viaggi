@@ -9,8 +9,8 @@
   <title>LTS · Gestione autisti</title>
   <meta name="description" content="Pannello riservato all'amministratore per gestire gli autisti LTS.">
   <link rel="icon" type="image/png" href="../assets/icon-192.png">
-  <link rel="stylesheet" href="./admin.css?v=20261104-driver-pro-v2">
-  <script type="module" src="./admin.mjs?v=20261104-driver-pro-v2"></script>
+  <link rel="stylesheet" href="./admin.css?v=20261104-company-v3">
+  <script type="module" src="./admin.mjs?v=20261104-company-v3"></script>
 </head>
 <body>
   <header class="topbar">
@@ -234,6 +234,91 @@
           </label>
           <div id="report-driver-cards" class="report-driver-cards" aria-label="Elenco autisti e riepilogo delle trasferte"></div>
           <p id="report-directory-empty" class="empty" hidden>Nessun autista corrisponde alla ricerca.</p>
+        </section>
+        <section id="pro-insights" aria-labelledby="pro-title" class="report-insights">
+          <div class="pro-heading">
+            <div>
+              <p class="eyebrow">LTS ANALISI AZIENDALE · VERSIONE 3</p>
+              <h2 id="pro-title">Analisi avanzata e confronti</h2>
+              <p>Esamina gli ultimi 12 mesi, confronta i risultati e individua le registrazioni da controllare.</p>
+            </div>
+            <span class="pill">Solo amministratore · MFA</span>
+          </div>
+          <div id="pro-progress" class="pro-progress" role="status" aria-live="polite">Caricamento analisi avanzata…</div>
+          <p id="pro-error" class="error-message" role="alert" hidden></p>
+          <div class="pro-compare-grid">
+            <div class="surface pro-variation">
+              <p class="eyebrow">RISPETTO AL MESE PRECEDENTE</p>
+              <div class="pro-variation-line"><strong id="pro-delta-trips">—</strong><span>Viaggi registrati</span></div>
+              <div class="pro-variation-line"><strong id="pro-delta-value">—</strong><span>Valore trasferte</span></div>
+              <p id="pro-previous-caption" class="report-source"></p>
+            </div>
+            <div class="surface pro-comparison">
+              <label for="pro-compare-driver">Confronta con un secondo autista</label>
+              <select id="pro-compare-driver"><option value="">Nessun confronto</option></select>
+              <div id="pro-compare-output" class="pro-compare-output" aria-live="polite">Seleziona un autista dal cruscotto e un secondo autista per confrontare viaggi e importi.</div>
+            </div>
+          </div>
+          <div class="surface pro-trend-panel">
+            <div class="section-head">
+              <div><p class="eyebrow">STORICO ULTIMI 12 MESI</p><h3>Andamento attività</h3></div>
+              <label class="pro-trend-choice">Mostra
+                <select id="pro-trend-metric"><option value="trips">Numero viaggi</option><option value="value">Importi registrati</option></select>
+              </label>
+            </div>
+            <div id="pro-trend" class="pro-trend" aria-label="Grafico andamento mensile. Premi un mese nell'elenco sotto per filtrare il cruscotto."></div>
+            <div id="pro-trend-months" class="pro-trend-months" aria-label="Seleziona un mese dallo storico"></div>
+            <p class="footnote">I valori sono riferiti alle sole trasferte già sincronizzate. Tocca un mese per analizzarlo.</p>
+          </div>
+          <div class="surface pro-filters-panel">
+            <div class="section-head"><div><p class="eyebrow">FILTRI INTELLIGENTI</p><h3>Ricerca personalizzata</h3></div><span class="pill">Fino a 12 mesi</span></div>
+            <div class="pro-filters">
+              <label>Dal giorno <input id="pro-from" type="date" required></label>
+              <label>Al giorno <input id="pro-to" type="date" required></label>
+              <label>Cliente principale <select id="pro-client"><option value="">Tutti i clienti</option></select></label>
+              <label>Località principale <select id="pro-city"><option value="">Tutte le località</option></select></label>
+              <label>Container <input id="pro-container" maxlength="40" type="search" placeholder="Cerca container…" autocomplete="off"></label>
+              <div class="pro-filter-actions">
+                <button id="pro-apply" class="button" type="button">Applica filtri</button>
+                <button id="pro-clear" class="button outline" type="button">Cancella filtri</button>
+              </div>
+            </div>
+            <p id="pro-filter-summary" class="report-source" aria-live="polite"></p>
+          </div>
+          <div class="pro-breakdowns">
+            <div class="surface">
+              <div class="section-head"><div><p class="eyebrow">CLIENTI</p><h3>Viaggi per cliente</h3></div><span class="pill">Principale</span></div>
+              <div id="pro-clients" class="pro-breakdown-bars"></div>
+            </div>
+            <div class="surface">
+              <div class="section-head"><div><p class="eyebrow">LOCALITÀ</p><h3>Viaggi per località</h3></div><span class="pill">Principale</span></div>
+              <div id="pro-routes" class="pro-breakdown-bars"></div>
+            </div>
+          </div>
+          <section class="surface pro-alerts-panel" aria-labelledby="pro-alert-title">
+            <div class="section-head"><div><p class="eyebrow">CENTRO NOTIFICHE</p><h3 id="pro-alert-title">Anomalie da verificare</h3></div>
+              <strong id="pro-alert-count" class="pro-alert-counter">—</strong></div>
+            <p class="report-source">Segnalazioni indicative: tariffe mancanti, possibili doppioni e archivi senza sincronizzazioni recenti.</p>
+            <div id="pro-alerts" class="pro-alert-list"></div>
+          </section>
+          <section class="surface pro-data-panel" aria-labelledby="pro-data-title">
+            <div class="section-head"><div><p class="eyebrow">DETTAGLIO FILTRATO</p><h3 id="pro-data-title">Viaggi selezionati</h3></div>
+              <span id="pro-record-count" class="pill">—</span></div>
+            <p class="report-source">I filtri personalizzati e i punti dei grafici aggiornano questo elenco. Il registro mensile principale resta separato.</p>
+            <div id="pro-records" class="pro-records"></div>
+            <button id="pro-show-more" class="button outline" type="button" hidden>Mostra altri viaggi</button>
+          </section>
+          <section class="surface pro-exports" aria-labelledby="pro-export-title">
+            <div class="section-head"><div><p class="eyebrow">REPORT AZIENDALI</p><h3 id="pro-export-title">Esporta il riepilogo</h3></div>
+              <span class="pill">Accesso riservato</span></div>
+            <p>Il report contiene i dati del periodo e dell'autista selezionati, il riepilogo e le trasferte filtrate.
+              È un prospetto dei valori registrati, non un calcolo di utile o stipendio.</p>
+            <div class="pro-export-actions">
+              <button id="pro-export-pdf" class="button" type="button">Esporta PDF</button>
+              <button id="pro-export-xlsx" class="button outline" type="button">Esporta Excel (.xlsx)</button>
+            </div>
+            <p id="pro-export-status" class="report-source" role="status" aria-live="polite"></p>
+          </section>
         </section>
         <section class="surface report-register" aria-labelledby="report-register-title">
           <div class="section-head"><div><p class="eyebrow">REGISTRO SINCRONIZZATO</p><h2 id="report-register-title">Dettaglio dei viaggi</h2></div><span class="pill">Sola lettura</span></div>

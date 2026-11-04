@@ -46,6 +46,56 @@ export const companyReport=async({month,offset=0,limit=40,driverId=null})=>{
    totalCents:selected.filter(t=>t.date===date).reduce((s,t)=>s+t.totalCents,0)})),
   trips:selected.slice(offset,offset+limit),pagination:{offset,limit,total:selected.length}};
 };
+/* Synthetic V3 analytics – no production data or credentials. */
+export const companyInsights=async({month,driverId=null,compareDriverId=null,fromDate=null,toDate=null,
+ client='',city='',container=''})=>{
+ const all=[
+ {id:'1',driverId:'11111111-1111-4111-8111-111111111111',driverName:'Mario Rossi',date:'2026-11-04',
+  container:'ABCD1234567',client:'CLIENTE ALFA',city:'NAPOLI',amountCents:15000,missingTariff:false},
+ {id:'2',driverId:'11111111-1111-4111-8111-111111111111',driverName:'Mario Rossi',date:'2026-11-03',
+  container:'WXYZ1234567',client:'CLIENTE BETA',city:'SALERNO',amountCents:10000,missingTariff:true},
+ {id:'3',driverId:'11111111-1111-4111-8111-111111111111',driverName:'Mario Rossi',date:'2026-10-08',
+  container:'TEST1234567',client:'CLIENTE ALFA',city:'NAPOLI',amountCents:5000,missingTariff:false}
+ ];
+ const previous=month==='2026-11'?'2026-10':'2026-09';
+ const current=all.filter(x=>x.date.startsWith(month+'-')&&(!driverId||x.driverId===driverId));
+ const prev=all.filter(x=>x.date.startsWith(previous+'-')&&(!driverId||x.driverId===driverId));
+ const base=all.filter(x=>(!driverId||x.driverId===driverId)&&x.date>=(fromDate||month+'-01')&&
+  x.date<=(toDate||month+'-30'));
+ const records=base.filter(x=>(!client||x.client.toLowerCase().includes(client.toLowerCase()))&&
+  (!city||x.city.toLowerCase().includes(city.toLowerCase()))&&
+  (!container||x.container.toLowerCase().includes(container.toLowerCase())));
+ const sum=trips=>({trips:trips.length,drivers:new Set(trips.map(x=>x.driverId)).size,
+  days:new Set(trips.map(x=>x.date)).size,totalCents:trips.reduce((n,x)=>n+x.amountCents,0),
+  missingTariffCount:trips.filter(x=>x.missingTariff).length});
+ const months=Array.from({length:12},(_,i)=>{
+  const [y,m]=month.split('-').map(Number),d=new Date(Date.UTC(y,m-1-(11-i),1));
+  const key=d.toISOString().slice(0,7),items=all.filter(x=>x.date.startsWith(key+'-')&&(!driverId||x.driverId===driverId));
+  return {month:key,...sum(items)};
+ });
+ const rank=(field)=>[...new Set(records.map(x=>x[field]))].map(name=>{
+  const items=records.filter(t=>t[field]===name);
+  return {name,count:items.length,totalCents:sum(items).totalCents};
+ });
+ return {
+  month,reportedAt:new Date().toISOString(),
+  range:{fromDate:fromDate||month+'-01',toDate:toDate||month+'-30'},
+  selection:{driverId,compareDriverId,client,city,container},
+  summary:{...sum(records),activeDrivers:1},
+  currentMonth:sum(current),previousMonth:{month:previous,...sum(prev)},
+  monthly:months,compareMonthly:compareDriverId?months.map(x=>({...x,trips:0,totalCents:0})):[],
+  drivers:[driverId,compareDriverId].filter(Boolean).map(id=>({id,
+   name:id.startsWith('111')?'Mario Rossi':'Lucia Bianchi',
+   ...sum(all.filter(x=>x.driverId===id&&x.date.startsWith(month+'-')))})),
+  clients:rank('client'),routes:rank('city'),
+  options:{clients:['CLIENTE ALFA','CLIENTE BETA'],cities:['NAPOLI','SALERNO']},
+  daily:[...new Set(records.map(x=>x.date))].map(date=>({date,trips:records.filter(x=>x.date===date).length})),
+  alerts:records.filter(x=>x.missingTariff).map(x=>({type:'tariff',severity:'warning',
+   driverId:x.driverId,driverName:x.driverName,date:x.date,detail:'Tariffa incompleta '+x.container})),
+  alertTotal:records.filter(x=>x.missingTariff).length,incompleteArchives:0,
+  partial:records.some(x=>x.missingTariff),records
+ };
+};
 `;
 const root=resolve(dir),mime={'.html':'text/html','.css':'text/css','.mjs':'text/javascript','.png':'image/png'};
 const server=createServer(async(req,res)=>{
@@ -77,6 +127,47 @@ try{
  assert.equal(await page.locator('#report-rows tr').count(),2);
  assert.equal(await page.locator('#report-chart .report-bar-row').count(),2);
  assert.equal(await page.locator('#report-driver-chart .report-bar-row').count(),1);
+ // V3: automatically loaded 12-month insights, client/route rankings and anomaly center.
+ await page.waitForFunction(()=>document.querySelector('#pro-record-count').textContent==='2 viaggi');
+ assert.equal(await page.locator('#pro-trend-months button').count(),12);
+ assert.equal(await page.locator('#pro-clients button').count(),2);
+ assert.equal(await page.locator('#pro-routes button').count(),2);
+ assert.equal(await page.locator('#pro-alert-count').textContent(),'1');
+ assert.equal(await page.locator('#pro-export-pdf').isEnabled(),true);
+ assert.match(await page.locator('#pro-delta-trips').textContent(),/100%/);
+ // Interactive customer filtering, date interval, and PDF/Excel outputs.
+ await page.locator('#pro-clients button').first().click();
+ await page.waitForFunction(()=>document.querySelector('#pro-record-count').textContent==='1 viaggi');
+ assert.equal(await page.locator('#pro-records .pro-record').count(),1);
+ await page.locator('#pro-clear').click();
+ await page.waitForFunction(()=>document.querySelector('#pro-record-count').textContent==='2 viaggi');
+ await page.locator('#pro-from').fill('2026-11-04');
+ await page.locator('#pro-to').fill('2026-11-04');
+ await page.locator('#pro-apply').click();
+ await page.waitForFunction(()=>document.querySelector('#pro-record-count').textContent==='1 viaggi');
+ await page.locator('#pro-clear').click();
+ await page.waitForFunction(()=>document.querySelector('#pro-record-count').textContent==='2 viaggi');
+ // Anomaly opens the exact affected day, even when switching driver first.
+ await page.locator('#pro-alerts [data-selectable="true"]').first().click();
+ await page.waitForFunction(()=>document.querySelector('#report-driver').value==='11111111-1111-4111-8111-111111111111'&&
+  document.querySelector('#pro-from').value==='2026-11-03'&&
+  document.querySelector('#pro-record-count').textContent==='1 viaggi');
+ assert.equal(await page.locator('#pro-to').inputValue(),'2026-11-03');
+ await page.locator('#report-show-all').click();
+ await page.waitForFunction(()=>document.querySelector('#report-driver').value===''&&
+  document.querySelector('#pro-record-count').textContent==='2 viaggi');
+ const pd=page.waitForEvent('download');
+ await page.locator('#pro-export-pdf').click();
+ const pdf=await pd;
+ assert.match(pdf.suggestedFilename(),/\.pdf$/);
+ const pdfBytes=await readFile(await pdf.path());
+ assert(pdfBytes.subarray(0,8).toString('ascii').startsWith('%PDF-1.4'));
+ const xd=page.waitForEvent('download');
+ await page.locator('#pro-export-xlsx').click();
+ const xlsx=await xd;
+ assert.match(xlsx.suggestedFilename(),/\.xlsx$/);
+ const xlsxBytes=await readFile(await xlsx.path());
+ assert.equal(xlsxBytes[0],80);assert.equal(xlsxBytes[1],75);
  assert.equal(await page.locator('#report-amount-chart .report-bar-row').count(),2);
  assert.equal(await page.locator('#report-driver-cards .report-person-card').count(),2);
  assert.equal(await page.locator('#report-driver-profile').isVisible(),false);
@@ -87,6 +178,11 @@ try{
  await page.waitForFunction(()=>document.querySelector('#report-profile-title').textContent==='Mario Rossi'&&
   document.querySelector('#report-driver-profile').hidden===false);
  assert.equal(await page.locator('#report-profile-trips').textContent(),'2');
+ await page.waitForFunction(()=>document.querySelector('#pro-record-count').textContent==='2 viaggi');
+ await page.locator('#pro-compare-driver').selectOption('22222222-2222-4222-8222-222222222222');
+ await page.waitForFunction(()=>document.querySelector('#pro-compare-output table tbody tr')!==null);
+ assert.equal(await page.locator('#pro-compare-output tbody tr').count(),2);
+ assert.match(await page.locator('#pro-compare-output').textContent(),/Lucia Bianchi/);
  assert.equal(await page.locator('#report-profile-days').textContent(),'2');
  assert.match((await page.locator('#report-profile-average').textContent()).replace(/\s/g,' '),/125,00/);
  assert.match((await page.locator('#report-profile-total').textContent()).replace(/\s/g,' '),/250,00/);
@@ -136,6 +232,8 @@ try{
  assert.equal(await page.locator('#report-driver-cards .report-person-card').count(),0);
  assert.equal(await page.locator('#report-driver-profile').isVisible(),false);
  assert.equal(await page.locator('#report-amount-chart .report-bar-row').count(),0);
+ assert.equal(await page.locator('#pro-records .pro-record').count(),0);
+ assert.equal(await page.locator('#pro-export-pdf').isDisabled(),true);
  assert.equal(errors.length,0,'No JavaScript errors: '+errors.join(';'));
  // Data source remains read-only, notes never render as HTML, and no horizontal page scroll on mobile.
  assert.equal(await page.locator('#report-month').inputValue(),'2026-11');

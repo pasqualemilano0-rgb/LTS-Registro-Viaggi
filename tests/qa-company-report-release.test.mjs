@@ -9,11 +9,14 @@ test('dashboard accessibile solo dal pannello admin, CSP e versioni coerenti',()
  for(const id of ['management-tab','report-tab','report-panel','report-count',
    'report-total','report-chart','report-amount-chart','report-driver-chart','report-rows',
    'report-next','report-driver','report-month','report-driver-profile','report-profile-title',
-   'report-profile-average','report-driver-cards','report-driver-search','report-reset-filters'])
+   'report-profile-average','report-driver-cards','report-driver-search','report-reset-filters',
+   'pro-insights','pro-trend','pro-trend-months','pro-from','pro-to','pro-client',
+   'pro-city','pro-container','pro-compare-driver','pro-alerts','pro-alert-count',
+   'pro-export-pdf','pro-export-xlsx','pro-records'])
    assert.match(html,new RegExp('id="'+id+'"'));
- assert.match(html,/admin\.mjs\?v=20261104-driver-pro-v2/);
- assert.match(html,/admin\.css\?v=20261104-driver-pro-v2/);
- assert.match(js,/account-access\.mjs\?v=20261104-company-v1/);
+ assert.match(html,/admin\.mjs\?v=20261104-company-v3/);
+ assert.match(html,/admin\.css\?v=20261104-company-v3/);
+ assert.match(js,/account-access\.mjs\?v=20261104-company-v3/);
  assert.match(js,/setupReport\(account\)/);
  assert.match(js,/companyView\.reset\(\)/);
  assert.match(html,/default-src 'none'/);
@@ -23,7 +26,17 @@ test('dashboard accessibile solo dal pannello admin, CSP e versioni coerenti',()
  assert.match(report,/function driverProfile\(/);
  assert.match(report,/function driverDirectory\(/);
  assert.match(report,/function renderAmountChart\(/);
- assert.match(js,/report\.mjs\?v=20261104-driver-pro-v2/);
+ assert.match(js,/report\.mjs\?v=20261104-company-v3/);
+ assert.match(report,/setupInsights\(account\)/);
+ const advanced=read('amministratore/report-insights.mjs');
+ const exportsModule=read('amministratore/report-export.mjs');
+ assert.match(advanced,/companyInsights\(/);
+ assert.match(advanced,/downloadXlsx\(/);
+ assert.match(advanced,/downloadPdf\(/);
+ assert.match(exportsModule,/export function makeXlsx/);
+ assert.match(exportsModule,/export function makePdf/);
+ assert.doesNotMatch(advanced,/innerHTML|eval\(|document\.write\(/);
+ 
  assert.doesNotMatch(report,/innerHTML|eval\(|\.style\./);
  assert.doesNotMatch([html,js,report].join('\n'),/sb_secret_|SUPABASE_SERVICE_ROLE_KEY|SUPABASE_SECRET_KEYS/);
 });
