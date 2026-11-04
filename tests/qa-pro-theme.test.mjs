@@ -18,7 +18,7 @@ test('shared LTS visual design is loaded in both driver entrypoints and admin',(
 });
 test('new shared stylesheet remains available offline without caching personal data',()=>{
  const worker=read('sw.js');
- assert.match(worker,/const CACHE = PREFIX \+ '20261104-lts-pro-ui-v5'/);
+ assert.match(worker,/const CACHE = PREFIX \+ '20261104-driver-phase2-v1'/);
  assert.match(worker,/"\/LTS-Registro-Viaggi\/pro-theme\.css"/);
  assert.doesNotMatch(worker,/service_role|sb_secret_/i);
 });
