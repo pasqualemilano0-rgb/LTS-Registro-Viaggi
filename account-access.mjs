@@ -1,8 +1,8 @@
 /** Driver-only remembered sign-in: no persistent passwords or access JWTs.
  * Server verification is mandatory before opening any cached account archive.
  */
-import runtime from '/runtime-config.mjs';
-import {readDriverToken,writeDriverToken,clearDriverToken} from '/driver-session-vault.mjs';
+import runtime from '/LTS-Registro-Viaggi/runtime-config.mjs';
+import {readDriverToken,writeDriverToken,clearDriverToken} from '/LTS-Registro-Viaggi/driver-session-vault.mjs';
 
 const SESSION_KEY='lts-supabase-account-session-v1';
 const MODE_KEY='lts-supabase-account-mode-v1';
