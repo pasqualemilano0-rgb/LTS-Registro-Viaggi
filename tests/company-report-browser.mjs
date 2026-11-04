@@ -324,6 +324,51 @@ try{
  assert.equal(errors.length,0,'No JavaScript errors: '+errors.join(';'));
  // Data source remains read-only, notes never render as HTML, and no horizontal page scroll on mobile.
  assert.equal(await page.locator('#report-month').inputValue(),'2026-11');
+ // Actual unauthenticated layout after logout; no production account or credentials.
+ assert.equal(await page.locator('#login-panel').isVisible(),true,'Login is visible after logout');
+ for(const width of [320,390,768,980]){
+  const height=width===980?1480:844;
+  await page.setViewportSize({width,height});
+  const geometry=await page.locator('#login-panel').evaluate(card=>{
+   const rect=card.getBoundingClientRect(),field=card.querySelector('#login-phone'),
+     button=card.querySelector('[type=submit]'),heading=card.querySelector('h1');
+   return {
+    vw:innerWidth,scrollWidth:document.documentElement.scrollWidth,
+    left:rect.left,right:rect.right,width:rect.width,
+    inputHeight:field.getBoundingClientRect().height,
+    inputFont:parseFloat(getComputedStyle(field).fontSize),
+    buttonHeight:button.getBoundingClientRect().height,
+    titleFont:parseFloat(getComputedStyle(heading).fontSize),
+    touch:matchMedia('(pointer:coarse)').matches
+   };
+  });
+  assert(geometry.left>=-1&&geometry.right<=geometry.vw+1,
+   width+'px: login must remain inside viewport');
+  assert(geometry.scrollWidth<=geometry.vw+2,width+'px: no horizontal overflow');
+  assert(geometry.inputFont>=16&&geometry.inputHeight>=56,
+   width+'px: phone input is readable and touch sized');
+  assert(geometry.buttonHeight>=55,width+'px: sign-in tap target is large');
+  assert(geometry.titleFont>=26,width+'px: heading is legible');
+  if(width===980&&geometry.touch){
+   assert(geometry.width>=geometry.vw*.7,
+    'Portrait touch browser using desktop viewport must not show a tiny card');
+  }
+  if(width===320)assert(geometry.width>=geometry.vw*.85,'320px card fills mobile width');
+ }
+ await page.setViewportSize({width:390,height:844});
+ await page.evaluate(()=>{
+  document.querySelector('#login-panel').hidden=true;
+  document.querySelector('#mfa-panel').hidden=false;
+ });
+ assert.equal(await page.locator('#mfa-panel').isVisible(),true,'MFA card remains reachable');
+ const mfaMetrics=await page.locator('#mfa-panel').evaluate(card=>({
+  width:card.getBoundingClientRect().width,
+  vw:innerWidth,
+  inputFont:parseFloat(getComputedStyle(card.querySelector('#mfa-code')).fontSize)
+ }));
+ assert(mfaMetrics.width<=mfaMetrics.vw&&mfaMetrics.inputFont>=20,
+  'MFA card and six-digit code remain readable on mobile');
+
  console.log('PASS Chromium mobile 390px: seven real pages, admin MFA, charts, filters, PDF/Excel, anomaly drill-down, security, logout wipe');
  await page.close();
  // Desktop navigation: the protected dashboard must retain working tabs with its

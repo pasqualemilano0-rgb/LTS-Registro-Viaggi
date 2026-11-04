@@ -40,3 +40,21 @@ test('administrator retains independent professional layout',()=>{
  assert.doesNotMatch(html,/onload\s*=|onclick\s*=/);
  assert.match(read('recupera-password.html'),/shared professional visual language/);
 });
+
+test('administrator sign-in V8 stays accessible and keeps protected flows intact',()=>{
+ const login=read('amministratore/login-v8.css');
+ assert.match(html,/login-v8[.]css[?]v=20261104-admin-login-v8/);
+ for(const id of ['login-panel','login-form','login-phone','login-password','login-error',
+                  'mfa-panel','mfa-verify-form','mfa-code','dashboard']){
+  assert.match(html,new RegExp('id="'+id+'"'));
+ }
+ assert.match(html,/auth-assurance/);
+ assert.match(login,/body:has\(#dashboard\[hidden\]\)/);
+ assert.match(login,/@media\(max-width:720px\)/);
+ assert.match(login,/\(pointer:coarse\) and \(orientation:portrait\)/);
+ assert.match(login,/min-height:56px/);
+ assert.match(login,/font-size:16px/);
+ assert.match(login,/max-width:1100px/);
+ assert.doesNotMatch(login,/https?:\/\/|@import|url\s*\(|javascript:|service_role|sb_secret_/i);
+ assert.doesNotMatch(html,/onload\s*=|onclick\s*=/);
+});
