@@ -37,7 +37,7 @@ function url(which){
  if(result.protocol!=='https:'||
      result.hostname!=='otrqynkscpbeyuvdlgpg.supabase.co'||
      result.username||result.password||result.search||result.hash||
-     !['/functions/v1/lts-phone-auth','/functions/v1/lts-account-state','/functions/v1/lts-driver-onboarding'].includes(result.pathname))
+     !['/functions/v1/lts-phone-auth','/functions/v1/lts-account-state','/functions/v1/lts-driver-onboarding','/functions/v1/lts-company-report'].includes(result.pathname))
    throw new Error('Servizio account non configurato in modo sicuro.');
  return result.href;
 }
@@ -351,4 +351,16 @@ export async function activateDriverInvitation({phone, code, password} = {}) {
      typeof password !== 'string' || password.length < 12 || password.length > 128)
    throw new Error('Inserisci numero, invito e una password di almeno 12 caratteri.');
  return api('onboardingEndpoint', {action:'redeem', phone, code, password});
+}
+
+/** Admin-only statistical view; backend also validates role, JWT, live session and MFA. */
+export async function companyReport({month,offset=0,limit=40,driverId=null}={}){
+ if(!isVerified()||getRole()!=='admin')throw new Error('Accesso amministratore richiesto.');
+ if(typeof month!=='string'||!/^20\d{2}-(0[1-9]|1[0-2])$/.test(month)||
+    !Number.isSafeInteger(offset)||offset<0||!Number.isSafeInteger(limit)||limit<1||limit>40)
+   throw new Error('Filtri report non validi.');
+ const payload={action:'overview',month,offset,limit,...(driverId?{driverId}:{})};
+ return withSessionRetry(
+  ()=>api('reportEndpoint',payload,readStored()?.access_token),
+  async()=>{await verifySession();if(getRole()!=='admin')throw new Error('Ruolo non autorizzato.');});
 }
