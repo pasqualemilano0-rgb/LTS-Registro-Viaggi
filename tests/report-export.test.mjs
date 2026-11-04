@@ -33,7 +33,10 @@ test('Excel XLSX contains four real worksheets and escaped untrusted content',()
  assert(bytes instanceof Uint8Array);
  assert.equal(bytes[0],0x50);assert.equal(bytes[1],0x4b);
  const files=zipNames(bytes);
- assert.equal(files.length,8);
+ assert.equal(files.length,9);
+ assert(files.some(x=>x.name==='xl/styles.xml'));
+ assert(files.find(x=>x.name==='xl/styles.xml').body.includes('applyNumberFormat'));
+ assert(files.find(x=>x.name==='xl/worksheets/sheet2.xml').body.includes('autoFilter ref="A1:G3"'));
  assert(files.some(x=>x.name==='[Content_Types].xml'));
  assert(files.some(x=>x.name==='xl/worksheets/sheet1.xml'));
  const trips=files.find(x=>x.name==='xl/worksheets/sheet2.xml').body;
