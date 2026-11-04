@@ -52,7 +52,7 @@ test('PDF output has a complete cross-reference and all records with real amount
  assert(pdf.includes('startxref'));
  assert(pdf.includes('Rossi'));
  assert(pdf.includes('250.00'));
- assert(pdf.includes('CLIENTE & SALERNO')===false,'PDF only contains compact text fields');
+ assert(pdf.includes('CLIENTE & SALERNO'),'PDF includes customer names in the authorized report');
  assert(pdf.includes('%%EOF'));
  const objects=[...pdf.matchAll(/\d+ 0 obj\n/g)].length;
  const count=Number(/xref\n0 (\d+)/.exec(pdf)?.[1]);
