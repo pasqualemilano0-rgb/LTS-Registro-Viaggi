@@ -1,10 +1,12 @@
-import * as account from '../account-access.mjs?v=20261103-admin-backup-v21';
+import * as account from '../account-access.mjs?v=20261104-company-v1';
 import {STATUS_LABELS,driverSummary,filterDrivers} from './model.mjs';
+import {setupReport} from './report.mjs';
 
 const byId=id=>document.getElementById(id);
 const loginPanel=byId('login-panel'), dashboard=byId('dashboard');
 const loginError=byId('login-error'),listError=byId('list-error');
 let drivers=[],busy=false,mfaFactorId=null,mfaMode='login';
+const companyView=setupReport(account);
 const errorText=(error,fallback)=>error?.message||fallback;
 function inform(message,bad=false){
  const node=byId('notice');node.textContent=message;node.hidden=!message;node.classList.toggle('danger',bad);
@@ -80,7 +82,7 @@ async function loadBackupFactors(){
  }catch(error){byId('mfa-backup-status').textContent=errorText(error,'Stato backup non disponibile. Riprova online.');}
 }
 function lock(message='Accedi come amministratore per continuare.'){
- drivers=[];clearMfa();
+ drivers=[];companyView.reset();clearMfa();
  byId('roster').replaceChildren();hideCode();
  byId('mfa-panel').hidden=true;
  dashboard.hidden=true;loginPanel.hidden=false;byId('logout').hidden=true;
@@ -88,7 +90,7 @@ function lock(message='Accedi come amministratore per continuare.'){
  inform(message,Boolean(message));
 }
 function showDashboard(status={}){
- clearMfa();byId('mfa-panel').hidden=true;
+ companyView.reset();clearMfa();byId('mfa-panel').hidden=true;
  byId('mfa-warning').hidden=status.mfa_enrolled===true;
  byId('mfa-backup-card').hidden=!(status.mfa_enrolled&&status.mfa_verified);
  loginPanel.hidden=true;dashboard.hidden=false;byId('logout').hidden=false;
