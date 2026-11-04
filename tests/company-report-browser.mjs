@@ -77,6 +77,12 @@ try{
  assert.equal(await page.locator('#report-rows tr').count(),2);
  assert.equal(await page.locator('#report-chart .report-bar-row').count(),2);
  assert.equal(await page.locator('#report-driver-chart .report-bar-row').count(),1);
+ await page.locator('#report-driver').selectOption('22222222-2222-4222-8222-222222222222');
+ await page.waitForFunction(()=>document.querySelector('#report-count').textContent==='0');
+ assert.equal(await page.locator('#report-driver-chart .report-bar-row').count(),0);
+ await page.locator('#report-driver').selectOption('');
+ await page.waitForFunction(()=>document.querySelector('#report-count').textContent==='2');
+ assert.equal(await page.locator('#report-driver-chart .report-bar-row').count(),1);
  await page.locator('#report-rows details').first().locator('summary').click();
  assert.match(await page.locator('#report-rows details').first().textContent(),/Seconda presa/);
  assert.equal(await page.locator('img[src="x"]').count(),0,'Notes must not create HTML');
