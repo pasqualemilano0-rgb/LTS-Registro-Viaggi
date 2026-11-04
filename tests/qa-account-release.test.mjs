@@ -50,8 +50,8 @@ test('offline worker activates new cache and precaches auth code without caching
 });
 test('HTML entry points are identical and use the new cache buster',()=>{
   assert.equal(html,shell);
-  assert.match(html,/app[.]css[?]v=20261104-company-v1/);
-  assert.match(html,/app[.]mjs[?]v=20261104-company-v1/);
+  assert.match(html,/app[.]css[?]v=20261103-admin-backup-v21/);
+  assert.match(html,/app[.]mjs[?]v=20261103-admin-backup-v21/);
   assert.match(html,/<script type="module"/);
 });
 test('ports section stays integrated, untouched backups and no new bundled private backend',()=>{
