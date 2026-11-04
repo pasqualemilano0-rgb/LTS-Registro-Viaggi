@@ -1,4 +1,5 @@
 /** Administrator reporting UI. Aggregates are authoritative only when returned by the API. */
+import {setupInsights} from './report-insights.mjs?v=20261104-company-v3';
 const el=id=>document.getElementById(id);
 function node(tag,className='',value=''){
  const e=document.createElement(tag);
@@ -171,6 +172,7 @@ export function setupReport(account){
  const month=el('report-month'),driver=el('report-driver');
  month.value=currentMonth();
  let requestSeq=0,rows=[],page=null,loading=false,focusOnDriver=false;
+ const insights=setupInsights(account);
  const driverSearch=el('report-driver-search');
  function selectDriver(id){
   if(driver.value===id&&page)return;
@@ -185,7 +187,7 @@ export function setupReport(account){
  }
  function reset(){
   requestSeq++;rows=[];page=null;loading=false;
-  clearData();el('report-empty').hidden=true;el('report-status').textContent='';
+  clearData();insights.reset();el('report-empty').hidden=true;el('report-status').textContent='';
   el('report-error').hidden=true;el('report-next').disabled=false;
   updateDriverOptions([]);
   driverSearch.value='';
@@ -199,7 +201,7 @@ export function setupReport(account){
   }
   const serial=++requestSeq;loading=true;
   el('report-refresh').disabled=true;el('report-next').disabled=true;
-  if(!append){clearData();el('report-empty').hidden=true;}
+  if(!append){clearData();insights.reset();el('report-empty').hidden=true;}
   el('report-error').hidden=true;
   el('report-status').textContent='Verifica in corso dei dati sincronizzati…';
   try{
@@ -240,6 +242,7 @@ export function setupReport(account){
    el('report-next').hidden=rows.length>=result.pagination.total;
    el('report-status').textContent=(result.source||'Dati sincronizzati')+
     ' Ultimo controllo: '+new Date(result.reportedAt).toLocaleString('it-IT')+'.';
+   if(!append)void insights.load({month:month.value,driverId:driver.value||null,drivers:result.drivers});
    if(focusOnDriver&&selected&&el('report-driver-profile').hidden===false){
     focusOnDriver=false;
     el('report-driver-profile').scrollIntoView({block:'start',behavior:'auto'});
@@ -257,7 +260,7 @@ export function setupReport(account){
    if(serial===requestSeq){loading=false;el('report-refresh').disabled=false;el('report-next').disabled=false;}
   }
  }
- mTab.addEventListener('click',()=>{requestSeq++;loading=false;rows=[];page=null;clearData();tabs(false);});
+ mTab.addEventListener('click',()=>{requestSeq++;loading=false;rows=[];page=null;clearData();insights.reset();tabs(false);});
  rTab.addEventListener('click',()=>{if(!account.isVerified()||account.getRole()!=='admin')return;tabs(true);void load(false);});
  el('report-refresh').addEventListener('click',()=>{rows=[];void load(false);});
  month.addEventListener('change',()=>{rows=[];void load(false);});
