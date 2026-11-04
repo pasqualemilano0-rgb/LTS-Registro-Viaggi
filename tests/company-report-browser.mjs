@@ -239,6 +239,39 @@ try{
  assert.equal(await page.locator('#report-month').inputValue(),'2026-11');
  console.log('PASS Chromium mobile 390px: overview, 3 graphs, driver directory/search, individual profile, monthly filters, escaped notes, logout wipe');
  await page.close();
+ // Desktop navigation: the protected dashboard must retain working tabs with its
+ // new dark sidebar; never make a non-verified page visible via CSS.
+ const desktop=await browser.newPage({viewport:{width:1440,height:900}});
+ const desktopErrors=[];desktop.on('pageerror',e=>desktopErrors.push(String(e)));
+ await desktop.goto(origin+'/amministratore/',{waitUntil:'networkidle',timeout:20000});
+ await desktop.locator('#dashboard').waitFor({state:'visible'});
+ const nav=desktop.locator('#dashboard>.admin-switch');
+ const navBox=await nav.boundingBox(),contentBox=await desktop.locator('#management-panel').boundingBox();
+ assert(navBox&&contentBox&&navBox.x+navBox.width<contentBox.x,
+  'Professional left sidebar must be beside the admin content');
+ assert.equal(await nav.evaluate(e=>getComputedStyle(e).position),'sticky');
+ assert.equal(await desktop.locator('.admin-nav-brand').isVisible(),true);
+ await desktop.locator('#report-tab').click();
+ await desktop.waitForFunction(()=>document.querySelector('#report-count').textContent==='2');
+ assert.equal(await desktop.locator('#report-panel').isVisible(),true);
+ assert.equal(await desktop.locator('#management-panel').isVisible(),false);
+ assert.equal(desktopErrors.length,0,desktopErrors.join(';'));
+ await desktop.close();
+ // Shared driver theme visual regression with fixed DOM; avoid reading real
+ // trips or depending on network authentication for a CSS-only change.
+ const driver=await browser.newPage({viewport:{width:1440,height:900}});
+ await driver.setContent('<div id="app"><div class="app-frame"><div class="app-scroll"><header class="topbar">LTS</header><main class="app-main"><h1>Registro viaggi</h1></main></div><nav class="bottom-nav"><button class="nav-item active">Viaggi</button><button class="nav-item">Clienti</button></nav></div></div>');
+ await driver.addStyleTag({path:resolve(dir,'app.css')});
+ await driver.addStyleTag({path:resolve(dir,'pro-theme.css')});
+ const dnav=await driver.locator('.bottom-nav').boundingBox();
+ const dscroll=await driver.locator('.app-scroll').boundingBox();
+ assert(dnav&&dscroll&&dnav.x+dnav.width<=dscroll.x+1,'Desktop driver nav stays separate from content');
+ assert.equal(await driver.locator('.bottom-nav').evaluate(e=>getComputedStyle(e).position),'sticky');
+ await driver.setViewportSize({width:390,height:844});
+ const mobileNav=await driver.locator('.bottom-nav').boundingBox();
+ assert(mobileNav&&mobileNav.width>=380,'Mobile retains full-width navigation');
+ await driver.close();
+ console.log('PASS LTS Pro theme: desktop admin sidebar, live report tabs, driver desktop sidebar and mobile nav.');
 } finally {
  if(browser)await browser.close();
  await new Promise(resolve=>server.close(resolve));

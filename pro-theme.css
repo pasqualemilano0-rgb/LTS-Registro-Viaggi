@@ -1,0 +1,153 @@
+/* LTS Registro Viaggi · professional visual theme v4.
+   This file deliberately changes presentation only; no navigation, storage or auth logic. */
+:root{
+ --ink:#102f44;--muted:#647d8e;--teal:#087e87;--teal-dark:#075f6e;
+ --wash:#e8f7f7;--line:#dfe8ee;--shadow:0 8px 27px rgba(18,50,77,.055);
+ background:#f1f5f9;color:var(--ink);
+ font-family:Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+}
+html{background:#f1f5f9}
+body{background:linear-gradient(180deg,#f7fbfd 0,#f1f5f9 360px,#f2f6fa 100%);color:var(--ink)}
+.topbar{background:#fff;border-color:#e2eaf0;box-shadow:0 2px 12px rgba(17,51,77,.035)}
+.brand-title{color:#13344b;letter-spacing:-.045em}
+.brand-copy .eyebrow{color:#0b8790}
+.profile-button{background:linear-gradient(135deg,#0d8291,#075f71);color:white;
+ box-shadow:0 3px 11px rgba(12,92,115,.16);font-weight:800}
+.profile-button:after{background:#4bd5b4}
+.app-main{max-width:1140px}
+.section-hero{
+ background:linear-gradient(120deg,#f8fffe 0%,#f4f9fc 68%,#edf6f9 100%);
+ border:1px solid #dce9ed;
+ border-radius:19px;box-shadow:0 8px 25px rgba(11,61,86,.04);
+}
+.section-hero h1{color:#102d44;letter-spacing:-.05em}
+.section-hero .subtitle{color:#607d8c}
+.panel,.trip-card,.customer-card,.tariff-card{
+ background:#fff;border:1px solid #e1e9ee;border-radius:19px;
+ box-shadow:0 7px 28px rgba(12,46,70,.05);
+}
+.form-panel{border-radius:19px}
+.trip-card{transition:border-color .16s,box-shadow .16s}
+.trip-card:hover{border-color:#a8d9da;box-shadow:0 12px 31px rgba(11,57,76,.085)}
+.trip-container{color:#173a52;letter-spacing:-.045em}
+.trip-money,.tariff-amount{color:#067e82}
+.date-badge{border-radius:8px;background:#e9f7f6;color:#167781;font-weight:750}
+.mini-chip{background:#edf6f8;color:#3a7082;border:1px solid #e2edf0}
+.overview{border-radius:22px;background:linear-gradient(122deg,#10314a 0%,#14546c 68%,#087d7e 100%);
+ box-shadow:0 14px 32px rgba(16,61,79,.17);border-color:#1f6672}
+.overview-amount{font-variant-numeric:tabular-nums}
+.overview-bottom{gap:25px}
+.month-control,.search input,.segment{border-radius:13px}
+.primary-button{background:linear-gradient(115deg,#087f8c,#0a9e90);
+ border-radius:12px;box-shadow:0 7px 19px rgba(12,111,113,.14);
+ font-weight:760}
+.primary-button:hover{background:linear-gradient(115deg,#086b7f,#078b81)}
+.secondary-button{border-radius:12px;border-color:#cedfe7;background:#fff}
+.secondary-button:hover{background:#f0f8fa}
+.segment{background:#e5eff2}
+.segment button.selected{box-shadow:0 4px 11px rgba(15,63,84,.09)}
+.form-panel .field-label,.field-label{color:#405e70;font-weight:750}
+input,select,textarea{background:#fff;border-color:#d7e4ea;border-radius:12px}
+input:focus,select:focus,textarea:focus{border-color:#058a95;box-shadow:0 0 0 3px #bdece9}
+.trip-field{background:#fff;border-color:#dde8ed;border-radius:14px}
+.trip-option{border-radius:13px}
+.service-chip{border-radius:12px}
+.customer-card{transition:border-color .16s,box-shadow .16s}
+.customer-card:hover{border-color:#b0d9da}
+.customer-avatar,.profile-avatar{background:linear-gradient(135deg,#e1f5f5,#e8f1fb);color:#146b7b;border-radius:14px}
+.tariff-card{border-color:#e0e9ed}
+.dialog{border-radius:22px;box-shadow:0 24px 80px rgba(8,37,58,.24);border-color:#dce7ed}
+.dialog::backdrop{background:rgba(8,29,48,.54)}
+.dialog-close{background:#eaf3f5}
+.empty-state{border:1px dashed #cfdee5}
+.empty-icon{background:#e2f5f2;color:#088d8b}
+.info-note{border:1px solid #d9eced;border-radius:13px}
+.sync-status{color:#628195}
+.bottom-nav{background:#fff;border-top-color:#e0e9ec}
+.nav-item{border-radius:12px;transition:background .16s,color .16s}
+.nav-item.active{background:#e7f7f4;color:#067e80}
+.nav-item.active .icon{color:#078e89}
+.nav-item:focus-visible{outline:3px solid #10a9a0;outline-offset:2px}
+.account-gate{
+ background:linear-gradient(135deg,#fff 0%,#edf9f9 100%);
+ border:1px solid #dcebed;
+ border-radius:25px;
+ box-shadow:0 17px 55px rgba(12,51,70,.085);
+}
+.account-gate h1{color:#102e46}
+.account-login-form{background:#fff;border:1px solid #dfebee;border-radius:18px;padding:20px;box-shadow:0 8px 25px #123d5010}
+.account-login-form .primary-button{width:100%}
+@media(min-width:1080px) and (pointer:fine){
+ html,body,#app{height:auto;min-height:100dvh}
+ body{overflow:auto}
+ .app-frame{
+  display:grid!important;grid-template-columns:240px minmax(0,1fr);grid-template-rows:minmax(100dvh,1fr);
+  max-width:1680px;min-height:100dvh;height:auto!important;width:100%;
+  gap:0;background:#f2f6fa;border-left:1px solid #e6edef;border-right:1px solid #e6edef;
+ }
+ .app-frame>.app-scroll{grid-column:2;grid-row:1;min-height:0;min-width:0;
+  height:100dvh;overflow-y:auto!important;display:block}
+ .app-frame>.bottom-nav{
+  display:flex!important;flex-direction:column;justify-content:flex-start;align-items:stretch;
+  grid-column:1;grid-row:1;position:sticky!important;top:0;right:auto;bottom:auto;left:auto;
+  transform:none!important;max-width:none;width:auto;height:100dvh;min-height:0;
+  padding:33px 14px 25px;margin:0;gap:8px;
+  border:0;border-right:1px solid #1e4962;border-radius:0;
+  background:linear-gradient(155deg,#102e49,#0b2a46 70%,#0b5762);
+  box-shadow:none;overflow-y:auto;overscroll-behavior:contain;
+ }
+ .app-frame>.bottom-nav:before{
+  content:"LTS  ·  REGISTRO VIAGGI";color:#fff;display:block;white-space:normal;
+  font-size:17px;font-weight:850;letter-spacing:-.045em;
+  padding:4px 12px 26px;border-bottom:1px solid #ffffff24;margin-bottom:16px;
+ }
+ .app-frame>.bottom-nav:after{
+  content:"CONTROLLO VIAGGI • ACCESSO SICURO";
+  color:#a6c4d0;display:block;font-size:10px;font-weight:650;letter-spacing:.055em;
+  padding:19px 11px 10px;margin-top:auto;border-top:1px solid #ffffff25;
+ }
+ .app-frame .bottom-nav .nav-item{
+  display:flex;align-items:center;justify-content:flex-start;gap:13px;flex-direction:row;
+  width:100%;max-width:none;min-height:52px;flex:none;text-align:left;
+  color:#c5d9e1;background:transparent;font-size:13px;font-weight:730;
+  padding:12px 15px;border-radius:12px;
+ }
+ .app-frame .bottom-nav .nav-item .icon{width:22px;height:22px;flex:none;color:#c6dce7}
+ .app-frame .bottom-nav .nav-item.active{
+  color:#fff;background:linear-gradient(95deg,#0c9393,#0c7782);
+  box-shadow:0 6px 16px #061e371b;
+ }
+ .app-frame .bottom-nav .nav-item.active .icon{color:#fff}
+ .app-frame .bottom-nav .nav-item:hover{background:#ffffff14;color:#fff}
+ .app-frame .bottom-nav .nav-item.active:hover{background:#0b8d91}
+ .app-frame .bottom-nav .nav-item.active:before{display:none!important}
+ .app-frame .topbar{padding:20px 34px;min-height:82px}
+ .app-frame .app-main{max-width:1180px;padding:30px 34px 70px;margin:0 auto}
+ .app-frame .section-hero{margin-bottom:23px}
+ .app-frame .view-porti{height:calc(100dvh - 82px);max-width:none;margin:0;padding:0}
+ .app-frame>.app-scroll:has(.view-porti){display:flex!important;flex-direction:column;overflow:hidden!important}
+ .app-frame>.app-scroll:has(.view-porti) .view-porti{flex:1;min-height:0;height:auto}
+}
+@media(max-width:1079px){
+ .app-frame{max-width:1120px}
+ .app-main{width:100%}
+ .bottom-nav{box-shadow:0 -8px 28px rgba(16,48,71,.075);border-top:1px solid #e1ebef}
+ .bottom-nav .nav-item.active{background:#e6f6f4;color:#087980}
+}
+@media(max-width:759px){
+ .topbar{padding-inline:16px;background:#fff}
+ .brand-title{font-size:13px}
+ .app-main{padding-inline:15px}
+ .section-hero{border-radius:15px}
+ .panel,.trip-card,.customer-card,.tariff-card{border-radius:17px}
+ .account-gate{border-radius:0;border:0;box-shadow:none;background:transparent}
+ .account-login-form{padding:17px}
+ .bottom-nav{border-top-color:#dce7ed}
+ .bottom-nav .nav-item{border-radius:10px}
+}
+@media(max-width:390px){
+ .app-main{padding-inline:12px}
+ .topbar{padding-inline:12px}
+ .bottom-nav .nav-item{min-width:0}
+}
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{transition:none!important}}
