@@ -147,7 +147,7 @@ function validateData(d,month){
  return d;
 }
 export function setupInsights(account){
- let state=null,seq=0,currentMonth='',driverId='',drivers=[],visible=30;
+ let state=null,seq=0,currentMonth='',driverId='',drivers=[],visible=30,pendingAlert=null;
  const monthEl=el('report-month'),driverEl=el('report-driver');
  const compare=el('pro-compare-driver');
  const from=el('pro-from'),to=el('pro-to');
@@ -171,12 +171,16 @@ export function setupInsights(account){
  }
  function chosenAlerts(item){
   if(item.driverId&&driverEl.value!==item.driverId){
+   // The overview reload clears filters; preserve the alert for the new user.
+   pendingAlert=item;
    driverEl.value=item.driverId;
    driverEl.dispatchEvent(new Event('change',{bubbles:true}));
+   return;
   }
   if(item.date&&item.date>=from.min&&item.date<=to.max){
    from.value=item.date;to.value=item.date;
   }
+  void load();
  }
  function changedContext(ctx){
   const sameMonth=currentMonth===ctx.month;
@@ -197,6 +201,13 @@ export function setupInsights(account){
   from.min=earliest;from.max=last(ctx.month);to.min=earliest;to.max=last(ctx.month);
   if(from.value<earliest||from.value>from.max)from.value=first(ctx.month);
   if(to.value>to.max||to.value<to.min)to.value=last(ctx.month);
+  if(pendingAlert){
+   const alert=pendingAlert;pendingAlert=null;
+   if((!alert.driverId||alert.driverId===driverId)&&alert.date&&
+      alert.date>=from.min&&alert.date<=to.max){
+    from.value=alert.date;to.value=alert.date;
+   }
+  }
  }
  function render(data){
   state=data;visible=30;lock(false);
@@ -242,8 +253,9 @@ export function setupInsights(account){
    el('pro-progress').textContent='Analisi non disponibile: nessun dato confermato.';
   }
  }
- function reset(){
+ function reset({keepPending=false}={}){
   clear();currentMonth='';driverId='';drivers=[];
+  if(!keepPending)pendingAlert=null;
   compare.replaceChildren();from.value='';to.value='';client.replaceChildren();city.replaceChildren();
   container.value='';
  }
