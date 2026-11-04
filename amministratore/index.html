@@ -10,6 +10,7 @@
   <meta name="description" content="Pannello riservato all'amministratore per gestire gli autisti LTS.">
   <link rel="icon" type="image/png" href="../assets/icon-192.png">
   <link rel="stylesheet" href="./admin.css?v=20261104-company-v3">
+  <link rel="stylesheet" href="./pro-theme.css?v=20261104-pro-ui-v4">
   <script type="module" src="./admin.mjs?v=20261104-company-v3"></script>
 </head>
 <body>
@@ -73,8 +74,14 @@
     </section>
     <div id="dashboard" hidden>
       <nav class="admin-switch" aria-label="Sezioni amministratore">
-        <button type="button" id="management-tab" class="admin-switch-button selected" aria-pressed="true">Gestione account</button>
-        <button type="button" id="report-tab" class="admin-switch-button" aria-pressed="false">Viaggi e statistiche</button>
+        <div class="admin-nav-brand" aria-hidden="true">
+          <span class="admin-nav-logo">LTS</span>
+          <span class="admin-nav-name">Gestione Autisti<small>Control Center</small></span>
+        </div>
+        <p class="admin-nav-caption">NAVIGAZIONE</p>
+        <button type="button" id="management-tab" class="admin-switch-button selected" aria-pressed="true"><span class="admin-nav-icon" aria-hidden="true">▦</span><span>Gestione account</span></button>
+        <button type="button" id="report-tab" class="admin-switch-button" aria-pressed="false"><span class="admin-nav-icon" aria-hidden="true">▥</span><span>Viaggi e statistiche</span></button>
+        <div class="admin-nav-help"><span class="admin-nav-help-dot" aria-hidden="true"></span><span>Ambiente protetto<small>Sessione amministratore MFA</small></span></div>
       </nav>
       <div id="management-panel">
       <div class="page-intro">
