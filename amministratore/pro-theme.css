@@ -174,3 +174,116 @@ input:focus,select:focus{outline:2px solid #bae7e6;border-color:#158e92}
  #dashboard>#management-panel,#dashboard>#report-panel{display:block;position:static}
  .topbar{box-shadow:none}
 }
+
+
+/* LTS Control Center V5 — seven real views from protected existing data modules. */
+#dashboard>.admin-switch{scrollbar-width:thin;scrollbar-color:#70a8ab transparent}
+#dashboard .admin-switch-button .admin-nav-icon{flex:none}
+#dashboard .admin-switch-button[aria-current="page"]{font-weight:850}
+#dashboard[data-view="drivers"] #security-console,
+#dashboard[data-view="drivers"] #mfa-warning,
+#dashboard[data-view="drivers"] #mfa-backup-card{display:none!important}
+#dashboard[data-view="security"] #management-panel>.page-intro,
+#dashboard[data-view="security"] #management-panel>.stat-grid,
+#dashboard[data-view="security"] #management-panel>.main-grid,
+#dashboard[data-view="security"] #management-panel>#secret-panel{display:none!important}
+#dashboard:not([data-view="security"]) #security-console{display:none!important}
+#dashboard[data-view="security"] #security-console{display:block}
+.console-security{padding:30px;max-width:950px}
+.console-security h1{font-size:clamp(28px,3.2vw,38px);letter-spacing:-.04em;margin:8px 0 11px}
+.console-security>p:not(.eyebrow){max-width:72ch;line-height:1.65;color:#536f7d}
+.console-security-actions{display:flex;gap:10px;flex-wrap:wrap;margin:24px 0 17px}
+.console-security-actions .button{display:inline-flex;align-items:center;justify-content:center;text-decoration:none}
+#security-result{font-size:13px;font-weight:650;border:1px solid #dbe9ed;background:#f5fafb;
+ border-radius:13px;padding:13px 15px;line-height:1.5}
+#dashboard[data-view="security"] #mfa-warning,
+#dashboard[data-view="security"] #mfa-backup-card{margin-top:17px}
+.console-overview{background:linear-gradient(130deg,#f8fefe,#eef7fb)!important;
+ border:1px solid #d0e8e7!important;display:flex;align-items:center;justify-content:space-between;
+ gap:24px;margin:0 0 20px;padding:28px}
+.console-overview h2{font-size:clamp(23px,2.6vw,30px);margin:6px 0 11px;color:#13384a}
+.console-overview p:not(.eyebrow){max-width:520px;font-size:13px;line-height:1.6;color:#587383}
+.console-shortcuts{display:grid;grid-template-columns:repeat(2,minmax(140px,1fr));gap:9px;min-width:min(100%,340px)}
+.console-shortcuts button{display:flex;align-items:center;justify-content:space-between;gap:7px;
+ border:1px solid #cae2e5;border-radius:11px;padding:14px 12px;background:#fff;
+ font-size:12px;font-weight:760;text-align:left;color:#18546b;min-height:47px}
+.console-shortcuts button:hover{background:#e6f7f5;border-color:#8bd0ce}
+.console-shortcuts button>span{font-size:18px;color:#138d8b}
+#dashboard:not([data-view="overview"]) #console-overview{display:none!important}
+/* All report views retain the same authenticated API response; only presentation changes. */
+#dashboard[data-view="overview"] .report-graphs,
+#dashboard[data-view="overview"] .report-directory,
+#dashboard[data-view="overview"] #report-driver-profile,
+#dashboard[data-view="overview"] .report-register,
+#dashboard[data-view="overview"] .pro-comparison,
+#dashboard[data-view="overview"] .pro-filters-panel,
+#dashboard[data-view="overview"] .pro-data-panel,
+#dashboard[data-view="overview"] .pro-exports{display:none!important}
+#dashboard[data-view="overview"] .pro-compare-grid{grid-template-columns:1fr}
+#dashboard[data-view="overview"] .pro-heading{display:none}
+#dashboard[data-view="trips"] .report-graphs,
+#dashboard[data-view="trips"] .report-directory,
+#dashboard[data-view="trips"] #report-driver-profile,
+#dashboard[data-view="trips"] .pro-heading,
+#dashboard[data-view="trips"] .pro-compare-grid,
+#dashboard[data-view="trips"] .pro-trend-panel,
+#dashboard[data-view="trips"] .pro-breakdowns,
+#dashboard[data-view="trips"] .pro-alerts-panel,
+#dashboard[data-view="trips"] .pro-exports{display:none!important}
+#dashboard[data-view="analysis"] .pro-alerts-panel,
+#dashboard[data-view="analysis"] .pro-data-panel,
+#dashboard[data-view="analysis"] .pro-exports,
+#dashboard[data-view="analysis"] .report-register{display:none!important}
+#dashboard[data-view="alerts"] .report-graphs,
+#dashboard[data-view="alerts"] .report-directory,
+#dashboard[data-view="alerts"] #report-driver-profile,
+#dashboard[data-view="alerts"] .report-register,
+#dashboard[data-view="alerts"] .pro-heading,
+#dashboard[data-view="alerts"] .pro-compare-grid,
+#dashboard[data-view="alerts"] .pro-trend-panel,
+#dashboard[data-view="alerts"] .pro-breakdowns,
+#dashboard[data-view="alerts"] .pro-exports{display:none!important}
+#dashboard[data-view="exports"] .report-graphs,
+#dashboard[data-view="exports"] .report-directory,
+#dashboard[data-view="exports"] #report-driver-profile,
+#dashboard[data-view="exports"] .report-register,
+#dashboard[data-view="exports"] .pro-heading,
+#dashboard[data-view="exports"] .pro-compare-grid,
+#dashboard[data-view="exports"] .pro-trend-panel,
+#dashboard[data-view="exports"] .pro-breakdowns,
+#dashboard[data-view="exports"] .pro-alerts-panel{display:none!important}
+#dashboard[data-view="trips"] #pro-insights,
+#dashboard[data-view="alerts"] #pro-insights,
+#dashboard[data-view="exports"] #pro-insights{margin-top:16px}
+#dashboard[data-view="alerts"] .pro-alerts-panel{border-color:#e3d8be}
+#dashboard[data-view="exports"] .pro-exports{border-color:#c5e3e4}
+#dashboard[data-view="analysis"] .report-graphs{margin-bottom:20px}
+#dashboard[data-view="analysis"] .report-directory{margin-bottom:20px}
+@media(min-width:1030px){
+ #dashboard>.admin-switch{min-height:700px}
+ #dashboard .admin-switch-button{min-height:48px}
+ #dashboard .admin-nav-caption{margin-top:0}
+}
+@media(max-width:1029px){
+ #dashboard>.admin-switch{
+  display:flex;flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain;
+  -webkit-overflow-scrolling:touch;scroll-snap-type:x proximity;
+  gap:5px;max-width:100%;margin-bottom:20px
+ }
+ #dashboard .admin-switch-button{flex:0 0 auto;min-width:125px;width:auto;
+  justify-content:center;scroll-snap-align:start;white-space:normal;padding:11px 14px}
+ #dashboard .admin-switch-button span:last-child{white-space:nowrap}
+}
+@media(max-width:680px){
+ .console-overview{flex-direction:column;align-items:stretch;gap:16px;padding:20px 17px}
+ .console-shortcuts{width:100%;min-width:0;grid-template-columns:repeat(2,minmax(0,1fr))}
+ .console-shortcuts button{min-width:0;font-size:11px;padding:12px 10px}
+ .console-security{padding:22px 18px}
+ .console-security-actions{flex-direction:column}
+ .console-security-actions .button{width:100%}
+ #dashboard .admin-switch-button{min-width:126px;font-size:12px}
+}
+@media print{
+ #dashboard>.admin-switch,.console-shortcuts{display:none!important}
+ #dashboard[data-view="overview"] .pro-trend-panel{display:block}
+}
