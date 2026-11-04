@@ -11,8 +11,9 @@
   <link rel="icon" type="image/png" href="../assets/icon-192.png">
   <link rel="stylesheet" href="./admin.css?v=20261104-company-v3">
   <link rel="stylesheet" href="./pro-theme.css?v=20261104-console-v5">
-  <link rel="stylesheet" href="./dashboard-v6.css?v=20261104-dashboard-v6">
+  <link rel="stylesheet" href="./dashboard-v6.css?v=20261104-mobile-v7">
   <script type="module" src="./admin.mjs?v=20261104-console-v5"></script>
+  <script type="module" src="./dashboard-mobile-nav.mjs?v=20261104-mobile-v7"></script>
 </head>
 <body>
   <header class="topbar">
@@ -80,13 +81,18 @@
           <span class="admin-nav-name">Gestione Autisti<small>Control Center</small></span>
         </div>
         <p class="admin-nav-caption">NAVIGAZIONE AZIENDALE</p>
-        <button type="button" id="overview-tab" class="admin-switch-button" aria-pressed="false"><span class="admin-nav-icon" aria-hidden="true">◫</span><span>Panoramica</span></button>
-        <button type="button" id="management-tab" class="admin-switch-button selected" aria-pressed="true"><span class="admin-nav-icon" aria-hidden="true">▦</span><span>Gestione autisti</span></button>
-        <button type="button" id="report-tab" class="admin-switch-button" aria-pressed="false"><span class="admin-nav-icon" aria-hidden="true">▤</span><span>Registro viaggi</span></button>
-        <button type="button" id="analysis-tab" class="admin-switch-button" aria-pressed="false"><span class="admin-nav-icon" aria-hidden="true">▥</span><span>Analisi e grafici</span></button>
-        <button type="button" id="alerts-tab" class="admin-switch-button" aria-pressed="false"><span class="admin-nav-icon" aria-hidden="true">◇</span><span>Anomalie</span></button>
-        <button type="button" id="exports-tab" class="admin-switch-button" aria-pressed="false"><span class="admin-nav-icon" aria-hidden="true">▣</span><span>Report PDF e Excel</span></button>
-        <button type="button" id="security-tab" class="admin-switch-button" aria-pressed="false"><span class="admin-nav-icon" aria-hidden="true">◈</span><span>Sicurezza e accessi</span></button>
+        <button type="button" id="overview-tab" class="admin-switch-button" aria-label="Panoramica" aria-pressed="false"><span class="admin-nav-icon"><svg class="admin-nav-svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.3"/><rect x="14" y="3" width="7" height="7" rx="1.3"/><rect x="3" y="14" width="7" height="7" rx="1.3"/><rect x="14" y="14" width="7" height="7" rx="1.3"/></svg></span><span class="admin-nav-label-full">Panoramica</span><span class="admin-nav-label-short" aria-hidden="true">Home</span></button>
+        <button type="button" id="management-tab" class="admin-switch-button selected" aria-label="Gestione autisti" aria-pressed="true"><span class="admin-nav-icon"><svg class="admin-nav-svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3 20v-1a6 6 0 0 1 12 0v1"/><path d="M17 11a3 3 0 0 0 0-6M17 14a5 5 0 0 1 4 5v1"/></svg></span><span class="admin-nav-label-full">Gestione autisti</span><span class="admin-nav-label-short" aria-hidden="true">Autisti</span></button>
+        <button type="button" id="report-tab" class="admin-switch-button" aria-label="Registro viaggi" aria-pressed="false"><span class="admin-nav-icon"><svg class="admin-nav-svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7h11v9H3zM14 10h4l3 3v3h-7z"/><circle cx="7" cy="17" r="2"/><circle cx="18" cy="17" r="2"/></svg></span><span class="admin-nav-label-full">Registro viaggi</span><span class="admin-nav-label-short" aria-hidden="true">Viaggi</span></button>
+        <button type="button" id="analysis-tab" class="admin-switch-button" aria-label="Analisi e grafici" aria-pressed="false"><span class="admin-nav-icon"><svg class="admin-nav-svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h16M6 17v-5M12 17V5M18 17V9"/></svg></span><span class="admin-nav-label-full">Analisi e grafici</span><span class="admin-nav-label-short" aria-hidden="true">Analisi</span></button>
+        <details class="admin-nav-more" id="admin-nav-more" open>
+          <summary class="admin-nav-more-toggle" aria-label="Altre sezioni" aria-controls="admin-nav-more-items"><span class="admin-nav-icon"><svg class="admin-nav-svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg></span><span>Altro</span></summary>
+          <div class="admin-nav-more-items" id="admin-nav-more-items" role="group" aria-label="Altre sezioni">
+            <button type="button" id="alerts-tab" class="admin-switch-button" aria-label="Anomalie" aria-pressed="false"><span class="admin-nav-icon"><svg class="admin-nav-svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3 10 18H2L12 3z"/><path d="M12 9v5M12 18h.01"/></svg></span><span class="admin-nav-label-full">Anomalie</span></button>
+            <button type="button" id="exports-tab" class="admin-switch-button" aria-label="Report PDF e Excel" aria-pressed="false"><span class="admin-nav-icon"><svg class="admin-nav-svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 3h9l5 5v13H5zM14 3v5h5M12 11v7m-3-3 3 3 3-3"/></svg></span><span class="admin-nav-label-full">Report PDF e Excel</span></button>
+            <button type="button" id="security-tab" class="admin-switch-button" aria-label="Sicurezza e accessi" aria-pressed="false"><span class="admin-nav-icon"><svg class="admin-nav-svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2 4 5v6c0 5 3 8 8 11 5-3 8-6 8-11V5z"/><path d="m9 12 2 2 4-4"/></svg></span><span class="admin-nav-label-full">Sicurezza e accessi</span></button>
+          </div>
+        </details>
         <div class="admin-nav-help"><span class="admin-nav-help-dot" aria-hidden="true"></span><span>Ambiente protetto<small>Sessione amministratore MFA</small></span></div>
       </nav>
       <div id="management-panel">
