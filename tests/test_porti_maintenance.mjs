@@ -36,7 +36,7 @@ test('maintenance shows message and official sources without loading booking',()
 test('explicit reversible maintenance switch and cache-busting module reference',()=>{
  assert.match(access,/const MAINTENANCE_ENABLED = true;/);
  assert.match(access,/}else if\(!sameOriginParent\(\)\)\{/);
- assert.match(page,/src="\.\.\/porti-access.mjs\?v=20261104-porti-maintenance-v1"/);
+ assert.match(page,/src="\.\.\/porti-access.mjs\?v=20261103-lts-gate-v1"/);
  assert.match(page,/<body hidden>/);
  assert.doesNotMatch(page,/<script(?![^>]*porti-access)[^>]*>/g);
 });
