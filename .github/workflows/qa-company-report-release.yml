@@ -6,6 +6,7 @@ on:
       - 'amministratore/**'
       - 'account-access.mjs'
       - 'runtime-config.mjs'
+      - 'privacy/index.html'
       - 'tests/qa-company-report-release.test.mjs'
       - 'tests/company-report-browser.mjs'
       - 'tests/qa-account-release.test.mjs'
