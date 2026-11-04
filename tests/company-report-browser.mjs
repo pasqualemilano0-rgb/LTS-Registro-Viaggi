@@ -139,6 +139,33 @@ try{
  }));
  assert(mobileGeometry.width<=mobileGeometry.viewport+1&&
   mobileGeometry.documentScroll<=mobileGeometry.viewport+1,'Mobile navigation must fit the viewport');
+ // Verify the compact tab bar and full-width layout on narrow and tablet viewports.
+ for(const width of [320,360,768]){
+  await page.setViewportSize({width,height:844});
+  const box=await navigation.evaluate(nav=>{
+   const buttons=[...nav.querySelectorAll(':scope > button')];
+   const rects=buttons.map(button=>button.getBoundingClientRect());
+   const navBox=nav.getBoundingClientRect();
+   return {
+    viewport:innerWidth,
+    documentScroll:document.documentElement.scrollWidth,
+    navLeft:navBox.left,navRight:navBox.right,
+    colCount:getComputedStyle(nav).gridTemplateColumns.split(' ').length,
+    buttonWidths:rects.map(rect=>rect.width),
+    buttonHeights:rects.map(rect=>rect.height),
+    labelSize:parseFloat(getComputedStyle(buttons[0]).fontSize)
+   };
+  });
+  assert.equal(box.colCount,5,width+'px: four tabs and More fit one row');
+  assert(box.navLeft>=-1&&box.navRight<=box.viewport+1,
+   width+'px: bar fits the viewport');
+  assert(box.documentScroll<=box.viewport+2,width+'px: no horizontal page overflow');
+  assert(box.buttonWidths.every(n=>n>=42)&&box.buttonHeights.every(n=>n>=44),
+   width+'px: readable tap target geometry');
+  assert(box.labelSize>=11,width+'px: mobile nav labels remain readable');
+ }
+ await page.setViewportSize({width:390,height:844});
+
 
  await openAdminTab('analysis-tab');
  await page.locator('#report-count').waitFor();
