@@ -78,6 +78,7 @@ function icon(name) {
     download:['M12 3v12','m7 10 5 5 5-5','M4 17v4h16v-4'], upload:['M12 16V4','m7 9 5-5 5 5','M4 17v4h16v-4'],
     share:['M12 16V3','m7 8 5-5 5 5','M7 10H4v11h16V10h-3'], info:['M12 11v6','M12 7h.01'],
     link:['M10 13a5 5 0 0 0 7 .5l3-3a5 5 0 0 0-7-7l-2 2','M14 11a5 5 0 0 0-7-.5l-3 3a5 5 0 0 0 7 7l2-2'],
+    phone:['M22 16.9v3a2 2 0 0 1-2.2 2A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7l.6 3a2 2 0 0 1-.6 1.8l-1.2 1.2a16 16 0 0 0 6.5 6.5l1.2-1.2a2 2 0 0 1 1.8-.6l3 .6a2 2 0 0 1 1.7 1.9z'],
     truck:['M1 3h14v13H1z','M15 8h4l3 4v4h-7','M3 16v2','M17 16v2'],
     ship:['M5 11V6h14v5','M9 6V3h6v3','m3 12 9-3 9 3-3 7H6z','M12 9v10','M2 21c2 1 3 1 5 0s3-1 5 0 3 1 5 0 3-1 5 0'],
     sliders:['M4 6h6','M14 6h6','M4 12h10','M18 12h2','M4 18h2','M10 18h10','M10 3v6','M14 9v6','M6 15v6'],
@@ -790,20 +791,39 @@ function installDialog(){
  * copies or reassigns their records. Users can explicitly export/import a ZIP.
  */
 function accountLoginFields({fromGate=false}={}){
-  const form=el('form',{class:'panel form-panel account-login-form',novalidate:true});
-  const error=el('p',{class:'form-error',role:'alert'});
-  const tel=el('input',{type:'tel',name:'phone',inputmode:'tel',autocomplete:'username',
-    placeholder:'+39 3XX XXX XXXX',required:true,maxlength:40,'aria-label':'Telefono'});
-  const pass=el('input',{type:'password',name:'password',autocomplete:'current-password',
-    required:true,maxlength:256,'aria-label':'Password'});
-  const submit=el('button',{type:'submit',class:'primary-button full'},icon('lock'),'Accedi al registro');
-  const number=el('div',{class:'field'},el('label',{class:'field-label'},'Numero di cellulare'),tel,
+  const form=el('form',{class:`panel form-panel account-login-form${fromGate?' account-login-form-gate':''}`,novalidate:true});
+  const error=el('p',{class:'form-error',role:'alert','aria-live':'assertive'});
+  const prefix=fromGate?'accesso-gate':'accesso-dialogo';
+  const tel=el('input',{id:prefix+'-telefono',type:'tel',name:'phone',inputmode:'tel',autocomplete:'username',
+    placeholder:'+39 3XX XXX XXXX',required:true,maxlength:40,'aria-label':'Numero di cellulare'});
+  const pass=el('input',{id:prefix+'-password',type:'password',name:'password',autocomplete:'current-password',
+    placeholder:'Inserisci la password',required:true,maxlength:256,'aria-label':'Password'});
+  const visibility=el('button',{type:'button',class:'account-password-toggle',
+    'aria-label':'Mostra password','aria-controls':pass.id,'aria-pressed':'false'},'Mostra');
+  visibility.addEventListener('click',()=>{
+    const showing=pass.type==='password';
+    pass.type=showing?'text':'password';
+    visibility.textContent=showing?'Nascondi':'Mostra';
+    visibility.setAttribute('aria-label',showing?'Nascondi password':'Mostra password');
+    visibility.setAttribute('aria-pressed',String(showing));
+    pass.focus({preventScroll:true});
+  });
+  const submit=el('button',{type:'submit',class:'primary-button full account-submit'},icon('lock'),'Accedi al registro',icon('arrow'));
+  const number=el('div',{class:'field'},
+    el('label',{class:'field-label',for:tel.id},'Numero di cellulare'),
+    el('div',{class:'account-input-wrap'},el('span',{class:'account-input-icon'},icon('phone')),tel),
     el('p',{class:'field-hint'},'Per i numeri italiani puoi scrivere 3XXXXXXXXX: +39 viene aggiunto automaticamente.'));
-  const password=el('div',{class:'field'},el('label',{class:'field-label'},'Password'),pass);
-  form.append(error,number,password,submit,el('p',{class:'field-hint'},
-    'Il tuo account deve essere attivato dall’amministratore. Non inviare password tramite chat.'));
-  form.append(button('Hai un invito? Attiva account','text',showDriverActivation,'lock',{class:'text-button full'}));
-  form.append(el('a',{href:'/LTS-Registro-Viaggi/recupera-password.html',target:'_blank',rel:'noopener noreferrer',class:'text-button full'},'Imposta o recupera password via Gmail'));
+  const password=el('div',{class:'field'},
+    el('label',{class:'field-label',for:pass.id},'Password'),
+    el('div',{class:'account-input-wrap account-password-wrap'},el('span',{class:'account-input-icon'},icon('lock')),pass,visibility));
+  const note=el('div',{class:'account-security-note'},icon('info'),
+    el('p',{},'L’account deve essere attivato dall’amministratore. Non inviare la password tramite chat.'));
+  const activate=button('Attiva account','text',showDriverActivation,'users',
+    {class:'text-button account-help-link'});
+  const recover=el('a',{href:'/LTS-Registro-Viaggi/recupera-password.html',target:'_blank',rel:'noopener noreferrer',
+    class:'account-help-link account-recovery-link',title:'Imposta o recupera password via Gmail'},icon('lock'),'Recupera password');
+  form.append(error,number,password,submit,note,
+    el('div',{class:'account-help-actions'},activate,recover));
   form.addEventListener('submit',async e=>{
     e.preventDefault();
     if(busy)return;
@@ -1076,20 +1096,30 @@ function renderAccountGate(message=''){
   pdfReport=null;editingId=null;editingBaseline=null;busy=false;
   document.querySelectorAll('dialog[open]').forEach(node=>node.close());
   const gate=el('section',{class:'boot account-gate'},
-    el('img',{src:'/LTS-Registro-Viaggi/assets/lts-logo.png',alt:'LTS Registro Viaggi'}),
-    el('h1',{},'Accesso al tuo registro'),
-    el('p',{class:'subtitle'},'Inserisci numero e password una sola volta: su questo dispositivo l’accesso verrà ricordato senza salvare la password.'),
-    message?el('p',{class:'form-error',role:'alert'},message):null,
-    accountLoginFields({fromGate:true}),
-    button('Riprova accesso automatico','secondary',()=>initialize(),'refresh'),
-    accountAccess.hasSession()?button('Esci e cambia account','text',()=>{
-      void accountAccess.logout().then(result=>{
-        if(!result.revoked)toast('Sessione chiusa sul telefono; revoca online non confermata.',true);
-      });
-      store.lockRevokedAccount();
-      renderAccountGate('Sessione chiusa. Puoi accedere con un altro account.');
-    }):null,
-    el('p',{class:'field-hint'},'I dati precedenti sul telefono rimangono conservati. Dopo l’accesso potrai salvarne un backup e recuperarli nel tuo account.'));
+    el('div',{class:'account-hero'},
+      el('div',{class:'account-hero-brand'},
+        el('img',{src:'/LTS-Registro-Viaggi/assets/lts-logo.png',alt:'LTS Registro Viaggi'}),
+        el('span',{},'REGISTRO VIAGGI'),
+        el('span',{class:'account-italian-accent','aria-hidden':'true'})),
+      el('div',{class:'account-hero-heading'},
+        el('p',{class:'account-hero-kicker'},'AREA AUTISTI'),
+        el('h1',{},'Accedi al tuo registro'),
+        el('p',{},'Il tuo registro viaggi, sempre a portata di mano.'))),
+    el('div',{class:'account-login-stage'},
+      message?el('p',{class:'form-error account-gate-error',role:'alert'},message):null,
+      accountLoginFields({fromGate:true}),
+      el('div',{class:'account-login-extras'},
+        button('Riprova accesso automatico','secondary',()=>initialize(),'refresh',
+          {class:'secondary-button account-retry-button'}),
+        accountAccess.hasSession()?button('Esci e cambia account','text',()=>{
+          void accountAccess.logout().then(result=>{
+            if(!result.revoked)toast('Sessione chiusa sul telefono; revoca online non confermata.',true);
+          });
+          store.lockRevokedAccount();
+          renderAccountGate('Sessione chiusa. Puoi accedere con un altro account.');
+        }):null),
+      el('div',{class:'account-footnote'},icon('lock'),
+        el('p',{},'I dati precedenti restano sul dispositivo. Dopo l’accesso potrai eseguire un backup e recuperarli nel tuo account.'))));
   root.replaceChildren(gate);
 }
 window.addEventListener('lts-account-locked',()=>{
