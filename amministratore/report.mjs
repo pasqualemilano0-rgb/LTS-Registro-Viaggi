@@ -168,7 +168,15 @@ function updateDriverOptions(drivers){
 }
 export function setupReport(account){
  const management=el('management-panel'),report=el('report-panel');
- const mTab=el('management-tab'),rTab=el('report-tab');
+ const views=[
+  ['overview','overview-tab','Panoramica aziendale','Indicatori, andamento e anomalie dei viaggi sincronizzati.'],
+  ['drivers','management-tab','Gestione autisti','Account, inviti, ripristino credenziali e autorizzazioni.'],
+  ['trips','report-tab','Registro viaggi','Consulta gli inserimenti e ricerca i viaggi del periodo.'],
+  ['analysis','analysis-tab','Analisi e grafici','Confronti tra autisti, clienti, località e andamento storico.'],
+  ['alerts','alerts-tab','Centro anomalie','Controlla le segnalazioni generate dai viaggi sincronizzati.'],
+  ['exports','exports-tab','Report PDF ed Excel','Applica i filtri ed esporta soltanto i dati autorizzati.'],
+  ['security','security-tab','Sicurezza e accessi','Proteggi l’account amministratore e gestisci gli Authenticator.']
+ ];
  const month=el('report-month'),driver=el('report-driver');
  month.value=currentMonth();
  let requestSeq=0,rows=[],page=null,loading=false,focusOnDriver=false;
@@ -178,12 +186,25 @@ export function setupReport(account){
   if(driver.value===id&&page)return;
   driver.value=id;rows=[];focusOnDriver=Boolean(id);void load(false);
  }
- function tabs(showReport){
+ function tabs(view){
+  const current=views.find(v=>v[0]===view)||views[1];
+  const showReport=!['drivers','security'].includes(current[0]);
   management.hidden=showReport;report.hidden=!showReport;
-  mTab.setAttribute('aria-pressed',String(!showReport));
-  rTab.setAttribute('aria-pressed',String(showReport));
-  mTab.classList.toggle('selected',!showReport);
-  rTab.classList.toggle('selected',showReport);
+  el('dashboard').dataset.view=current[0];
+  document.title='LTS · '+current[2];
+  for(const item of views){
+   const button=el(item[1]),chosen=item[0]===current[0];
+   button.setAttribute('aria-pressed',String(chosen));
+   button.setAttribute('aria-current',chosen?'page':'false');
+   button.classList.toggle('selected',chosen);
+  }
+  if(showReport){
+   el('report-title').textContent=current[2];
+   el('report-register-caption').textContent=current[0]==='trips'?
+    'Viaggi sincronizzati del periodo selezionato.':'Consulta i dettagli nei filtri disponibili.';
+   el('pro-title').textContent=current[0]==='alerts'?'Segnalazioni e controlli':
+    current[0]==='exports'?'Report ed esportazioni':'Analisi avanzata e confronti';
+  }
  }
  function reset(){
   requestSeq++;rows=[];page=null;loading=false;
@@ -192,7 +213,25 @@ export function setupReport(account){
   updateDriverOptions([]);
   driverSearch.value='';
   el('report-period-title').textContent='—';
-  focusOnDriver=false;tabs(false);
+  focusOnDriver=false;tabs('drivers');
+ }
+ function open(view){
+  if(!account.isVerified()||account.getRole()!=='admin')return;
+  if(!views.some(v=>v[0]===view))return;
+  const wasReport=!report.hidden,showReport=!['drivers','security'].includes(view);
+  // Never retain a one-time invite or password-reset code on another page.
+  if(view!=='drivers'){
+   el('secret-code').value='';
+   el('secret-panel').hidden=true;
+  }
+  if(!showReport){
+   requestSeq++;loading=false;rows=[];page=null;clearData();insights.reset();
+   tabs(view);
+  }else{
+   tabs(view);
+   if(!wasReport||(!page&&!loading)){rows=[];void load(false);}
+  }
+  window.scrollTo({top:0,behavior:'instant'});
  }
  async function load(append=false){
   if(report.hidden)return;
@@ -260,8 +299,10 @@ export function setupReport(account){
    if(serial===requestSeq){loading=false;el('report-refresh').disabled=false;el('report-next').disabled=false;}
   }
  }
- mTab.addEventListener('click',()=>{requestSeq++;loading=false;rows=[];page=null;clearData();insights.reset();tabs(false);});
- rTab.addEventListener('click',()=>{if(!account.isVerified()||account.getRole()!=='admin')return;tabs(true);void load(false);});
+ for(const [view,id] of views)el(id).addEventListener('click',()=>open(view));
+ for(const button of document.querySelectorAll('[data-open-section]')){
+  button.addEventListener('click',()=>open(button.dataset.openSection));
+ }
  el('report-refresh').addEventListener('click',()=>{rows=[];void load(false);});
  month.addEventListener('change',()=>{rows=[];void load(false);});
  driver.addEventListener('change',()=>{rows=[];focusOnDriver=Boolean(driver.value);void load(false);});
@@ -273,5 +314,5 @@ export function setupReport(account){
   month.value=currentMonth();driver.value='';driverSearch.value='';rows=[];focusOnDriver=false;void load(false);
  });
  el('report-next').addEventListener('click',()=>void load(true));
- return {reset};
+ return {reset,open};
 }
