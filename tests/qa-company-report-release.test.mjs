@@ -41,7 +41,7 @@ test('trasporto report autenticato senza allargare archivio individuale',()=>{
 test('sola lettura e importi registrati non spacciati per fatturato aziendale',()=>{
  const report=read('amministratore/report.mjs'),html=read('amministratore/index.html');
  assert.match(html,/Valore trasferte registrate/);
- assert.match(html,/non fatturato aziendale né stipendio/);
+ assert.match(html,/non fatturato aziendale, guadagno netto o stipendio/);
  assert.doesNotMatch(report,/\.update\(|\.insert\(|\.delete\(|archiveRequest\(/);
 });
 
