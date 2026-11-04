@@ -364,3 +364,27 @@ export async function companyReport({month,offset=0,limit=40,driverId=null}={}){
   ()=>api('reportEndpoint',payload,readStored()?.access_token),
   async()=>{await verifySession();if(getRole()!=='admin')throw new Error('Ruolo non autorizzato.');});
 }
+
+
+/** Advanced admin-only read-only insights; same verified session and MFA-secured endpoint. */
+export async function companyInsights({month,driverId=null,compareDriverId=null,fromDate=null,toDate=null,
+ client='',city='',container=''}={}){
+ if(!isVerified()||getRole()!=='admin')throw new Error('Accesso amministratore richiesto.');
+ if(typeof month!=='string'||!/^20\d{2}-(0[1-9]|1[0-2])$/.test(month))
+  throw new Error('Mese non valido.');
+ const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+ if((driverId&&!UUID.test(driverId))||(compareDriverId&&!UUID.test(compareDriverId))||
+    (driverId&&driverId===compareDriverId))
+  throw new Error('Selezione autisti non valida.');
+ for(const value of [fromDate,toDate])if(value!==null&&
+  (typeof value!=='string'||!/^20\d{2}-\d{2}-\d{2}$/.test(value)))throw new Error('Data non valida.');
+ for(const value of [client,city,container])if(typeof value!=='string'||value.length>100)
+  throw new Error('Filtro non valido.');
+ const payload={action:'insights',month,...(driverId?{driverId}:{}),
+  ...(compareDriverId?{compareDriverId}:{}),
+  ...(fromDate?{fromDate}:{}),...(toDate?{toDate}:{}),
+  ...(client?{client}:{}),...(city?{city}:{}),...(container?{container}:{})};
+ return withSessionRetry(
+  ()=>api('reportEndpoint',payload,readStored()?.access_token),
+  async()=>{await verifySession();if(getRole()!=='admin')throw new Error('Ruolo non autorizzato.');});
+}
