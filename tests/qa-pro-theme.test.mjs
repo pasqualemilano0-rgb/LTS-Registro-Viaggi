@@ -16,6 +16,12 @@ test('shared LTS visual design is loaded in both driver entrypoints and admin',(
  assert.match(html,/id="mfa-panel"/);
  assert.match(html,/id="pro-insights"/);
 });
+test('new shared stylesheet remains available offline without caching personal data',()=>{
+ const worker=read('sw.js');
+ assert.match(worker,/const CACHE = PREFIX \+ '20261104-lts-pro-ui-v4'/);
+ assert.match(worker,/"\/LTS-Registro-Viaggi\/pro-theme\.css"/);
+ assert.doesNotMatch(worker,/service_role|sb_secret_/i);
+});
 test('professional desktop sidebars with responsive mobile alternative',()=>{
  assert.match(css,/grid-template-columns:240px minmax\(0,1fr\)/);
  assert.match(css,/@media\(min-width:1080px\) and \(pointer:fine\)/);
