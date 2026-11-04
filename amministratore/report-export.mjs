@@ -18,11 +18,11 @@ function valid(data){
   throw Error('Importo del report non valido.');
  return data;
 }
-function sheetXml(rows,{widths=[],moneyColumns=[],filter=false,freeze=false,title=false}={}){
+function sheetXml(rows,{widths=[],moneyColumns=[],moneyRows=null,filter=false,freeze=false,title=false}={}){
  const cols='ABCDEFGHIJKLMNOPQRSTUVWXYZ';
  const cell=(value,r,c)=>{
   const address=cols[c]+r;
-  const style=r===1?(title?' s="3"':' s="1"'):(typeof value==='number'&&moneyColumns.includes(c)?' s="2"':'');
+  const style=r===1?(title?' s="3"':' s="1"'):(typeof value==='number'&&moneyColumns.includes(c)&&(!moneyRows||moneyRows.includes(r))?' s="2"':'');
   if(typeof value==='number'&&Number.isFinite(value))
    return '<c r="'+address+'"'+style+' t="n"><v>'+value+'</v></c>';
   return '<c r="'+address+'"'+style+' t="inlineStr"><is><t xml:space="preserve">'+html(value)+'</t></is></c>';
@@ -127,7 +127,7 @@ export function makeXlsx(data){
   '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>';
  return zip([['[Content_Types].xml',ct],['_rels/.rels',root],['xl/workbook.xml',workbook],
   ['xl/_rels/workbook.xml.rels',rels],['xl/styles.xml',styles],
-  ['xl/worksheets/sheet1.xml',sheetXml(overview,{widths:[40,72],moneyColumns:[1],title:true})],
+  ['xl/worksheets/sheet1.xml',sheetXml(overview,{widths:[40,72],moneyColumns:[1],moneyRows:[7],title:true})],
   ['xl/worksheets/sheet2.xml',sheetXml(records,{widths:[16,29,22,34,29,24,19],moneyColumns:[5],filter:true,freeze:true})],
   ['xl/worksheets/sheet3.xml',sheetXml(trend,{widths:[20,16,26],moneyColumns:[2],filter:true,freeze:true})],
   ['xl/worksheets/sheet4.xml',sheetXml(alerts,{widths:[16,16,28,20,64],filter:true,freeze:true})]]);
