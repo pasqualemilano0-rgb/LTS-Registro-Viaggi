@@ -1,0 +1,34 @@
+name: QA LTS Porti — modalità manutenzione reversibile
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'porti-access.mjs'
+      - 'porti/index.html'
+      - 'tests/test_porti_maintenance.mjs'
+      - '.github/workflows/qa-porti-maintenance.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'porti-access.mjs'
+      - 'porti/index.html'
+      - 'tests/test_porti_maintenance.mjs'
+      - '.github/workflows/qa-porti-maintenance.yml'
+permissions:
+  contents: read
+jobs:
+  verify-isolation:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Test maintenance gating, reversible flag, and sources
+        run: |
+          node --check porti-access.mjs
+          node --test tests/test_porti_maintenance.mjs
+          node --test tests/qa-account-release.test.mjs tests/driver-session-vault.test.mjs tests/leaked-password-protection.test.mjs
