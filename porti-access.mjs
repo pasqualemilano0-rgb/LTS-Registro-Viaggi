@@ -1,4 +1,38 @@
 // Porti is a verified subview of LTS; it cannot start as an independent application.
+// Maintenance switch for the controlled LTS Porti migration.
+// Change ONLY this flag to false after the acceptance tests and rollback check.
+const MAINTENANCE_ENABLED = true;
+
+function showMaintenance() {
+  const main=document.createElement('main');
+  main.className='shell';
+  main.setAttribute('role','status');
+  const header=document.createElement('header');header.className='top';
+  const brand=document.createElement('h1');brand.textContent='LTS Registro Viaggi';
+  header.append(brand);
+  const section=document.createElement('section');section.className='panel';
+  const title=document.createElement('h2');title.textContent='Porti e Booking temporaneamente sospesi';
+  const message=document.createElement('p');
+  message.textContent='Stiamo completando la migrazione tecnica e i controlli di sicurezza. Registro Viaggi, clienti e dashboard restano disponibili.';
+  const note=document.createElement('p');
+  note.textContent='Per operazioni urgenti verifica direttamente sui siti ufficiali dei terminali. Questa pagina non conferma accettazioni o autorizzazioni al carico.';
+  const home=document.createElement('a');
+  home.href='/LTS-Registro-Viaggi/';home.target='_top';
+  home.className='secondary-btn';home.textContent='Torna a Registro Viaggi';
+  const sources=document.createElement('div');sources.className='source-grid';
+  for(const [name,url] of [
+    ['CO.NA.TE.CO.','https://www.conateco.it/berth-forecast/'],
+    ['TFG Napoli','https://tfg.bucci.it/@/TFGW_TP_ETA'],
+    ['SCT Salerno','https://www.salernocontainerterminal.com/vessel-schedule/']]){
+    const link=document.createElement('a');
+    link.href=url;link.target='_blank';link.rel='noopener noreferrer';
+    link.textContent=name;sources.append(link);
+  }
+  section.append(title,message,note,home,sources);
+  main.append(header,section);
+  document.body.replaceChildren(main);
+  document.body.hidden=false;
+}
 const BASE='/LTS-Registro-Viaggi/';
 const PARENT_PATHS=new Set([BASE,BASE+'index.html',BASE+'shell.html']);
 const sameOriginParent=()=>{
@@ -6,7 +40,9 @@ const sameOriginParent=()=>{
  try{return window.parent.location.origin===location.origin
    && PARENT_PATHS.has(window.parent.location.pathname);}catch{return false;}
 };
-if(!sameOriginParent()){
+if(MAINTENANCE_ENABLED){
+ showMaintenance();
+}else if(!sameOriginParent()){
  location.replace(BASE);
 }else{
  let authorized=false;
