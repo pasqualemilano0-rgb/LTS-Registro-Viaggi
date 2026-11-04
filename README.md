@@ -28,6 +28,7 @@ L'interfaccia riunisce in un unico ambiente cinque sezioni: **Inserisci viaggio,
 | **Tariffe** | Tariffario per cliente e destinazione, calcolo delle trasferte e degli extra |
 | **Porti** | Ricerca booking e consultazione delle navi presso CO.NA.TE.CO., TFG e SCT |
 | **Backup e sincronizzazione** | Recupero dei dati precedenti, importazione controllata e sincronizzazione dell'archivio personale |
+| **Control Center aziendale** | Sette sezioni riservate all'amministratore: panoramica, account, viaggi, analisi, anomalie, report e sicurezza |
 
 I resoconti PDF riportano i dati operativi previsti dal registro; **gli importi economici non vengono inseriti nel PDF mensile**.
 
@@ -49,6 +50,24 @@ Il pannello amministrativo consente la gestione degli inviti, la disattivazione 
 
 Nella versione web, la sessione dell'autista può essere ricordata sul dispositivo; l'autorizzazione viene verificata nuovamente dal servizio online. La password non viene salvata nel registro.
 
+## LTS Control Center — pannello aziendale
+
+Il [pannello amministratore](https://pasqualemilano0-rgb.github.io/LTS-Registro-Viaggi/amministratore/) comprende **sette sezioni operative** con navigazione laterale su computer e menu scorrevole su smartphone.
+
+| Sezione | Attività |
+| --- | --- |
+| **Panoramica** | Riepilogo dei viaggi sincronizzati, indicatori e andamento del mese |
+| **Gestione autisti** | Inviti, attivazioni, blocchi, recuperi e reinserimenti reversibili |
+| **Registro viaggi** | Consultazione dettagliata dei viaggi, filtro per autista e periodo |
+| **Analisi e grafici** | Storico di 12 mesi, attività individuale, confronti, clienti e località |
+| **Anomalie** | Tariffe mancanti, possibili duplicati e sincronizzazioni da controllare |
+| **Report PDF ed Excel** | Esportazione dei dati aziendali o individuali filtrati |
+| **Sicurezza e accessi** | Verifica sessione amministratore e gestione della protezione MFA |
+
+La sezione aziendale è **in sola lettura** rispetto ai viaggi e richiede autenticazione amministratore con MFA. Gli importi rappresentano valori di trasferte registrate, **non utili aziendali né stipendi**. I PDF/Excel amministrativi sono separati dal PDF mensile personale dell'autista, nel quale gli importi economici non vengono riportati.
+
+**Stato della release:** la console a sette sezioni è stata pubblicata il **4 novembre 2026** e ha superato i controlli automatici su sicurezza, browser mobile/desktop, pagine e download dei report. È ancora da registrare la prova visiva manuale su smartphone con un amministratore reale.
+
 ## Utilizzo su smartphone
 
 **iPhone / iPad:** aprire [LTS Registro Viaggi](https://pasqualemilano0-rgb.github.io/LTS-Registro-Viaggi/) in Safari e selezionare **Condividi → Aggiungi alla schermata Home**.
@@ -69,7 +88,7 @@ La sicurezza di una web app installabile dipende anche dalla protezione del disp
 
 ## Pubblicazione
 
-Questo repository contiene **esclusivamente la distribuzione web pubblica** di LTS Registro Viaggi: interfaccia, risorse statiche e controlli di qualità collegati al sito.
+Questo repository contiene **esclusivamente la distribuzione web pubblica** di LTS Registro Viaggi: interfaccia, risorse statiche e controlli di qualità collegati al sito. La versione corrente del Control Center deriva dalla PR #33 (`7d8b68c68042e249aa95d8f8f2d4063553bf0ede`); il relativo deployment Pages e i test post-pubblicazione sono terminati correttamente.
 
 Il progetto applicativo completo, i componenti server, i pacchetti Android e la documentazione operativa sono mantenuti separatamente in un archivio di sviluppo riservato. **Non pubblicare in questo repository** registri personali, password, token, chiavi di firma o esportazioni dei database.
 
