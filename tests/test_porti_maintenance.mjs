@@ -93,7 +93,7 @@ test('Protected Pages entry and current PWA cache are required for reopening',()
  assert.match(page,/<body hidden>/);
  assert.doesNotMatch(page,/<script(?![^>]*porti-access)[^>]*>/g);
  assert.match(access,/}else if\(!sameOriginParent\(\)\)\{/);
- assert.match(sw,/const CACHE = PREFIX \+ '20261104-theme-restore-v1'/);
+ assert.match(sw,/const CACHE = PREFIX \+ '20261104-login-harbor-v1'/);
  assert.match(sw,/BASE \+ 'porti\/app\.js'/);
  assert.match(sw,/if \(NETWORK_FIRST_CODE\.has\(url\.pathname\)\)/);
 });
