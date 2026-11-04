@@ -15,7 +15,7 @@
       "vessel": "X-PRESS SAGARMALA",
       "voyage": "645W",
       "eta": "03/11/2026 14:30",
-      "closing": "04/11/2026 17:00",
+      "closing": "04/11/2026 17:00 CLOSED",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
@@ -33,7 +33,7 @@
       "vessel": "RACHEL BORCHARD",
       "voyage": "1032",
       "eta": "03/11/2026 20:00",
-      "closing": "04/11/2026 17:00",
+      "closing": "04/11/2026 17:00 CLOSED",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "DEPARTED"
@@ -51,7 +51,7 @@
       "vessel": "KINGSTON",
       "voyage": "024W",
       "eta": "04/11/2026 01:00",
-      "closing": "04/11/2026 17:00",
+      "closing": "04/11/2026 17:00 CLOSED",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
@@ -69,7 +69,7 @@
       "vessel": "SARA BORCHARD",
       "voyage": "0475",
       "eta": "05/11/2026 06:00",
-      "closing": "04/11/2026 17:00",
+      "closing": "04/11/2026 17:00 CLOSED",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
@@ -237,7 +237,7 @@
       "status": "PENDING"
     }
   ],
-  "acquired_at": "2026-11-04T15:30:16.656Z",
-  "data_changed_at": "2026-11-04T14:00:17.265Z",
-  "updated_at": "2026-11-04T15:30:16.656Z"
+  "acquired_at": "2026-11-04T16:00:17.196Z",
+  "data_changed_at": "2026-11-04T16:00:17.196Z",
+  "updated_at": "2026-11-04T16:00:17.196Z"
 }
