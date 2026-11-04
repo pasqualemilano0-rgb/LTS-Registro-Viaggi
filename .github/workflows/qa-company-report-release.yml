@@ -8,6 +8,7 @@ on:
       - 'runtime-config.mjs'
       - 'privacy/index.html'
       - 'tests/qa-company-report-release.test.mjs'
+      - 'tests/qa-report-production-http-smoke.mjs'
       - 'tests/company-report-browser.mjs'
       - 'tests/qa-account-release.test.mjs'
       - '.github/workflows/qa-company-report-release.yml'
@@ -18,6 +19,7 @@ on:
       - 'account-access.mjs'
       - 'runtime-config.mjs'
       - 'tests/qa-company-report-release.test.mjs'
+      - 'tests/qa-report-production-http-smoke.mjs'
       - '.github/workflows/qa-company-report-release.yml'
 permissions:
   contents: read
@@ -37,7 +39,21 @@ jobs:
           node --check amministratore/admin.mjs
           node --check account-access.mjs
           node --check tests/company-report-browser.mjs
+          node --check tests/qa-report-production-http-smoke.mjs
           node --test tests/qa-company-report-release.test.mjs tests/qa-account-release.test.mjs tests/driver-session-vault.test.mjs tests/leaked-password-protection.test.mjs
+  production-endpoint-smoke:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Live no-credentials production report smoke
+        run: node tests/qa-report-production-http-smoke.mjs
+
   chromium-mobile:
     runs-on: ubuntu-24.04
     timeout-minutes: 12
