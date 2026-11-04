@@ -1,8 +1,8 @@
 /** Driver-only remembered sign-in: no persistent passwords or access JWTs.
  * Server verification is mandatory before opening any cached account archive.
  */
-import runtime from '/LTS-Registro-Viaggi/runtime-config.mjs';
-import {readDriverToken,writeDriverToken,clearDriverToken} from '/LTS-Registro-Viaggi/driver-session-vault.mjs';
+import runtime from '/runtime-config.mjs';
+import {readDriverToken,writeDriverToken,clearDriverToken} from '/driver-session-vault.mjs';
 
 const SESSION_KEY='lts-supabase-account-session-v1';
 const MODE_KEY='lts-supabase-account-mode-v1';
@@ -316,6 +316,16 @@ export async function verifySession(){
  verified=!mfaEnrolled||mfaVerified;
  return {user_id:session.user_id,role:result.role,
   mfa_enrolled:mfaEnrolled,mfa_verified:mfaVerified};
+}
+/** Only an actively revalidated LTS session can authorize a booking lookup.
+ * The caller must not persist, log, or pass the bearer token in URL parameters.
+ */
+export async function getVerifiedAccessToken(){
+ await verifySession();
+ if(!isVerified())throw new Error('Verifica amministratore necessaria.');
+ const current=readStored();
+ if(!current?.access_token)throw new Error('Effettua nuovamente l’accesso.');
+ return current.access_token;
 }
 export async function archiveRequest(method,body){
  if(!verified||!readStored())throw new Error('Effettua l’accesso per consultare il registro.');
