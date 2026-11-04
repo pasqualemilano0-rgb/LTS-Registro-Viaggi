@@ -30,11 +30,13 @@
     {
       "path": "app.js",
       "upstream_sha256": "1642155424c97511dd58a2012ac1793f2c34e0709005dea5a70c278a36f4999b",
-      "sha256": "c8b14f949c5aa1a07adac1ccec7b6dec6d4a1449adac5a336013238a14d036af",
+      "sha256": "e13b15529d8cee5ba3bc330c1748b49492beb799dae818a523fa63ade66d4095",
       "adaptations": [
         "remove-standalone-cache-reset-and-reload-handler",
         "reevaluate-terminal-immediately-on-offline",
-        "lts-owned-snapshot-fallbacks"
+        "lts-owned-snapshot-fallbacks",
+        "lts-authenticated-booking-lookup",
+        "lts-booking-auth-error-states"
       ]
     },
     {
