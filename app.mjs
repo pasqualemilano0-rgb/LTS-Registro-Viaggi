@@ -1,4 +1,6 @@
 import * as D from '/LTS-Registro-Viaggi/shared/domain.mjs';
+import { quickTripFromRoute } from '/LTS-Registro-Viaggi/shared/quick-trip.mjs';
+import { PORT_SOURCE_FEEDS, describePortSource } from '/LTS-Registro-Viaggi/shared/port-source-status.mjs';
 import {unionStates} from '/LTS-Registro-Viaggi/shared/sync-merge.mjs';
 import * as store from '/LTS-Registro-Viaggi/client-store.mjs';
 import runtimeConfig from '/LTS-Registro-Viaggi/runtime-config.mjs';
@@ -24,6 +26,7 @@ let pdfReport = null;
 let toastTimer;
 let refreshView = null;
 let portiFrame = null;
+let portiSourceAbort = null;
 let subscribed = false;
 let installPrompt = null;
 const standaloneMode = window.matchMedia('(display-mode: standalone)');
@@ -114,12 +117,17 @@ function field(label,name,value='',options={}) {
 }
 function decorateTripField(value,ico,kind=''){value.wrap.classList.add('trip-field');if(kind)value.wrap.classList.add(kind);value.wrap.prepend(el('span',{class:'trip-field-icon','aria-hidden':'true'},icon(ico)));return value;}
 function datalist(id,values){return el('datalist',{id},unique(values).map(value=>el('option',{value})));}
-function syncNode(){return el('div',{class:`sync-status${syncWarning?' warning':''}`,id:'sync-status'},el('span',{class:'status-dot'}),syncMessage);}
+function syncNode(compact=false){
+  return el('div',{class:`sync-status${compact?' sync-status-top':''}${syncWarning?' warning':''}`,
+    id:compact?'sync-status-top':'sync-status',role:compact?'status':null,
+    'aria-live':compact?'polite':null},el('span',{class:'status-dot'}),syncMessage);
+}
 function setStatus(status){
  const value=typeof status==='string'?status:status?.message||status?.status||'';
  const known={saved:'Dati salvati',saving:'Salvataggio in corso…',syncing:'Salvataggio online in corso…',synced:'Archivio online aggiornato',pending:'Salvato sul dispositivo · sincronizzazione in attesa',conflict:'Modifiche da controllare · apri Profilo → Risolvi sincronizzazione',offline:'Offline · dati conservati su questo dispositivo',error:'Sincronizzazione da verificare',online:'Connessione disponibile',local:'Dati salvati su questo dispositivo'};
  syncMessage=known[value]||value||'Archivio personale';syncWarning=/offline|error|errore|locale|pending|conflict|attesa/i.test(typeof status==='string'?status:status?.status||value);
  const current=document.querySelector('#sync-status');if(current)current.replaceWith(syncNode());
+ const top=document.querySelector('#sync-status-top');if(top)top.replaceWith(syncNode(true));
 }
 async function persist(nextState){
  if(busy)throw new Error('Attendi il salvataggio in corso.');
@@ -138,6 +146,8 @@ function refreshDraftCustomers(previous,next){
  for(const customer of previous.customers){const current=nextById.get(customer.id);if(current&&customer.name!==current.name)for(const field of ['client','secondClient'])if(D.normalizeText(draft[field])===customer.name)draft[field]=current.name;}
 }
 function unmountPorti(){
+ portiSourceAbort?.abort();
+ portiSourceAbort=null;
  if(!portiFrame)return;
  // Leaving Porti stops its polling and discards the in-frame booking query.
  portiFrame.src='about:blank';portiFrame.remove();portiFrame=null;
@@ -159,16 +169,70 @@ function render(){
   return;
  }
  unmountPorti();
- const scroll=el('div',{class:'app-scroll'},header,main);
+ const scroll=el('div',{class:'app-scroll'},header,el('div',{class:'sync-banner-wrap'},syncNode(true)),main);
  frame.append(scroll,nav);root.replaceChildren(frame);
  if(tab==='insert')renderInsert(main); else if(tab==='register')renderRegister(main);else if(tab==='customers')renderCustomers(main);else if(tab==='porti')renderPorti(main);else renderTariffs(main);
  if(tab!=='porti')main.append(syncNode());
  scroll.scrollTop=scrollTop;
 }
 function renderPorti(main){
+ const formatTime=value=>value?new Intl.DateTimeFormat('it-IT',{
+  day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'
+ }).format(new Date(value)):'Non dichiarata';
+ const tiles=PORT_SOURCE_FEEDS.map(feed=>{
+  const signal=el('span',{class:'porti-source-signal',dataset:{state:'loading'}},
+   feed.id.toUpperCase(),' · Verifica…');
+  const copied=el('p',{class:'porti-source-timestamp'},'Copia acquisita: in verifica');
+  const official=el('p',{class:'porti-source-timestamp'},'Aggiornamento fonte: in verifica');
+  const detail=el('p',{class:'porti-source-note'},'Il programma non certifica un booking.');
+  const card=el('div',{class:'porti-source-card'},
+   el('div',{class:'porti-source-card-head'},el('strong',{},feed.label),
+    el('a',{href:feed.official,target:'_blank',rel:'noopener noreferrer'},'Fonte ufficiale')),
+   copied,official,detail);
+  return {feed,signal,copied,official,detail,card};
+ });
+ const overview=el('section',{class:'porti-source-overview',
+  'aria-label':'Aggiornamento dei programmi navi'},
+  el('div',{class:'porti-source-intro'},
+   el('strong',{},'Stato dei programmi navi'),
+   el('span',{},'Copia acquisita ≠ conferma del carico')),
+  el('div',{class:'porti-source-signals',role:'status','aria-live':'polite'},
+   tiles.map(tile=>tile.signal)),
+  el('details',{class:'porti-source-details'},
+   el('summary',{},'Orari delle fonti e collegamenti ufficiali'),
+   el('div',{class:'porti-source-cards'},tiles.map(tile=>tile.card))));
  const url=(runtimeConfig.basePath??'/')+'porti/index.html';
  portiFrame=el('iframe',{class:'porti-frame',src:url,title:'Porti e booking',referrerpolicy:'no-referrer'});
- main.append(el('div',{class:'porti-heading'},el('h1',{},'Porti')),portiFrame);
+ main.append(el('div',{class:'porti-heading'},el('h1',{},'Porti')),overview,portiFrame);
+ portiSourceAbort?.abort();
+ const controller=new AbortController();
+ portiSourceAbort=controller;
+ // Only public, nonpersonal vessel snapshots are read; never fetch booking values.
+ for(const tile of tiles)void (async()=>{
+  try{
+   const path=new URL((runtimeConfig.basePath??'/')+'porti/data/'+tile.feed.file,location.origin);
+   if(path.origin!==location.origin)throw new Error('Origine non attendibile');
+   const response=await fetch(path.href,{cache:'no-store',credentials:'omit',
+    redirect:'error',signal:controller.signal});
+   if(!response.ok||response.redirected)throw new Error('Copia non disponibile');
+   const body=await response.text();
+   if(body.length>256*1024)throw new Error('Copia fuori limite');
+   const described=describePortSource(JSON.parse(body),tile.feed);
+   if(controller.signal.aborted||!overview.isConnected)return;
+   tile.signal.dataset.state=described.state;
+   tile.signal.textContent=tile.feed.id.toUpperCase()+' · '+described.label;
+   tile.copied.textContent='Copia acquisita: '+formatTime(described.acquiredAt);
+   tile.official.textContent='Aggiornamento dichiarato dalla fonte: '+formatTime(described.sourceUpdatedAt);
+   tile.detail.textContent=described.detail;
+  }catch(error){
+   if(controller.signal.aborted||!overview.isConnected)return;
+   tile.signal.dataset.state='unknown';
+   tile.signal.textContent=tile.feed.id.toUpperCase()+' · Non verificabile';
+   tile.copied.textContent='Copia non consultabile al momento';
+   tile.official.textContent='Aggiornamento della fonte: non verificato';
+   tile.detail.textContent='Usa il collegamento al sito ufficiale del terminal.';
+  }
+ })();
 }
 // The port module is a subview of a verified LTS account, not a public standalone app.
 window.addEventListener('message',event=>{
@@ -300,6 +364,23 @@ function renderInsert(main){
 function citySuggestions(client){const normalized=D.normalizeText(client);return unique([...state.tariffs.filter(t=>t.client===normalized).map(t=>t.city),...state.customers.filter(c=>c.name===normalized).map(c=>c.city),...state.trips.filter(t=>t.client===normalized).map(t=>t.city)]);}
 function autofillCity(client,city){if(!city.value.trim()){const normalized=D.normalizeText(client.value);const tariffCities=unique(state.tariffs.filter(t=>t.client===normalized).map(t=>t.city));if(tariffCities.length===1)city.value=tariffCities[0];else if(!tariffCities.length){const customer=state.customers.find(c=>c.name===normalized);if(customer?.city)city.value=customer.city;else{const values=citySuggestions(client.value);if(values.length===1)city.value=values[0];}}}}
 function editTrip(trip,{focusNote=false}={}){editingId=trip.id;editingBaseline=tripEditVersion(trip);draft={...trip,services:[...trip.services],second:Boolean(trip.secondClient||trip.secondCity),note:trip.note||'',noteOpen:focusNote||Boolean(trip.note),servicesOpen:true};navigate('insert');if(focusNote)document.querySelector('#trip-note')?.focus();}
+function repeatRoute(trip){
+ const apply=()=>{
+  editingId=null;
+  editingBaseline=null;
+  draft=quickTripFromRoute(trip,today());
+  navigate('insert');
+  document.querySelector('input[name="container"]')?.focus();
+  toast('Percorso pronto. Inserisci il nuovo container e controlla i dati prima di salvare.');
+ };
+ // A route shortcut must not silently replace work typed into the current form.
+ const filled=Boolean(editingId||draft.container.trim()||draft.client.trim()||
+  draft.city.trim()||draft.second||draft.services.length||draft.note.trim());
+ if(filled)confirmAction('Usare questo percorso?',
+  'I dati già compilati nel modulo saranno sostituiti. Il viaggio originale non verrà modificato.',
+  apply,'Usa percorso');
+ else apply();
+}
 function saturdayNoteText(status){return status==='included'?'SABATO TRASFERTA già conteggiato per questa data':status==='applied'?'SABATO TRASFERTA conteggiato una sola volta nella giornata':'';}
 function tripCard(trip,amountContext){
  const amount=D.tripAmounts(trip,amountContext);const saturday=D.saturdayAllowanceStatus(trip,amountContext);
@@ -310,6 +391,9 @@ function tripCard(trip,amountContext){
  else card.append(el('button',{type:'button',class:'trip-option trip-note-add','aria-label':`INSERISCI NOTA · ${trip.container} · ${formatDate(trip.date)}`,on:{click:()=>editTrip(trip,{focusNote:true})}},el('span',{class:'plus-disc','aria-hidden':'true'},'+'),'INSERISCI NOTA'));
  if(saturday.status!=='none')card.append(el('p',{class:'saturday-note',dataset:{saturdayStatus:saturday.status}},saturdayNoteText(saturday.status)));
  card.append(el('div',{class:'trip-card-footer'},el('p',{class:'trip-breakdown'},`Prese ${D.formatMoney(amount.pickupCents)} · Extra ${D.formatMoney(amount.extraCents)}`),el('div',{class:'inline-actions'},el('button',{type:'button',class:'icon-button','aria-label':`Modifica viaggio ${trip.container} del ${formatDate(trip.date)}`,on:{click:()=>editTrip(trip)}},icon('edit')),el('button',{type:'button',class:'icon-button danger','aria-label':`Elimina viaggio ${trip.container} del ${formatDate(trip.date)}`,on:{click:()=>confirmAction('Eliminare questo viaggio?',`${trip.container} · ${formatDate(trip.date)}. Il viaggio sarà rimosso dal registro.`,async()=>{requireCurrentEditor(editorVersion(trip),state.trips.find(current=>current.id===trip.id),'Il viaggio');await persist({...state,trips:state.trips.filter(t=>t.id!==trip.id)});render();toast('Viaggio eliminato.');})}},icon('trash')))));
+ card.append(el('button',{type:'button',class:'trip-repeat-action',
+  'aria-label':`Ripeti percorso ${trip.client}, ${trip.city}. Nuovo viaggio senza container e servizi.`,
+  on:{click:()=>repeatRoute(trip)}},icon('refresh'),'Ripeti percorso'));
  return card;
 }
 function renderRegister(main){

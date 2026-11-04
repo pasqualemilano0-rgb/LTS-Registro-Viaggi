@@ -1,6 +1,6 @@
 const BASE = "/LTS-Registro-Viaggi/";
 const PREFIX = "lts-iphone-pages-0aa8d087d02b-";
-const CACHE = PREFIX + '20261104-lts-pro-ui-v5';
+const CACHE = PREFIX + '20261104-driver-phase2-v1';
 const CORE = [
   "/LTS-Registro-Viaggi/account-access.mjs",
   "/LTS-Registro-Viaggi/app.css",
@@ -48,6 +48,8 @@ const CORE = [
   "/LTS-Registro-Viaggi/shared/domain.mjs",
   "/LTS-Registro-Viaggi/shared/maps-client.mjs",
   "/LTS-Registro-Viaggi/shared/pdf.mjs",
+  "/LTS-Registro-Viaggi/shared/port-source-status.mjs",
+  "/LTS-Registro-Viaggi/shared/quick-trip.mjs",
   "/LTS-Registro-Viaggi/shared/sync-merge.mjs",
   "/LTS-Registro-Viaggi/shared/vendor/fflate.mjs",
   "/LTS-Registro-Viaggi/shell.html"
