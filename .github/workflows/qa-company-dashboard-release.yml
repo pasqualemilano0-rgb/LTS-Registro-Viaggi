@@ -1,0 +1,53 @@
+name: QA release LTS Autisti — gated dashboard
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'amministratore/**'
+      - 'account-access.mjs'
+      - 'runtime-config.mjs'
+      - 'privacy/index.html'
+      - 'tests/qa-company-dashboard-*'
+      - 'tests/qa-account-release.test.mjs'
+      - '.github/workflows/qa-company-dashboard-release.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  static-release:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax checks including report and account modules
+        run: |
+          node --check amministratore/admin.mjs
+          node --check amministratore/report.mjs
+          node --check account-access.mjs
+          node --check runtime-config.mjs
+          node --check tests/qa-company-dashboard-release.test.mjs
+          node --check tests/qa-company-dashboard-browser.mjs
+      - name: Existing account regression and new report privacy/security checks
+        run: node --test tests/qa-account-release.test.mjs tests/qa-company-dashboard-release.test.mjs
+  browser-release:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Prepare isolated Chromium
+        run: |
+          mkdir -p "$RUNNER_TEMP/lts-playwright"
+          npm install --prefix "$RUNNER_TEMP/lts-playwright" --no-save --no-package-lock playwright@1.56.1
+          "$RUNNER_TEMP/lts-playwright/node_modules/.bin/playwright" install --with-deps chromium
+      - name: Run mobile UI with synthetic accounts and no real trip data
+        run: LTS_BROWSER_PLAYWRIGHT="$RUNNER_TEMP/lts-playwright" node tests/qa-company-dashboard-browser.mjs
