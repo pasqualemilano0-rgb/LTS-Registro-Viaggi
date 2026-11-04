@@ -114,13 +114,33 @@ try{
  browser=await chromium.launch({headless:true,args:['--no-sandbox']});
  const page=await browser.newPage({viewport:{width:390,height:844},deviceScaleFactor:2,isMobile:true,hasTouch:true});
  const errors=[];page.on('pageerror',e=>errors.push(String(e)));
+ const mobileMore=page.locator('#admin-nav-more');
+ async function openAdminTab(id){
+  if(['alerts-tab','exports-tab','security-tab'].includes(id)&&
+     !(await mobileMore.evaluate(details=>details.open))){
+   await mobileMore.locator('summary').click();
+  }
+  await page.locator('#'+id).click();
+ }
  await page.goto(origin+'/amministratore/',{waitUntil:'networkidle',timeout:20000});
  await page.locator('#dashboard').waitFor({state:'visible'});
  assert.equal(await page.locator('#dashboard').getAttribute('data-view'),'overview','Protected overview should open after verified admin MFA');
  assert.equal(await page.locator('#console-overview').isVisible(),true);
  assert.equal(await page.locator('#report-panel').isVisible(),true);
  assert.equal(await page.locator('#management-panel').isVisible(),false);
- await page.locator('#analysis-tab').click();
+ const navigation=page.locator('#dashboard>.admin-switch');
+ assert.equal(await navigation.locator('button:visible').count(),4,
+  'Mobile nav exposes four primary actions; secondary sections live in More');
+ assert.equal(await mobileMore.locator('summary').isVisible(),true);
+ assert.equal(await mobileMore.evaluate(details=>details.open),false,'More starts collapsed on mobile');
+ const mobileGeometry=await navigation.evaluate(element=>({
+  width:element.getBoundingClientRect().width,viewport:innerWidth,
+  documentScroll:document.documentElement.scrollWidth
+ }));
+ assert(mobileGeometry.width<=mobileGeometry.viewport+1&&
+  mobileGeometry.documentScroll<=mobileGeometry.viewport+1,'Mobile navigation must fit the viewport');
+
+ await openAdminTab('analysis-tab');
  await page.locator('#report-count').waitFor();
  await page.locator('#report-month').fill('2026-11');
  await page.locator('#report-month').dispatchEvent('change');
@@ -151,7 +171,7 @@ try{
  await page.locator('#pro-clear').click();
  await page.waitForFunction(()=>document.querySelector('#pro-record-count').textContent==='2 viaggi');
  // Dedicated anomalies page opens the exact affected day.
- await page.locator('#alerts-tab').click();
+ await openAdminTab('alerts-tab');
  assert.equal(await page.locator('.pro-alerts-panel').isVisible(),true);
  assert.equal(await page.locator('.pro-trend-panel').isVisible(),false);
  await page.locator('#pro-alerts [data-selectable="true"]').first().click();
@@ -159,11 +179,11 @@ try{
   document.querySelector('#pro-from').value==='2026-11-03'&&
   document.querySelector('#pro-record-count').textContent==='1 viaggi');
  assert.equal(await page.locator('#pro-to').inputValue(),'2026-11-03');
- await page.locator('#analysis-tab').click();
+ await openAdminTab('analysis-tab');
  await page.locator('#report-show-all').click();
  await page.waitForFunction(()=>document.querySelector('#report-driver').value===''&&
   document.querySelector('#pro-record-count').textContent==='2 viaggi');
- await page.locator('#exports-tab').click();
+ await openAdminTab('exports-tab');
  assert.equal(await page.locator('.pro-exports').isVisible(),true);
  assert.equal(await page.locator('.report-graphs').isVisible(),false);
  const pd=page.waitForEvent('download');
@@ -178,7 +198,7 @@ try{
  assert.match(xlsx.suggestedFilename(),/\.xlsx$/);
  const xlsxBytes=await readFile(await xlsx.path());
  assert.equal(xlsxBytes[0],80);assert.equal(xlsxBytes[1],75);
- await page.locator('#analysis-tab').click();
+ await openAdminTab('analysis-tab');
  assert.equal(await page.locator('#report-amount-chart .report-bar-row').count(),2);
  assert.equal(await page.locator('#report-driver-cards .report-person-card').count(),2);
  assert.equal(await page.locator('#report-driver-profile').isVisible(),false);
@@ -216,7 +236,7 @@ try{
  await page.locator('#report-driver').selectOption('');
  await page.waitForFunction(()=>document.querySelector('#report-count').textContent==='2');
  assert.equal(await page.locator('#report-driver-chart .report-bar-row').count(),1);
- await page.locator('#report-tab').click();
+ await openAdminTab('report-tab');
  assert.equal(await page.locator('.report-register').isVisible(),true);
  await page.locator('#report-rows details').first().locator('summary').click();
  assert.match(await page.locator('#report-rows details').first().textContent(),/Seconda presa/);
@@ -234,9 +254,9 @@ try{
  await page.locator('#report-month').fill('2026-11');
  await page.locator('#report-month').dispatchEvent('change');
  await page.waitForFunction(()=>document.querySelector('#report-count').textContent==='2');
- await page.locator('#management-tab').click();
+ await openAdminTab('management-tab');
  assert.equal(await page.locator('#report-panel').isVisible(),false);
- await page.locator('#report-tab').click();
+ await openAdminTab('report-tab');
  await page.waitForFunction(()=>document.querySelector('#report-count').textContent==='2');
  // All seven navigation pages are real, separate, keyboard-accessible views.
  const sectionCases=[
@@ -249,15 +269,21 @@ try{
   ['security-tab','security','#security-console']
  ];
  for(const [button,view,content] of sectionCases){
-  await page.locator('#'+button).click();
+  await openAdminTab(button);
   assert.equal(await page.locator('#dashboard').getAttribute('data-view'),view,'Tab '+view+' must be functional');
   assert.equal(await page.locator('#'+button).getAttribute('aria-current'),'page');
+  if(['alerts-tab','exports-tab','security-tab'].includes(button)){
+   assert.equal(await mobileMore.evaluate(details=>details.open),false,
+    'More closes after choosing a secondary section');
+   assert.equal(await mobileMore.locator('summary').getAttribute('aria-current'),'page',
+    'More announces its selected section');
+  }
   assert.equal(await page.locator(content).isVisible(),true,'Section '+view+' must show actual controls');
  }
  await page.locator('#security-check').click();
  await page.waitForFunction(()=>document.querySelector('#security-result').textContent.includes('MFA confermata'));
  assert.equal(await page.locator('#report-panel').isVisible(),false,'Security view must hide reports');
- await page.locator('#report-tab').click();
+ await openAdminTab('report-tab');
  await page.waitForFunction(()=>document.querySelector('#report-count').textContent==='2');
  await page.locator('#logout').click();
  await page.waitForFunction(()=>document.querySelector('#dashboard').hidden===true);
