@@ -127,6 +127,38 @@ try{
  assert.equal(await page.locator('#report-rows tr').count(),2);
  assert.equal(await page.locator('#report-chart .report-bar-row').count(),2);
  assert.equal(await page.locator('#report-driver-chart .report-bar-row').count(),1);
+ // V3: automatically loaded 12-month insights, client/route rankings and anomaly center.
+ await page.waitForFunction(()=>document.querySelector('#pro-record-count').textContent==='2 viaggi');
+ assert.equal(await page.locator('#pro-trend-months button').count(),12);
+ assert.equal(await page.locator('#pro-clients button').count(),2);
+ assert.equal(await page.locator('#pro-routes button').count(),2);
+ assert.equal(await page.locator('#pro-alert-count').textContent(),'1');
+ assert.equal(await page.locator('#pro-export-pdf').isEnabled(),true);
+ assert.match(await page.locator('#pro-delta-trips').textContent(),/100%/);
+ // Interactive customer filtering, date interval, and PDF/Excel outputs.
+ await page.locator('#pro-clients button').first().click();
+ await page.waitForFunction(()=>document.querySelector('#pro-record-count').textContent==='1 viaggi');
+ assert.equal(await page.locator('#pro-records .pro-record').count(),1);
+ await page.locator('#pro-clear').click();
+ await page.waitForFunction(()=>document.querySelector('#pro-record-count').textContent==='2 viaggi');
+ await page.locator('#pro-from').fill('2026-11-04');
+ await page.locator('#pro-to').fill('2026-11-04');
+ await page.locator('#pro-apply').click();
+ await page.waitForFunction(()=>document.querySelector('#pro-record-count').textContent==='1 viaggi');
+ await page.locator('#pro-clear').click();
+ await page.waitForFunction(()=>document.querySelector('#pro-record-count').textContent==='2 viaggi');
+ const pd=page.waitForEvent('download');
+ await page.locator('#pro-export-pdf').click();
+ const pdf=await pd;
+ assert.match(pdf.suggestedFilename(),/\.pdf$/);
+ const pdfBytes=await readFile(await pdf.path());
+ assert(pdfBytes.subarray(0,8).toString('ascii').startsWith('%PDF-1.4'));
+ const xd=page.waitForEvent('download');
+ await page.locator('#pro-export-xlsx').click();
+ const xlsx=await xd;
+ assert.match(xlsx.suggestedFilename(),/\.xlsx$/);
+ const xlsxBytes=await readFile(await xlsx.path());
+ assert.equal(xlsxBytes[0],80);assert.equal(xlsxBytes[1],75);
  assert.equal(await page.locator('#report-amount-chart .report-bar-row').count(),2);
  assert.equal(await page.locator('#report-driver-cards .report-person-card').count(),2);
  assert.equal(await page.locator('#report-driver-profile').isVisible(),false);
@@ -137,6 +169,11 @@ try{
  await page.waitForFunction(()=>document.querySelector('#report-profile-title').textContent==='Mario Rossi'&&
   document.querySelector('#report-driver-profile').hidden===false);
  assert.equal(await page.locator('#report-profile-trips').textContent(),'2');
+ await page.waitForFunction(()=>document.querySelector('#pro-record-count').textContent==='2 viaggi');
+ await page.locator('#pro-compare-driver').selectOption('22222222-2222-4222-8222-222222222222');
+ await page.waitForFunction(()=>document.querySelector('#pro-compare-output table tbody tr')!==null);
+ assert.equal(await page.locator('#pro-compare-output tbody tr').count(),2);
+ assert.match(await page.locator('#pro-compare-output').textContent(),/Lucia Bianchi/);
  assert.equal(await page.locator('#report-profile-days').textContent(),'2');
  assert.match((await page.locator('#report-profile-average').textContent()).replace(/\s/g,' '),/125,00/);
  assert.match((await page.locator('#report-profile-total').textContent()).replace(/\s/g,' '),/250,00/);
@@ -186,6 +223,8 @@ try{
  assert.equal(await page.locator('#report-driver-cards .report-person-card').count(),0);
  assert.equal(await page.locator('#report-driver-profile').isVisible(),false);
  assert.equal(await page.locator('#report-amount-chart .report-bar-row').count(),0);
+ assert.equal(await page.locator('#pro-records .pro-record').count(),0);
+ assert.equal(await page.locator('#pro-export-pdf').isDisabled(),true);
  assert.equal(errors.length,0,'No JavaScript errors: '+errors.join(';'));
  // Data source remains read-only, notes never render as HTML, and no horizontal page scroll on mobile.
  assert.equal(await page.locator('#report-month').inputValue(),'2026-11');
