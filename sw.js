@@ -1,6 +1,6 @@
 const BASE = "/LTS-Registro-Viaggi/";
 const PREFIX = "lts-iphone-pages-0aa8d087d02b-";
-const CACHE = PREFIX + '20261104-theme-restore-v1';
+const CACHE = PREFIX + '20261104-login-harbor-v1';
 const CORE = [
   "/LTS-Registro-Viaggi/account-access.mjs",
   "/LTS-Registro-Viaggi/app.css",
@@ -8,6 +8,7 @@ const CORE = [
   "/LTS-Registro-Viaggi/assets/apple-touch-icon.png",
   "/LTS-Registro-Viaggi/assets/icon-192.png",
   "/LTS-Registro-Viaggi/assets/icon-512.png",
+  "/LTS-Registro-Viaggi/assets/login-harbor.svg",
   "/LTS-Registro-Viaggi/assets/lts-logo-pdf.png",
   "/LTS-Registro-Viaggi/assets/lts-logo.png",
   "/LTS-Registro-Viaggi/assets/vendor/fflate.mjs",
