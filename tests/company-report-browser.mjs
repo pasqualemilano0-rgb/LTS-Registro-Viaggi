@@ -241,7 +241,7 @@ try{
  // All seven navigation pages are real, separate, keyboard-accessible views.
  const sectionCases=[
   ['overview-tab','overview','#console-overview'],
-  ['management-tab','drivers','#roster'],
+  ['management-tab','drivers','#invite-form'],
   ['report-tab','trips','.report-register'],
   ['analysis-tab','analysis','.report-graphs'],
   ['alerts-tab','alerts','.pro-alerts-panel'],
