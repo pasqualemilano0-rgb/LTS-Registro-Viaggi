@@ -9,8 +9,8 @@
   <title>LTS · Gestione autisti</title>
   <meta name="description" content="Pannello riservato all'amministratore per gestire gli autisti LTS.">
   <link rel="icon" type="image/png" href="../assets/icon-192.png">
-  <link rel="stylesheet" href="./admin.css?v=20261104-company-v1">
-  <script type="module" src="./admin.mjs?v=20261104-company-v1"></script>
+  <link rel="stylesheet" href="./admin.css?v=20261104-driver-pro-v2">
+  <script type="module" src="./admin.mjs?v=20261104-driver-pro-v2"></script>
 </head>
 <body>
   <header class="topbar">
@@ -155,40 +155,89 @@
       </section>
       </div>
       <section id="report-panel" aria-labelledby="report-title" hidden>
-        <div class="page-intro">
-          <div><p class="eyebrow">LTS GESTIONE AUTISTI · FASE 1</p>
+        <header class="report-hero">
+          <div class="report-hero-main">
+            <p class="report-hero-kicker"><span class="report-hero-dot" aria-hidden="true"></span> LTS · CENTRO CONTROLLO AUTISTI</p>
             <h1 id="report-title">Viaggi e statistiche</h1>
-            <p>Controllo dei viaggi già sincronizzati nel registro. Solo amministratore con verifica a due fattori.</p>
+            <p>Una panoramica chiara dell'attività e un controllo dettagliato di ogni autista, basati sui soli viaggi sincronizzati.</p>
+            <div class="report-hero-tags" aria-label="Caratteristiche della dashboard">
+              <span>Area riservata</span><span>Protezione MFA</span><span>Sola lettura</span>
+            </div>
           </div>
-          <button type="button" id="report-refresh" class="button outline">Aggiorna dati</button>
-        </div>
-        <div class="surface">
+          <div class="report-hero-action">
+            <span>PERIODO DI ANALISI</span>
+            <strong id="report-period-title">—</strong>
+            <button type="button" id="report-refresh" class="button report-refresh-button">Aggiorna dati <span aria-hidden="true">↻</span></button>
+          </div>
+        </header>
+        <section class="surface report-filter-panel" aria-label="Filtri e stato sincronizzazione">
+          <div class="report-filter-heading">
+            <div><p class="eyebrow">ANALISI DEI DATI</p><h2>Filtri del cruscotto</h2></div>
+            <span class="report-sync-pill"><span aria-hidden="true">●</span> Dati sincronizzati</span>
+          </div>
           <div class="report-filters">
-            <label>Mese <input id="report-month" type="month" min="2020-01" max="2099-12" required></label>
-            <label>Autista <select id="report-driver"><option value="">Tutti gli autisti</option></select></label>
+            <label>Mese di riferimento <input id="report-month" type="month" min="2020-01" max="2099-12" required></label>
+            <label>Controlla un autista <select id="report-driver"><option value="">Tutti gli autisti</option></select></label>
+            <button type="button" id="report-reset-filters" class="button outline report-clear-filters">Azzera filtri</button>
           </div>
           <p id="report-status" class="report-source" role="status" aria-live="polite"></p>
           <p id="report-error" class="error-message" role="alert" hidden></p>
           <p id="report-warning" class="report-warning" role="alert"></p>
-        </div>
-        <div class="stat-grid report-kpis" aria-label="Riepilogo viaggi">
-          <div class="stat"><span>Viaggi registrati</span><strong id="report-count">—</strong></div>
-          <div class="stat"><span>Autisti con viaggi</span><strong id="report-driver-count">—</strong></div>
-          <div class="stat"><span>Valore trasferte registrate</span><strong id="report-total">—</strong></div>
-          <div class="stat"><span>Tariffe mancanti</span><strong id="report-missing">—</strong></div>
-        </div>
+        </section>
+        <section class="stat-grid report-kpis" aria-label="Indicatori principali">
+          <div class="stat report-kpi"><span>Viaggi registrati</span><strong id="report-count">—</strong><small>Nel periodo selezionato</small></div>
+          <div class="stat report-kpi"><span id="report-driver-count-label">Autisti con viaggi</span><strong id="report-driver-count">—</strong><small id="report-driver-count-note">Con attività nel mese</small></div>
+          <div class="stat report-kpi report-kpi-value"><span>Valore trasferte registrate</span><strong id="report-total">—</strong><small>Non è il guadagno netto</small></div>
+          <div class="stat report-kpi"><span>Tariffe da verificare</span><strong id="report-missing">—</strong><small>Inserimenti senza tariffa completa</small></div>
+        </section>
+        <section id="report-driver-profile" class="surface report-profile" aria-labelledby="report-profile-title" hidden>
+          <div class="report-profile-heading">
+            <div class="report-profile-ident">
+              <span id="report-profile-avatar" class="report-profile-avatar" aria-hidden="true">—</span>
+              <div><p class="eyebrow">SCHEDA INDIVIDUALE</p>
+                <h2 id="report-profile-title">Profilo autista</h2>
+                <p id="report-profile-status" class="report-profile-state">—</p>
+              </div>
+            </div>
+            <button id="report-show-all" class="button outline" type="button">Tutti gli autisti</button>
+          </div>
+          <div class="report-profile-metrics" aria-label="Statistiche autista selezionato">
+            <div><span>Trasferte</span><strong id="report-profile-trips">—</strong></div>
+            <div><span>Giorni con attività</span><strong id="report-profile-days">—</strong></div>
+            <div><span>Media per viaggio</span><strong id="report-profile-average">—</strong></div>
+            <div><span>Valore totale registrato</span><strong id="report-profile-total">—</strong></div>
+          </div>
+          <p id="report-profile-note" class="report-profile-note"></p>
+        </section>
         <div class="report-graphs">
-          <section class="surface" aria-labelledby="report-daily-title">
-            <div class="section-head"><h2 id="report-daily-title">Viaggi per giorno</h2><span class="pill">Mese selezionato</span></div>
-            <div id="report-chart" class="report-bars"></div>
+          <section class="surface report-graph-card" aria-labelledby="report-daily-title">
+            <div class="section-head"><div><p class="eyebrow">ANDAMENTO</p><h2 id="report-daily-title">Viaggi per giorno</h2></div><span class="pill">Frequenza</span></div>
+            <div id="report-chart" class="report-bars" aria-label="Grafico viaggi giornalieri"></div>
           </section>
-          <section class="surface" aria-labelledby="report-driver-title">
-            <div class="section-head"><h2 id="report-driver-title">Viaggi per autista</h2><span class="pill">Confronto attività</span></div>
-            <div id="report-driver-chart" class="report-bars"></div>
+          <section class="surface report-graph-card" aria-labelledby="report-amount-title">
+            <div class="section-head"><div><p class="eyebrow">VALORI REGISTRATI</p><h2 id="report-amount-title">Importi per giorno</h2></div><span class="pill">€</span></div>
+            <div id="report-amount-chart" class="report-bars" aria-label="Grafico valori giornalieri"></div>
+          </section>
+          <section class="surface report-graph-card report-wide-chart" aria-labelledby="report-driver-title">
+            <div class="section-head"><div><p class="eyebrow">ATTIVITÀ</p><h2 id="report-driver-title">Viaggi per autista</h2></div><span class="pill">Confronto mensile</span></div>
+            <div id="report-driver-chart" class="report-bars" aria-label="Grafico confronto autisti"></div>
           </section>
         </div>
+        <section class="surface report-directory" aria-labelledby="report-directory-title">
+          <div class="section-head report-directory-head">
+            <div><p class="eyebrow">CONTROLLO INDIVIDUALE</p><h2 id="report-directory-title">Seleziona un autista</h2>
+              <p>Scegli una persona per visualizzare la sua scheda, i grafici e soltanto i suoi viaggi.</p></div>
+            <span id="report-directory-count" class="pill">—</span>
+          </div>
+          <label class="report-directory-search">Cerca autista
+            <input type="search" id="report-driver-search" placeholder="Nome o cognome…" maxlength="120" autocomplete="off">
+          </label>
+          <div id="report-driver-cards" class="report-driver-cards" aria-label="Elenco autisti e riepilogo delle trasferte"></div>
+          <p id="report-directory-empty" class="empty" hidden>Nessun autista corrisponde alla ricerca.</p>
+        </section>
         <section class="surface report-register" aria-labelledby="report-register-title">
-          <div class="section-head"><h2 id="report-register-title">Tutti gli inserimenti</h2><span class="pill">Sola lettura</span></div>
+          <div class="section-head"><div><p class="eyebrow">REGISTRO SINCRONIZZATO</p><h2 id="report-register-title">Dettaglio dei viaggi</h2></div><span class="pill">Sola lettura</span></div>
+          <p id="report-register-caption" class="report-register-caption">Elenco degli inserimenti del periodo selezionato.</p>
           <div class="report-table-scroll"><table class="report-table">
             <thead><tr><th scope="col">Autista</th><th scope="col">Data</th>
               <th scope="col">Container</th><th scope="col">Cliente e località</th>
@@ -197,7 +246,7 @@
           </table></div>
           <p id="report-empty" class="empty" hidden>Nessun viaggio sincronizzato per i filtri scelti.</p>
           <button id="report-next" type="button" class="button outline" hidden>Carica altri viaggi</button>
-          <p class="footnote">Gli importi indicano valori registrati, non fatturato aziendale né stipendio. I viaggi non sincronizzati dal telefono non possono comparire qui.</p>
+          <p class="footnote">I valori indicano trasferte registrate, non fatturato aziendale, guadagno netto o stipendio. Viaggi non sincronizzati dal telefono e costi aziendali non sono inclusi.</p>
         </section>
       </section>
     </div>

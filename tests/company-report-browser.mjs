@@ -23,8 +23,8 @@ export const logout=async()=>({revoked:true});
 export const signOut=()=>{};
 export const companyReport=async({month,offset=0,limit=40,driverId=null})=>{
  const drivers=[
- {id:'11111111-1111-4111-8111-111111111111',name:'Mario Rossi',trips:2,totalCents:25000,missingTariffCount:1,active:true},
- {id:'22222222-2222-4222-8222-222222222222',name:'Lucia Bianchi',trips:0,totalCents:0,missingTariffCount:0,active:false}
+ {id:'11111111-1111-4111-8111-111111111111',name:'Mario Rossi',trips:2,days:2,totalCents:25000,missingTariffCount:1,active:true},
+ {id:'22222222-2222-4222-8222-222222222222',name:'Lucia Bianchi',trips:0,days:0,totalCents:0,missingTariffCount:0,active:false}
  ];
  const trips=month==='2026-11'?[
  {id:'1',driverId:drivers[0].id,driverName:drivers[0].name,date:'2026-11-04',
@@ -77,9 +77,35 @@ try{
  assert.equal(await page.locator('#report-rows tr').count(),2);
  assert.equal(await page.locator('#report-chart .report-bar-row').count(),2);
  assert.equal(await page.locator('#report-driver-chart .report-bar-row').count(),1);
+ assert.equal(await page.locator('#report-amount-chart .report-bar-row').count(),2);
+ assert.equal(await page.locator('#report-driver-cards .report-person-card').count(),2);
+ assert.equal(await page.locator('#report-driver-profile').isVisible(),false);
+ // Find and open an individual driver from the searchable directory.
+ await page.locator('#report-driver-search').fill('Mario');
+ assert.equal(await page.locator('#report-driver-cards .report-person-card').count(),1);
+ await page.locator('#report-driver-cards .report-person-card').first().click();
+ await page.waitForFunction(()=>document.querySelector('#report-profile-title').textContent==='Mario Rossi'&&
+  document.querySelector('#report-driver-profile').hidden===false);
+ assert.equal(await page.locator('#report-profile-trips').textContent(),'2');
+ assert.equal(await page.locator('#report-profile-days').textContent(),'2');
+ assert.match((await page.locator('#report-profile-average').textContent()).replace(/\s/g,' '),/125,00/);
+ assert.match((await page.locator('#report-profile-total').textContent()).replace(/\s/g,' '),/250,00/);
+ assert.equal(await page.locator('#report-amount-chart .report-bar-row').count(),2);
+ assert.equal(await page.locator('#report-rows tr').count(),2);
+ assert.equal(await page.locator('#report-driver-cards .report-person-card').count(),1,'Search stays active');
+ assert.equal(await page.locator('#report-driver-cards .report-person-card').first().getAttribute('aria-pressed'),'true');
+ await page.locator('#report-driver-search').fill('');
  await page.locator('#report-driver').selectOption('22222222-2222-4222-8222-222222222222');
  await page.waitForFunction(()=>document.querySelector('#report-count').textContent==='0');
  assert.equal(await page.locator('#report-driver-chart .report-bar-row').count(),0);
+ assert.equal(await page.locator('#report-profile-title').textContent(),'Lucia Bianchi');
+ assert.equal(await page.locator('#report-profile-trips').textContent(),'0');
+ assert.equal(await page.locator('#report-profile-days').textContent(),'0');
+ assert.equal(await page.locator('#report-profile-average').textContent(),'—');
+ assert.equal(await page.locator('#report-amount-chart .report-bar-row').count(),0);
+ await page.locator('#report-show-all').click();
+ await page.waitForFunction(()=>document.querySelector('#report-count').textContent==='2');
+ assert.equal(await page.locator('#report-driver-profile').isVisible(),false);
  await page.locator('#report-driver').selectOption('');
  await page.waitForFunction(()=>document.querySelector('#report-count').textContent==='2');
  assert.equal(await page.locator('#report-driver-chart .report-bar-row').count(),1);
@@ -91,6 +117,11 @@ try{
  await page.waitForFunction(()=>document.querySelector('#report-count').textContent==='0');
  assert.equal(await page.locator('#report-rows tr').count(),0);
  assert.equal(await page.locator('#report-chart .report-bar-row').count(),0);
+ assert.equal(await page.locator('#report-amount-chart .report-bar-row').count(),0);
+ // Month reset returns to the current month and clears the driver selection.
+ await page.locator('#report-reset-filters').click();
+ await page.waitForFunction(()=>document.querySelector('#report-count').textContent==='2');
+ assert.equal(await page.locator('#report-driver').inputValue(),'');
  await page.locator('#report-month').fill('2026-11');
  await page.locator('#report-month').dispatchEvent('change');
  await page.waitForFunction(()=>document.querySelector('#report-count').textContent==='2');
@@ -102,8 +133,13 @@ try{
  await page.waitForFunction(()=>document.querySelector('#dashboard').hidden===true);
  assert.equal(await page.locator('#report-count').textContent(),'—');
  assert.equal(await page.locator('#report-rows tr').count(),0);
+ assert.equal(await page.locator('#report-driver-cards .report-person-card').count(),0);
+ assert.equal(await page.locator('#report-driver-profile').isVisible(),false);
+ assert.equal(await page.locator('#report-amount-chart .report-bar-row').count(),0);
  assert.equal(errors.length,0,'No JavaScript errors: '+errors.join(';'));
- console.log('PASS Chromium mobile 390px: trusted dashboard, real UI graphs/table, monthly filters, escaped notes, logout wipe');
+ // Data source remains read-only, notes never render as HTML, and no horizontal page scroll on mobile.
+ assert.equal(await page.locator('#report-month').inputValue(),'2026-11');
+ console.log('PASS Chromium mobile 390px: overview, 3 graphs, driver directory/search, individual profile, monthly filters, escaped notes, logout wipe');
  await page.close();
 } finally {
  if(browser)await browser.close();

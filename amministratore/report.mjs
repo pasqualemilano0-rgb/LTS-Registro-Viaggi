@@ -19,8 +19,22 @@ function currentMonth(){
  return parts.find(p=>p.type==='year').value+'-'+parts.find(p=>p.type==='month').value;
 }
 function clearData(){
- for(const id of ['report-chart','report-driver-chart','report-rows'])el(id).replaceChildren();
- for(const id of ['report-count','report-driver-count','report-total','report-missing'])el(id).textContent='—';
+ for(const id of ['report-chart','report-amount-chart','report-driver-chart','report-driver-cards','report-rows'])
+  el(id).replaceChildren();
+ for(const id of ['report-count','report-driver-count','report-total','report-missing',
+                  'report-profile-trips','report-profile-days','report-profile-average','report-profile-total'])
+  el(id).textContent='—';
+ el('report-profile-title').textContent='Profilo autista';
+ el('report-profile-avatar').textContent='—';
+ el('report-profile-status').textContent='';
+ el('report-profile-note').textContent='';
+ el('report-profile-note').hidden=true;
+ el('report-driver-profile').hidden=true;
+ el('report-driver-count-label').textContent='Autisti con viaggi';
+ el('report-driver-count-note').textContent='Con attività nel mese';
+ el('report-directory-count').textContent='—';
+ el('report-directory-empty').hidden=true;
+ el('report-register-caption').textContent='Elenco degli inserimenti del periodo selezionato.';
  el('report-next').hidden=true;
  el('report-warning').textContent='';
 }
@@ -52,17 +66,77 @@ function renderDrivers(drivers){
  const max=Math.max(1,...filtered.map(d=>d.trips));
  for(const driver of filtered)target.append(makeBar(driver.name,driver.trips,max));
 }
+function renderAmountChart(days){
+ const target=el('report-amount-chart');target.replaceChildren();
+ const values=Array.isArray(days)?days:[];
+ if(!values.length){target.append(node('p','empty','Nessun importo registrato nel periodo.'));return;}
+ const max=Math.max(1,...values.map(d=>d.totalCents));
+ for(const day of values)target.append(makeBar(dateLabel(day.date),day.totalCents,max,true));
+}
+function initials(name){
+ const chunks=String(name||'').trim().split(/\s+/).filter(Boolean);
+ return (chunks.length?chunks.length===1?chunks[0].slice(0,2):chunks[0][0]+chunks[chunks.length-1][0]:'—').toLocaleUpperCase('it-IT');
+}
+function driverDirectory(drivers,selectedId,onSelect,search=''){
+ const target=el('report-driver-cards');target.replaceChildren();
+ const nameQuery=String(search||'').trim().toLocaleLowerCase('it-IT');
+ const all=Array.isArray(drivers)?drivers:[];
+ const matched=all.filter(d=>String(d.name||'').toLocaleLowerCase('it-IT').includes(nameQuery));
+ el('report-directory-count').textContent=matched.length+' di '+all.length;
+ el('report-directory-empty').hidden=matched.length>0;
+ for(const d of matched){
+  const button=document.createElement('button');
+  button.type='button';button.className='report-person-card';
+  button.setAttribute('aria-pressed',String(d.id===selectedId));
+  button.setAttribute('aria-label','Apri scheda di '+d.name+', '+d.trips+' viaggi nel mese');
+  if(!d.active)button.classList.add('report-person-disabled');
+  const avatar=node('span','report-person-avatar',initials(d.name));
+  avatar.setAttribute('aria-hidden','true');
+  const text=node('span','report-person-main');
+  text.append(node('strong','report-person-name',d.name),
+    node('span','report-person-meta',d.days+' giorni con attività'),
+    node('span','report-person-value',currency(d.totalCents)));
+  const end=node('span','report-person-end');
+  end.append(node('strong','',d.trips),node('small','',d.trips===1?'viaggio':'viaggi'),
+    node('span','report-open-indicator',d.id===selectedId?'Selezionato ✓':'Apri scheda ›'));
+  if(!d.active)end.append(node('span','report-person-status','Accesso non attivo'));
+  button.append(avatar,text,end);
+  button.addEventListener('click',()=>onSelect(d.id));
+  target.append(button);
+ }
+}
+function driverProfile(drivers,selectedId){
+ const target=el('report-driver-profile');
+ const current=(Array.isArray(drivers)?drivers:[]).find(d=>d.id===selectedId);
+ target.hidden=!current;
+ if(!current)return null;
+ el('report-profile-title').textContent=current.name;
+ el('report-profile-avatar').textContent=initials(current.name);
+ el('report-profile-status').textContent=current.active?'Account con accesso attivo':'Account con accesso non attivo';
+ el('report-profile-trips').textContent=String(current.trips);
+ el('report-profile-days').textContent=String(current.days);
+ el('report-profile-average').textContent=current.trips?currency(Math.round(current.totalCents/current.trips)):'—';
+ el('report-profile-total').textContent=currency(current.totalCents);
+ const warning=Number.isInteger(current.missingTariffCount)?current.missingTariffCount:0;
+ const note=el('report-profile-note');
+ note.textContent=warning>0?
+  warning+' viaggio/i con tariffe da completare: il totale è parziale.':
+  'Valori relativi al mese selezionato e ai soli viaggi sincronizzati.';
+ note.hidden=false;
+ return current;
+}
 function tableRow(trip){
  const row=document.createElement('tr');
- const cell=value=>{const td=node('td','',value);row.append(td);return td;};
- cell(trip.driverName);
- cell(dateLabel(trip.date));
- cell(trip.container);
- const route=cell(trip.client);
+ const cell=(label,value)=>{const td=node('td','',value);td.dataset.label=label;row.append(td);return td;};
+ cell('Autista',trip.driverName);
+ cell('Data',dateLabel(trip.date));
+ cell('Container',trip.container);
+ const route=cell('Cliente e località',trip.client);
  route.append(node('small','report-muted',trip.city||''));
- const amount=cell(currency(trip.totalCents));
+ const amount=cell('Importo registrato',currency(trip.totalCents));
  if(trip.missingTariff)amount.append(node('span','report-partial','Parziale · tariffa mancante'));
  const extra=document.createElement('td');
+ extra.dataset.label='Altri dettagli';
  const detail=document.createElement('details');
  const summary=node('summary','','Dettagli');detail.append(summary);
  const text=node('div','report-row-details');
@@ -96,7 +170,12 @@ export function setupReport(account){
  const mTab=el('management-tab'),rTab=el('report-tab');
  const month=el('report-month'),driver=el('report-driver');
  month.value=currentMonth();
- let requestSeq=0,rows=[],page=null,loading=false;
+ let requestSeq=0,rows=[],page=null,loading=false,focusOnDriver=false;
+ const driverSearch=el('report-driver-search');
+ function selectDriver(id){
+  if(driver.value===id&&page)return;
+  driver.value=id;rows=[];focusOnDriver=Boolean(id);void load(false);
+ }
  function tabs(showReport){
   management.hidden=showReport;report.hidden=!showReport;
   mTab.setAttribute('aria-pressed',String(!showReport));
@@ -108,7 +187,10 @@ export function setupReport(account){
   requestSeq++;rows=[];page=null;loading=false;
   clearData();el('report-empty').hidden=true;el('report-status').textContent='';
   el('report-error').hidden=true;el('report-next').disabled=false;
-  updateDriverOptions([]);tabs(false);
+  updateDriverOptions([]);
+  driverSearch.value='';
+  el('report-period-title').textContent='—';
+  focusOnDriver=false;tabs(false);
  }
  async function load(append=false){
   if(report.hidden)return;
@@ -132,20 +214,36 @@ export function setupReport(account){
    page=result;
    updateDriverOptions(result.drivers);
    const summary=result.summary;
+   const selected=driver.value?result.drivers.find(d=>d.id===driver.value):null;
    el('report-count').textContent=String(summary.trips);
-   el('report-driver-count').textContent=String(summary.drivers);
+   el('report-driver-count').textContent=String(selected?selected.days:summary.drivers);
+   el('report-driver-count-label').textContent=selected?'Giorni con attività':'Autisti con viaggi';
+   el('report-driver-count-note').textContent=selected?'Date con viaggi nel mese':'Con attività nel mese';
    el('report-total').textContent=currency(summary.knownTotalCents);
    el('report-missing').textContent=String(summary.missingTariffCount);
    const warnings=[];
    if(summary.missingTariffCount)warnings.push('Importi parziali: '+summary.missingTariffCount+' viaggi con tariffe mancanti.');
    if(result.incompleteArchives)warnings.push(result.incompleteArchives+' archivi non leggibili, esclusi dai totali: report incompleto.');
    el('report-warning').textContent=warnings.join(' ');
-   renderDayChart(result.chart);renderDrivers(driver.value?result.drivers.filter(item=>item.id===driver.value):result.drivers);
+   renderDayChart(result.chart);
+   renderAmountChart(result.chart);
+   renderDrivers(driver.value?result.drivers.filter(item=>item.id===driver.value):result.drivers);
+   driverProfile(result.drivers,driver.value);
+   driverDirectory(result.drivers,driver.value,selectDriver,driverSearch.value);
+   el('report-register-caption').textContent=selected?
+    'Viaggi sincronizzati di '+selected.name+' nel periodo selezionato.':
+    'Elenco di tutti i viaggi sincronizzati nel periodo selezionato.';
+   el('report-period-title').textContent=new Intl.DateTimeFormat('it-IT',{year:'numeric',month:'long'})
+    .format(new Date(Number(month.value.slice(0,4)),Number(month.value.slice(5,7))-1,1));
    el('report-rows').replaceChildren(...rows.map(tableRow));
    el('report-empty').hidden=rows.length>0;
    el('report-next').hidden=rows.length>=result.pagination.total;
    el('report-status').textContent=(result.source||'Dati sincronizzati')+
     ' Ultimo controllo: '+new Date(result.reportedAt).toLocaleString('it-IT')+'.';
+   if(focusOnDriver&&selected&&el('report-driver-profile').hidden===false){
+    focusOnDriver=false;
+    el('report-driver-profile').scrollIntoView({block:'start',behavior:'auto'});
+   }
   }catch(error){
    if(serial!==requestSeq)return;
    rows=[];page=null;clearData();
@@ -153,6 +251,8 @@ export function setupReport(account){
    el('report-error').textContent=error?.message||'Impossibile caricare il report.';
    el('report-error').hidden=false;
    el('report-status').textContent='Report non disponibile: nessun dato confermato.';
+   el('report-period-title').textContent='—';
+   focusOnDriver=false;
   }finally{
    if(serial===requestSeq){loading=false;el('report-refresh').disabled=false;el('report-next').disabled=false;}
   }
@@ -161,7 +261,14 @@ export function setupReport(account){
  rTab.addEventListener('click',()=>{if(!account.isVerified()||account.getRole()!=='admin')return;tabs(true);void load(false);});
  el('report-refresh').addEventListener('click',()=>{rows=[];void load(false);});
  month.addEventListener('change',()=>{rows=[];void load(false);});
- driver.addEventListener('change',()=>{rows=[];void load(false);});
+ driver.addEventListener('change',()=>{rows=[];focusOnDriver=Boolean(driver.value);void load(false);});
+ driverSearch.addEventListener('input',()=>{
+  if(page)driverDirectory(page.drivers,driver.value,selectDriver,driverSearch.value);
+ });
+ el('report-show-all').addEventListener('click',()=>selectDriver(''));
+ el('report-reset-filters').addEventListener('click',()=>{
+  month.value=currentMonth();driver.value='';driverSearch.value='';rows=[];focusOnDriver=false;void load(false);
+ });
  el('report-next').addEventListener('click',()=>void load(true));
  return {reset};
 }
