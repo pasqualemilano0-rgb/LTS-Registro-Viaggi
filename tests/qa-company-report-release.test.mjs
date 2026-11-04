@@ -7,10 +7,12 @@ test('dashboard accessibile solo dal pannello admin, CSP e versioni coerenti',()
  const html=read('amministratore/index.html'),js=read('amministratore/admin.mjs');
  const report=read('amministratore/report.mjs'),css=read('amministratore/admin.css');
  for(const id of ['management-tab','report-tab','report-panel','report-count',
-   'report-total','report-chart','report-driver-chart','report-rows','report-next','report-driver','report-month'])
+   'report-total','report-chart','report-amount-chart','report-driver-chart','report-rows',
+   'report-next','report-driver','report-month','report-driver-profile','report-profile-title',
+   'report-profile-average','report-driver-cards','report-driver-search','report-reset-filters'])
    assert.match(html,new RegExp('id="'+id+'"'));
- assert.match(html,/admin\.mjs\?v=20261104-company-v1/);
- assert.match(html,/admin\.css\?v=20261104-company-v1/);
+ assert.match(html,/admin\.mjs\?v=20261104-driver-pro-v2/);
+ assert.match(html,/admin\.css\?v=20261104-driver-pro-v2/);
  assert.match(js,/account-access\.mjs\?v=20261104-company-v1/);
  assert.match(js,/setupReport\(account\)/);
  assert.match(js,/companyView\.reset\(\)/);
@@ -18,6 +20,10 @@ test('dashboard accessibile solo dal pannello admin, CSP e versioni coerenti',()
  assert.match(html,/connect-src https:\/\/otrqynkscpbeyuvdlgpg.supabase.co/);
  assert.match(css,/\.report-bar-progress/);
  assert.match(report,/createElement\('progress'\)/);
+ assert.match(report,/function driverProfile\(/);
+ assert.match(report,/function driverDirectory\(/);
+ assert.match(report,/function renderAmountChart\(/);
+ assert.match(js,/report\.mjs\?v=20261104-driver-pro-v2/);
  assert.doesNotMatch(report,/innerHTML|eval\(|\.style\./);
  assert.doesNotMatch([html,js,report].join('\n'),/sb_secret_|SUPABASE_SERVICE_ROLE_KEY|SUPABASE_SECRET_KEYS/);
 });
