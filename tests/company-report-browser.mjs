@@ -116,8 +116,11 @@ try{
  const errors=[];page.on('pageerror',e=>errors.push(String(e)));
  await page.goto(origin+'/amministratore/',{waitUntil:'networkidle',timeout:20000});
  await page.locator('#dashboard').waitFor({state:'visible'});
- assert.equal(await page.locator('#report-panel').isVisible(),false,'Report initially hidden');
- await page.locator('#report-tab').click();
+ assert.equal(await page.locator('#dashboard').getAttribute('data-view'),'overview','Protected overview should open after verified admin MFA');
+ assert.equal(await page.locator('#console-overview').isVisible(),true);
+ assert.equal(await page.locator('#report-panel').isVisible(),true);
+ assert.equal(await page.locator('#management-panel').isVisible(),false);
+ await page.locator('#analysis-tab').click();
  await page.locator('#report-count').waitFor();
  await page.locator('#report-month').fill('2026-11');
  await page.locator('#report-month').dispatchEvent('change');
@@ -147,15 +150,22 @@ try{
  await page.waitForFunction(()=>document.querySelector('#pro-record-count').textContent==='1 viaggi');
  await page.locator('#pro-clear').click();
  await page.waitForFunction(()=>document.querySelector('#pro-record-count').textContent==='2 viaggi');
- // Anomaly opens the exact affected day, even when switching driver first.
+ // Dedicated anomalies page opens the exact affected day.
+ await page.locator('#alerts-tab').click();
+ assert.equal(await page.locator('.pro-alerts-panel').isVisible(),true);
+ assert.equal(await page.locator('.pro-trend-panel').isVisible(),false);
  await page.locator('#pro-alerts [data-selectable="true"]').first().click();
  await page.waitForFunction(()=>document.querySelector('#report-driver').value==='11111111-1111-4111-8111-111111111111'&&
   document.querySelector('#pro-from').value==='2026-11-03'&&
   document.querySelector('#pro-record-count').textContent==='1 viaggi');
  assert.equal(await page.locator('#pro-to').inputValue(),'2026-11-03');
+ await page.locator('#analysis-tab').click();
  await page.locator('#report-show-all').click();
  await page.waitForFunction(()=>document.querySelector('#report-driver').value===''&&
   document.querySelector('#pro-record-count').textContent==='2 viaggi');
+ await page.locator('#exports-tab').click();
+ assert.equal(await page.locator('.pro-exports').isVisible(),true);
+ assert.equal(await page.locator('.report-graphs').isVisible(),false);
  const pd=page.waitForEvent('download');
  await page.locator('#pro-export-pdf').click();
  const pdf=await pd;
@@ -168,6 +178,7 @@ try{
  assert.match(xlsx.suggestedFilename(),/\.xlsx$/);
  const xlsxBytes=await readFile(await xlsx.path());
  assert.equal(xlsxBytes[0],80);assert.equal(xlsxBytes[1],75);
+ await page.locator('#analysis-tab').click();
  assert.equal(await page.locator('#report-amount-chart .report-bar-row').count(),2);
  assert.equal(await page.locator('#report-driver-cards .report-person-card').count(),2);
  assert.equal(await page.locator('#report-driver-profile').isVisible(),false);
@@ -205,6 +216,8 @@ try{
  await page.locator('#report-driver').selectOption('');
  await page.waitForFunction(()=>document.querySelector('#report-count').textContent==='2');
  assert.equal(await page.locator('#report-driver-chart .report-bar-row').count(),1);
+ await page.locator('#report-tab').click();
+ assert.equal(await page.locator('.report-register').isVisible(),true);
  await page.locator('#report-rows details').first().locator('summary').click();
  assert.match(await page.locator('#report-rows details').first().textContent(),/Seconda presa/);
  assert.equal(await page.locator('img[src="x"]').count(),0,'Notes must not create HTML');
@@ -225,6 +238,27 @@ try{
  assert.equal(await page.locator('#report-panel').isVisible(),false);
  await page.locator('#report-tab').click();
  await page.waitForFunction(()=>document.querySelector('#report-count').textContent==='2');
+ // All seven navigation pages are real, separate, keyboard-accessible views.
+ const sectionCases=[
+  ['overview-tab','overview','#console-overview'],
+  ['management-tab','drivers','#invite-form'],
+  ['report-tab','trips','.report-register'],
+  ['analysis-tab','analysis','.report-graphs'],
+  ['alerts-tab','alerts','.pro-alerts-panel'],
+  ['exports-tab','exports','.pro-exports'],
+  ['security-tab','security','#security-console']
+ ];
+ for(const [button,view,content] of sectionCases){
+  await page.locator('#'+button).click();
+  assert.equal(await page.locator('#dashboard').getAttribute('data-view'),view,'Tab '+view+' must be functional');
+  assert.equal(await page.locator('#'+button).getAttribute('aria-current'),'page');
+  assert.equal(await page.locator(content).isVisible(),true,'Section '+view+' must show actual controls');
+ }
+ await page.locator('#security-check').click();
+ await page.waitForFunction(()=>document.querySelector('#security-result').textContent.includes('MFA confermata'));
+ assert.equal(await page.locator('#report-panel').isVisible(),false,'Security view must hide reports');
+ await page.locator('#report-tab').click();
+ await page.waitForFunction(()=>document.querySelector('#report-count').textContent==='2');
  await page.locator('#logout').click();
  await page.waitForFunction(()=>document.querySelector('#dashboard').hidden===true);
  assert.equal(await page.locator('#report-count').textContent(),'—');
@@ -237,7 +271,7 @@ try{
  assert.equal(errors.length,0,'No JavaScript errors: '+errors.join(';'));
  // Data source remains read-only, notes never render as HTML, and no horizontal page scroll on mobile.
  assert.equal(await page.locator('#report-month').inputValue(),'2026-11');
- console.log('PASS Chromium mobile 390px: overview, 3 graphs, driver directory/search, individual profile, monthly filters, escaped notes, logout wipe');
+ console.log('PASS Chromium mobile 390px: seven real pages, admin MFA, charts, filters, PDF/Excel, anomaly drill-down, security, logout wipe');
  await page.close();
  // Desktop navigation: the protected dashboard must retain working tabs with its
  // new dark sidebar; never make a non-verified page visible via CSS.
@@ -246,11 +280,13 @@ try{
  await desktop.goto(origin+'/amministratore/',{waitUntil:'networkidle',timeout:20000});
  await desktop.locator('#dashboard').waitFor({state:'visible'});
  const nav=desktop.locator('#dashboard>.admin-switch');
- const navBox=await nav.boundingBox(),contentBox=await desktop.locator('#management-panel').boundingBox();
+ const navBox=await nav.boundingBox(),contentBox=await desktop.locator('#report-panel').boundingBox();
  assert(navBox&&contentBox&&navBox.x+navBox.width<contentBox.x,
   'Professional left sidebar must be beside the admin content');
  assert.equal(await nav.evaluate(e=>getComputedStyle(e).position),'sticky');
  assert.equal(await desktop.locator('.admin-nav-brand').isVisible(),true);
+ assert.equal(await nav.locator('button').count(),7);
+ assert.equal(await desktop.locator('#dashboard').getAttribute('data-view'),'overview');
  await desktop.locator('#report-tab').click();
  await desktop.waitForFunction(()=>document.querySelector('#report-count').textContent==='2');
  assert.equal(await desktop.locator('#report-panel').isVisible(),true);

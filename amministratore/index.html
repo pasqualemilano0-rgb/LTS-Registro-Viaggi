@@ -10,8 +10,8 @@
   <meta name="description" content="Pannello riservato all'amministratore per gestire gli autisti LTS.">
   <link rel="icon" type="image/png" href="../assets/icon-192.png">
   <link rel="stylesheet" href="./admin.css?v=20261104-company-v3">
-  <link rel="stylesheet" href="./pro-theme.css?v=20261104-pro-ui-v4">
-  <script type="module" src="./admin.mjs?v=20261104-company-v3"></script>
+  <link rel="stylesheet" href="./pro-theme.css?v=20261104-console-v5">
+  <script type="module" src="./admin.mjs?v=20261104-console-v5"></script>
 </head>
 <body>
   <header class="topbar">
@@ -78,12 +78,28 @@
           <span class="admin-nav-logo">LTS</span>
           <span class="admin-nav-name">Gestione Autisti<small>Control Center</small></span>
         </div>
-        <p class="admin-nav-caption">NAVIGAZIONE</p>
-        <button type="button" id="management-tab" class="admin-switch-button selected" aria-pressed="true"><span class="admin-nav-icon" aria-hidden="true">▦</span><span>Gestione account</span></button>
-        <button type="button" id="report-tab" class="admin-switch-button" aria-pressed="false"><span class="admin-nav-icon" aria-hidden="true">▥</span><span>Viaggi e statistiche</span></button>
+        <p class="admin-nav-caption">NAVIGAZIONE AZIENDALE</p>
+        <button type="button" id="overview-tab" class="admin-switch-button" aria-pressed="false"><span class="admin-nav-icon" aria-hidden="true">◫</span><span>Panoramica</span></button>
+        <button type="button" id="management-tab" class="admin-switch-button selected" aria-pressed="true"><span class="admin-nav-icon" aria-hidden="true">▦</span><span>Gestione autisti</span></button>
+        <button type="button" id="report-tab" class="admin-switch-button" aria-pressed="false"><span class="admin-nav-icon" aria-hidden="true">▤</span><span>Registro viaggi</span></button>
+        <button type="button" id="analysis-tab" class="admin-switch-button" aria-pressed="false"><span class="admin-nav-icon" aria-hidden="true">▥</span><span>Analisi e grafici</span></button>
+        <button type="button" id="alerts-tab" class="admin-switch-button" aria-pressed="false"><span class="admin-nav-icon" aria-hidden="true">◇</span><span>Anomalie</span></button>
+        <button type="button" id="exports-tab" class="admin-switch-button" aria-pressed="false"><span class="admin-nav-icon" aria-hidden="true">▣</span><span>Report PDF e Excel</span></button>
+        <button type="button" id="security-tab" class="admin-switch-button" aria-pressed="false"><span class="admin-nav-icon" aria-hidden="true">◈</span><span>Sicurezza e accessi</span></button>
         <div class="admin-nav-help"><span class="admin-nav-help-dot" aria-hidden="true"></span><span>Ambiente protetto<small>Sessione amministratore MFA</small></span></div>
       </nav>
       <div id="management-panel">
+      <section id="security-console" class="surface console-security" aria-labelledby="security-title">
+        <p class="eyebrow">PROTEZIONE DELL'AREA AZIENDALE</p>
+        <h1 id="security-title">Sicurezza e accessi</h1>
+        <p>Verifica la sessione amministratore, gestisci gli Authenticator registrati e trova le indicazioni per il recupero dell'account. Le credenziali non vengono mostrate né salvate qui.</p>
+        <div class="console-security-actions">
+          <button id="security-check" class="button primary" type="button">Verifica sicurezza sessione</button>
+          <a class="button outline" href="../recupera-password.html">Recupero password</a>
+          <a class="button outline" href="../privacy/">Informativa privacy</a>
+        </div>
+        <p id="security-result" role="status" aria-live="polite">Accesso al pannello protetto dal tuo account amministratore.</p>
+      </section>
       <div class="page-intro">
         <div><p class="eyebrow">CONTROLLO ACCESSI LTS</p><h1>Gestione autisti</h1>
           <p>Inviti, autorizzazioni e recupero account. I registri personali rimangono associati al proprietario.</p>
@@ -162,6 +178,19 @@
       </section>
       </div>
       <section id="report-panel" aria-labelledby="report-title" hidden>
+        <section id="console-overview" class="console-overview surface" aria-labelledby="console-overview-title">
+          <div>
+            <p class="eyebrow">LTS CONTROL CENTER</p>
+            <h2 id="console-overview-title">Panoramica aziendale</h2>
+            <p>Controlla l'andamento del mese, individua le registrazioni da verificare e apri le aree operative. I risultati provengono solo dagli archivi sincronizzati.</p>
+          </div>
+          <div class="console-shortcuts" aria-label="Accesso rapido alle sezioni">
+            <button type="button" data-open-section="drivers">Gestisci autisti <span aria-hidden="true">›</span></button>
+            <button type="button" data-open-section="trips">Consulta viaggi <span aria-hidden="true">›</span></button>
+            <button type="button" data-open-section="alerts">Controlla anomalie <span aria-hidden="true">›</span></button>
+            <button type="button" data-open-section="exports">Esporta report <span aria-hidden="true">›</span></button>
+          </div>
+        </section>
         <header class="report-hero">
           <div class="report-hero-main">
             <p class="report-hero-kicker"><span class="report-hero-dot" aria-hidden="true"></span> LTS · CENTRO CONTROLLO AUTISTI</p>

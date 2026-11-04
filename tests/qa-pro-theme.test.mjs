@@ -8,7 +8,7 @@ test('shared LTS visual design is loaded in both driver entrypoints and admin',(
  for(const p of ['index.html','shell.html']){
   assert.match(read(p),/pro-theme[.]css[?]v=20261104-pro-ui-v4/);
  }
- assert.match(html,/pro-theme[.]css[?]v=20261104-pro-ui-v4/);
+ assert.match(html,/pro-theme[.]css[?]v=20261104-console-v5/);
  assert.match(html,/admin-nav-brand/);
  assert.match(html,/id="management-tab"/);
  assert.match(html,/id="report-tab"/);

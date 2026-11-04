@@ -1,6 +1,6 @@
 import * as account from '../account-access.mjs?v=20261104-company-v3';
 import {STATUS_LABELS,driverSummary,filterDrivers} from './model.mjs';
-import {setupReport} from './report.mjs?v=20261104-company-v3';
+import {setupReport} from './report.mjs?v=20261104-console-v5';
 
 const byId=id=>document.getElementById(id);
 const loginPanel=byId('login-panel'), dashboard=byId('dashboard');
@@ -95,6 +95,7 @@ function showDashboard(status={}){
  byId('mfa-backup-card').hidden=!(status.mfa_enrolled&&status.mfa_verified);
  loginPanel.hidden=true;dashboard.hidden=false;byId('logout').hidden=false;
  setError(loginError,'');inform('');
+ companyView.open(status.mfa_enrolled===true&&status.mfa_verified===true?'overview':'security');
 }
 async function authenticate(){
  if(!account.hasSession()){lock('');return;}
@@ -321,6 +322,25 @@ byId('switch-account').addEventListener('click',()=>{
 byId('logout').addEventListener('click',()=>{
  void account.logout().then(result=>{if(!result.revoked)inform('Accesso locale terminato. Revoca online non confermata.',true);});
  lock('Accesso terminato.');
+});
+byId('security-check').addEventListener('click',async()=>{
+ const button=byId('security-check');
+ if(button.disabled||!account.isVerified()||account.getRole()!=='admin')return;
+ button.disabled=true;
+ byId('security-result').textContent='Verifica autorizzazioni in corso…';
+ try{
+  const status=await account.verifySession();
+  if(account.getRole()!=='admin'||!account.isVerified()){
+   lock('Sessione amministratore non più autorizzata.');return;
+  }
+  byId('security-result').textContent=status.mfa_verified===true?
+   'Sessione amministratore verificata. MFA confermata; dati aziendali accessibili solo con autenticazione valida.':
+   'Sessione verificata, ma MFA non confermata. Le statistiche richiedono una verifica MFA valida.';
+  if(status.mfa_enrolled&&status.mfa_verified)await loadBackupFactors();
+ }catch(error){
+  byId('security-result').textContent=errorText(error,'Verifica della sessione non riuscita.');
+  if(!account.isVerified()||account.getRole()!=='admin')lock('Verifica amministratore non valida.');
+ }finally{button.disabled=false;}
 });
 byId('refresh').addEventListener('click',()=>{hideCode();loadDrivers();});
 byId('search').addEventListener('input',renderRoster);
