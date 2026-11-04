@@ -4,6 +4,11 @@ on:
     branches: [main]
     paths:
       - 'amministratore/**'
+      - 'pro-theme.css'
+      - 'index.html'
+      - 'shell.html'
+      - 'recupera-password.html'
+      - 'tests/qa-pro-theme.test.mjs'
       - 'account-access.mjs'
       - 'runtime-config.mjs'
       - 'privacy/index.html'
@@ -17,6 +22,11 @@ on:
     branches: [main, release/lts-autisti-company-v1-20261104]
     paths:
       - 'amministratore/**'
+      - 'pro-theme.css'
+      - 'index.html'
+      - 'shell.html'
+      - 'recupera-password.html'
+      - 'tests/qa-pro-theme.test.mjs'
       - 'account-access.mjs'
       - 'runtime-config.mjs'
       - 'tests/qa-company-report-release.test.mjs'
@@ -43,7 +53,7 @@ jobs:
           node --check account-access.mjs
           node --check tests/company-report-browser.mjs
           node --check tests/qa-report-production-http-smoke.mjs
-          node --test tests/qa-company-report-release.test.mjs tests/qa-account-release.test.mjs tests/driver-session-vault.test.mjs tests/leaked-password-protection.test.mjs tests/report-export.test.mjs
+          node --test tests/qa-company-report-release.test.mjs tests/qa-pro-theme.test.mjs tests/qa-account-release.test.mjs tests/driver-session-vault.test.mjs tests/leaked-password-protection.test.mjs tests/report-export.test.mjs
   production-endpoint-smoke:
     runs-on: ubuntu-24.04
     timeout-minutes: 5
