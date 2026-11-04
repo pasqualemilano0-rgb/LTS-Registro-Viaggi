@@ -31,4 +31,11 @@ const forged=await call('POST',allowed,{headers:{'Content-Type':'application/jso
  'Authorization':'Bearer '+'a'.repeat(72)},
  body:{action:'overview',month:'2026-11'}});
 assert.equal(forged.status,401,'Invalid JWT must not access reports');
-console.log('PASS production report: trusted CORS preflight and no anonymous/forged access; no real data read.');
+// V3 route must be protected by the same JWT and role/MFA gate.
+for(const auth of [null,'Bearer '+'b'.repeat(72)]){
+ const res=await call('POST',allowed,{headers:{'Content-Type':'application/json',
+  ...(auth?{'Authorization':auth}:{})},
+  body:{action:'insights',month:'2026-11'}});
+ assert.equal(res.status,401,'Company insights must deny anonymous and forged tokens');
+}
+console.log('PASS production V3: trusted origin only; overview and insights deny anonymous/forged tokens; no real data read.');
