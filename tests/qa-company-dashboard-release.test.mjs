@@ -1,0 +1,58 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+const read=name=>readFileSync(new URL('../'+name,import.meta.url),'utf8');
+const html=read('amministratore/index.html');
+const js=read('amministratore/admin.mjs');
+const report=read('amministratore/report.mjs');
+const css=read('amministratore/admin.css');
+const auth=read('account-access.mjs');
+const runtime=read('runtime-config.mjs');
+const sw=read('sw.js');
+const privacy=read('privacy/index.html');
+test('new report is present only in the authenticated admin panel',()=>{
+ assert.match(html,/id="report-panel"[^>]*hidden/);
+ assert.match(html,/id="report-tab"/);
+ assert.match(html,/id="report-chart"/);
+ assert.match(html,/id="report-driver-chart"/);
+ assert.match(html,/id="report-rows"/);
+ assert.match(html,/id="report-warning"/);
+ assert.match(html,/src="\.\/admin\.mjs\?v=20261104-company-v1"/);
+ assert.match(html,/href="\.\/admin\.css\?v=20261104-company-v1"/);
+ assert.match(js,/import \{setupReport\} from '\.\/report\.mjs'/);
+ assert.match(js,/companyView\.reset\(\)/);
+ assert.match(report,/export function setupReport\(account\)/);
+ assert.match(report,/account\.getRole\(\)!=='admin'/);
+ assert.match(report,/account\.companyReport\(/);
+ assert.match(css,/report-bar-progress/);
+ assert.doesNotMatch(report,/\.innerHTML\s*=|eval\(|new Function\(|document\.write/);
+ assert.doesNotMatch([html,js,report].join('\n'),/SUPABASE_SERVICE_ROLE_KEY|sb_secret_[A-Za-z0-9_-]+/);
+});
+test('the Pages report client is scoped and follows the existing verified account model',()=>{
+ assert.match(auth,/import runtime from '\/LTS-Registro-Viaggi\/runtime-config[.]mjs'/);
+ assert.match(auth,/import \{readDriverToken,writeDriverToken,clearDriverToken\} from '\/LTS-Registro-Viaggi\/driver-session-vault[.]mjs'/);
+ assert.match(auth,/companyReport\(\{month,offset=0,limit=40,driverId=null\}/);
+ assert.match(auth,/getRole\(\)!=='admin'/);
+ assert.match(auth,/api\('reportEndpoint',payload,readStored\(\)\?\.access_token\)/);
+ assert.match(auth,/\/functions\/v1\/lts-company-report/);
+ assert.match(runtime,/"reportEndpoint": "https:\/\/otrqynkscpbeyuvdlgpg\.supabase\.co\/functions\/v1\/lts-company-report"/);
+ assert.match(runtime,/"archiveEndpoint": "https:\/\/otrqynkscpbeyuvdlgpg\.supabase\.co\/functions\/v1\/lts-account-state"/);
+ assert.doesNotMatch(runtime,/sywxretbfgwxwhvdcknq|sb_secret_|SUPABASE_SERVICE_ROLE_KEY/);
+});
+test('the dashboard does not make private trips available offline or cache API responses',()=>{
+ assert.match(auth,/cache:'no-store'/);
+ assert.match(auth,/credentials:'omit'/);
+ assert.match(report,/reset\(\)/);
+ assert.match(sw,/if \(url\.origin !== self\.location\.origin/);
+ assert.match(sw,/if \(url\.pathname\.startsWith\(BASE \+ 'api\/'\)\) return/);
+ const list=sw.match(/const CORE = \[([\s\S]*?)\];/)?.[1]||'';
+ assert.doesNotMatch(list,/amministratore\/|lts-company-report|archive/);
+ assert.doesNotMatch([auth,report].join('\n'),/localStorage\.setItem\(|indexedDB\.open\(|caches\.open\(/);
+});
+test('public notice discloses that employer admins can view already synced trips',()=>{
+ assert.match(privacy,/Consultazione aziendale dei viaggi sincronizzati/);
+ assert.match(privacy,/importi registrati/);
+ assert.match(privacy,/prima dell'attivazione dei controlli/);
+ assert.match(privacy,/non sostituisce l'informativa e gli adempimenti del datore di lavoro/);
+ assert.match(privacy,/Aggiornamento: 4 novembre 2026/);
+});
