@@ -22,3 +22,56 @@ button,input,select{font:inherit}button{cursor:pointer}button:disabled{opacity:.
 #mfa-qr{display:block;max-width:100%;height:auto;margin:0 auto 12px}
 .mfa-secret{display:block;font-family:ui-monospace,monospace;overflow-wrap:anywhere;background:#f0f6f8;padding:12px;border-radius:8px;user-select:all}
 #mfa-warning{border-color:#e3c884;margin:0 0 18px}
+
+
+/* LTS Autisti: read-only company analytics; inherits existing admin palette. */
+.admin-switch{display:flex;gap:5px;padding:5px;background:#e5eff2;border:1px solid var(--border);border-radius:15px;margin:0 0 23px;max-width:560px}
+.admin-switch-button{flex:1;border:0;border-radius:11px;background:transparent;color:#42626c;padding:13px 12px;min-height:44px;font-size:14px;font-weight:750}
+.admin-switch-button.selected{color:var(--teal-dark);background:#fff;box-shadow:0 2px 7px rgba(11,50,62,.09)}
+.report-filters{display:grid;grid-template-columns:minmax(160px,1fr) minmax(200px,2fr);gap:15px}
+.report-filters label{font-size:13px;font-weight:700;color:#425e67}
+.report-filters input,.report-filters select{margin-top:7px}
+.report-source{font-size:13px;color:var(--muted);margin:14px 0 0}
+.report-warning{font-size:13px;color:#8b4f12;font-weight:650;margin:11px 0 0}
+.report-warning:empty{display:none}
+.report-kpis{margin:18px 0}
+.report-kpis .stat strong{font-variant-numeric:tabular-nums}
+#report-total{font-size:clamp(18px,2.5vw,29px)}
+.report-graphs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-bottom:20px}
+.report-graphs .surface{min-width:0}
+.report-graphs .section-head{margin-bottom:13px}
+.report-graphs h2{margin:0}
+.report-bars{display:grid;gap:12px;max-height:360px;overflow:auto;padding:6px 4px 6px 0}
+.report-bar-row{display:grid;grid-template-columns:minmax(86px,120px) minmax(0,1fr) minmax(28px,65px);align-items:center;gap:10px;min-height:31px}
+.report-bar-name{font-size:12px;color:#4c6570;overflow-wrap:anywhere}
+.report-bar-progress{appearance:none;-webkit-appearance:none;width:100%;height:13px;border:0;border-radius:7px;overflow:hidden;background:#e5f0f2}
+.report-bar-progress::-webkit-progress-bar{background:#e5f0f2;border-radius:7px}
+.report-bar-progress::-webkit-progress-value{background:linear-gradient(90deg,#008fa5,#026a83);border-radius:7px}
+.report-bar-progress::-moz-progress-bar{background:#026a83;border-radius:7px}
+.report-bar-value{font-size:13px;text-align:right;font-variant-numeric:tabular-nums}
+.report-register .section-head{margin-bottom:16px}
+.report-table-scroll{overflow:auto;max-width:100%}
+.report-table{width:100%;border-collapse:collapse;font-size:13px;text-align:left}
+.report-table th{background:#eaf2f4;color:#506771;font-size:11px;letter-spacing:.02em;white-space:nowrap;padding:13px 12px}
+.report-table td{border-top:1px solid var(--border);padding:12px;vertical-align:top;overflow-wrap:anywhere}
+.report-table td:nth-child(3){font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:12px;white-space:nowrap}
+.report-table td:nth-child(5){font-weight:750;font-variant-numeric:tabular-nums;min-width:112px}
+.report-table td:nth-child(4){min-width:150px}
+.report-table td small{display:block;color:var(--muted);font-size:11px}
+.report-table details{max-width:250px}
+.report-table summary{color:var(--teal);font-weight:750;cursor:pointer}
+.report-row-details{margin-top:9px;min-width:190px;font-size:12px;color:#3d5962;white-space:pre-wrap}
+.report-row-details p{margin:0 0 9px;overflow-wrap:anywhere}
+.report-row-details strong{font-weight:700}
+.report-partial{display:block;color:#9b5b18;font-size:11px;font-weight:650}
+#report-next{margin:16px 0 0}
+#report-panel .page-intro{margin-bottom:18px}
+@media(max-width:850px){.report-graphs{grid-template-columns:1fr}}
+@media(max-width:630px){
+ .admin-switch{max-width:none}
+ .admin-switch-button{font-size:12px;padding:12px 8px}
+ .report-filters{grid-template-columns:1fr}
+ .report-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .report-bar-row{grid-template-columns:88px minmax(0,1fr) 30px;gap:7px}
+ .report-table{min-width:720px}
+}
