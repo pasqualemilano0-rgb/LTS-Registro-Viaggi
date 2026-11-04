@@ -1,7 +1,7 @@
 // Porti is a verified subview of LTS; it cannot start as an independent application.
 // Maintenance switch for the controlled LTS Porti migration.
 // Change ONLY this flag to false after the acceptance tests and rollback check.
-const MAINTENANCE_ENABLED = true;
+const MAINTENANCE_ENABLED = false;
 
 function showMaintenance() {
   const main=document.createElement('main');
