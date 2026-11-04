@@ -201,7 +201,7 @@ export function setupReport(account){
   }
   const serial=++requestSeq;loading=true;
   el('report-refresh').disabled=true;el('report-next').disabled=true;
-  if(!append){clearData();insights.reset();el('report-empty').hidden=true;}
+  if(!append){clearData();insights.reset({keepPending:true});el('report-empty').hidden=true;}
   el('report-error').hidden=true;
   el('report-status').textContent='Verifica in corso dei dati sincronizzati…';
   try{
