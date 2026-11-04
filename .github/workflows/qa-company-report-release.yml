@@ -12,7 +12,7 @@ on:
       - 'tests/qa-account-release.test.mjs'
       - '.github/workflows/qa-company-report-release.yml'
   push:
-    branches: [main]
+    branches: [main, release/lts-autisti-company-v1-20261104]
     paths:
       - 'amministratore/**'
       - 'account-access.mjs'
