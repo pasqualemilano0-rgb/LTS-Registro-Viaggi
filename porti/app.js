@@ -3,6 +3,7 @@ import {normalizeName,parseItalianDate,findSctVessels,evaluateSct,evaluateSctTyp
 import {parseTfgBookingResult} from './tfg.mjs?v=20261031-v41';
 import {validateBooking,bookingTerminal} from './booking_search.mjs?v=20261031-v41';
 import {lookupTfgBooking} from './tfg_booking.mjs?v=20261102-v63';
+import {getVerifiedAccessToken} from '../account-access.mjs';
 import {lookupConatecoBooking,matchConatecoBookingToSchedule,matchConatecoVesselToForecast} from './conateco_booking.mjs?v=20261102-v64';
 import {matchTfgVoyage,isTfgFeedFresh,evaluateTfgSchedule} from './tfg_schedule.mjs?v=20261102-v62';
 import {evaluateConateco,isConatecoRecent} from './conateco_rules.mjs?v=20261102-v65';
@@ -782,7 +783,21 @@ async function renderTfgBooking(booking){
     'Consultazione del modulo EXPORT BOOKING del sito ufficiale TFG tramite il servizio dell’app. Il numero non viene salvato.');
   results.append(node('div','booking-loading','Controllo il booking su TFG…'));
   try{
-    const data=await lookupTfgBooking(booking,undefined,controller.signal);
+    const data=await lookupTfgBooking(booking,async (endpoint,options)=>{
+      if(endpoint!=='https://container-booking-backend.pasqualemilano0.workers.dev/api/tfg_booking')
+        throw Error('UNEXPECTED_BOOKING_ENDPOINT');
+      let accessToken;
+      try{accessToken=await getVerifiedAccessToken();}
+      catch(error){
+        if(error?.offline===true)throw Error('LTS_BOOKING_OFFLINE');
+        if(error?.status>=500)throw Error('LTS_BOOKING_AUTH_UNAVAILABLE');
+        throw Error('LTS_BOOKING_LOGIN_REQUIRED');
+      }
+      const response=await fetch(endpoint,{...options,headers:{...options.headers,Authorization:'Bearer '+accessToken}});
+      if(response.status===401)throw Error('LTS_BOOKING_LOGIN_REQUIRED');
+      if(response.status===403)throw Error('LTS_BOOKING_ACCESS_DENIED');
+      return response;
+    },controller.signal);
     if(requestId!==bookingLookupSeq||selectedPort!=='napoli'||currentBookingTerminal()!=='tfg')return;
     const found=data.status==='found';
     openResults('Booking · TFG',found?'DATI BOOKING RILEVATI':'BOOKING NON CONFERMATO',found?'good':'warn',
@@ -813,7 +828,12 @@ async function renderTfgBooking(booking){
   }catch(error){
     if(requestId!==bookingLookupSeq||selectedPort!=='napoli'||currentBookingTerminal()!=='tfg')return;
     const limited=error?.message==='TFG_RATE_LIMITED';
-    openResults('Booking · TFG',limited?'TROPPE RICHIESTE':'SERVIZIO NON DISPONIBILE','warn',
+    const denied=['LTS_BOOKING_LOGIN_REQUIRED','LTS_BOOKING_ACCESS_DENIED'].includes(error?.message);
+    const offline=error?.message==='LTS_BOOKING_OFFLINE'||navigator.onLine===false;
+    openResults('Booking · TFG',denied?'ACCESSO LTS NECESSARIO':offline?'CONNESSIONE ASSENTE':
+      limited?'TROPPE RICHIESTE':'SERVIZIO NON DISPONIBILE','warn',
+      denied?'La sessione LTS non è valida o l’account non ha accesso. Verifica il login e l’Authenticator, poi riapri Porti.':
+      offline?'Connettiti a Internet e verifica nuovamente l’accesso a LTS prima di cercare il booking.':
       limited?'Per proteggere il portale TFG, attendi almeno un minuto prima di riprovare. Se necessario usa il sito ufficiale.':
       'Non è stato possibile verificare la risposta TFG. Puoi aprire direttamente il modulo ufficiale con il booking già inserito.');
   }finally{
