@@ -162,7 +162,7 @@ export function makePdf(data){
  const objects=['','<< /Type /Catalog /Pages 2 0 R >>','','<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>'];
  const refs=[];
  for(const page of pages){
-  const contentId=objects.length+2,pageId=objects.length+1;
+  const pageId=objects.length,contentId=objects.length+1;
   const stream=encoder.encode(page);
   objects.push('<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R >> >> /Contents '+contentId+' 0 R >>');
   objects.push('<< /Length '+stream.length+' >>\nstream\n'+page+'endstream');
