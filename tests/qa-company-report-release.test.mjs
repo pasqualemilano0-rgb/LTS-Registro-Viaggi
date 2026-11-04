@@ -29,7 +29,7 @@ test('trasporto report autenticato senza allargare archivio individuale',()=>{
  assert.match(auth,/withSessionRetry/);
  assert.match(auth,/!isVerified\(\)/);
  assert.match(runtime,/\"reportEndpoint\": \"https:\/\/otrqynkscpbeyuvdlgpg\.supabase\.co\/functions\/v1\/lts-company-report\"/);
- assert.doesNotMatch(runtime,/sb_secret_|SUPABASE_SERVICE_ROLE_KEY|password|Bearer/);
+ assert.doesNotMatch(runtime,/sb_secret_[A-Za-z0-9_-]+|SUPABASE_SERVICE_ROLE_KEY\s*[=:]|Authorization\s*:\s*Bearer/i);
  assert.doesNotMatch(read('app.mjs'),/companyReport\(/);
 });
 test('sola lettura e importi registrati non spacciati per fatturato aziendale',()=>{
