@@ -12,8 +12,8 @@ test('driver entrypoints load the original LTS theme and preserve account routes
   assert.doesNotMatch(source,/href="[^"]*pro-theme[.]css/);
   assert.match(source,/app[.]mjs[?]v=20261104-theme-restore-v1/);
  }
- assert.match(css,/\\.overview\\{background:var\\(--teal\\);color:#fff/);
- assert.match(css,/\\.section-hero\\{[^}]*background:linear-gradient\\(115deg,#005f77,#087d94\\)/);
+ assert.match(css,/\.overview\{background:var\(--teal\);color:#fff/);
+ assert.match(css,/\.section-hero\{[^}]*background:linear-gradient\(115deg,#005f77,#087d94\)/);
  assert.match(html,/pro-theme[.]css[?]v=20261104-console-v5/);
  assert.match(html,/admin-nav-brand/);
  assert.match(html,/id="management-tab"/);
@@ -25,18 +25,18 @@ test('driver entrypoints load the original LTS theme and preserve account routes
 
 test('new PWA worker precaches the original stylesheet, not the unused override',()=>{
  const sw=read('sw.js');
- assert.match(sw,/const CACHE = PREFIX \\+ '20261104-theme-restore-v1'/);
- assert.match(sw,/"\\/LTS-Registro-Viaggi\\/app[.]css"/);
- assert.doesNotMatch(sw,/"\\/LTS-Registro-Viaggi\\/pro-theme[.]css"/);
+ assert.match(sw,/const CACHE = PREFIX \+ '20261104-theme-restore-v1'/);
+ assert.match(sw,/"\/LTS-Registro-Viaggi\/app[.]css"/);
+ assert.doesNotMatch(sw,/"\/LTS-Registro-Viaggi\/pro-theme[.]css"/);
  assert.doesNotMatch(sw,/service_role|sb_secret_/i);
 });
 
 test('administrator retains independent professional layout',()=>{
  assert.match(adminCSS,/#dashboard>.admin-switch/);
- assert.match(adminCSS,/grid-template-columns:238px minmax\\(0,1fr\\)/);
- assert.match(adminCSS,/@media\\(max-width:1029px\\)/);
- assert.doesNotMatch(adminCSS,/sb_secret_|SUPABASE_SERVICE_ROLE_KEY|https?:\\/\\/|@import|javascript:/i);
- assert.doesNotMatch(adminCSS,/url\\s*\\(/i);
- assert.doesNotMatch(html,/onload\\s*=|onclick\\s*=/);
+ assert.match(adminCSS,/grid-template-columns:238px minmax\(0,1fr\)/);
+ assert.match(adminCSS,/@media\(max-width:1029px\)/);
+ assert.doesNotMatch(adminCSS,/sb_secret_|SUPABASE_SERVICE_ROLE_KEY|https?:\/\/|@import|javascript:/i);
+ assert.doesNotMatch(adminCSS,/url\s*\(/i);
+ assert.doesNotMatch(html,/onload\s*=|onclick\s*=/);
  assert.match(read('recupera-password.html'),/shared professional visual language/);
 });
