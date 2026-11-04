@@ -46,6 +46,56 @@ export const companyReport=async({month,offset=0,limit=40,driverId=null})=>{
    totalCents:selected.filter(t=>t.date===date).reduce((s,t)=>s+t.totalCents,0)})),
   trips:selected.slice(offset,offset+limit),pagination:{offset,limit,total:selected.length}};
 };
+/* Synthetic V3 analytics – no production data or credentials. */
+export const companyInsights=async({month,driverId=null,compareDriverId=null,fromDate=null,toDate=null,
+ client='',city='',container=''})=>{
+ const all=[
+ {id:'1',driverId:'11111111-1111-4111-8111-111111111111',driverName:'Mario Rossi',date:'2026-11-04',
+  container:'ABCD1234567',client:'CLIENTE ALFA',city:'NAPOLI',amountCents:15000,missingTariff:false},
+ {id:'2',driverId:'11111111-1111-4111-8111-111111111111',driverName:'Mario Rossi',date:'2026-11-03',
+  container:'WXYZ1234567',client:'CLIENTE BETA',city:'SALERNO',amountCents:10000,missingTariff:true},
+ {id:'3',driverId:'11111111-1111-4111-8111-111111111111',driverName:'Mario Rossi',date:'2026-10-08',
+  container:'TEST1234567',client:'CLIENTE ALFA',city:'NAPOLI',amountCents:5000,missingTariff:false}
+ ];
+ const previous=month==='2026-11'?'2026-10':'2026-09';
+ const current=all.filter(x=>x.date.startsWith(month+'-')&&(!driverId||x.driverId===driverId));
+ const prev=all.filter(x=>x.date.startsWith(previous+'-')&&(!driverId||x.driverId===driverId));
+ const base=all.filter(x=>(!driverId||x.driverId===driverId)&&x.date>=(fromDate||month+'-01')&&
+  x.date<=(toDate||month+'-30'));
+ const records=base.filter(x=>(!client||x.client.toLowerCase().includes(client.toLowerCase()))&&
+  (!city||x.city.toLowerCase().includes(city.toLowerCase()))&&
+  (!container||x.container.toLowerCase().includes(container.toLowerCase())));
+ const sum=trips=>({trips:trips.length,drivers:new Set(trips.map(x=>x.driverId)).size,
+  days:new Set(trips.map(x=>x.date)).size,totalCents:trips.reduce((n,x)=>n+x.amountCents,0),
+  missingTariffCount:trips.filter(x=>x.missingTariff).length});
+ const months=Array.from({length:12},(_,i)=>{
+  const [y,m]=month.split('-').map(Number),d=new Date(Date.UTC(y,m-1-(11-i),1));
+  const key=d.toISOString().slice(0,7),items=all.filter(x=>x.date.startsWith(key+'-')&&(!driverId||x.driverId===driverId));
+  return {month:key,...sum(items)};
+ });
+ const rank=(field)=>[...new Set(records.map(x=>x[field]))].map(name=>{
+  const items=records.filter(t=>t[field]===name);
+  return {name,count:items.length,totalCents:sum(items).totalCents};
+ });
+ return {
+  month,reportedAt:new Date().toISOString(),
+  range:{fromDate:fromDate||month+'-01',toDate:toDate||month+'-30'},
+  selection:{driverId,compareDriverId,client,city,container},
+  summary:{...sum(records),activeDrivers:1},
+  currentMonth:sum(current),previousMonth:{month:previous,...sum(prev)},
+  monthly:months,compareMonthly:compareDriverId?months.map(x=>({...x,trips:0,totalCents:0})):[],
+  drivers:[driverId,compareDriverId].filter(Boolean).map(id=>({id,
+   name:id.startsWith('111')?'Mario Rossi':'Lucia Bianchi',
+   ...sum(all.filter(x=>x.driverId===id&&x.date.startsWith(month+'-')))})),
+  clients:rank('client'),routes:rank('city'),
+  options:{clients:['CLIENTE ALFA','CLIENTE BETA'],cities:['NAPOLI','SALERNO']},
+  daily:[...new Set(records.map(x=>x.date))].map(date=>({date,trips:records.filter(x=>x.date===date).length})),
+  alerts:records.filter(x=>x.missingTariff).map(x=>({type:'tariff',severity:'warning',
+   driverId:x.driverId,driverName:x.driverName,date:x.date,detail:'Tariffa incompleta '+x.container})),
+  alertTotal:records.filter(x=>x.missingTariff).length,incompleteArchives:0,
+  partial:records.some(x=>x.missingTariff),records
+ };
+};
 `;
 const root=resolve(dir),mime={'.html':'text/html','.css':'text/css','.mjs':'text/javascript','.png':'image/png'};
 const server=createServer(async(req,res)=>{
