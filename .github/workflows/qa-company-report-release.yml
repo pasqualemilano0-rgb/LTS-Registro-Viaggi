@@ -10,6 +10,7 @@ on:
       - 'tests/qa-company-report-release.test.mjs'
       - 'tests/qa-report-production-http-smoke.mjs'
       - 'tests/company-report-browser.mjs'
+      - 'tests/report-export.test.mjs'
       - 'tests/qa-account-release.test.mjs'
       - '.github/workflows/qa-company-report-release.yml'
   push:
@@ -36,11 +37,13 @@ jobs:
           node-version: '22'
       - run: |
           node --check amministratore/report.mjs
+          node --check amministratore/report-insights.mjs
+          node --check amministratore/report-export.mjs
           node --check amministratore/admin.mjs
           node --check account-access.mjs
           node --check tests/company-report-browser.mjs
           node --check tests/qa-report-production-http-smoke.mjs
-          node --test tests/qa-company-report-release.test.mjs tests/qa-account-release.test.mjs tests/driver-session-vault.test.mjs tests/leaked-password-protection.test.mjs
+          node --test tests/qa-company-report-release.test.mjs tests/qa-account-release.test.mjs tests/driver-session-vault.test.mjs tests/leaked-password-protection.test.mjs tests/report-export.test.mjs
   production-endpoint-smoke:
     runs-on: ubuntu-24.04
     timeout-minutes: 5
