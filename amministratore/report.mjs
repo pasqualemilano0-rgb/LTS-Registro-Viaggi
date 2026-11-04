@@ -140,7 +140,7 @@ export function setupReport(account){
    if(summary.missingTariffCount)warnings.push('Importi parziali: '+summary.missingTariffCount+' viaggi con tariffe mancanti.');
    if(result.incompleteArchives)warnings.push(result.incompleteArchives+' archivi non leggibili, esclusi dai totali: report incompleto.');
    el('report-warning').textContent=warnings.join(' ');
-   renderDayChart(result.chart);renderDrivers(result.drivers);
+   renderDayChart(result.chart);renderDrivers(driver.value?result.drivers.filter(item=>item.id===driver.value):result.drivers);
    el('report-rows').replaceChildren(...rows.map(tableRow));
    el('report-empty').hidden=rows.length>0;
    el('report-next').hidden=rows.length>=result.pagination.total;
