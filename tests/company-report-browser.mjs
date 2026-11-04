@@ -147,6 +147,15 @@ try{
  await page.waitForFunction(()=>document.querySelector('#pro-record-count').textContent==='1 viaggi');
  await page.locator('#pro-clear').click();
  await page.waitForFunction(()=>document.querySelector('#pro-record-count').textContent==='2 viaggi');
+ // Anomaly opens the exact affected day, even when switching driver first.
+ await page.locator('#pro-alerts [data-selectable="true"]').first().click();
+ await page.waitForFunction(()=>document.querySelector('#report-driver').value==='11111111-1111-4111-8111-111111111111'&&
+  document.querySelector('#pro-from').value==='2026-11-03'&&
+  document.querySelector('#pro-record-count').textContent==='1 viaggi');
+ assert.equal(await page.locator('#pro-to').inputValue(),'2026-11-03');
+ await page.locator('#report-show-all').click();
+ await page.waitForFunction(()=>document.querySelector('#report-driver').value===''&&
+  document.querySelector('#pro-record-count').textContent==='2 viaggi');
  const pd=page.waitForEvent('download');
  await page.locator('#pro-export-pdf').click();
  const pdf=await pd;
