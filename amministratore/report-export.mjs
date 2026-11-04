@@ -169,7 +169,7 @@ export function makePdf(data){
   refs.push(pageId+' 0 R');
  }
  objects[2]='<< /Type /Pages /Kids ['+refs.join(' ')+'] /Count '+refs.length+' >>';
- let file='%PDF-1.4\n%\xD3\xD4\xD5\xD6\n',offsets=[0];
+ let file='%PDF-1.4\n%LTS-REPORT\n',offsets=[0];
  // All objects only use ASCII content; high-bit binary-comment bytes are permitted.
  for(let i=1;i<objects.length;i++){
   offsets.push(encoder.encode(file).length);
