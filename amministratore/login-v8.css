@@ -1,0 +1,197 @@
+/* LTS admin sign-in V8. Presentation only: preserves form IDs, MFA and account flows. */
+body:has(#dashboard[hidden]){
+  background:
+    radial-gradient(ellipse 65% 160px at 84% 244px,rgba(98,206,192,.18),transparent 75%),
+    linear-gradient(180deg,#fff 0,#fff 78px,#11364d 78px,#0d6572 330px,#edf5f8 330px,#f4f8fa 100%);
+  min-height:100dvh;
+}
+body:has(#dashboard[hidden]) .topbar{
+  position:relative;z-index:1;min-height:78px;background:#fff;
+  border-bottom:1px solid #dce9ed;
+}
+body:has(#dashboard[hidden]) .brand img{
+  width:55px;height:55px;object-fit:contain;
+}
+body:has(#dashboard[hidden]) .brand strong{
+  font-size:23px;font-weight:850;letter-spacing:-.045em;
+}
+body:has(#dashboard[hidden]) .brand small{
+  color:#416877;font-size:12px;font-weight:700;
+}
+body:has(#dashboard[hidden]) .secure-label{
+  background:#e9f8f3;color:#12635b;
+  border-color:#c8e7df;font-size:12px;
+}
+body:has(#dashboard[hidden]) .container{
+  display:flex;flex-direction:column;align-items:center;justify-content:flex-start;
+  width:100%;max-width:1100px;min-width:0;
+  min-height:calc(100dvh - 78px);
+  padding:clamp(26px,5.5dvh,64px) 18px 64px;
+}
+body:has(#dashboard[hidden]) .container>.notice{
+  width:min(100%,560px);margin-bottom:16px;
+}
+body:has(#dashboard[hidden]) .login-wrap{
+  position:relative;width:min(100%,560px);max-width:none;min-width:0;
+  margin:0 auto;padding:clamp(26px,4vw,42px);
+  background:#fff;border:1px solid #d5e6e8;border-radius:25px;
+  box-shadow:0 23px 65px rgba(5,36,52,.17),0 4px 14px rgba(5,36,52,.05);
+}
+body:has(#dashboard[hidden]) .login-wrap::before{
+  content:"";position:absolute;top:0;left:36px;right:36px;height:4px;
+  background:linear-gradient(90deg,#0b8291,#0bb49e);
+  border-radius:0 0 8px 8px;
+}
+body:has(#dashboard[hidden]) .intro-icon{
+  display:grid;place-items:center;
+  width:60px;height:60px;margin:0 0 20px;
+  color:#076d78;border:1px solid #c7e8e6;border-radius:16px;
+  background:linear-gradient(135deg,#e2f7f0,#e8f5fa);
+}
+body:has(#dashboard[hidden]) .intro-icon svg{width:31px;height:31px}
+body:has(#dashboard[hidden]) .login-wrap .eyebrow{
+  margin:0 0 9px;color:#087b84;
+  font-size:11px;font-weight:850;letter-spacing:.14em;
+}
+body:has(#dashboard[hidden]) .login-wrap h1{
+  margin:0 0 13px;color:#10344a;
+  font-size:clamp(28px,3vw,37px);line-height:1.13;letter-spacing:-.052em;
+  max-width:18ch;font-weight:840;
+}
+body:has(#dashboard[hidden]) .intro-copy{
+  max-width:46ch;margin:0 0 27px;
+  color:#476574;font-size:15px;line-height:1.62;
+}
+body:has(#dashboard[hidden]) .stack{gap:20px}
+body:has(#dashboard[hidden]) .stack label{
+  display:grid;gap:9px;color:#193d50;
+  font-size:14px;font-weight:760;line-height:1.4;
+}
+body:has(#dashboard[hidden]) .stack label small{
+  display:block;color:#557381;font-size:12px;line-height:1.3;
+  font-weight:600;margin-top:1px;
+}
+body:has(#dashboard[hidden]) .stack input{
+  width:100%;min-width:0;min-height:56px;
+  padding:14px 16px;border-radius:13px;border:1px solid #c6dce4;
+  background:#fbfdff;color:#143548;font-size:16px;line-height:1.4;
+}
+body:has(#dashboard[hidden]) .stack input::placeholder{color:#69808e;opacity:1}
+body:has(#dashboard[hidden]) .stack input:focus-visible,
+body:has(#dashboard[hidden]) #mfa-factor-choice:focus-visible{
+  outline:3px solid #85dbd4;outline-offset:2px;border-color:#027b83;
+}
+body:has(#dashboard[hidden]) .stack .button.primary{
+  display:flex;align-items:center;justify-content:center;
+  width:100%;min-height:55px;margin-top:2px;
+  padding:14px 20px;border:1px solid #087681;
+  border-radius:13px;background:linear-gradient(110deg,#087784,#089c8c);
+  font-size:16px;font-weight:830;box-shadow:0 7px 16px rgba(5,111,115,.13);
+}
+body:has(#dashboard[hidden]) .stack .button.primary:hover{
+  background:linear-gradient(110deg,#066975,#07897d);
+}
+body:has(#dashboard[hidden]) .auth-assurance{
+  display:flex;gap:9px;align-items:center;justify-content:center;
+  margin:15px 0 0;color:#476f74;font-size:12px;line-height:1.45;
+}
+body:has(#dashboard[hidden]) .auth-assurance svg{
+  flex:none;width:17px;height:17px;color:#078c83;
+}
+body:has(#dashboard[hidden]) .login-footer{
+  display:flex;justify-content:space-between;align-items:center;
+  gap:12px 18px;flex-wrap:wrap;
+  margin-top:24px;padding-top:20px;
+  border-top:1px solid #e1edf0;
+  color:#096c79;font-size:13px;
+}
+body:has(#dashboard[hidden]) .login-footer .text-button,
+body:has(#dashboard[hidden]) .login-footer a{
+  min-height:44px;display:inline-flex;align-items:center;
+  color:#096c79;font-weight:750;text-decoration:underline;
+  text-underline-offset:3px;
+}
+body:has(#dashboard[hidden]) .login-wrap .error-message{
+  color:#9d352b;background:#fff2ee;border-color:#f0cbc4;
+  font-size:14px;line-height:1.5;
+}
+body:has(#dashboard[hidden]) #mfa-panel{
+  width:min(100%,610px);
+}
+body:has(#dashboard[hidden]) #mfa-panel h1{
+  font-size:clamp(28px,3vw,36px);
+}
+body:has(#dashboard[hidden]) #mfa-panel .hint{
+  color:#426475;font-size:13px;line-height:1.6;
+}
+body:has(#dashboard[hidden]) #mfa-panel .text-button{
+  min-height:44px;padding:10px 0;font-weight:730;
+}
+body:has(#dashboard[hidden]) #mfa-code{
+  font-size:22px;letter-spacing:.25em;text-align:center;font-variant-numeric:tabular-nums;
+}
+body:has(#dashboard[hidden]) #mfa-secret{overflow-wrap:anywhere}
+@media(max-width:720px){
+  body:has(#dashboard[hidden]){
+    background:linear-gradient(180deg,#fff 0,#fff 70px,#103e56 70px,#0d6874 275px,#edf5f8 275px,#f4f8fa 100%);
+  }
+  body:has(#dashboard[hidden]) .topbar{
+    min-height:70px;padding:9px 16px;
+  }
+  body:has(#dashboard[hidden]) .brand{gap:8px}
+  body:has(#dashboard[hidden]) .brand img{width:48px;height:48px}
+  body:has(#dashboard[hidden]) .brand strong{font-size:20px}
+  body:has(#dashboard[hidden]) .brand small{font-size:11px}
+  body:has(#dashboard[hidden]) .container{
+    min-height:calc(100dvh - 70px);
+    padding:24px 13px max(28px,env(safe-area-inset-bottom));
+  }
+  body:has(#dashboard[hidden]) .login-wrap,
+  body:has(#dashboard[hidden]) #mfa-panel{
+    width:100%;max-width:560px;
+    padding:25px 20px 22px;border-radius:22px;
+  }
+  body:has(#dashboard[hidden]) .login-wrap::before{left:24px;right:24px}
+  body:has(#dashboard[hidden]) .intro-icon{width:55px;height:55px;margin-bottom:17px}
+  body:has(#dashboard[hidden]) .login-wrap h1{font-size:clamp(27px,6.6vw,34px)}
+  body:has(#dashboard[hidden]) .intro-copy{font-size:14px;margin-bottom:22px}
+  body:has(#dashboard[hidden]) .stack{gap:17px}
+  body:has(#dashboard[hidden]) .login-footer{gap:4px 12px;margin-top:18px;padding-top:12px}
+  body:has(#dashboard[hidden]) .login-footer a,
+  body:has(#dashboard[hidden]) .login-footer .text-button{font-size:12px}
+}
+@media(max-width:370px){
+  body:has(#dashboard[hidden]) .container{padding-inline:10px}
+  body:has(#dashboard[hidden]) .login-wrap,
+  body:has(#dashboard[hidden]) #mfa-panel{padding:23px 16px 20px}
+  body:has(#dashboard[hidden]) .login-wrap h1{font-size:27px}
+  body:has(#dashboard[hidden]) .login-footer{flex-direction:column;align-items:stretch}
+  body:has(#dashboard[hidden]) .login-footer a,
+  body:has(#dashboard[hidden]) .login-footer .text-button{
+    min-height:42px;justify-content:center;text-align:center;
+  }
+}
+/* Some Android browsers request a desktop-size viewport on a portrait touch device. */
+@media (pointer:coarse) and (orientation:portrait) and (min-width:721px) and (max-width:1100px){
+  body:has(#dashboard[hidden]) .container{
+    max-width:none;padding:28px 22px 56px;
+  }
+  body:has(#dashboard[hidden]) .login-wrap,
+  body:has(#dashboard[hidden]) #mfa-panel{
+    width:min(90vw,760px);max-width:none;
+    padding:clamp(30px,4.3vw,45px);
+  }
+  body:has(#dashboard[hidden]) .login-wrap h1{
+    font-size:clamp(34px,4.5vw,43px);
+  }
+  body:has(#dashboard[hidden]) .intro-copy{font-size:17px}
+  body:has(#dashboard[hidden]) .stack label{font-size:16px}
+  body:has(#dashboard[hidden]) .stack input{min-height:64px;font-size:18px}
+  body:has(#dashboard[hidden]) .stack .button.primary{min-height:63px;font-size:18px}
+  body:has(#dashboard[hidden]) .login-footer{font-size:15px}
+  body:has(#dashboard[hidden]) .topbar{padding-inline:24px}
+  body:has(#dashboard[hidden]) .secure-label{display:none}
+}
+@media(prefers-reduced-motion:reduce){
+  body:has(#dashboard[hidden]) .button{transition:none}
+}
