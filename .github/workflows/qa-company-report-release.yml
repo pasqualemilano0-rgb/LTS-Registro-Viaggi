@@ -1,0 +1,56 @@
+name: QA release LTS Autisti — Fase 1
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'amministratore/**'
+      - 'account-access.mjs'
+      - 'runtime-config.mjs'
+      - 'tests/qa-company-report-release.test.mjs'
+      - 'tests/company-report-browser.mjs'
+      - 'tests/qa-account-release.test.mjs'
+      - '.github/workflows/qa-company-report-release.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'amministratore/**'
+      - 'account-access.mjs'
+      - 'runtime-config.mjs'
+      - 'tests/qa-company-report-release.test.mjs'
+      - '.github/workflows/qa-company-report-release.yml'
+permissions:
+  contents: read
+jobs:
+  public-assets:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: |
+          node --check amministratore/report.mjs
+          node --check amministratore/admin.mjs
+          node --check account-access.mjs
+          node --check tests/company-report-browser.mjs
+          node --test tests/qa-company-report-release.test.mjs tests/qa-account-release.test.mjs tests/driver-session-vault.test.mjs tests/leaked-password-protection.test.mjs
+  chromium-mobile:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install isolated Chromium
+        run: |
+          mkdir -p "$RUNNER_TEMP/lts-playwright"
+          npm install --prefix "$RUNNER_TEMP/lts-playwright" --no-save --no-package-lock playwright@1.56.1
+          "$RUNNER_TEMP/lts-playwright/node_modules/.bin/playwright" install --with-deps chromium
+      - name: Mobile dashboard flow with synthetic mock records
+        run: LTS_BROWSER_PLAYWRIGHT="$RUNNER_TEMP/lts-playwright" node tests/company-report-browser.mjs
