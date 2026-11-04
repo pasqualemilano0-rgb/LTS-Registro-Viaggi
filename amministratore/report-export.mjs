@@ -18,18 +18,24 @@ function valid(data){
   throw Error('Importo del report non valido.');
  return data;
 }
-function sheetXml(rows){
+function sheetXml(rows,{widths=[],moneyColumns=[],filter=false,freeze=false,title=false}={}){
  const cols='ABCDEFGHIJKLMNOPQRSTUVWXYZ';
  const cell=(value,r,c)=>{
   const address=cols[c]+r;
+  const style=r===1?(title?' s="3"':' s="1"'):(typeof value==='number'&&moneyColumns.includes(c)?' s="2"':'');
   if(typeof value==='number'&&Number.isFinite(value))
-   return '<c r="'+address+'" t="n"><v>'+value+'</v></c>';
-  return '<c r="'+address+'" t="inlineStr"><is><t xml:space="preserve">'+html(value)+'</t></is></c>';
+   return '<c r="'+address+'"'+style+' t="n"><v>'+value+'</v></c>';
+  return '<c r="'+address+'"'+style+' t="inlineStr"><is><t xml:space="preserve">'+html(value)+'</t></is></c>';
  };
  const body=rows.map((row,i)=>'<row r="'+(i+1)+'">'+row.map((v,j)=>cell(v,i+1,j)).join('')+'</row>').join('');
+ const widthsXml=widths.length?'<cols>'+widths.map((w,i)=>'<col min="'+(i+1)+'" max="'+(i+1)+'" width="'+w+'" customWidth="1"/>').join('')+'</cols>':'';
+ const view=freeze?'<sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>':
+  '<sheetViews><sheetView workbookViewId="0"/></sheetViews>';
+ const colEnd=cols[rows[0].length-1];
+ const filterXml=filter?'<autoFilter ref="A1:'+colEnd+rows.length+'"/>':'';
  return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
   +'<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
-  +'<sheetViews><sheetView workbookViewId="0"/></sheetViews><sheetData>'+body+'</sheetData></worksheet>';
+  +view+widthsXml+'<sheetData>'+body+'</sheetData>'+filterXml+'</worksheet>';
 }
 const le16=(a,n)=>{a.push(n&255,(n>>>8)&255);};
 const le32=(a,n)=>{a.push(n&255,(n>>>8)&255,(n>>>16)&255,(n>>>24)&255);};
@@ -90,20 +96,41 @@ export function makeXlsx(data){
  const rels='<?xml version="1.0" encoding="UTF-8"?>'+
   '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'+
   [1,2,3,4].map(i=>'<Relationship Id="rId'+i+'" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet'+i+'.xml"/>').join('')+
+  '<Relationship Id="rId5" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>'+
   '</Relationships>';
+ const styles='<?xml version="1.0" encoding="UTF-8"?>'+
+  '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'+
+  '<numFmts count="1"><numFmt numFmtId="164" formatCode="#,##0.00 &quot;EUR&quot;"/></numFmts>'+
+  '<fonts count="3"><font><sz val="11"/><name val="Aptos"/></font>'+
+  '<font><b/><color rgb="FFFFFFFF"/><sz val="11"/><name val="Aptos"/></font>'+
+  '<font><b/><color rgb="FF0F5368"/><sz val="13"/><name val="Aptos"/></font></fonts>'+
+  '<fills count="3"><fill><patternFill patternType="none"/></fill>'+
+  '<fill><patternFill patternType="gray125"/></fill>'+
+  '<fill><patternFill patternType="solid"><fgColor rgb="FF0C6477"/><bgColor indexed="64"/></patternFill></fill></fills>'+
+  '<borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders>'+
+  '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>'+
+  '<cellXfs count="4"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>'+
+  '<xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFill="1" applyFont="1"/>'+
+  '<xf numFmtId="164" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>'+
+  '<xf numFmtId="0" fontId="2" fillId="0" borderId="0" xfId="0" applyFont="1"/></cellXfs>'+
+  '<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>'+
+  '</styleSheet>';
  const ct='<?xml version="1.0" encoding="UTF-8"?>'+
   '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'+
   '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'+
   '<Default Extension="xml" ContentType="application/xml"/>'+
   '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>'+
+  '<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>'+
   [1,2,3,4].map(i=>'<Override PartName="/xl/worksheets/sheet'+i+'.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>').join('')+'</Types>';
  const root='<?xml version="1.0" encoding="UTF-8"?>'+
   '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'+
   '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>';
  return zip([['[Content_Types].xml',ct],['_rels/.rels',root],['xl/workbook.xml',workbook],
-  ['xl/_rels/workbook.xml.rels',rels],['xl/worksheets/sheet1.xml',sheetXml(overview)],
-  ['xl/worksheets/sheet2.xml',sheetXml(records)],['xl/worksheets/sheet3.xml',sheetXml(trend)],
-  ['xl/worksheets/sheet4.xml',sheetXml(alerts)]]);
+  ['xl/_rels/workbook.xml.rels',rels],['xl/styles.xml',styles],
+  ['xl/worksheets/sheet1.xml',sheetXml(overview,{widths:[40,72],moneyColumns:[1],title:true})],
+  ['xl/worksheets/sheet2.xml',sheetXml(records,{widths:[16,29,22,34,29,24,19],moneyColumns:[5],filter:true,freeze:true})],
+  ['xl/worksheets/sheet3.xml',sheetXml(trend,{widths:[20,16,26],moneyColumns:[2],filter:true,freeze:true})],
+  ['xl/worksheets/sheet4.xml',sheetXml(alerts,{widths:[16,16,28,20,64],filter:true,freeze:true})]]);
 }
 // Self-contained A4 landscape? Portrait report with a compact 12-month chart and
 // a paginated table, using PDF 1.4 and built-in Helvetica (no fonts embedded).
