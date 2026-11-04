@@ -9,8 +9,8 @@
   <title>LTS · Gestione autisti</title>
   <meta name="description" content="Pannello riservato all'amministratore per gestire gli autisti LTS.">
   <link rel="icon" type="image/png" href="../assets/icon-192.png">
-  <link rel="stylesheet" href="./admin.css?v=20261103-admin-backup-v21">
-  <script type="module" src="./admin.mjs?v=20261103-admin-backup-v21"></script>
+  <link rel="stylesheet" href="./admin.css?v=20261104-company-v1">
+  <script type="module" src="./admin.mjs?v=20261104-company-v1"></script>
 </head>
 <body>
   <header class="topbar">
@@ -72,6 +72,11 @@
       <button id="mfa-exit" class="text-button" type="button">Esci dall'account</button>
     </section>
     <div id="dashboard" hidden>
+      <nav class="admin-switch" aria-label="Sezioni amministratore">
+        <button type="button" id="management-tab" class="admin-switch-button selected" aria-pressed="true">Gestione account</button>
+        <button type="button" id="report-tab" class="admin-switch-button" aria-pressed="false">Viaggi e statistiche</button>
+      </nav>
+      <div id="management-panel">
       <div class="page-intro">
         <div><p class="eyebrow">CONTROLLO ACCESSI LTS</p><h1>Gestione autisti</h1>
           <p>Inviti, autorizzazioni e recupero account. I registri personali rimangono associati al proprietario.</p>
@@ -147,6 +152,53 @@
         <p id="secret-explanation" class="hint"></p>
         <div class="secret-row"><input id="secret-code" type="text" readonly spellcheck="false" autocomplete="off" aria-label="Codice privato monouso"><button id="copy-secret" class="button primary" type="button">Copia codice</button></div>
         <p class="footnote">Non comunicare il codice in chat pubbliche. Non viene inviato automaticamente tramite SMS.</p>
+      </section>
+      </div>
+      <section id="report-panel" aria-labelledby="report-title" hidden>
+        <div class="page-intro">
+          <div><p class="eyebrow">LTS GESTIONE AUTISTI · FASE 1</p>
+            <h1 id="report-title">Viaggi e statistiche</h1>
+            <p>Controllo dei viaggi già sincronizzati nel registro. Solo amministratore con verifica a due fattori.</p>
+          </div>
+          <button type="button" id="report-refresh" class="button outline">Aggiorna dati</button>
+        </div>
+        <div class="surface">
+          <div class="report-filters">
+            <label>Mese <input id="report-month" type="month" min="2020-01" max="2099-12" required></label>
+            <label>Autista <select id="report-driver"><option value="">Tutti gli autisti</option></select></label>
+          </div>
+          <p id="report-status" class="report-source" role="status" aria-live="polite"></p>
+          <p id="report-error" class="error-message" role="alert" hidden></p>
+          <p id="report-warning" class="report-warning" role="alert"></p>
+        </div>
+        <div class="stat-grid report-kpis" aria-label="Riepilogo viaggi">
+          <div class="stat"><span>Viaggi registrati</span><strong id="report-count">—</strong></div>
+          <div class="stat"><span>Autisti con viaggi</span><strong id="report-driver-count">—</strong></div>
+          <div class="stat"><span>Valore trasferte registrate</span><strong id="report-total">—</strong></div>
+          <div class="stat"><span>Tariffe mancanti</span><strong id="report-missing">—</strong></div>
+        </div>
+        <div class="report-graphs">
+          <section class="surface" aria-labelledby="report-daily-title">
+            <div class="section-head"><h2 id="report-daily-title">Viaggi per giorno</h2><span class="pill">Mese selezionato</span></div>
+            <div id="report-chart" class="report-bars"></div>
+          </section>
+          <section class="surface" aria-labelledby="report-driver-title">
+            <div class="section-head"><h2 id="report-driver-title">Viaggi per autista</h2><span class="pill">Confronto attività</span></div>
+            <div id="report-driver-chart" class="report-bars"></div>
+          </section>
+        </div>
+        <section class="surface report-register" aria-labelledby="report-register-title">
+          <div class="section-head"><h2 id="report-register-title">Tutti gli inserimenti</h2><span class="pill">Sola lettura</span></div>
+          <div class="report-table-scroll"><table class="report-table">
+            <thead><tr><th scope="col">Autista</th><th scope="col">Data</th>
+              <th scope="col">Container</th><th scope="col">Cliente e località</th>
+              <th scope="col">Importo registrato</th><th scope="col">Altri dettagli</th></tr></thead>
+            <tbody id="report-rows"></tbody>
+          </table></div>
+          <p id="report-empty" class="empty" hidden>Nessun viaggio sincronizzato per i filtri scelti.</p>
+          <button id="report-next" type="button" class="button outline" hidden>Carica altri viaggi</button>
+          <p class="footnote">Gli importi indicano valori registrati, non fatturato aziendale né stipendio. I viaggi non sincronizzati dal telefono non possono comparire qui.</p>
+        </section>
       </section>
     </div>
   </main>
