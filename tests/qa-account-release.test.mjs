@@ -272,7 +272,7 @@ test('dedicated admin console loads only verified administrative transport',asyn
  const css=readFileSync(new URL('../amministratore/admin.css',import.meta.url),'utf8');
  const model=await import('../amministratore/model.mjs');
  assert.match(adminHtml,/Content-Security-Policy/);
- assert.match(adminHtml,/src="\.\/admin[.]mjs\?v=20261105-admin-resume-v1"/);
+ assert.match(adminHtml,/src="\.\/admin[.]mjs\?v=20261105-customer-audit-v1"/);
  assert.match(adminJs,/import \* as account from '\.\.\/account-access[.]mjs\?v=20261104-company-v3'/);
  assert.match(adminJs,/await account[.]verifySession\(\)/);
  assert.match(adminJs,/account[.]getRole\(\)!=='admin'/);
@@ -375,7 +375,7 @@ test('TOTP admin flow uses verified backend session and never exposes secret in 
  assert.match(html,/id="mfa-warning"/);
  assert.match(html,/pattern="\[0-9\]\{6\}"/);
  assert.match(html,/img-src 'self' data:/);
- assert.match(html,/admin\.mjs\?v=20261105-admin-resume-v1/);
+ assert.match(html,/admin\.mjs\?v=20261105-customer-audit-v1/);
  assert.match(html,/admin\.css\?v=20261104-company-v3/);
  assert.match(admin,/account\.enrollAdminTotp/);
  assert.match(admin,/account\.verifyAdminTotp/);
@@ -396,7 +396,7 @@ test('MFA enrollment requires the latest QR and a correctly synchronized device 
  assert.match(html,/Data e ora automatiche/);
  assert.match(html,/fuso orario automatico/);
  assert.match(html,/codice basato sull'ora/);
- assert.match(html,/admin[.]mjs[?]v=20261105-admin-resume-v1/);
+ assert.match(html,/admin[.]mjs[?]v=20261105-customer-audit-v1/);
 });
 
 test('Authenticator app switching preserves the existing enrollment instead of regenerating QR',()=>{
@@ -533,3 +533,21 @@ test('dashboard Maps action reuses secure client import and keeps unsaved trip d
  const css=read('app.css');
  assert.match(css,/dashboard-maps-shortcut-button:focus-visible/);
 });
+
+test('admin-only customer audit is visible in Anomalie with no data-changing actions',()=>{
+ const html=read('amministratore/index.html');
+ const report=read('amministratore/report.mjs');
+ const logic=read('amministratore/customer-audit.mjs');
+ const api=read('account-access.mjs');
+ assert.match(html,/id="customer-audit"/);
+ assert.match(html,/id="customer-audit-driver"/);
+ assert.match(html,/id="customer-audit-confidence"/);
+ assert.match(html,/Nessun dato viene modificato/);
+ assert.match(report,/if\(view==='alerts'\)customerAudit[.]open\(\);else customerAudit[.]close\(\)/);
+ assert.match(report,/customerAudit[.]reset\(\)/);
+ assert.match(logic,/await account[.]customerAudit\(\)/);
+ assert.match(api,/\{action:'customer-audit'\}/);
+ assert.doesNotMatch(logic,/localStorage|sessionStorage|innerHTML|upsert|archiveRequest/);
+ assert.match(read('amministratore/dashboard-v6.css'),/#dashboard\[data-view="alerts"\] #customer-audit\{display:block\}/);
+});
+
