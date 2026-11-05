@@ -272,7 +272,27 @@ async function refreshCompanyCustomers(){
   const customers=await sharedMapsCustomers();
   if(owner!==accountAccess.getAccountId())return;
   companyCustomers=customers;
-  if(!busy&&['customers','insert'].includes(tab))render();
+  // Keep the currently edited trip, caret, keyboard and open dialogs intact.
+  // A background catalog sync must only refresh suggestions/list contents,
+  // never reconstruct the entire screen with render().
+  if(tab==='customers'){
+   const panel=document.querySelector('.company-customer-list');
+   if(panel)panel.replaceWith(companyCustomersPanel());
+  }
+  if(tab==='insert'){
+   const list=document.getElementById('trip-customers');
+   const form=list?.closest('form');
+   if(form){
+    const update=(node,values)=>{
+     if(node)node.replaceChildren(...unique(values).map(value=>el('option',{value})));
+    };
+    update(list,[...state.customers.map(c=>c.name),...state.trips.map(t=>t.client),...companyCustomers.map(c=>c.name)]);
+    const first=form.querySelector('[name="client"]');
+    update(form.querySelector('#trip-cities'),citySuggestions(first?.value||draft.client));
+    const second=form.querySelector('[name="secondClient"]');
+    update(form.querySelector('#second-cities'),citySuggestions(second?.value||draft.secondClient));
+   }
+  }
  }catch{
   // An offline/unauthorized shared list must never overwrite personal archives.
  }
@@ -605,7 +625,7 @@ function tariffDialog(tariff=null){
  const {dialog,body}=modal(tariff?'Modifica tariffa':'Nuova tariffa',{subtitle:'Scegli cliente e località: l’importo aggiorna automaticamente anche i viaggi già nel registro.'});const form=el('form',{novalidate:true});const error=el('div',{class:'form-error',role:'alert'});
  const client=field('Cliente','client',tariff?.client||'',{placeholder:'Seleziona o scrivi il cliente',list:'tariff-customers',required:true,maxlength:500});const city=field('Località','city',tariff?.city||'',{placeholder:'Città del viaggio',required:true,maxlength:500});const amount=field('Trasferta €','cents',moneyInput(tariff?.cents),{placeholder:'0,00',inputmode:'decimal',required:true,maxlength:14});
  client.input.addEventListener('change',()=>autofillCity(client.input,city.input));
- form.append(error,client.wrap,datalist('tariff-customers',state.customers.map(c=>c.name)),city.wrap,amount.wrap,el('button',{type:'submit',class:'primary-button full','data-save':true},icon('check'),'Salva tariffa'));
+ form.append(error,client.wrap,datalist('tariff-customers',[...state.customers.map(c=>c.name),...companyCustomers.map(c=>c.name)]),city.wrap,amount.wrap,el('button',{type:'submit',class:'primary-button full','data-save':true},icon('check'),'Salva tariffa'));
  form.addEventListener('submit',async event=>{event.preventDefault();error.textContent='';
   try{const original=tariff||D.findTariff({tariffs:openingTariffs},client.input.value,city.input.value);const current=tariff?state.tariffs.find(row=>row.id===tariff.id):D.findTariff(state,client.input.value,city.input.value);requireCurrentEditor(editorVersion(original),current,'La tariffa');const next=D.upsertTariff(state,{id:tariff?.id,client:client.input.value,city:city.input.value,cents:D.toCents(amount.input.value)});await persist(next);dialog.close();render();toast('Tariffa, cliente e registro aggiornati.');}catch(err){error.textContent=err.message;}});body.append(form);client.input.focus();
 }
