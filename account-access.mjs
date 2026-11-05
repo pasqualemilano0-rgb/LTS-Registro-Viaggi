@@ -289,8 +289,19 @@ export async function login(phone,password){
  if(!isEnabled())throw new Error('Accesso account non abilitato.');
  if(typeof phone!=='string'||phone.length>40||typeof password!=='string'||password.length>256)
    throw new Error('Inserisci numero e password validi.');
- if(readStored())throw new Error('Esci dall’account attuale prima di accedere con un altro.');
+ // A failed/expired saved session must not prevent its rightful owner from
+ // re-authenticating on the login screen. Verify the new password on the server,
+ // then accept it only if the identity matches the retained session.
+ const previous=readStored();
  const data=await api('loginEndpoint',{action:'login',phone,password});
+ if(previous&&(data.user_id!==previous.user_id||data.role!==previous.role)){
+  // Another person's credentials never silently replace the owner's cached
+  // session or expose their unsynchronized local archive.
+  if(typeof data.access_token==='string'){
+   try{await api('loginEndpoint',{action:'logout'},data.access_token);}catch{}
+  }
+  throw new Error('Sul dispositivo è salvato un altro account. Usa “Esci e cambia account”, poi accedi.');
+ }
  const next=saveSession(data);
  try{
   const status=await verifySession();
