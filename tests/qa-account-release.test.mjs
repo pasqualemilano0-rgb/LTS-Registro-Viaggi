@@ -521,3 +521,15 @@ test('shared Google Maps customers have an independent search for company and lo
  assert.match(app,/Cerca nei clienti personali: nome, località o partita IVA/);
  assert.match(read('app.css'),/company-customer-search:focus-within/);
 });
+
+test('dashboard Maps action reuses secure client import and keeps unsaved trip draft',()=>{
+ const insert=app.slice(app.indexOf('function renderInsert('),app.indexOf('function citySuggestions('));
+ assert.match(insert,/if\(!editingId\)form[.]append\(el\('section',\{class:'dashboard-maps-shortcut'/);
+ assert.match(insert,/Aggiungi da Google Maps/);
+ assert.match(insert,/\(\)=>\{collect\(\);mapsCustomerDialog\(\);\}/);
+ assert.equal((app.match(/function mapsCustomerDialog\(/g)||[]).length,1);
+ assert.equal((app.match(/await saveSharedMapsCustomer\(/g)||[]).length,1);
+ assert.match(app,/mapsLinkForCompanySync\(\{existingCustomer:customer,proposal,enabled:sharedMapsEnabled\(\)\}\)/);
+ const css=read('app.css');
+ assert.match(css,/dashboard-maps-shortcut-button:focus-visible/);
+});
