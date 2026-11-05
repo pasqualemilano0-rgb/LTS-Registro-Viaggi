@@ -332,6 +332,14 @@ h1,h2,h3{letter-spacing:-.035em}
 /* Private customer registry, imported only from user-submitted Maps links. */
 .company-customer-list{margin-top:16px;border:1px solid #c9e3e6;background:#f8fcfd;padding:20px 16px;border-radius:17px}
 .company-customer-list h2,.personal-customers h2{font-size:19px;line-height:1.3;margin:0 0 9px;color:#184d60}
+
+.company-customer-search{display:flex;align-items:center;gap:10px;margin:14px 0 12px;padding:0 13px;background:#fff;border:1.5px solid #bddbe3;border-radius:13px;min-height:51px;color:#178299}
+.company-customer-search:focus-within{border-color:#07869a;box-shadow:0 0 0 3px #0a829519}
+.company-customer-search>.icon{width:19px;height:19px;flex:none}
+.company-customer-search input{flex:1;min-width:0;width:100%;min-height:46px;border:0;background:transparent;box-shadow:none;outline:0;font-size:16px;color:#163747}
+.company-customer-search input::placeholder{color:#607e8b;opacity:1}
+.company-customer-items[hidden],.company-customer-empty[hidden]{display:none}
+
 .company-customer-help,.company-customer-empty{font-size:13px;line-height:1.55;color:#536f7c;margin:0 0 12px}
 .company-customer-count{font-size:13px;font-weight:750;color:#196574;margin:0 0 13px}
 .company-customer-items{margin:0 0 15px;padding:0;list-style:none;display:grid;gap:9px;max-height:500px;overflow-y:auto}
