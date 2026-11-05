@@ -6,7 +6,7 @@ import * as store from '/LTS-Registro-Viaggi/client-store.mjs';
 import runtimeConfig from '/LTS-Registro-Viaggi/runtime-config.mjs';
 import * as accountAccess from '/LTS-Registro-Viaggi/account-access.mjs';
 import {sharedMapsEnabled,sharedMapsCustomers,saveSharedMapsCustomer} from '/LTS-Registro-Viaggi/shared-maps-client.mjs';
-import {mapsLinkForCompanySync} from '/LTS-Registro-Viaggi/shared/maps-company-routing.mjs';
+import {mapsLinkForCompanySync,filterSharedCustomers} from '/LTS-Registro-Viaggi/shared/maps-company-routing.mjs';
 import { appendPushSettings } from '/LTS-Registro-Viaggi/push-client.mjs';
 import { parseCustomerCsv, mergeCustomerCsv, exportCustomerCsv, MAX_CUSTOMER_CSV_BYTES } from '/LTS-Registro-Viaggi/shared/customer-csv.mjs';
 
@@ -14,6 +14,7 @@ const root = document.querySelector('#app');
 const today = () => { const now = new Date(); return `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`; };
 let state = D.emptyState();
 let companyCustomers=[]; // In-memory shared list, never part of personal archive/backup.
+let companyCustomerSearch=''; // Independent filter for the read-only company list.
 let user = null;
 let tab = 'insert';
 let tariffTab = 'base';
@@ -275,10 +276,7 @@ async function refreshCompanyCustomers(){
   // Keep the currently edited trip, caret, keyboard and open dialogs intact.
   // A background catalog sync must only refresh suggestions/list contents,
   // never reconstruct the entire screen with render().
-  if(tab==='customers'){
-   const panel=document.querySelector('.company-customer-list');
-   if(panel)panel.replaceWith(companyCustomersPanel());
-  }
+  if(tab==='customers')updateCompanyCustomersPanel();
   if(tab==='insert'){
    const list=document.getElementById('trip-customers');
    const form=list?.closest('form');
@@ -297,27 +295,47 @@ async function refreshCompanyCustomers(){
   // An offline/unauthorized shared list must never overwrite personal archives.
  }
 }
+/** Update only the company list, leaving the search field, caret and keyboard intact. */
+function updateCompanyCustomersPanel(panel=document.querySelector('.company-customer-list')){
+ if(!panel)return;
+ const found=filterSharedCustomers(companyCustomers,companyCustomerSearch);
+ const count=panel.querySelector('.company-customer-count');
+ const list=panel.querySelector('.company-customer-items');
+ const empty=panel.querySelector('.company-customer-empty');
+ count.textContent=companyCustomerSearch.trim()
+  ?`${found.length} di ${companyCustomers.length} sedi trovate`
+  :`${companyCustomers.length} clienti disponibili a tutti gli autisti autorizzati`;
+ list.replaceChildren(...found.map(customer=>el('li',{},
+  el('div',{},el('strong',{},customer.name),
+   el('span',{},customer.city+' · '+customer.address),
+   customer.operationalNotes?el('p',{class:'company-customer-operations'},
+    'Indicazioni operative fornite da autista (da ricontrollare): '+customer.operationalNotes):null),
+  el('a',{href:customer.mapsUrl,target:'_blank',rel:'noopener noreferrer',
+   'aria-label':`Apri su Google Maps ${customer.name}`},'Apri Maps'))));
+ list.hidden=found.length===0;
+ empty.hidden=found.length!==0;
+ empty.textContent=companyCustomers.length===0
+  ?'Nessun cliente condiviso ancora disponibile, oppure elenco non sincronizzato.'
+  :'Nessuna sede corrisponde alla ricerca. Prova un altro nome o una località.';
+}
 function companyCustomersPanel(){
  if(!sharedMapsEnabled())return null;
  const panel=el('section',{class:'panel company-customer-list','aria-label':'Registro clienti condiviso'});
+ const search=el('input',{type:'search',id:'company-customer-search',
+  value:companyCustomerSearch,placeholder:'Cerca cliente, località o indirizzo',
+  'aria-label':'Cerca nella lista clienti aziendale',autocomplete:'off',
+  on:{input:event=>{
+   companyCustomerSearch=event.target.value;
+   updateCompanyCustomersPanel(panel);
+  }}});
  panel.append(el('h2',{},'Lista clienti online da Google Maps'),
-  el('p',{class:'company-customer-help'},'Elenco ottenuto dai link Maps salvati dagli autisti. Non contiene i viaggi personali né le tariffe.'));
- if(!companyCustomers.length){
-  panel.append(el('p',{class:'company-customer-empty'},'Nessun cliente condiviso ancora disponibile, oppure elenco non sincronizzato.'));
- }else{
-  panel.append(el('p',{class:'company-customer-count'},`${companyCustomers.length} clienti disponibili a tutti gli autisti autorizzati`));
-  const list=el('ul',{class:'company-customer-items'});
-  for(const customer of companyCustomers){
-   list.append(el('li',{},el('div',{},el('strong',{},customer.name),
-    el('span',{},customer.city+' · '+customer.address),
-    customer.operationalNotes?el('p',{class:'company-customer-operations'},
-     'Indicazioni operative fornite da autista (da ricontrollare): '+customer.operationalNotes):null),
-    el('a',{href:customer.mapsUrl,target:'_blank',rel:'noopener noreferrer',
-     'aria-label':`Apri su Google Maps ${customer.name}`},'Apri Maps')));
-  }
-  panel.append(list);
- }
- panel.append(button('Aggiorna elenco','secondary',()=>{void refreshCompanyCustomers();},'refresh'));
+  el('p',{class:'company-customer-help'},'Elenco ottenuto dai link Maps salvati dagli autisti. Non contiene i viaggi personali né le tariffe.'),
+  el('div',{class:'company-customer-search'},icon('search'),search),
+  el('p',{class:'company-customer-count',role:'status','aria-live':'polite'}),
+  el('ul',{class:'company-customer-items'}),
+  el('p',{class:'company-customer-empty',hidden:true}),
+  button('Aggiorna elenco','secondary',()=>{void refreshCompanyCustomers();},'refresh'));
+ updateCompanyCustomersPanel(panel);
  return panel;
 }
 function renderInsert(main){
@@ -491,7 +509,7 @@ function renderCustomers(main){
   if(!customers.length)list.append(emptyState(filter?'Nessun cliente trovato':'La tua rubrica parte da qui',filter?'Prova a cercare un altro nome o una località.':'Aggiungi un cliente oppure salva il tuo primo viaggio.','users',filter?null:button('Aggiungi cliente','primary',()=>customerDialog(),'plus')));
  }
  const csvInput=el('input',{type:'file',accept:'.csv,text/csv',class:'visually-hidden','aria-label':'Importa CSV clienti',on:{change:async event=>{const file=event.target.files?.[0];event.target.value='';if(file)await importCustomersCsv(file);}}});
- main.append(el('section',{class:'panel customer-tools','aria-label':'Strumenti clienti'},button('Da Google Maps','secondary',mapsCustomerDialog,'pin'),el('div',{class:'csv-tools'},button('Importa CSV','text',()=>csvInput.click(),'upload'),button('Esporta CSV','text',()=>{try{downloadBlob(new Blob([exportCustomerCsv(state)],{type:'text/csv;charset=utf-8'}),`LTS-Clienti-${today()}.csv`);toast('Rubrica esportata.');}catch(error){toast(error.message,true);}},'download')),csvInput),searchBox('Cerca cliente, località o partita IVA',draw),el('div',{class:'catalog-top'},count,el('button',{type:'button',class:'text-button',on:{click:()=>customerDialog()}},icon('plus'),'Nuovo cliente')),list);draw();refreshView=draw;
+ main.append(el('section',{class:'panel customer-tools','aria-label':'Strumenti clienti'},button('Da Google Maps','secondary',mapsCustomerDialog,'pin'),el('div',{class:'csv-tools'},button('Importa CSV','text',()=>csvInput.click(),'upload'),button('Esporta CSV','text',()=>{try{downloadBlob(new Blob([exportCustomerCsv(state)],{type:'text/csv;charset=utf-8'}),`LTS-Clienti-${today()}.csv`);toast('Rubrica esportata.');}catch(error){toast(error.message,true);}},'download')),csvInput),searchBox('Cerca nei clienti personali: nome, località o partita IVA',draw),el('div',{class:'catalog-top'},count,el('button',{type:'button',class:'text-button',on:{click:()=>customerDialog()}},icon('plus'),'Nuovo cliente')),list);draw();refreshView=draw;
 }
 function renderTariffs(main){
  main.append(heading('IL VALORE DEI TUOI VIAGGI','Tariffe & extra','Collegate ai clienti. Sempre a portata di mano.'));
@@ -1178,6 +1196,7 @@ async function showLegacyArchiveRecovery(preview=null) {
 }
 function renderAccountGate(message=''){
  companyCustomers=[];
+ companyCustomerSearch='';
  const hasPreviousSession=accountAccess.hasSession();
  const recovery=hasPreviousSession?el('div',{class:'account-session-recovery'},
    el('p',{},'Questo dispositivo conserva una sessione precedente. Per rientrare nello stesso account, inserisci nuovamente la password. Per usare un altro account, esci prima.'),
