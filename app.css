@@ -340,6 +340,7 @@ h1,h2,h3{letter-spacing:-.035em}
 .company-customer-items strong{font-size:14px;color:#163c4d;overflow-wrap:anywhere}
 .company-customer-items li span{font-size:12px;line-height:1.5;color:#526d78;overflow-wrap:anywhere}
 .company-customer-items li a{font-size:12px;color:#087887;font-weight:800;text-decoration:underline;text-underline-offset:3px;white-space:nowrap;min-height:44px;display:flex;align-items:center}
+.company-customer-items .company-customer-operations{font-size:12px;line-height:1.5;color:#6a5360;margin:4px 0 0;overflow-wrap:anywhere;white-space:normal}
 .personal-customers{margin-top:20px}
 @media(max-width:390px){
  .company-customer-list{padding:16px 12px}
