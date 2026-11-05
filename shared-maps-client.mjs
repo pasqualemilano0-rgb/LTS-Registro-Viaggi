@@ -21,7 +21,10 @@ function validCustomer(c){
  if(url.protocol!=='https:'||!['www.google.com','google.com','www.google.it','google.it',
     'maps.google.com','maps.google.it','maps.app.goo.gl','goo.gl'].includes(url.hostname))
   throw new Error('Link cliente non riconosciuto.');
- return {name:c.name,city:c.city,address:c.address,mapsUrl:c.mapsUrl,source:c.source};
+ if(c.operationalNotes!==undefined&&(typeof c.operationalNotes!=='string'||c.operationalNotes.length>1500))
+  throw new Error('Indicazioni operative cliente non valide.');
+ return {name:c.name,city:c.city,address:c.address,mapsUrl:c.mapsUrl,source:c.source,
+  operationalNotes:c.operationalNotes||''};
 }
 async function post(payload){
  const url=endpoint();
