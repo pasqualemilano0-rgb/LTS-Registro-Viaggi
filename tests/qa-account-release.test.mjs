@@ -42,7 +42,7 @@ test('account archive ID must derive from verified session, not user input',()=>
   assert.match(store,/account[.]archiveRequest\(method, body\)/);
 });
 test('offline worker activates new cache and precaches auth code without caching server data',()=>{
-  assert.match(sw,/const CACHE = PREFIX \+ '20261105-dashboard-maps-quick-add-v1'/);
+  assert.match(sw,/const CACHE = PREFIX \+ '20261105-admin-customer-audit-v1'/);
   assert.match(sw,/\/LTS-Registro-Viaggi\/account-access[.]mjs/);
   assert.match(sw,/\/LTS-Registro-Viaggi\/shared\/quick-trip[.]mjs/);
   assert.match(sw,/\/LTS-Registro-Viaggi\/shared\/port-source-status[.]mjs/);
@@ -52,8 +52,8 @@ test('offline worker activates new cache and precaches auth code without caching
 });
 test('HTML entry points are identical and use the new cache buster',()=>{
   assert.equal(html,shell);
-  assert.match(html,/app[.]css[?]v=20261105-dashboard-maps-quick-add-v1/);
-  assert.match(html,/app[.]mjs[?]v=20261105-dashboard-maps-quick-add-v1/);
+  assert.match(html,/app[.]css[?]v=20261105-admin-customer-audit-v1/);
+  assert.match(html,/app[.]mjs[?]v=20261105-admin-customer-audit-v1/);
   assert.match(html,/<script type="module"/);
 });
 test('ports section stays integrated, untouched backups and no new bundled private backend',()=>{
@@ -328,7 +328,7 @@ test('the main register CSP is restrictive, loads before scripts, and preserves 
  const porti=read('porti/index.html');
  assert.match(porti,/https:\/\/api\.conateco\.it/);
  assert.match(porti,/https:\/\/container-booking-backend\.pasqualemilano0\.workers\.dev/);
- assert.match(sw,/const CACHE = PREFIX \+ '20261105-dashboard-maps-quick-add-v1'/);
+ assert.match(sw,/const CACHE = PREFIX \+ '20261105-admin-customer-audit-v1'/);
 });
 
 test('logout is authenticated on the server and remote driver disconnection is admin-only',()=>{
@@ -344,7 +344,7 @@ test('logout is authenticated on the server and remote driver disconnection is a
  assert.match(admin,/account[.]manageDrivers\(action,data\)/);
  assert.match(admin,/account[.]logout\(\)/);
  assert.match(admin,/Sessioni revocate/);
- assert.match(sw,/const CACHE = PREFIX \+ '20261105-dashboard-maps-quick-add-v1'/);
+ assert.match(sw,/const CACHE = PREFIX \+ '20261105-admin-customer-audit-v1'/);
  assert.doesNotMatch([app,auth,admin,sw].join('\n'),/SUPABASE_SERVICE_ROLE_KEY|sb_secret_[A-Za-z0-9_-]+/);
 });
 
@@ -383,7 +383,7 @@ test('TOTP admin flow uses verified backend session and never exposes secret in 
  assert.match(auth,/export async function verifyAdminTotp\(code,factorId=null\)/);
  assert.match(auth,/verified=!mfaEnrolled\|\|mfaVerified/);
  assert.match(app,/logged\.mfa_enrolled&&!logged\.mfa_verified/);
- assert.match(sw,/20261105-dashboard-maps-quick-add-v1/);
+ assert.match(sw,/20261105-admin-customer-audit-v1/);
  assert.match(css,/#mfa-setup-secret/);
  for(const item of [html,admin,auth,app]){
   assert.doesNotMatch(item,/SUPABASE_SERVICE_ROLE_KEY|sb_secret_[A-Za-z0-9_-]+/);
@@ -417,7 +417,7 @@ test('Authenticator app switching preserves the existing enrollment instead of r
  assert.match(html,/senza conservare QR e chiave/);
  assert.doesNotMatch(admin,/sessionStorage|localStorage|innerHTML/);
  assert.doesNotMatch(auth,/sessionStorage[.]setItem\(MFA_PENDING_KEY,JSON[.]stringify\(\{[^\n]*(?:qr_code|secret|code)/);
- assert.match(sw,/20261105-dashboard-maps-quick-add-v1/);
+ assert.match(sw,/20261105-admin-customer-audit-v1/);
 });
 
 test('administrator has separately verified backup authenticator without bypassing AAL2',()=>{
@@ -436,7 +436,7 @@ test('administrator has separately verified backup authenticator without bypassi
  assert.match(auth,/rememberPendingAdminMfa\(result[.]factor_id,'backup'\)/);
  assert.doesNotMatch(admin,/localStorage|sessionStorage|innerHTML|sb_secret_/i);
  assert.match(html,/Non caricare mai QR, chiavi TOTP/);
- assert.match(sw,/20261105-dashboard-maps-quick-add-v1/);
+ assert.match(sw,/20261105-admin-customer-audit-v1/);
 });
 
 test('Porti can start only after verified account handshake from the LTS parent',()=>{
