@@ -3,24 +3,6 @@
   "source_updated_at": null,
   "rows": [
     {
-      "vessel": "AMELIE BORCHARD",
-      "voyage": "0208",
-      "eta": "04/11/2026 01:00",
-      "closing": "03/11/2026 17:00 CLOSED",
-      "acceptance_dry": "CARGO ACCEPTED",
-      "acceptance_reef": "CARGO ACCEPTED",
-      "status": "PENDING"
-    },
-    {
-      "vessel": "KINGSTON",
-      "voyage": "024W",
-      "eta": "04/11/2026 01:00",
-      "closing": "04/11/2026 17:00 CLOSED",
-      "acceptance_dry": "CARGO ACCEPTED",
-      "acceptance_reef": "CARGO ACCEPTED",
-      "status": "PENDING"
-    },
-    {
       "vessel": "ATRIA",
       "voyage": "ATI0526E",
       "eta": "05/11/2026 03:00",
@@ -66,8 +48,8 @@
       "status": "PENDING"
     },
     {
-      "vessel": "MSC CORNELIA",
-      "voyage": "CD645A",
+      "vessel": "CONTSHIP ERA",
+      "voyage": "93E",
       "eta": "07/11/2026 00:00",
       "closing": "07/11/2026 12:00",
       "acceptance_dry": "CARGO ACCEPTED",
@@ -75,8 +57,8 @@
       "status": "PENDING"
     },
     {
-      "vessel": "CONTSHIP ERA",
-      "voyage": "93E",
+      "vessel": "MSC CORNELIA",
+      "voyage": "CD645A",
       "eta": "07/11/2026 00:00",
       "closing": "07/11/2026 12:00",
       "acceptance_dry": "CARGO ACCEPTED",
@@ -210,8 +192,8 @@
       "status": "PENDING"
     },
     {
-      "vessel": "DEPE",
-      "voyage": "DEP1426W",
+      "vessel": "ASTRAIOS",
+      "voyage": "0HWLAE1MA",
       "eta": "12/11/2026 00:00",
       "closing": "11/11/2026 17:00",
       "acceptance_dry": "CARGO ACCEPTED",
@@ -219,8 +201,8 @@
       "status": "PENDING"
     },
     {
-      "vessel": "ASTRAIOS",
-      "voyage": "0HWLAE1MA",
+      "vessel": "DEPE",
+      "voyage": "DEP1426W",
       "eta": "12/11/2026 00:00",
       "closing": "11/11/2026 17:00",
       "acceptance_dry": "CARGO ACCEPTED",
@@ -235,9 +217,36 @@
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
+    },
+    {
+      "vessel": "KOBE EXPRESS",
+      "voyage": "645W",
+      "eta": "13/11/2026 00:00",
+      "closing": "12/11/2026 17:00",
+      "acceptance_dry": "CARGO ACCEPTED",
+      "acceptance_reef": "CARGO ACCEPTED",
+      "status": "PENDING"
+    },
+    {
+      "vessel": "MASTERY D",
+      "voyage": "0926E",
+      "eta": "13/11/2026 00:00",
+      "closing": "12/11/2026 17:00",
+      "acceptance_dry": "CARGO ACCEPTED",
+      "acceptance_reef": "CARGO ACCEPTED",
+      "status": "PENDING"
+    },
+    {
+      "vessel": "VENTO DI MELTEMI",
+      "voyage": "599",
+      "eta": "13/11/2026 08:00",
+      "closing": "12/11/2026 17:00",
+      "acceptance_dry": "CARGO ACCEPTED",
+      "acceptance_reef": "CARGO ACCEPTED",
+      "status": "PENDING"
     }
   ],
-  "acquired_at": "2026-11-05T22:45:16.713Z",
-  "data_changed_at": "2026-11-05T17:00:17.182Z",
-  "updated_at": "2026-11-05T22:45:16.713Z"
+  "acquired_at": "2026-11-05T23:45:17.039Z",
+  "data_changed_at": "2026-11-05T23:00:16.906Z",
+  "updated_at": "2026-11-05T23:45:17.039Z"
 }
