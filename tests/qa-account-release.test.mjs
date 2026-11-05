@@ -501,3 +501,11 @@ test('tariff customer autocomplete includes company names without sharing tariff
  assert.match(dialog,/D[.]upsertTariff\(state,/);
  assert.doesNotMatch(dialog,/saveSharedMapsCustomer\(/);
 });
+
+test('curated Maps operational hints show only as read-only site information',()=>{
+ const client=read('shared-maps-client.mjs');
+ assert.match(client,/operationalNotes:c[.]operationalNotes\|\|''/);
+ assert.match(app,/class:'company-customer-operations'/);
+ assert.match(app,/Indicazioni operative fornite da autista/);
+ assert.doesNotMatch(app,/customer[.]note.*company-customer-operations/);
+});
