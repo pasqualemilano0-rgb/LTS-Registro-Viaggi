@@ -485,3 +485,19 @@ test('login gate shows visible account recovery before password fields without l
  assert.match(style,/account-session-recovery/);
  assert.match(style,/account-session-switch:focus-visible/);
 });
+
+test('online catalog sync never reconstructs a currently edited trip',()=>{
+ const fn=app.slice(app.indexOf('async function refreshCompanyCustomers(){'),
+    app.indexOf('function companyCustomersPanel(){'));
+ assert.match(fn,/if\(panel\)panel[.]replaceWith\(companyCustomersPanel\(\)\)/);
+ assert.match(fn,/document[.]getElementById\('trip-customers'\)/);
+ assert.match(fn,/form[.]querySelector\('#trip-cities'\)/);
+ assert.match(fn,/form[.]querySelector\('#second-cities'\)/);
+ assert.doesNotMatch(fn,/\brender\(\);/);
+});
+test('tariff customer autocomplete includes company names without sharing tariffs',()=>{
+ const dialog=app.slice(app.indexOf('function tariffDialog('),app.indexOf('function openProfile('));
+ assert.match(dialog,/datalist\('tariff-customers',\[\.\.\.state[.]customers[.]map\(c=>c[.]name\),\.\.\.companyCustomers[.]map\(c=>c[.]name\)\]\)/);
+ assert.match(dialog,/D[.]upsertTariff\(state,/);
+ assert.doesNotMatch(dialog,/saveSharedMapsCustomer\(/);
+});
