@@ -24,7 +24,7 @@
       "vessel": "ATRIA",
       "voyage": "ATI0526E",
       "eta": "05/11/2026 03:00",
-      "closing": "05/11/2026 12:00",
+      "closing": "05/11/2026 12:00 CLOSED",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
@@ -42,7 +42,7 @@
       "vessel": "MAERSK GATESHEAD",
       "voyage": "644W",
       "eta": "05/11/2026 12:00",
-      "closing": "05/11/2026 12:00",
+      "closing": "05/11/2026 12:00 CLOSED",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
@@ -66,8 +66,8 @@
       "status": "PENDING"
     },
     {
-      "vessel": "OOCL KOBE",
-      "voyage": "643N",
+      "vessel": "MSC CORNELIA",
+      "voyage": "CD645A",
       "eta": "07/11/2026 00:00",
       "closing": "07/11/2026 12:00",
       "acceptance_dry": "CARGO ACCEPTED",
@@ -84,8 +84,8 @@
       "status": "PENDING"
     },
     {
-      "vessel": "MSC CORNELIA",
-      "voyage": "CD645A",
+      "vessel": "OOCL KOBE",
+      "voyage": "643N",
       "eta": "07/11/2026 00:00",
       "closing": "07/11/2026 12:00",
       "acceptance_dry": "CARGO ACCEPTED",
@@ -93,8 +93,8 @@
       "status": "PENDING"
     },
     {
-      "vessel": "ULYSSE",
-      "voyage": "081126E",
+      "vessel": "VENTO DI GRECALE",
+      "voyage": "637",
       "eta": "08/11/2026 00:00",
       "closing": "07/11/2026 10:00",
       "acceptance_dry": "CARGO ACCEPTED",
@@ -111,8 +111,8 @@
       "status": "PENDING"
     },
     {
-      "vessel": "VENTO DI GRECALE",
-      "voyage": "637",
+      "vessel": "ULYSSE",
+      "voyage": "081126E",
       "eta": "08/11/2026 00:00",
       "closing": "07/11/2026 10:00",
       "acceptance_dry": "CARGO ACCEPTED",
@@ -129,6 +129,15 @@
       "status": "PENDING"
     },
     {
+      "vessel": "LIDER TRABZON",
+      "voyage": "1126",
+      "eta": "09/11/2026 00:00",
+      "closing": "07/11/2026 10:00",
+      "acceptance_dry": "CARGO ACCEPTED",
+      "acceptance_reef": "CARGO ACCEPTED",
+      "status": "PENDING"
+    },
+    {
       "vessel": "BELITAKI",
       "voyage": "MPS0F0W19",
       "eta": "09/11/2026 08:00",
@@ -138,19 +147,19 @@
       "status": "PENDING"
     },
     {
-      "vessel": "JAKARTA EXPRESS",
-      "voyage": "14W46",
+      "vessel": "MEDKON NLS",
+      "voyage": "324",
       "eta": "10/11/2026 00:00",
-      "closing": "10/11/2026 17:00",
+      "closing": "09/11/2026 17:00",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
     },
     {
-      "vessel": "MEDKON NLS",
-      "voyage": "324",
+      "vessel": "JAKARTA EXPRESS",
+      "voyage": "14W46",
       "eta": "10/11/2026 00:00",
-      "closing": "09/11/2026 17:00",
+      "closing": "10/11/2026 17:00",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
@@ -174,8 +183,8 @@
       "status": "PENDING"
     },
     {
-      "vessel": "KATHERINE BORCHARD",
-      "voyage": "1158",
+      "vessel": "K-RIVER",
+      "voyage": "0926W",
       "eta": "11/11/2026 00:00",
       "closing": "10/11/2026 17:00",
       "acceptance_dry": "CARGO ACCEPTED",
@@ -183,8 +192,8 @@
       "status": "PENDING"
     },
     {
-      "vessel": "K-RIVER",
-      "voyage": "0926W",
+      "vessel": "KATHERINE BORCHARD",
+      "voyage": "1158",
       "eta": "11/11/2026 00:00",
       "closing": "10/11/2026 17:00",
       "acceptance_dry": "CARGO ACCEPTED",
@@ -196,6 +205,15 @@
       "voyage": "646W",
       "eta": "11/11/2026 00:00",
       "closing": "10/11/2026 17:00",
+      "acceptance_dry": "CARGO ACCEPTED",
+      "acceptance_reef": "CARGO ACCEPTED",
+      "status": "PENDING"
+    },
+    {
+      "vessel": "DEPE",
+      "voyage": "DEP1426W",
+      "eta": "12/11/2026 00:00",
+      "closing": "11/11/2026 17:00",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
@@ -217,18 +235,9 @@
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
-    },
-    {
-      "vessel": "DEPE",
-      "voyage": "DEP1426W",
-      "eta": "12/11/2026 00:00",
-      "closing": "11/11/2026 17:00",
-      "acceptance_dry": "CARGO ACCEPTED",
-      "acceptance_reef": "CARGO ACCEPTED",
-      "status": "PENDING"
     }
   ],
-  "acquired_at": "2026-11-05T10:30:17.289Z",
-  "data_changed_at": "2026-11-05T06:00:16.988Z",
-  "updated_at": "2026-11-05T10:30:17.289Z"
+  "acquired_at": "2026-11-05T11:30:17.145Z",
+  "data_changed_at": "2026-11-05T11:15:16.987Z",
+  "updated_at": "2026-11-05T11:30:17.145Z"
 }
