@@ -42,7 +42,7 @@ test('account archive ID must derive from verified session, not user input',()=>
   assert.match(store,/account[.]archiveRequest\(method, body\)/);
 });
 test('offline worker activates new cache and precaches auth code without caching server data',()=>{
-  assert.match(sw,/const CACHE = PREFIX \+ '20261105-dashboard-maps-quick-add-v1'/);
+  assert.match(sw,/const CACHE = PREFIX \+ '20261105-admin-customer-audit-v1'/);
   assert.match(sw,/\/LTS-Registro-Viaggi\/account-access[.]mjs/);
   assert.match(sw,/\/LTS-Registro-Viaggi\/shared\/quick-trip[.]mjs/);
   assert.match(sw,/\/LTS-Registro-Viaggi\/shared\/port-source-status[.]mjs/);
@@ -52,8 +52,8 @@ test('offline worker activates new cache and precaches auth code without caching
 });
 test('HTML entry points are identical and use the new cache buster',()=>{
   assert.equal(html,shell);
-  assert.match(html,/app[.]css[?]v=20261105-dashboard-maps-quick-add-v1/);
-  assert.match(html,/app[.]mjs[?]v=20261105-dashboard-maps-quick-add-v1/);
+  assert.match(html,/app[.]css[?]v=20261105-admin-customer-audit-v1/);
+  assert.match(html,/app[.]mjs[?]v=20261105-admin-customer-audit-v1/);
   assert.match(html,/<script type="module"/);
 });
 test('ports section stays integrated, untouched backups and no new bundled private backend',()=>{
@@ -272,7 +272,7 @@ test('dedicated admin console loads only verified administrative transport',asyn
  const css=readFileSync(new URL('../amministratore/admin.css',import.meta.url),'utf8');
  const model=await import('../amministratore/model.mjs');
  assert.match(adminHtml,/Content-Security-Policy/);
- assert.match(adminHtml,/src="\.\/admin[.]mjs\?v=20261105-admin-resume-v1"/);
+ assert.match(adminHtml,/src="\.\/admin[.]mjs\?v=20261105-customer-audit-v1"/);
  assert.match(adminJs,/import \* as account from '\.\.\/account-access[.]mjs\?v=20261104-company-v3'/);
  assert.match(adminJs,/await account[.]verifySession\(\)/);
  assert.match(adminJs,/account[.]getRole\(\)!=='admin'/);
@@ -328,7 +328,7 @@ test('the main register CSP is restrictive, loads before scripts, and preserves 
  const porti=read('porti/index.html');
  assert.match(porti,/https:\/\/api\.conateco\.it/);
  assert.match(porti,/https:\/\/container-booking-backend\.pasqualemilano0\.workers\.dev/);
- assert.match(sw,/const CACHE = PREFIX \+ '20261105-dashboard-maps-quick-add-v1'/);
+ assert.match(sw,/const CACHE = PREFIX \+ '20261105-admin-customer-audit-v1'/);
 });
 
 test('logout is authenticated on the server and remote driver disconnection is admin-only',()=>{
@@ -344,7 +344,7 @@ test('logout is authenticated on the server and remote driver disconnection is a
  assert.match(admin,/account[.]manageDrivers\(action,data\)/);
  assert.match(admin,/account[.]logout\(\)/);
  assert.match(admin,/Sessioni revocate/);
- assert.match(sw,/const CACHE = PREFIX \+ '20261105-dashboard-maps-quick-add-v1'/);
+ assert.match(sw,/const CACHE = PREFIX \+ '20261105-admin-customer-audit-v1'/);
  assert.doesNotMatch([app,auth,admin,sw].join('\n'),/SUPABASE_SERVICE_ROLE_KEY|sb_secret_[A-Za-z0-9_-]+/);
 });
 
@@ -375,7 +375,7 @@ test('TOTP admin flow uses verified backend session and never exposes secret in 
  assert.match(html,/id="mfa-warning"/);
  assert.match(html,/pattern="\[0-9\]\{6\}"/);
  assert.match(html,/img-src 'self' data:/);
- assert.match(html,/admin\.mjs\?v=20261105-admin-resume-v1/);
+ assert.match(html,/admin\.mjs\?v=20261105-customer-audit-v1/);
  assert.match(html,/admin\.css\?v=20261104-company-v3/);
  assert.match(admin,/account\.enrollAdminTotp/);
  assert.match(admin,/account\.verifyAdminTotp/);
@@ -383,7 +383,7 @@ test('TOTP admin flow uses verified backend session and never exposes secret in 
  assert.match(auth,/export async function verifyAdminTotp\(code,factorId=null\)/);
  assert.match(auth,/verified=!mfaEnrolled\|\|mfaVerified/);
  assert.match(app,/logged\.mfa_enrolled&&!logged\.mfa_verified/);
- assert.match(sw,/20261105-dashboard-maps-quick-add-v1/);
+ assert.match(sw,/20261105-admin-customer-audit-v1/);
  assert.match(css,/#mfa-setup-secret/);
  for(const item of [html,admin,auth,app]){
   assert.doesNotMatch(item,/SUPABASE_SERVICE_ROLE_KEY|sb_secret_[A-Za-z0-9_-]+/);
@@ -396,7 +396,7 @@ test('MFA enrollment requires the latest QR and a correctly synchronized device 
  assert.match(html,/Data e ora automatiche/);
  assert.match(html,/fuso orario automatico/);
  assert.match(html,/codice basato sull'ora/);
- assert.match(html,/admin[.]mjs[?]v=20261105-admin-resume-v1/);
+ assert.match(html,/admin[.]mjs[?]v=20261105-customer-audit-v1/);
 });
 
 test('Authenticator app switching preserves the existing enrollment instead of regenerating QR',()=>{
@@ -417,7 +417,7 @@ test('Authenticator app switching preserves the existing enrollment instead of r
  assert.match(html,/senza conservare QR e chiave/);
  assert.doesNotMatch(admin,/sessionStorage|localStorage|innerHTML/);
  assert.doesNotMatch(auth,/sessionStorage[.]setItem\(MFA_PENDING_KEY,JSON[.]stringify\(\{[^\n]*(?:qr_code|secret|code)/);
- assert.match(sw,/20261105-dashboard-maps-quick-add-v1/);
+ assert.match(sw,/20261105-admin-customer-audit-v1/);
 });
 
 test('administrator has separately verified backup authenticator without bypassing AAL2',()=>{
@@ -436,7 +436,7 @@ test('administrator has separately verified backup authenticator without bypassi
  assert.match(auth,/rememberPendingAdminMfa\(result[.]factor_id,'backup'\)/);
  assert.doesNotMatch(admin,/localStorage|sessionStorage|innerHTML|sb_secret_/i);
  assert.match(html,/Non caricare mai QR, chiavi TOTP/);
- assert.match(sw,/20261105-dashboard-maps-quick-add-v1/);
+ assert.match(sw,/20261105-admin-customer-audit-v1/);
 });
 
 test('Porti can start only after verified account handshake from the LTS parent',()=>{
@@ -533,3 +533,21 @@ test('dashboard Maps action reuses secure client import and keeps unsaved trip d
  const css=read('app.css');
  assert.match(css,/dashboard-maps-shortcut-button:focus-visible/);
 });
+
+test('admin-only customer audit is visible in Anomalie with no data-changing actions',()=>{
+ const html=read('amministratore/index.html');
+ const report=read('amministratore/report.mjs');
+ const logic=read('amministratore/customer-audit.mjs');
+ const api=read('account-access.mjs');
+ assert.match(html,/id="customer-audit"/);
+ assert.match(html,/id="customer-audit-driver"/);
+ assert.match(html,/id="customer-audit-confidence"/);
+ assert.match(html,/Nessun dato viene modificato/);
+ assert.match(report,/if\(view==='alerts'\)customerAudit[.]open\(\);else customerAudit[.]close\(\)/);
+ assert.match(report,/customerAudit[.]reset\(\)/);
+ assert.match(logic,/await account[.]customerAudit\(\)/);
+ assert.match(api,/\{action:'customer-audit'\}/);
+ assert.doesNotMatch(logic,/localStorage|sessionStorage|innerHTML|upsert|archiveRequest/);
+ assert.match(read('amministratore/dashboard-v6.css'),/#dashboard\[data-view="alerts"\] #customer-audit\{display:block\}/);
+});
+

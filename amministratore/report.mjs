@@ -1,5 +1,6 @@
 /** Administrator reporting UI. Aggregates are authoritative only when returned by the API. */
 import {setupInsights} from './report-insights.mjs?v=20261104-company-v3';
+import {setupCustomerAudit} from './customer-audit.mjs?v=20261105-customer-audit-v1';
 const el=id=>document.getElementById(id);
 function node(tag,className='',value=''){
  const e=document.createElement(tag);
@@ -181,6 +182,7 @@ export function setupReport(account){
  month.value=currentMonth();
  let requestSeq=0,rows=[],page=null,loading=false,focusOnDriver=false;
  const insights=setupInsights(account);
+ const customerAudit=setupCustomerAudit(account);
  const driverSearch=el('report-driver-search');
  function selectDriver(id){
   if(driver.value===id&&page)return;
@@ -208,7 +210,7 @@ export function setupReport(account){
  }
  function reset(){
   requestSeq++;rows=[];page=null;loading=false;
-  clearData();insights.reset();el('report-empty').hidden=true;el('report-status').textContent='';
+  clearData();insights.reset();customerAudit.reset();el('report-empty').hidden=true;el('report-status').textContent='';
   el('report-error').hidden=true;el('report-next').disabled=false;
   updateDriverOptions([]);
   driverSearch.value='';
@@ -231,6 +233,7 @@ export function setupReport(account){
    tabs(view);
    if(!wasReport||(!page&&!loading)){rows=[];void load(false);}
   }
+  if(view==='alerts')customerAudit.open();else customerAudit.close();
   window.scrollTo({top:0,behavior:'instant'});
  }
  async function load(append=false){

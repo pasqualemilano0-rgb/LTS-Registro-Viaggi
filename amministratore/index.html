@@ -11,8 +11,8 @@
   <link rel="icon" type="image/png" href="../assets/icon-192.png">
   <link rel="stylesheet" href="./admin.css?v=20261104-company-v3">
   <link rel="stylesheet" href="./pro-theme.css?v=20261104-console-v5">
-  <link rel="stylesheet" href="./dashboard-v6.css?v=20261104-mobile-v7">
-  <script type="module" src="./admin.mjs?v=20261105-admin-resume-v1"></script>
+  <link rel="stylesheet" href="./dashboard-v6.css?v=20261105-customer-audit-v1">
+  <script type="module" src="./admin.mjs?v=20261105-customer-audit-v1"></script>
   <script type="module" src="./dashboard-mobile-nav.mjs?v=20261104-mobile-v7"></script>
 </head>
 <body>
@@ -343,6 +343,44 @@
               <strong id="pro-alert-count" class="pro-alert-counter">—</strong></div>
             <p class="report-source">Segnalazioni indicative: tariffe mancanti, possibili doppioni e archivi senza sincronizzazioni recenti.</p>
             <div id="pro-alerts" class="pro-alert-list"></div>
+          </section>
+          <section id="customer-audit" class="surface customer-audit" aria-labelledby="customer-audit-title">
+            <div class="section-head">
+              <div><p class="eyebrow">CONTROLLO ANAGRAFICHE · SOLA LETTURA</p>
+                <h3 id="customer-audit-title">Controllo clienti</h3></div>
+              <button id="customer-audit-refresh" class="button outline" type="button">Ricontrolla</button>
+            </div>
+            <p class="report-source">Confronto dei clienti personali di tutti gli autisti con la lista condivisa Google Maps. Le corrispondenze sono suggerimenti, non fusioni automatiche. Nessun dato viene modificato.</p>
+            <div class="customer-audit-kpis" aria-label="Riepilogo anomalie clienti">
+              <div><span>Schede personali</span><strong id="customer-audit-personal">—</strong></div>
+              <div><span>Possibili duplicati interni</span><strong id="customer-audit-within">—</strong></div>
+              <div><span>Corrispondenze tra autisti</span><strong id="customer-audit-cross">—</strong></div>
+              <div><span>Sedi Maps abbinate</span><strong id="customer-audit-maps">—</strong></div>
+              <div><span>Indirizzi da completare</span><strong id="customer-audit-address">—</strong></div>
+            </div>
+            <p id="customer-audit-status" class="report-source" role="status" aria-live="polite"></p>
+            <p id="customer-audit-error" class="error-message" role="alert" hidden></p>
+            <div class="customer-audit-filters" aria-label="Filtra anomalie clienti">
+              <label>Autista<select id="customer-audit-driver"><option value="">Tutti gli autisti</option></select></label>
+              <label>Categoria<select id="customer-audit-type">
+                <option value="">Tutte le categorie</option>
+                <option value="within">Duplicati nello stesso archivio</option>
+                <option value="cross">Corrispondenze tra autisti</option>
+                <option value="maps">Corrispondenze Google Maps</option>
+                <option value="address">Indirizzi mancanti o errati</option>
+              </select></label>
+              <label>Attendibilità<select id="customer-audit-confidence">
+                <option value="">Tutti i livelli</option>
+                <option value="high">Alta</option>
+                <option value="probable">Probabile</option>
+                <option value="review">Da verificare</option>
+              </select></label>
+              <label>Cerca cliente o località<input id="customer-audit-search" type="search"
+                 placeholder="Es. Rummo, Nola, Flumeri..." maxlength="120" autocomplete="off"></label>
+            </div>
+            <p id="customer-audit-results-count" class="customer-audit-count" aria-live="polite"></p>
+            <div id="customer-audit-results" class="customer-audit-results" aria-label="Segnalazioni clienti in sola lettura"></div>
+            <button id="customer-audit-more" class="button outline" type="button" hidden>Mostra altre segnalazioni</button>
           </section>
           <section class="surface pro-data-panel" aria-labelledby="pro-data-title">
             <div class="section-head"><div><p class="eyebrow">DETTAGLIO FILTRATO</p><h3 id="pro-data-title">Viaggi selezionati</h3></div>
