@@ -5,12 +5,15 @@ import {unionStates} from '/LTS-Registro-Viaggi/shared/sync-merge.mjs';
 import * as store from '/LTS-Registro-Viaggi/client-store.mjs';
 import runtimeConfig from '/LTS-Registro-Viaggi/runtime-config.mjs';
 import * as accountAccess from '/LTS-Registro-Viaggi/account-access.mjs';
+import {sharedMapsEnabled,sharedMapsCustomers,saveSharedMapsCustomer} from '/LTS-Registro-Viaggi/shared-maps-client.mjs';
+import {mapsLinkForCompanySync} from '/LTS-Registro-Viaggi/shared/maps-company-routing.mjs';
 import { appendPushSettings } from '/LTS-Registro-Viaggi/push-client.mjs';
 import { parseCustomerCsv, mergeCustomerCsv, exportCustomerCsv, MAX_CUSTOMER_CSV_BYTES } from '/LTS-Registro-Viaggi/shared/customer-csv.mjs';
 
 const root = document.querySelector('#app');
 const today = () => { const now = new Date(); return `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`; };
 let state = D.emptyState();
+let companyCustomers=[]; // In-memory shared list, never part of personal archive/backup.
 let user = null;
 let tab = 'insert';
 let tariffTab = 'base';
@@ -261,6 +264,40 @@ function receiveState(record,{source}={}){
  if(refreshView)refreshView();else render();
 }
 function emptyState(title,message,ico='truck',action=null){return el('section',{class:'panel empty-state'},el('div',{class:'empty-icon'},icon(ico)),el('h3',{},title),el('p',{},message),action);}
+/** Read-only shared list. An unavailable network never unlocks an account. */
+async function refreshCompanyCustomers(){
+ if(!sharedMapsEnabled()||!store.usingAccount()||!accountAccess.isVerified())return;
+ const owner=accountAccess.getAccountId();
+ try{
+  const customers=await sharedMapsCustomers();
+  if(owner!==accountAccess.getAccountId())return;
+  companyCustomers=customers;
+  if(!busy&&['customers','insert'].includes(tab))render();
+ }catch{
+  // An offline/unauthorized shared list must never overwrite personal archives.
+ }
+}
+function companyCustomersPanel(){
+ if(!sharedMapsEnabled())return null;
+ const panel=el('section',{class:'panel company-customer-list','aria-label':'Registro clienti condiviso'});
+ panel.append(el('h2',{},'Lista clienti online da Google Maps'),
+  el('p',{class:'company-customer-help'},'Elenco ottenuto dai link Maps salvati dagli autisti. Non contiene i viaggi personali né le tariffe.'));
+ if(!companyCustomers.length){
+  panel.append(el('p',{class:'company-customer-empty'},'Nessun cliente condiviso ancora disponibile, oppure elenco non sincronizzato.'));
+ }else{
+  panel.append(el('p',{class:'company-customer-count'},`${companyCustomers.length} clienti disponibili a tutti gli autisti autorizzati`));
+  const list=el('ul',{class:'company-customer-items'});
+  for(const customer of companyCustomers){
+   list.append(el('li',{},el('div',{},el('strong',{},customer.name),
+    el('span',{},customer.city+' · '+customer.address)),
+    el('a',{href:customer.mapsUrl,target:'_blank',rel:'noopener noreferrer',
+     'aria-label':`Apri su Google Maps ${customer.name}`},'Apri Maps')));
+  }
+  panel.append(list);
+ }
+ panel.append(button('Aggiorna elenco','secondary',()=>{void refreshCompanyCustomers();},'refresh'));
+ return panel;
+}
 function renderInsert(main){
  const amountContext=D.buildTripAmountContext(state);
  const estimateId=editingId||crypto.randomUUID();const estimateCreatedAt=new Date().toISOString();
@@ -280,7 +317,7 @@ function renderInsert(main){
  const client=decorateTripField(field('Cliente','client',draft.client,{placeholder:'Nome cliente',list:customerListId,required:true,maxlength:500}),'users');
  const city=decorateTripField(field('Località','city',draft.city,{placeholder:'Es. Napoli',list:cityListId,required:true,maxlength:500}),'pin');
  const hint=el('p',{class:'field-hint',id:'tariff-hint'});city.wrap.append(hint);
- form.append(el('div',{class:'trip-fields'},container.wrap,client.wrap,city.wrap),datalist(customerListId,[...state.customers.map(c=>c.name),...state.trips.map(t=>t.client)]));
+ form.append(el('div',{class:'trip-fields'},container.wrap,client.wrap,city.wrap),datalist(customerListId,[...state.customers.map(c=>c.name),...state.trips.map(t=>t.client),...companyCustomers.map(c=>c.name)]));
  let cities=datalist(cityListId,citySuggestions(draft.client));form.append(cities);
  const add=el('button',{type:'button',class:'add-pickup trip-option','aria-label':draft.second?'Rimuovi seconda presa':'Aggiungi una seconda presa','aria-expanded':String(Boolean(draft.second)),on:{click:()=>{collect();draft.second=!draft.second;if(!draft.second){draft.secondClient='';draft.secondCity='';}render();}}},icon('pin'),el('span',{class:'tile-label'},'Seconda presa'),el('span',{class:'plus-disc','aria-hidden':'true'},draft.second?'−':'+'));
  const options=el('div',{class:'trip-options','aria-label':'Opzioni del viaggio'},add);form.append(options);
@@ -354,7 +391,7 @@ function renderInsert(main){
   client.input.value=draft.client;if(secondClient)secondClient.input.value=draft.secondClient;
   updateEstimate();
   const list=form.querySelector(`#${customerListId}`);
-  list?.replaceWith(datalist(customerListId,[...state.customers.map(c=>c.name),...state.trips.map(t=>t.client)]));
+  list?.replaceWith(datalist(customerListId,[...state.customers.map(c=>c.name),...state.trips.map(t=>t.client),...companyCustomers.map(c=>c.name)]));
   const nextCities=datalist(cityListId,citySuggestions(client.input.value));cities.replaceWith(nextCities);cities=nextCities;
   if(secondClient){const list=form.querySelector('#second-cities');list?.replaceWith(datalist('second-cities',citySuggestions(secondClient.input.value)));}
   const latest=D.sortTrips(state.trips)[0];
@@ -362,7 +399,7 @@ function renderInsert(main){
   recent.replaceChildren(el('p',{class:'recent-heading'},'L’ULTIMO VIAGGIO'),latest?tripCard(latest,currentAmounts):emptyState('Pronto a partire','Inserisci il primo viaggio: lo ritroverai qui e nel resoconto mensile.','truck'),el('p',{class:'hint-row'},icon('info'),'Clienti e località vengono ricordati.'));
  };
 }
-function citySuggestions(client){const normalized=D.normalizeText(client);return unique([...state.tariffs.filter(t=>t.client===normalized).map(t=>t.city),...state.customers.filter(c=>c.name===normalized).map(c=>c.city),...state.trips.filter(t=>t.client===normalized).map(t=>t.city)]);}
+function citySuggestions(client){const normalized=D.normalizeText(client);return unique([...state.tariffs.filter(t=>t.client===normalized).map(t=>t.city),...state.customers.filter(c=>c.name===normalized).map(c=>c.city),...state.trips.filter(t=>t.client===normalized).map(t=>t.city),...companyCustomers.filter(c=>D.normalizeText(c.name)===normalized).map(c=>D.normalizeText(c.city))]);}
 function autofillCity(client,city){if(!city.value.trim()){const normalized=D.normalizeText(client.value);const tariffCities=unique(state.tariffs.filter(t=>t.client===normalized).map(t=>t.city));if(tariffCities.length===1)city.value=tariffCities[0];else if(!tariffCities.length){const customer=state.customers.find(c=>c.name===normalized);if(customer?.city)city.value=customer.city;else{const values=citySuggestions(client.value);if(values.length===1)city.value=values[0];}}}}
 function editTrip(trip,{focusNote=false}={}){editingId=trip.id;editingBaseline=tripEditVersion(trip);draft={...trip,services:[...trip.services],second:Boolean(trip.secondClient||trip.secondCity),note:trip.note||'',noteOpen:focusNote||Boolean(trip.note),servicesOpen:true};navigate('insert');if(focusNote)document.querySelector('#trip-note')?.focus();}
 function repeatRoute(trip){
@@ -426,6 +463,7 @@ function customerCard(customer){
 }
 function renderCustomers(main){
  main.append(heading('LA TUA RUBRICA','Clienti','Meno digitazione, più tempo per il tuo lavoro.'));
+ if(sharedMapsEnabled())main.append(companyCustomersPanel());
  const list=el('div',{class:'catalog-list'});const count=el('span',{class:'catalog-count'});
  function draw(){const filter=D.normalizeText(searchValue);const customers=[...state.customers].filter(c=>`${c.name} ${c.city} ${c.vat}`.includes(filter)).sort((a,b)=>a.name.localeCompare(b.name,'it'));count.textContent=`${state.customers.length} ${state.customers.length===1?'cliente salvato':'clienti salvati'}`;list.replaceChildren(...customers.map(customerCard));
   if(!customers.length)list.append(emptyState(filter?'Nessun cliente trovato':'La tua rubrica parte da qui',filter?'Prova a cercare un altro nome o una località.':'Aggiungi un cliente oppure salva il tuo primo viaggio.','users',filter?null:button('Aggiungi cliente','primary',()=>customerDialog(),'plus')));
@@ -465,6 +503,8 @@ function confirmAction(title,message,callback,confirmLabel='Elimina'){
  const confirm=button(confirmLabel,confirmLabel==='Elimina'?'secondary danger':'primary',async()=>{confirm.disabled=true;try{await callback();dialog.close();}catch(err){error.textContent=err.message||'Operazione non riuscita.';confirm.disabled=false;}});
  body.append(el('div',{class:'dialog-actions'},button('Annulla','secondary',()=>dialog.close()),confirm));
 }
+/** One field: the Maps URL. Successful registration also remembers it locally
+ * for offline lookup. Missing address/city/name never triggers a manual form. */
 function mapsCustomerDialog(){
  const {dialog,body}=modal('Cliente da Google Maps',{subtitle:'Incolla il link condiviso da Google Maps. Potrai controllare e correggere i dati prima di salvarli.'});
  const form=el('form',{novalidate:true});const input=el('input',{type:'url',name:'mapsUrl',placeholder:'https://maps.app.goo.gl/…',autocapitalize:'none',spellcheck:'false',autocomplete:'off',maxlength:4096,'aria-label':'Link Google Maps'});const error=el('div',{class:'form-error',role:'alert'});const submit=el('button',{type:'submit',class:'primary-button full'},icon('pin'),'Leggi link');
@@ -477,7 +517,7 @@ function mapsCustomerDialog(){
    const response=await fetch(endpoint.href,{method:'POST',credentials:'omit',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:link}),signal:controller.signal});
    const result=await response.json();if(!response.ok)throw new Error(result.error||'Impossibile leggere il link. Puoi compilare i dati manualmente.');
    if(typeof result.name!=='string'||typeof result.city!=='string'||typeof result.address!=='string')throw new Error('Dati Maps incompleti. Compila il cliente manualmente.');
-   if(dialog.open){dialog.close();customerDialog(null,result);}
+   if(dialog.open){dialog.close();customerDialog(null,{...result,mapsUrl:link});}
   }catch(err){if(dialog.open)error.textContent=err.name==='AbortError'?'La lettura ha impiegato troppo tempo. Il link è conservato: riprova o compila manualmente.':err.message||'Connessione non disponibile. Il link è conservato: riprova o compila manualmente.';}
   finally{clearTimeout(timeout);submit.disabled=false;submit.replaceChildren(icon('pin'),'Leggi link');}
  });body.append(form);input.focus();
@@ -498,6 +538,9 @@ function customerDialog(customer=null,proposal=null,{focusRates=false}={}){
  const expectedCustomer=editorVersion(customer);
  const seed=customer||proposal;const {dialog,body}=modal(customer?'Modifica cliente':proposal?'Controlla cliente da Maps':'Nuovo cliente',{subtitle:proposal?'Controlla nome, città e indirizzo. Completa i dati mancanti: il cliente sarà aggiunto solo premendo Salva cliente.':'I dati del cliente restano collegati alle sue tariffe.'});const form=el('form',{novalidate:true});const error=el('div',{class:'form-error',role:'alert'});
  if(proposal?.warnings?.length)form.append(el('p',{class:'info-note'},proposal.warnings.join(' ')));
+ if(proposal?.mapsUrl&&sharedMapsEnabled()){
+  form.append(el('p',{class:'info-note'},'Dopo Salva cliente LTS aggiornerà la lista aziendale usando il link Google Maps e i dati di questa scheda che hai controllato. I clienti inseriti manualmente restano personali.'));
+ }
  const customerName=field('Nome cliente','name',seed?.name||'',{placeholder:'Ragione sociale',required:true,maxlength:500});const city=field('Località','city',seed?.city||'',{placeholder:'Città',optional:true,maxlength:500});const address=field('Indirizzo','address',seed?.address||'',{placeholder:'Via e numero civico',optional:true,maxlength:1000});const vat=field('Partita IVA','vat',seed?.vat||'',{placeholder:'Partita IVA',optional:true,maxlength:100});
  form.append(error,customerName.wrap,city.wrap,address.wrap,vat.wrap);
  const rateRows=[];let rateIndex=0;
@@ -533,7 +576,27 @@ function customerDialog(customer=null,proposal=null,{focusRates=false}={}){
   }
   if(customer)requireCurrentEditor(expectedCustomer,state.customers.find(current=>current.id===customer.id),'Il cliente');
   for(const change of tariffChanges)if(change.id){const original=rateRows.find(row=>row.tariff?.id===change.id)?.tariff;requireCurrentEditor(editorVersion(original),state.tariffs.find(current=>current.id===change.id),'La tariffa del cliente');}
-  const next=D.upsertCustomerWithTariffs(state,{id:customer?.id,name:customerName.input.value,city:city.input.value,address:address.input.value,vat:vat.input.value},tariffChanges);await persist(next);dialog.close();render();toast('Cliente salvato. Tariffe e viaggi aggiornati.');
+  const next=D.upsertCustomerWithTariffs(state,{id:customer?.id,name:customerName.input.value,city:city.input.value,address:address.input.value,vat:vat.input.value},tariffChanges);
+  await persist(next);
+  // Provenance check: ONLY the Google Maps flow supplies mapsUrl. Normal
+  // manual creation, CSV import, tariff and trip edits NEVER publish customers.
+  let message='Cliente salvato nel tuo registro personale.';
+  let onlineError=false;
+  const mapsLink=mapsLinkForCompanySync({existingCustomer:customer,proposal,enabled:sharedMapsEnabled()});
+  if(mapsLink){
+   try{
+    const shared=await saveSharedMapsCustomer(mapsLink,{name:customerName.input.value,city:city.input.value,address:address.input.value});
+    message=shared.created
+     ?'Cliente salvato nel tuo registro e nella lista clienti aziendale online.'
+     :'Cliente salvato nel tuo registro. Era già presente nella lista clienti online.';
+    await refreshCompanyCustomers();
+   }catch(err){
+    onlineError=true;
+    message='Cliente salvato nel tuo registro personale, ma NON nella lista online: '+
+     (err?.message||'collegamento Maps non leggibile. Riprova da Google Maps.');
+   }
+  }
+  dialog.close();render();toast(message,onlineError);
  }catch(err){error.textContent=err.message;error.scrollIntoView({block:'nearest'});}});body.append(form);
  if(focusRates){ratesSection.scrollIntoView({block:'start'});if(rateRows.length)rateRows[0].amount.input.focus({preventScroll:true});else ratesSection.querySelector('button').focus({preventScroll:true});}else customerName.input.focus();
 }
@@ -543,7 +606,8 @@ function tariffDialog(tariff=null){
  const client=field('Cliente','client',tariff?.client||'',{placeholder:'Seleziona o scrivi il cliente',list:'tariff-customers',required:true,maxlength:500});const city=field('Località','city',tariff?.city||'',{placeholder:'Città del viaggio',required:true,maxlength:500});const amount=field('Trasferta €','cents',moneyInput(tariff?.cents),{placeholder:'0,00',inputmode:'decimal',required:true,maxlength:14});
  client.input.addEventListener('change',()=>autofillCity(client.input,city.input));
  form.append(error,client.wrap,datalist('tariff-customers',state.customers.map(c=>c.name)),city.wrap,amount.wrap,el('button',{type:'submit',class:'primary-button full','data-save':true},icon('check'),'Salva tariffa'));
- form.addEventListener('submit',async event=>{event.preventDefault();error.textContent='';try{const original=tariff||D.findTariff({tariffs:openingTariffs},client.input.value,city.input.value);const current=tariff?state.tariffs.find(row=>row.id===tariff.id):D.findTariff(state,client.input.value,city.input.value);requireCurrentEditor(editorVersion(original),current,'La tariffa');const next=D.upsertTariff(state,{id:tariff?.id,client:client.input.value,city:city.input.value,cents:D.toCents(amount.input.value)});await persist(next);dialog.close();render();toast('Tariffa, cliente e registro aggiornati.');}catch(err){error.textContent=err.message;}});body.append(form);client.input.focus();
+ form.addEventListener('submit',async event=>{event.preventDefault();error.textContent='';
+  try{const original=tariff||D.findTariff({tariffs:openingTariffs},client.input.value,city.input.value);const current=tariff?state.tariffs.find(row=>row.id===tariff.id):D.findTariff(state,client.input.value,city.input.value);requireCurrentEditor(editorVersion(original),current,'La tariffa');const next=D.upsertTariff(state,{id:tariff?.id,client:client.input.value,city:city.input.value,cents:D.toCents(amount.input.value)});await persist(next);dialog.close();render();toast('Tariffa, cliente e registro aggiornati.');}catch(err){error.textContent=err.message;}});body.append(form);client.input.focus();
 }
 function openProfile(required=false){
  const expectedProfile=editorVersion(state.profile);
@@ -1091,6 +1155,7 @@ async function showLegacyArchiveRecovery(preview=null) {
   body.append(details,message,error,backup,restore,later);
 }
 function renderAccountGate(message=''){
+ companyCustomers=[];
   // Never leave an authenticated profile, document or port iframe on screen.
   unmountPorti();state=D.emptyState();user=null;draft=newDraft();
   pdfReport=null;editingId=null;editingBaseline=null;busy=false;
@@ -1132,7 +1197,7 @@ let resumingVerification=false;
 document.addEventListener('visibilitychange',async()=>{
  if(document.hidden||resumingVerification||!store.usingAccount()||!accountAccess.hasSession())return;
  resumingVerification=true;
- try{await accountAccess.verifySession();}
+ try{await accountAccess.verifySession();void refreshCompanyCustomers();}
  catch{
    store.lockRevokedAccount();
    renderAccountGate('Impossibile verificare la sessione. Riprova con Internet attivo.');
@@ -1170,6 +1235,7 @@ async function initialize(){
   if(result?.status)setStatus(result.status);
   const notificationTab=location.hash.slice(1);if(['insert','register'].includes(notificationTab))tab=notificationTab;
   render();
+  void refreshCompanyCustomers();
   if(store.usingAccount() && !store.hasImportedLegacyArchive() &&
     state.trips.length===0 && state.customers.length===0 && state.tariffs.length===0) {
     try {
