@@ -1156,6 +1156,17 @@ async function showLegacyArchiveRecovery(preview=null) {
 }
 function renderAccountGate(message=''){
  companyCustomers=[];
+ const hasPreviousSession=accountAccess.hasSession();
+ const recovery=hasPreviousSession?el('div',{class:'account-session-recovery'},
+   el('p',{},'Questo dispositivo conserva una sessione precedente. Per rientrare nello stesso account, inserisci nuovamente la password. Per usare un altro account, esci prima.'),
+   button('Esci e cambia account','secondary',()=>{
+     // The offline/archive copy stays stored under its original owner.
+     void accountAccess.logout().then(result=>{
+       if(!result.revoked)toast('Sessione locale chiusa. La revoca online non è confermata.',true);
+     });
+     store.lockRevokedAccount();
+     renderAccountGate('Sessione locale chiusa. Puoi accedere con un altro account.');
+   },'log-out',{class:'secondary-button account-session-switch'})):null;
   // Never leave an authenticated profile, document or port iframe on screen.
   unmountPorti();state=D.emptyState();user=null;draft=newDraft();
   pdfReport=null;editingId=null;editingBaseline=null;busy=false;
@@ -1172,17 +1183,11 @@ function renderAccountGate(message=''){
         el('p',{},'Il tuo registro viaggi, sempre a portata di mano.'))),
     el('div',{class:'account-login-stage'},
       message?el('p',{class:'form-error account-gate-error',role:'alert'},message):null,
+      recovery,
       accountLoginFields({fromGate:true}),
       el('div',{class:'account-login-extras'},
         button('Riprova accesso automatico','secondary',()=>initialize(),'refresh',
-          {class:'secondary-button account-retry-button'}),
-        accountAccess.hasSession()?button('Esci e cambia account','text',()=>{
-          void accountAccess.logout().then(result=>{
-            if(!result.revoked)toast('Sessione chiusa sul telefono; revoca online non confermata.',true);
-          });
-          store.lockRevokedAccount();
-          renderAccountGate('Sessione chiusa. Puoi accedere con un altro account.');
-        }):null),
+          {class:'secondary-button account-retry-button'})),
       el('div',{class:'account-footnote'},icon('lock'),
         el('p',{},'I dati precedenti restano sul dispositivo. Dopo l’accesso potrai eseguire un backup e recuperarli nel tuo account.'))));
   root.replaceChildren(gate);
