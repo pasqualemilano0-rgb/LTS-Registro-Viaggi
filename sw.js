@@ -1,6 +1,6 @@
 const BASE = "/LTS-Registro-Viaggi/";
 const PREFIX = "lts-iphone-pages-0aa8d087d02b-";
-const CACHE = PREFIX + '20261104-login-harbor-v1';
+const CACHE = PREFIX + '20261105-shared-maps-online-v1';
 const CORE = [
   "/LTS-Registro-Viaggi/account-access.mjs",
   "/LTS-Registro-Viaggi/app.css",
@@ -15,6 +15,8 @@ const CORE = [
   "/LTS-Registro-Viaggi/assets/vendor/jspdf.plugin.autotable.min.js",
   "/LTS-Registro-Viaggi/assets/vendor/jspdf.umd.min.js",
   "/LTS-Registro-Viaggi/client-store.mjs",
+  "/LTS-Registro-Viaggi/shared-maps-client.mjs",
+  "/LTS-Registro-Viaggi/shared/maps-company-routing.mjs",
   "/LTS-Registro-Viaggi/driver-session-vault.mjs",
   "/LTS-Registro-Viaggi/index.html",
   "/LTS-Registro-Viaggi/manifest.webmanifest",
