@@ -24,7 +24,7 @@
       "vessel": "ATRIA",
       "voyage": "ATI0526E",
       "eta": "05/11/2026 03:00",
-      "closing": "05/11/2026 12:00 CLOSED",
+      "closing": "05/11/2026 17:00",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
@@ -42,7 +42,7 @@
       "vessel": "MAERSK GATESHEAD",
       "voyage": "644W",
       "eta": "05/11/2026 12:00",
-      "closing": "05/11/2026 12:00 CLOSED",
+      "closing": "05/11/2026 15:00",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
@@ -51,7 +51,7 @@
       "vessel": "DIANE A",
       "voyage": "MAS30E26",
       "eta": "06/11/2026 00:00",
-      "closing": "06/11/2026 17:00",
+      "closing": "05/11/2026 17:00",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
@@ -237,7 +237,7 @@
       "status": "PENDING"
     }
   ],
-  "acquired_at": "2026-11-05T11:30:17.145Z",
-  "data_changed_at": "2026-11-05T11:15:16.987Z",
-  "updated_at": "2026-11-05T11:30:17.145Z"
+  "acquired_at": "2026-11-05T12:30:16.729Z",
+  "data_changed_at": "2026-11-05T12:00:16.967Z",
+  "updated_at": "2026-11-05T12:30:16.729Z"
 }
