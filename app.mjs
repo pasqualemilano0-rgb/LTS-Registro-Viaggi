@@ -352,6 +352,16 @@ function renderInsert(main){
  const updateDateCaption=()=>{dateCaptionText.textContent=/^\d{4}-(0[1-9]|1[0-2])-([0-2]\d|3[01])$/.test(date.input.value)?formatDate(date.input.value):'Data';};
  date.input.addEventListener('input',updateDateCaption);date.input.addEventListener('change',updateDateCaption);updateDateCaption();
  form.append(el('div',{class:'section-hero insert-hero'},el('h1',{},editingId?'Modifica viaggio':'Inserisci viaggio'),date.wrap));
+ // Dashboard shortcut: reuse the same Google Maps import and confirmation path
+ // as Clienti. Preserve the current unsaved journey before opening the dialog.
+ if(!editingId)form.append(el('section',{class:'dashboard-maps-shortcut',
+  'aria-label':'Aggiungi cliente Google Maps dalla dashboard'},
+  el('div',{class:'dashboard-maps-shortcut-copy'},icon('pin'),
+   el('div',{},el('strong',{},'Nuovo cliente?'),
+    el('p',{},'Aggiungilo da Google Maps senza uscire dalla dashboard.'))),
+  button('Aggiungi da Google Maps','secondary',()=>{collect();mapsCustomerDialog();},'plus',
+   {class:'secondary-button dashboard-maps-shortcut-button',
+    'aria-label':'Aggiungi un cliente da Google Maps'})));
  const container=decorateTripField(field('Sigla container','container',draft.container,{placeholder:'MSDU345676.8',class:'container-input',required:true,maxlength:500}),'addTrip','container-field');
  const customerListId='trip-customers'; const cityListId='trip-cities';
  const client=decorateTripField(field('Cliente','client',draft.client,{placeholder:'Nome cliente',list:customerListId,required:true,maxlength:500}),'users');
