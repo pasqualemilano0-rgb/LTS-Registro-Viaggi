@@ -8,6 +8,7 @@ export default Object.freeze({
     "loginEndpoint": "https://otrqynkscpbeyuvdlgpg.supabase.co/functions/v1/lts-phone-auth",
     "archiveEndpoint": "https://otrqynkscpbeyuvdlgpg.supabase.co/functions/v1/lts-account-state",
     "onboardingEndpoint": "https://otrqynkscpbeyuvdlgpg.supabase.co/functions/v1/lts-driver-onboarding",
-    "reportEndpoint": "https://otrqynkscpbeyuvdlgpg.supabase.co/functions/v1/lts-company-report"
+    "reportEndpoint": "https://otrqynkscpbeyuvdlgpg.supabase.co/functions/v1/lts-company-report",
+    "sharedMapsEndpoint": "https://otrqynkscpbeyuvdlgpg.supabase.co/functions/v1/lts-shared-maps"
   }
 });
