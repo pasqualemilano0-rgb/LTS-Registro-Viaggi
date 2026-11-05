@@ -464,3 +464,24 @@ test('TFG Booking requires an LTS revalidated access token in the generated clie
  assert.match(auth,/export async function getVerifiedAccessToken\(\)/);
  assert.match(porti,/lookupTfgBooking\(/);
 });
+
+test('stuck session allows only same-owner password reauthentication, never silent account switching',()=>{
+ assert.match(auth,/const previous=readStored\(\);\s*const data=await api\('loginEndpoint',\{action:'login',phone,password\}\)/);
+ assert.match(auth,/data[.]user_id!==previous[.]user_id\|\|data[.]role!==previous[.]role/);
+ assert.match(auth,/await api\('loginEndpoint',\{action:'logout'\},data[.]access_token\)/);
+ assert.match(auth,/const next=saveSession\(data\)/);
+ assert.doesNotMatch(auth,/if\(readStored\(\)\)throw new Error\('Esci dall.account attuale/);
+ assert.match(store,/accountOwner !== nextOwner && \(active\?\.pending \|\| blocked\)/);
+});
+test('login gate shows visible account recovery before password fields without losing offline archive',()=>{
+ const gate=app.slice(app.indexOf('function renderAccountGate('),app.indexOf("window.addEventListener('lts-account-locked'"));
+ assert.match(gate,/const hasPreviousSession=accountAccess[.]hasSession\(\)/);
+ assert.match(gate,/const recovery=hasPreviousSession\?/);
+ assert.match(gate,/recovery,\s*accountLoginFields\(\{fromGate:true\}\)/);
+ assert.match(gate,/Esci e cambia account/);
+ assert.match(gate,/store[.]lockRevokedAccount\(\)/);
+ assert.doesNotMatch(gate,/indexedDB[.]deleteDatabase\(|localStorage[.]clear\(/);
+ const style=read('app.css');
+ assert.match(style,/account-session-recovery/);
+ assert.match(style,/account-session-switch:focus-visible/);
+});
