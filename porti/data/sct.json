@@ -42,7 +42,7 @@
       "vessel": "MAERSK GATESHEAD",
       "voyage": "644W",
       "eta": "05/11/2026 12:00",
-      "closing": "05/11/2026 15:00",
+      "closing": "05/11/2026 15:00 CLOSED",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
@@ -237,7 +237,7 @@
       "status": "PENDING"
     }
   ],
-  "acquired_at": "2026-11-05T13:30:16.841Z",
-  "data_changed_at": "2026-11-05T12:00:16.967Z",
-  "updated_at": "2026-11-05T13:30:16.841Z"
+  "acquired_at": "2026-11-05T14:30:16.798Z",
+  "data_changed_at": "2026-11-05T14:00:16.647Z",
+  "updated_at": "2026-11-05T14:30:16.798Z"
 }

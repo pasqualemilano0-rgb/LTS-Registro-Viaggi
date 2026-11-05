@@ -131,7 +131,7 @@
       "carrier": "MEDITERRANEAN SHIPPING CO. GENEVA",
       "acceptance_flag": "0",
       "acceptance_icon": "",
-      "stop_cargo": "",
+      "stop_cargo": "S",
       "external_depot": "",
       "opening": "2026-10-27 12:00",
       "closing": "2026-11-05 12:00",
@@ -220,7 +220,7 @@
       "external_depot": "",
       "opening": "2026-11-03 14:00",
       "closing": "2026-11-07 12:00",
-      "notes": "ACCETT.RETROPORTO 30/10 12:00",
+      "notes": "ACCETT.RETROPORTO 30/10 12:00 RIACCETT.CONATECO 06/11 14:00",
       "source_conflict": false
     },
     {
@@ -254,7 +254,7 @@
       "external_depot": "",
       "opening": "2026-10-29 12:00",
       "closing": "2026-11-10 12:00",
-      "notes": "",
+      "notes": "RIACCETT.CARICO 09/11 06:30",
       "source_conflict": false
     },
     {
@@ -339,7 +339,7 @@
       "external_depot": "",
       "opening": "",
       "closing": "",
-      "notes": "",
+      "notes": "ACCETT.RETROPORTO 06/11 07:00",
       "source_conflict": false
     },
     {
@@ -632,5 +632,5 @@
       "source_conflict": false
     }
   ],
-  "acquired_at": "2026-11-05T13:30:16.841Z"
+  "acquired_at": "2026-11-05T14:30:16.798Z"
 }
