@@ -1,11 +1,30 @@
 import * as account from '../account-access.mjs?v=20261104-company-v3';
 import {STATUS_LABELS,driverSummary,filterDrivers} from './model.mjs';
 import {setupReport} from './report.mjs?v=20261104-console-v5';
+import {rememberPosition,readPosition,clearPosition} from './admin-position.mjs';
 
 const byId=id=>document.getElementById(id);
 const loginPanel=byId('login-panel'), dashboard=byId('dashboard');
 const loginError=byId('login-error'),listError=byId('list-error');
 let drivers=[],busy=false,mfaFactorId=null,mfaMode='login';
+let resumingDashboard=false;
+function rememberAdminPosition(){
+ if(dashboard.hidden||!account.isVerified()||account.getRole()!=='admin')return;
+ rememberPosition(account.getAccountId(),dashboard.dataset.view,window.scrollX,window.scrollY);
+}
+function readAdminPosition(){
+ if(!account.isVerified()||account.getRole()!=='admin')return null;
+ return readPosition(account.getAccountId());
+}
+function clearAdminPosition(){clearPosition();}
+function restoreAdminPosition(saved){
+ if(!saved)return;
+ requestAnimationFrame(()=>requestAnimationFrame(()=>{
+  if(dashboard.hidden||!account.isVerified()||account.getRole()!=='admin'||
+     account.getAccountId()!==saved.owner||dashboard.dataset.view!==saved.view)return;
+  window.scrollTo({left:saved.x,top:saved.y,behavior:'instant'});
+ }));
+}
 const companyView=setupReport(account);
 const errorText=(error,fallback)=>error?.message||fallback;
 function inform(message,bad=false){
@@ -82,6 +101,7 @@ async function loadBackupFactors(){
  }catch(error){byId('mfa-backup-status').textContent=errorText(error,'Stato backup non disponibile. Riprova online.');}
 }
 function lock(message='Accedi come amministratore per continuare.'){
+ clearAdminPosition();
  drivers=[];companyView.reset();clearMfa();
  byId('roster').replaceChildren();hideCode();
  byId('mfa-panel').hidden=true;
@@ -90,12 +110,15 @@ function lock(message='Accedi come amministratore per continuare.'){
  inform(message,Boolean(message));
 }
 function showDashboard(status={}){
+ const previousPosition=readAdminPosition();
  companyView.reset();clearMfa();byId('mfa-panel').hidden=true;
  byId('mfa-warning').hidden=status.mfa_enrolled===true;
  byId('mfa-backup-card').hidden=!(status.mfa_enrolled&&status.mfa_verified);
  loginPanel.hidden=true;dashboard.hidden=false;byId('logout').hidden=false;
  setError(loginError,'');inform('');
- companyView.open(status.mfa_enrolled===true&&status.mfa_verified===true?'overview':'security');
+ companyView.open(previousPosition?.view||
+  (status.mfa_enrolled===true&&status.mfa_verified===true?'overview':'security'));
+ return previousPosition;
 }
 async function authenticate(){
  if(!account.hasSession()){lock('');return;}
@@ -119,9 +142,10 @@ async function authenticate(){
      return;
    }
    if(pending)account.forgetPendingAdminMfa();
-   showDashboard(status);
+   const previousPosition=showDashboard(status);
    await Promise.all([loadDrivers(),status.mfa_enrolled&&status.mfa_verified?
      loadBackupFactors():Promise.resolve()]);
+   restoreAdminPosition(previousPosition);
  }catch(error){
    lock(errorText(error,'Verifica dell’account non riuscita. Riprova con Internet attivo.'));
  }
@@ -364,14 +388,41 @@ window.addEventListener('offline',()=>{
  }
  lock('Connessione assente: gestione autisti bloccata fino alla verifica online.');
 });
+async function verifyDashboardOnResume(){
+ if(resumingDashboard||dashboard.hidden)return;
+ resumingDashboard=true;
+ const owner=account.getAccountId(),view=dashboard.dataset.view;
+ const saved=readAdminPosition();
+ // Hide private content without collapsing layout while authorization is
+ // rechecked. Collapsing the dashboard would reset mobile scroll position.
+ dashboard.style.visibility='hidden';
+ try{
+  const status=await account.verifySession();
+  if(account.getRole()!=='admin'||!account.isVerified()||
+     account.getAccountId()!==owner)
+   throw new Error('Sessione amministratore non più autorizzata.');
+  if(status.mfa_enrolled&&!status.mfa_verified){
+   showMfaPanel();await loadLoginFactors();return;
+  }
+  // Do NOT call authenticate()/showDashboard()/companyView.open() here:
+  // those reset the selected tab, reports and the scroll position.
+  if(dashboard.dataset.view===view)restoreAdminPosition(saved);
+ }catch(error){
+  lock(errorText(error,'Verifica amministratore non riuscita. Riprova online.'));
+ }finally{
+  dashboard.style.visibility='';
+  resumingDashboard=false;
+ }
+}
 function resumeWhenSafe(){
- if(document.hidden||!account.hasSession())return;
- // Returning from Authenticator is not a new login. The previous behavior
- // called authenticate(), which cleared the QR and pending factor UUID.
- // Backend verification still checks all permissions when the code is sent.
+ if(document.hidden){rememberAdminPosition();return;}
+ if(!account.hasSession())return;
  if(!byId('mfa-panel').hidden)return;
+ if(!dashboard.hidden){void verifyDashboardOnResume();return;}
  void authenticate();
 }
+window.addEventListener('pagehide',rememberAdminPosition);
+window.addEventListener('pageshow',event=>{if(event.persisted)resumeWhenSafe();});
 window.addEventListener('online',resumeWhenSafe);
 document.addEventListener('visibilitychange',resumeWhenSafe);
 authenticate();
