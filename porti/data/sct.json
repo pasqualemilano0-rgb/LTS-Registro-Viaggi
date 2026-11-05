@@ -36,7 +36,7 @@
       "closing": "04/11/2026 17:00 CLOSED",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
-      "status": "ARRIVED"
+      "status": "DEPARTED"
     },
     {
       "vessel": "MAERSK GATESHEAD",
@@ -237,7 +237,7 @@
       "status": "PENDING"
     }
   ],
-  "acquired_at": "2026-11-05T16:45:16.899Z",
-  "data_changed_at": "2026-11-05T16:00:17.364Z",
-  "updated_at": "2026-11-05T16:45:16.899Z"
+  "acquired_at": "2026-11-05T17:30:16.940Z",
+  "data_changed_at": "2026-11-05T17:00:17.182Z",
+  "updated_at": "2026-11-05T17:30:16.940Z"
 }

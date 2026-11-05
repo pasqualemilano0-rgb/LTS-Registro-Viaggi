@@ -1,6 +1,6 @@
 {
   "source": "https://tfg.bucci.it/@/TFGW_TP_ETA",
-  "source_updated_at": "2026-11-05T16:37:14.000Z",
+  "source_updated_at": "2026-11-05T16:51:37.000Z",
   "rows": [
     {
       "vessel": "A LA MARINE",
@@ -85,7 +85,7 @@
       "departure_voyage": "018",
       "eta": "08/11/26",
       "acceptance": "ACCETTA CARICO",
-      "custom_close_time": "06/11/26 15:00:00",
+      "custom_close_time": "09/11/26 10:00:00",
       "fast_corridor_cut_off": "",
       "gate_cut_off": "",
       "destination": "INTERNO PORTO"
@@ -201,5 +201,5 @@
       "destination": "INTERNO PORTO"
     }
   ],
-  "acquired_at": "2026-11-05T16:45:16.899Z"
+  "acquired_at": "2026-11-05T17:30:16.940Z"
 }
