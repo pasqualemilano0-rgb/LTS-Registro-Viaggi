@@ -387,6 +387,17 @@ export async function companyReport({month,offset=0,limit=40,driverId=null}={}){
 }
 
 
+
+/** Sensitive cross-driver customer findings: administrator and MFA only.
+ * Never cache results in localStorage, service worker, or persistent archives.
+ */
+export async function customerAudit(){
+ if(!isVerified()||getRole()!=='admin')throw new Error('Accesso amministratore richiesto.');
+ return withSessionRetry(
+  ()=>api('reportEndpoint',{action:'customer-audit'},readStored()?.access_token),
+  async()=>{await verifySession();if(getRole()!=='admin')throw new Error('Ruolo non autorizzato.');});
+}
+
 /** Advanced admin-only read-only insights; same verified session and MFA-secured endpoint. */
 export async function companyInsights({month,driverId=null,compareDriverId=null,fromDate=null,toDate=null,
  client='',city='',container=''}={}){
