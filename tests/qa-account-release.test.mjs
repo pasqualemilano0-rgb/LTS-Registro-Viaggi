@@ -42,7 +42,7 @@ test('account archive ID must derive from verified session, not user input',()=>
   assert.match(store,/account[.]archiveRequest\(method, body\)/);
 });
 test('offline worker activates new cache and precaches auth code without caching server data',()=>{
-  assert.match(sw,/const CACHE = PREFIX \+ '20261105-shared-maps-online-v1'/);
+  assert.match(sw,/const CACHE = PREFIX \+ '20261105-driver-session-recovery-v1'/);
   assert.match(sw,/\/LTS-Registro-Viaggi\/account-access[.]mjs/);
   assert.match(sw,/\/LTS-Registro-Viaggi\/shared\/quick-trip[.]mjs/);
   assert.match(sw,/\/LTS-Registro-Viaggi\/shared\/port-source-status[.]mjs/);
@@ -52,8 +52,8 @@ test('offline worker activates new cache and precaches auth code without caching
 });
 test('HTML entry points are identical and use the new cache buster',()=>{
   assert.equal(html,shell);
-  assert.match(html,/app[.]css[?]v=20261105-shared-maps-online-v1/);
-  assert.match(html,/app[.]mjs[?]v=20261105-shared-maps-online-v1/);
+  assert.match(html,/app[.]css[?]v=20261105-driver-session-recovery-v1/);
+  assert.match(html,/app[.]mjs[?]v=20261105-driver-session-recovery-v1/);
   assert.match(html,/<script type="module"/);
 });
 test('ports section stays integrated, untouched backups and no new bundled private backend',()=>{
@@ -328,7 +328,7 @@ test('the main register CSP is restrictive, loads before scripts, and preserves 
  const porti=read('porti/index.html');
  assert.match(porti,/https:\/\/api\.conateco\.it/);
  assert.match(porti,/https:\/\/container-booking-backend\.pasqualemilano0\.workers\.dev/);
- assert.match(sw,/const CACHE = PREFIX \+ '20261105-shared-maps-online-v1'/);
+ assert.match(sw,/const CACHE = PREFIX \+ '20261105-driver-session-recovery-v1'/);
 });
 
 test('logout is authenticated on the server and remote driver disconnection is admin-only',()=>{
@@ -344,7 +344,7 @@ test('logout is authenticated on the server and remote driver disconnection is a
  assert.match(admin,/account[.]manageDrivers\(action,data\)/);
  assert.match(admin,/account[.]logout\(\)/);
  assert.match(admin,/Sessioni revocate/);
- assert.match(sw,/const CACHE = PREFIX \+ '20261105-shared-maps-online-v1'/);
+ assert.match(sw,/const CACHE = PREFIX \+ '20261105-driver-session-recovery-v1'/);
  assert.doesNotMatch([app,auth,admin,sw].join('\n'),/SUPABASE_SERVICE_ROLE_KEY|sb_secret_[A-Za-z0-9_-]+/);
 });
 
@@ -383,7 +383,7 @@ test('TOTP admin flow uses verified backend session and never exposes secret in 
  assert.match(auth,/export async function verifyAdminTotp\(code,factorId=null\)/);
  assert.match(auth,/verified=!mfaEnrolled\|\|mfaVerified/);
  assert.match(app,/logged\.mfa_enrolled&&!logged\.mfa_verified/);
- assert.match(sw,/20261105-shared-maps-online-v1/);
+ assert.match(sw,/20261105-driver-session-recovery-v1/);
  assert.match(css,/#mfa-setup-secret/);
  for(const item of [html,admin,auth,app]){
   assert.doesNotMatch(item,/SUPABASE_SERVICE_ROLE_KEY|sb_secret_[A-Za-z0-9_-]+/);
@@ -417,7 +417,7 @@ test('Authenticator app switching preserves the existing enrollment instead of r
  assert.match(html,/senza conservare QR e chiave/);
  assert.doesNotMatch(admin,/sessionStorage|localStorage|innerHTML/);
  assert.doesNotMatch(auth,/sessionStorage[.]setItem\(MFA_PENDING_KEY,JSON[.]stringify\(\{[^\n]*(?:qr_code|secret|code)/);
- assert.match(sw,/20261105-shared-maps-online-v1/);
+ assert.match(sw,/20261105-driver-session-recovery-v1/);
 });
 
 test('administrator has separately verified backup authenticator without bypassing AAL2',()=>{
@@ -436,7 +436,7 @@ test('administrator has separately verified backup authenticator without bypassi
  assert.match(auth,/rememberPendingAdminMfa\(result[.]factor_id,'backup'\)/);
  assert.doesNotMatch(admin,/localStorage|sessionStorage|innerHTML|sb_secret_/i);
  assert.match(html,/Non caricare mai QR, chiavi TOTP/);
- assert.match(sw,/20261105-shared-maps-online-v1/);
+ assert.match(sw,/20261105-driver-session-recovery-v1/);
 });
 
 test('Porti can start only after verified account handshake from the LTS parent',()=>{
@@ -463,4 +463,25 @@ test('TFG Booking requires an LTS revalidated access token in the generated clie
  assert.match(porti,/await getVerifiedAccessToken\(\)/);
  assert.match(auth,/export async function getVerifiedAccessToken\(\)/);
  assert.match(porti,/lookupTfgBooking\(/);
+});
+
+test('stuck session allows only same-owner password reauthentication, never silent account switching',()=>{
+ assert.match(auth,/const previous=readStored\(\);\s*const data=await api\('loginEndpoint',\{action:'login',phone,password\}\)/);
+ assert.match(auth,/data[.]user_id!==previous[.]user_id\|\|data[.]role!==previous[.]role/);
+ assert.match(auth,/await api\('loginEndpoint',\{action:'logout'\},data[.]access_token\)/);
+ assert.match(auth,/const next=saveSession\(data\)/);
+ assert.doesNotMatch(auth,/if\(readStored\(\)\)throw new Error\('Esci dall.account attuale/);
+ assert.match(store,/accountOwner !== nextOwner && \(active\?\.pending \|\| blocked\)/);
+});
+test('login gate shows visible account recovery before password fields without losing offline archive',()=>{
+ const gate=app.slice(app.indexOf('function renderAccountGate('),app.indexOf("window.addEventListener('lts-account-locked'"));
+ assert.match(gate,/const hasPreviousSession=accountAccess[.]hasSession\(\)/);
+ assert.match(gate,/const recovery=hasPreviousSession\?/);
+ assert.match(gate,/recovery,\s*accountLoginFields\(\{fromGate:true\}\)/);
+ assert.match(gate,/Esci e cambia account/);
+ assert.match(gate,/store[.]lockRevokedAccount\(\)/);
+ assert.doesNotMatch(gate,/indexedDB[.]deleteDatabase\(|localStorage[.]clear\(/);
+ const style=read('app.css');
+ assert.match(style,/account-session-recovery/);
+ assert.match(style,/account-session-switch:focus-visible/);
 });

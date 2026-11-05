@@ -346,3 +346,20 @@ h1,h2,h3{letter-spacing:-.035em}
  .company-customer-items li{padding:10px;flex-wrap:wrap}
  .company-customer-items li a{width:100%;justify-content:flex-start}
 }
+
+/* Recovery is shown before the login form: no off-screen session-switch trap. */
+.account-gate .account-session-recovery{
+ margin:0 0 12px;padding:13px 14px;
+ background:#eff8fa;border:1px solid #afd5df;border-radius:13px;
+ color:#265466;box-shadow:0 3px 10px #123c510a;
+}
+.account-gate .account-session-recovery p{
+ margin:0 0 11px;font-size:12px;line-height:1.55;font-weight:550;
+}
+.account-gate .account-session-switch{
+ display:flex;width:100%;min-height:48px;
+ align-items:center;justify-content:center;gap:9px;
+ padding:11px 13px;border:1px solid #4a9cab;border-radius:11px;
+ background:#fff;color:#08657a;font-size:13px;font-weight:800;
+}
+.account-gate .account-session-switch:focus-visible{outline:3px solid #48b9d1;outline-offset:2px}

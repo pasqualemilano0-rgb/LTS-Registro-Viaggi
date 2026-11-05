@@ -310,11 +310,14 @@ export function loadState(options = {}) { return enqueue(() => loadRecord(option
  */
 export function activateAccountFromSession() {
   return enqueue(async () => {
-    if (accountOwner && (active?.pending || blocked)) {
-      throw new Error('Prima completa la sincronizzazione del registro account corrente. Le modifiche restano salvate.');
-    }
     const identity = await account.verifySession();
     const nextOwner = 'account:' + identity.user_id;
+    // A pending local write may be resumed by the SAME verified account.
+    // Only switching to a different identity must be blocked until a safe
+    // backup/sync. Never discard the old account's unsynced data.
+    if (accountOwner && accountOwner !== nextOwner && (active?.pending || blocked)) {
+      throw new Error('Prima completa la sincronizzazione del registro account corrente. Le modifiche restano salvate.');
+    }
     accountOwner = nextOwner;
     active = null; blocked = false; published = '';
     return loadRecord({ requireOnline: true }, 'account');
