@@ -309,7 +309,9 @@ function companyCustomersPanel(){
   const list=el('ul',{class:'company-customer-items'});
   for(const customer of companyCustomers){
    list.append(el('li',{},el('div',{},el('strong',{},customer.name),
-    el('span',{},customer.city+' · '+customer.address)),
+    el('span',{},customer.city+' · '+customer.address),
+    customer.operationalNotes?el('p',{class:'company-customer-operations'},
+     'Indicazioni operative fornite da autista (da ricontrollare): '+customer.operationalNotes):null),
     el('a',{href:customer.mapsUrl,target:'_blank',rel:'noopener noreferrer',
      'aria-label':`Apri su Google Maps ${customer.name}`},'Apri Maps')));
   }
