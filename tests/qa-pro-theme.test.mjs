@@ -8,9 +8,9 @@ const html=read('amministratore/index.html');
 test('driver entrypoints load the original LTS theme and preserve account routes',()=>{
  for(const p of ['index.html','shell.html']){
   const source=read(p);
-  assert.match(source,/app[.]css[?]v=20261104-login-harbor-v1/);
+  assert.match(source,/app[.]css[?]v=20261105-shared-maps-online-v1/);
   assert.doesNotMatch(source,/href="[^"]*pro-theme[.]css/);
-  assert.match(source,/app[.]mjs[?]v=20261104-login-harbor-v1/);
+  assert.match(source,/app[.]mjs[?]v=20261105-shared-maps-online-v1/);
  }
  assert.match(css,/\.overview\{background:var\(--teal\);color:#fff/);
  assert.match(css,/\.section-hero\{[^}]*background:linear-gradient\(115deg,#005f77,#087d94\)/);
@@ -25,7 +25,7 @@ test('driver entrypoints load the original LTS theme and preserve account routes
 
 test('new PWA worker precaches the original stylesheet, not the unused override',()=>{
  const sw=read('sw.js');
- assert.match(sw,/const CACHE = PREFIX \+ '20261104-login-harbor-v1'/);
+ assert.match(sw,/const CACHE = PREFIX \+ '20261105-shared-maps-online-v1'/);
  assert.match(sw,/"\/LTS-Registro-Viaggi\/app[.]css"/);
  assert.doesNotMatch(sw,/"\/LTS-Registro-Viaggi\/pro-theme[.]css"/);
  assert.doesNotMatch(sw,/service_role|sb_secret_/i);
