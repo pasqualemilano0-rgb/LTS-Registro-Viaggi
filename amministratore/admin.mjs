@@ -1,40 +1,22 @@
 import * as account from '../account-access.mjs?v=20261104-company-v3';
 import {STATUS_LABELS,driverSummary,filterDrivers} from './model.mjs';
 import {setupReport} from './report.mjs?v=20261104-console-v5';
+import {rememberPosition,readPosition,clearPosition} from './admin-position.mjs';
 
 const byId=id=>document.getElementById(id);
 const loginPanel=byId('login-panel'), dashboard=byId('dashboard');
 const loginError=byId('login-error'),listError=byId('list-error');
 let drivers=[],busy=false,mfaFactorId=null,mfaMode='login';
-const POSITION_KEY='lts-admin-position-v1';
-const KNOWN_VIEWS=new Set(['overview','drivers','trips','analysis','alerts','exports','security']);
-const POSITION_TTL_MS=30*60*1000;
 let resumingDashboard=false;
-/** Keep only a view name and scroll offsets in this browser tab. Never persist
- * driver names, phone numbers, invite codes, passwords or MFA secrets. */
 function rememberAdminPosition(){
  if(dashboard.hidden||!account.isVerified()||account.getRole()!=='admin')return;
- const owner=account.getAccountId(),view=dashboard.dataset.view;
- if(!owner||!KNOWN_VIEWS.has(view))return;
- const position={owner,view,x:Math.max(0,Math.round(window.scrollX)),
-  y:Math.max(0,Math.round(window.scrollY)),at:Date.now()};
- try{sessionStorage.setItem(POSITION_KEY,JSON.stringify(position));}catch{}
+ rememberPosition(account.getAccountId(),dashboard.dataset.view,window.scrollX,window.scrollY);
 }
 function readAdminPosition(){
  if(!account.isVerified()||account.getRole()!=='admin')return null;
- try{
-  const saved=JSON.parse(sessionStorage.getItem(POSITION_KEY)||'null');
-  if(!saved||saved.owner!==account.getAccountId()||!KNOWN_VIEWS.has(saved.view)||
-    !Number.isSafeInteger(saved.x)||!Number.isSafeInteger(saved.y)||
-    saved.x<0||saved.y<0||saved.x>1000000||saved.y>1000000||
-    !Number.isFinite(saved.at)||Date.now()-saved.at<0||
-    Date.now()-saved.at>POSITION_TTL_MS)return null;
-  return saved;
- }catch{return null;}
+ return readPosition(account.getAccountId());
 }
-function clearAdminPosition(){
- try{sessionStorage.removeItem(POSITION_KEY);}catch{}
-}
+function clearAdminPosition(){clearPosition();}
 function restoreAdminPosition(saved){
  if(!saved)return;
  requestAnimationFrame(()=>requestAnimationFrame(()=>{
@@ -434,7 +416,8 @@ async function verifyDashboardOnResume(){
 }
 function resumeWhenSafe(){
  if(document.hidden){rememberAdminPosition();return;}
- if(!account.hasSession()||!byId('mfa-panel').hidden)return;
+ if(!account.hasSession())return;
+ if(!byId('mfa-panel').hidden)return;
  if(!dashboard.hidden){void verifyDashboardOnResume();return;}
  void authenticate();
 }
