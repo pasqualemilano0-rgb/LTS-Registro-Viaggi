@@ -489,7 +489,7 @@ test('login gate shows visible account recovery before password fields without l
 test('online catalog sync never reconstructs a currently edited trip',()=>{
  const fn=app.slice(app.indexOf('async function refreshCompanyCustomers(){'),
     app.indexOf('function companyCustomersPanel(){'));
- assert.match(fn,/if\(panel\)panel[.]replaceWith\(companyCustomersPanel\(\)\)/);
+ assert.match(fn,/if\(tab==='customers'\)updateCompanyCustomersPanel\(\)/);
  assert.match(fn,/document[.]getElementById\('trip-customers'\)/);
  assert.match(fn,/form[.]querySelector\('#trip-cities'\)/);
  assert.match(fn,/form[.]querySelector\('#second-cities'\)/);
@@ -508,4 +508,16 @@ test('curated Maps operational hints show only as read-only site information',()
  assert.match(app,/class:'company-customer-operations'/);
  assert.match(app,/Indicazioni operative fornite da autista/);
  assert.doesNotMatch(app,/customer[.]note.*company-customer-operations/);
+});
+
+test('shared Google Maps customers have an independent search for company and location',()=>{
+ const catalog=app.slice(app.indexOf('function updateCompanyCustomersPanel('),
+   app.indexOf('function renderInsert('));
+ assert.match(catalog,/filterSharedCustomers\(companyCustomers,companyCustomerSearch\)/);
+ assert.match(catalog,/type:'search',id:'company-customer-search'/);
+ assert.match(catalog,/Cerca nella lista clienti aziendale/);
+ assert.match(catalog,/Nessuna sede corrisponde alla ricerca/);
+ assert.match(catalog,/updateCompanyCustomersPanel\(panel\)/);
+ assert.match(app,/Cerca nei clienti personali: nome, località o partita IVA/);
+ assert.match(read('app.css'),/company-customer-search:focus-within/);
 });
