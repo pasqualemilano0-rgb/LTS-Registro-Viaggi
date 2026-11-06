@@ -12,7 +12,8 @@
   <link rel="stylesheet" href="./admin.css?v=20261104-company-v3">
   <link rel="stylesheet" href="./pro-theme.css?v=20261104-console-v5">
   <link rel="stylesheet" href="./dashboard-v6.css?v=20261104-mobile-v7">
-  <script type="module" src="./admin.mjs?v=20261106-security-frame-guard-v1"></script>
+  <link rel="stylesheet" href="./customer-overview.css?v=20261106-directory-v1">
+  <script type="module" src="./admin.mjs?v=20261106-directory-v1"></script>
   <script type="module" src="./dashboard-mobile-nav.mjs?v=20261104-mobile-v7"></script>
 </head>
 <body>
@@ -232,6 +233,42 @@
           <div class="stat report-kpi"><span id="report-driver-count-label">Autisti con viaggi</span><strong id="report-driver-count">—</strong><small id="report-driver-count-note">Con attività nel mese</small></div>
           <div class="stat report-kpi report-kpi-value"><span>Valore trasferte registrate</span><strong id="report-total">—</strong><small>Non è il guadagno netto</small></div>
           <div class="stat report-kpi"><span>Tariffe da verificare</span><strong id="report-missing">—</strong><small>Inserimenti senza tariffa completa</small></div>
+        </section>
+        
+        <section id="customer-overview" class="surface customer-overview" aria-labelledby="customer-overview-title">
+          <div class="customer-directory-heading">
+            <div><p class="eyebrow">ANAGRAFICA CONDIVISA · OPERATIVITÀ</p>
+              <h2 id="customer-overview-title">Clienti e sedi operative</h2>
+              <p>Controlla le sedi condivise dagli autisti, gli indirizzi mancanti e i collegamenti Google Maps senza alterare lo storico dei viaggi.</p></div>
+            <button id="customer-overview-refresh" class="button outline" type="button">Aggiorna clienti</button>
+          </div>
+          <p id="customer-overview-status" role="status" aria-live="polite">Caricamento anagrafica…</p>
+          <div class="customer-directory-kpis" aria-label="Indicatori anagrafica condivisa">
+            <div class="customer-directory-kpi"><span>Sedi condivise</span><strong id="customer-overview-total">—</strong></div>
+            <div class="customer-directory-kpi"><span>Indirizzi registrati</span><strong id="customer-overview-complete">—</strong></div>
+            <div class="customer-directory-kpi is-attention"><span>Indirizzi da completare</span><strong id="customer-overview-missing">—</strong></div>
+            <div class="customer-directory-kpi"><span>Copertura indirizzi</span><strong id="customer-overview-percent">—</strong></div>
+          </div>
+          <div class="customer-directory-coverage">
+            <div class="customer-directory-coverage-head"><span>Completezza dell'anagrafica</span><span>Solo indirizzi registrati</span></div>
+            <div class="customer-directory-track">
+              <div id="customer-overview-progress" class="customer-directory-fill" role="progressbar" aria-label="Quota sedi con indirizzo registrato" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div>
+            </div>
+            <p id="customer-overview-caption">La presenza di un indirizzo non ne certifica la validità su Google Maps.</p>
+          </div>
+          <div class="customer-directory-listhead">
+            <div><h3>Sedi e punti da verificare</h3><p id="customer-overview-matching">Nessun dato confermato</p></div>
+            <label for="customer-overview-filter">Visualizza
+              <select id="customer-overview-filter">
+                <option value="incomplete">Indirizzi da completare</option>
+                <option value="complete">Indirizzi registrati</option>
+                <option value="all">Tutte le sedi</option>
+              </select>
+            </label>
+          </div>
+          <div id="customer-overview-list" class="customer-directory-list" aria-label="Sedi del catalogo aziendale"></div>
+          <button id="customer-overview-more" class="button outline" type="button" hidden>Mostra altre sedi</button>
+          <p class="customer-directory-disclaimer">Un indirizzo registrato non certifica l'accesso camion o la sede di carico: confronta sempre la scheda Google Maps e le note operative.</p>
         </section>
         <section id="report-driver-profile" class="surface report-profile" aria-labelledby="report-profile-title" hidden>
           <div class="report-profile-heading">
