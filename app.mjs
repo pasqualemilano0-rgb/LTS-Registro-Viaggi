@@ -189,17 +189,20 @@ function render(){
  scroll.scrollTop=scrollTop;
 }
 function renderPorti(main){
- // This is a visual shell. The secured Porti iframe retains all booking,
- // vessel and operational verification workflows unchanged.
- const url=(runtimeConfig.basePath??'/')+'porti/index.html';
+ // Screen layout approved by the user. The image is exclusively decorative:
+ // booking/terminal controls remain real accessible elements in the secure iframe.
+ const base=runtimeConfig.basePath??'/';
+ const url=base+'porti/index.html';
  portiFrame=el('iframe',{class:'porti-frame',src:url,
-  title:'Terminal e collegamenti portuali',referrerpolicy:'no-referrer'});
- const hero=el('section',{class:'porti-hero','aria-labelledby':'porti-hero-title'},
-  el('div',{class:'porti-hero-copy'},
-   el('span',{class:'porti-hero-kicker'},'LTS · LOGISTICA PORTUALE'),
-   el('h1',{id:'porti-hero-title'},'Porti'),
-   el('p',{},'Napoli e Salerno · Terminal e collegamenti ufficiali')),
-  el('span',{class:'porti-hero-tricolore','aria-hidden':'true'}));
+  title:'Porti Napoli e Salerno · collegamenti ufficiali',referrerpolicy:'no-referrer'});
+ const hero=el('section',{class:'porti-hero porti-hero-reference',
+  'aria-labelledby':'porti-hero-title'},
+  el('h1',{id:'porti-hero-title',class:'sr-only'},'Porti'),
+  el('img',{class:'porti-hero-reference-image',
+   src:base+'porti/assets/lts-porti-hero-hd.webp',
+   width:1152,height:345,
+   alt:'Porti · Informazioni e collegamenti ufficiali, con una nave portacontainer al tramonto',
+   decoding:'async',loading:'eager'}));
  main.append(hero,portiFrame);
 }
 // The port module is a subview of a verified LTS account, not a public standalone app.
