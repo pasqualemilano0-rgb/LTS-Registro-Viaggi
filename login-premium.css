@@ -1,0 +1,104 @@
+/* LTS driver login: high-resolution approved Scania S / harbour theme.
+   The artwork is confined to the decorative hero; credential fields stay native. */
+.boot.account-gate.account-gate-premium{
+ background:linear-gradient(174deg,#06445a 0%,#08758a 31%,#d9ecf2 63%,#edf8fb 100%);
+ color:#0d3143;overscroll-behavior-y:contain;
+}
+.account-gate-premium .account-hero{
+ position:relative;display:block;flex:none;
+ width:min(100%,941px);height:auto;min-height:0;aspect-ratio:941 / 580;
+ margin:0 auto;padding:0;isolation:isolate;overflow:hidden;
+ background-color:#074f65;
+ background-image:url('/LTS-Registro-Viaggi/assets/lts-login-hero-hd.webp');
+ background-position:center;background-size:100% 100%;background-repeat:no-repeat;
+ box-shadow:0 15px 38px rgba(0,40,59,.16);
+}
+.account-gate-premium .account-hero::after{display:none}
+/* The original heading and brand stay available to assistive technology.
+   Their visible equivalents are part of the approved high-resolution hero. */
+.account-gate-premium .account-hero-brand,
+.account-gate-premium .account-hero-heading{
+ position:absolute!important;width:1px!important;height:1px!important;
+ padding:0!important;margin:-1px!important;overflow:hidden!important;
+ clip:rect(0,0,0,0)!important;clip-path:inset(50%)!important;
+ white-space:nowrap!important;border:0!important;
+}
+.account-gate-premium .account-login-stage{
+ width:min(calc(100% - 28px),540px);max-width:none;margin:-2px auto 0;
+ padding:0 0 calc(36px + env(safe-area-inset-bottom));z-index:2;
+}
+.account-gate-premium .account-login-form-gate{
+ padding:clamp(22px,5vw,32px) clamp(18px,4.5vw,28px) 23px;
+ border:1px solid rgba(226,239,243,.95);
+ border-radius:clamp(21px,5vw,28px);background:#fff;
+ box-shadow:0 18px 52px rgba(4,46,66,.24),0 3px 9px rgba(7,52,72,.08);
+}
+.account-gate-premium .account-login-form .field{margin-bottom:20px}
+.account-gate-premium .account-login-form .field-label{
+ margin-bottom:9px;font-size:clamp(14px,3.7vw,16px);font-weight:830;
+ letter-spacing:-.015em;color:#0e3346;
+}
+.account-gate-premium .account-login-form .account-input-wrap input{
+ height:58px;min-height:58px;padding-left:56px;
+ border:1.5px solid #c9dce2;border-radius:16px;
+ background:#f8fcfd;font-size:16px;box-shadow:0 1px 3px rgba(11,48,64,.06);
+}
+.account-gate-premium .account-login-form .account-input-icon{
+ left:17px;color:#0e6878;
+}
+.account-gate-premium .account-login-form .account-input-icon .icon{width:23px;height:23px}
+.account-gate-premium .account-login-form .account-password-wrap input{padding-right:95px}
+.account-gate-premium .account-password-toggle{
+ min-height:41px;min-width:78px;border-radius:11px;
+ color:#075b67;background:#eaf5f7;font-size:12px;
+}
+.account-gate-premium .account-login-form .field-hint{
+ margin-top:8px;color:#5c7683;font-size:11px;line-height:1.55;
+}
+.account-gate-premium .account-login-form .account-submit{
+ min-height:60px;margin-top:7px;border-radius:16px;
+ background:linear-gradient(115deg,#009ca7 0%,#056477 68%,#03475a 100%);
+ color:white;font-size:clamp(14px,3.85vw,17px);
+ box-shadow:0 12px 24px rgba(0,99,113,.19);
+}
+.account-gate-premium .account-login-form .account-submit:hover{
+ background:linear-gradient(115deg,#008892 0%,#065568 75%,#043c4c 100%);
+}
+.account-gate-premium .account-login-form .account-security-note{
+ margin-top:19px;margin-bottom:15px;
+ border-radius:16px;padding:15px 14px;
+ background:#e9f7f8;color:#244a5b;
+ font-size:12px;line-height:1.6;
+}
+.account-gate-premium .account-login-form .account-security-note .icon{width:20px;height:20px}
+.account-gate-premium .account-gate-error{
+ padding:14px 16px;border-radius:15px;background:#fff1f5;
+ box-shadow:0 4px 12px rgba(8,45,62,.08)
+}
+.account-gate-premium .account-session-recovery{
+ margin-bottom:13px;border-radius:15px;background:#edfaff;
+}
+.account-gate-premium .account-install-banner{margin-top:19px}
+.account-gate-premium .account-retry-button{
+ background:#fff;border:1px solid #b8d8df;border-radius:13px;
+ box-shadow:0 6px 17px rgba(0,50,70,.09);
+}
+.account-gate-premium .account-footnote{
+ color:#315d6b;background:rgba(255,255,255,.83);
+ border-radius:12px;padding:12px 14px;margin-top:16px;
+}
+@media(min-width:760px){
+ .account-gate-premium .account-hero{width:min(100%,941px);min-height:0;padding:0}
+ .account-gate-premium .account-login-stage{width:min(calc(100% - 48px),560px);margin:-16px auto 0}
+ .account-gate-premium .account-login-form-gate{padding:31px 31px 25px}
+}
+@media(max-width:380px){
+ .account-gate-premium .account-hero{min-height:0;padding:0}
+ .account-gate-premium .account-login-stage{width:calc(100% - 18px);margin:-1px auto 0}
+ .account-gate-premium .account-login-form-gate{padding:20px 14px 18px}
+ .account-gate-premium .account-login-form .account-input-wrap input{height:55px;min-height:55px}
+ .account-gate-premium .account-login-form .account-submit{min-height:57px}
+}
+@media(prefers-reduced-motion:reduce){
+ .account-gate-premium .account-login-form .account-input-wrap input{transition:none}
+}
