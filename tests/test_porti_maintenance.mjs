@@ -89,11 +89,11 @@ test('Original maintenance notice remains a one-line rollback',()=>{
 });
 
 test('Protected Pages entry and current PWA cache are required for reopening',()=>{
- assert.match(page,/src="\.\.\/porti-access\.mjs\?v=20261103-lts-gate-v1"/);
+ assert.match(page,/src="\.\.\/porti-access\.mjs\?v=20261106-porti-original-v1"/);
  assert.match(page,/<body hidden>/);
  assert.doesNotMatch(page,/<script(?![^>]*porti-access)[^>]*>/g);
  assert.match(access,/}else if\(!sameOriginParent\(\)\)\{/);
- assert.match(sw,/const CACHE = PREFIX \+ '20261106-hide-port-links-v17'/);
+ assert.match(sw,/const CACHE = PREFIX \+ '20261106-porti-original-v19'/);
  assert.match(sw,/BASE \+ 'porti\/app\.js'/);
  assert.match(sw,/if \(NETWORK_FIRST_CODE\.has\(url\.pathname\)\)/);
 });
