@@ -1412,30 +1412,15 @@ document.addEventListener('visibilitychange',async()=>{
  * then finishes the last stretch; the app replaces the splash at animation completion.
  * Auth failures and reduced-motion users bypass the journey without extra delay.
  */
-const firstBootStartedAt=performance.now();
-let firstBootHoldUsed=false;
-async function waitForTruckStage(vehicle,name,fallbackMs){
- const animation=vehicle?.getAnimations?.().find(item=>item.animationName===name);
- if(animation){
-  try{await animation.finished;}catch{} // The splash may be removed by an auth/error screen.
- }else if(fallbackMs>0){
-  await new Promise(resolve=>setTimeout(resolve,fallbackMs));
- }
-}
+/** Keep the Scania S still and the bar moving while authentication loads.
+ * The verified register opens immediately when its data is ready.
+ * No artificial animation timeout or progress percentage is imposed. */
+let initialLoaderClosed=false;
 async function finishInitialTruckLoading(){
- const truck=root.querySelector('.truck-loader');
- if(firstBootHoldUsed||!truck)return true;
- firstBootHoldUsed=true;
- if(window.matchMedia('(prefers-reduced-motion: reduce)').matches)return truck.isConnected;
- const vehicle=truck.querySelector('.truck-loader-vehicle');
- if(!vehicle)return truck.isConnected;
- // Wait for the approach to reach its holding position; this runs in parallel with load.
- await waitForTruckStage(vehicle,'lts-truck-approach',Math.max(0,1900-(performance.now()-firstBootStartedAt)));
- if(!truck.isConnected)return false;
- truck.classList.add('is-arriving');
- // Reading animations activates the new CSS stage; await its real ending, not a separate timer.
- await waitForTruckStage(vehicle,'lts-truck-arrive',600);
- return truck.isConnected;
+ const loader=root.querySelector('.truck-loader');
+ if(initialLoaderClosed||!loader)return true;
+ initialLoaderClosed=true;
+ return loader.isConnected;
 }
 
 async function initialize(){
