@@ -42,7 +42,7 @@ test('account archive ID must derive from verified session, not user input',()=>
   assert.match(store,/account[.]archiveRequest\(method, body\)/);
 });
 test('offline worker activates new cache and precaches auth code without caching server data',()=>{
-  assert.match(sw,/const CACHE = PREFIX \+ '20261106-full-scania-photo-v7'/);
+  assert.match(sw,/const CACHE = PREFIX \+ '20261106-full-scania-photo-v8'/);
   assert.match(sw,/\/LTS-Registro-Viaggi\/account-access[.]mjs/);
   assert.match(sw,/\/LTS-Registro-Viaggi\/shared\/quick-trip[.]mjs/);
   assert.match(sw,/\/LTS-Registro-Viaggi\/shared\/port-source-status[.]mjs/);
@@ -53,7 +53,7 @@ test('offline worker activates new cache and precaches auth code without caching
 test('HTML entry points are identical and use the new cache buster',()=>{
   assert.equal(html,shell);
   assert.match(html,/app[.]css[?]v=20261106-truck-road-sync-v2/);
-  assert.match(html,/app[.]mjs[?]v=20261106-scania-pause-v1/);
+  assert.match(html,/app[.]mjs[?]v=20261106-scania-pause-v2/);
   assert.match(html,/<script type="module"/);
 });
 test('ports section stays integrated, untouched backups and no new bundled private backend',()=>{
@@ -328,7 +328,7 @@ test('the main register CSP is restrictive, loads before scripts, and preserves 
  const porti=read('porti/index.html');
  assert.match(porti,/https:\/\/api\.conateco\.it/);
  assert.match(porti,/https:\/\/container-booking-backend\.pasqualemilano0\.workers\.dev/);
- assert.match(sw,/const CACHE = PREFIX \+ '20261106-full-scania-photo-v7'/);
+ assert.match(sw,/const CACHE = PREFIX \+ '20261106-full-scania-photo-v8'/);
 });
 
 test('logout is authenticated on the server and remote driver disconnection is admin-only',()=>{
@@ -344,7 +344,7 @@ test('logout is authenticated on the server and remote driver disconnection is a
  assert.match(admin,/account[.]manageDrivers\(action,data\)/);
  assert.match(admin,/account[.]logout\(\)/);
  assert.match(admin,/Sessioni revocate/);
- assert.match(sw,/const CACHE = PREFIX \+ '20261106-full-scania-photo-v7'/);
+ assert.match(sw,/const CACHE = PREFIX \+ '20261106-full-scania-photo-v8'/);
  assert.doesNotMatch([app,auth,admin,sw].join('\n'),/SUPABASE_SERVICE_ROLE_KEY|sb_secret_[A-Za-z0-9_-]+/);
 });
 
@@ -383,7 +383,7 @@ test('TOTP admin flow uses verified backend session and never exposes secret in 
  assert.match(auth,/export async function verifyAdminTotp\(code,factorId=null\)/);
  assert.match(auth,/verified=!mfaEnrolled\|\|mfaVerified/);
  assert.match(app,/logged\.mfa_enrolled&&!logged\.mfa_verified/);
- assert.match(sw,/20261106-full-scania-photo-v7/);
+ assert.match(sw,/20261106-full-scania-photo-v8/);
  assert.match(css,/#mfa-setup-secret/);
  for(const item of [html,admin,auth,app]){
   assert.doesNotMatch(item,/SUPABASE_SERVICE_ROLE_KEY|sb_secret_[A-Za-z0-9_-]+/);
@@ -417,7 +417,7 @@ test('Authenticator app switching preserves the existing enrollment instead of r
  assert.match(html,/senza conservare QR e chiave/);
  assert.doesNotMatch(admin,/sessionStorage|localStorage|innerHTML/);
  assert.doesNotMatch(auth,/sessionStorage[.]setItem\(MFA_PENDING_KEY,JSON[.]stringify\(\{[^\n]*(?:qr_code|secret|code)/);
- assert.match(sw,/20261106-full-scania-photo-v7/);
+ assert.match(sw,/20261106-full-scania-photo-v8/);
 });
 
 test('administrator has separately verified backup authenticator without bypassing AAL2',()=>{
@@ -436,7 +436,7 @@ test('administrator has separately verified backup authenticator without bypassi
  assert.match(auth,/rememberPendingAdminMfa\(result[.]factor_id,'backup'\)/);
  assert.doesNotMatch(admin,/localStorage|sessionStorage|innerHTML|sb_secret_/i);
  assert.match(html,/Non caricare mai QR, chiavi TOTP/);
- assert.match(sw,/20261106-full-scania-photo-v7/);
+ assert.match(sw,/20261106-full-scania-photo-v8/);
 });
 
 test('Porti can start only after verified account handshake from the LTS parent',()=>{
@@ -574,7 +574,7 @@ test('embedded access cannot display register or admin credential inputs',()=>{
  assert.match(admin,/field[.]value='';field[.]disabled=true/);
  assert.match(admin,/if\(!denyEmbeddedAdmin\(\)\)authenticate\(\)/);
  assert.match(html,/20261106-truck-road-sync-v2/);
- assert.match(sw,/20261106-full-scania-photo-v7/);
+ assert.match(sw,/20261106-full-scania-photo-v8/);
  assert.doesNotMatch(app,/frame-ancestors.*<meta/i);
 });
 
@@ -606,36 +606,31 @@ test('complete LTS Scania photo stays still while only the progress bar moves',(
  assert.equal(image.toString('ascii',0,4),'RIFF');
  assert.equal(image.toString('ascii',8,12),'WEBP');
 });
-test('Scania photo stays visible at least four seconds while the register loads',async()=>{
- const start=app.indexOf('const MIN_INITIAL_SPLASH_MS=4000;');
+test('Scania photo waits six seconds before showing login or personal register',async()=>{
+ const start=app.indexOf('const MIN_INITIAL_SPLASH_MS=6000;');
  const end=app.indexOf('\nasync function initialize(){',start);
- assert.ok(start>=0&&end>start,'minimum splash duration must be implemented');
- const code=app.slice(start,end)+'\nreturn finishInitialTruckLoading;';
- const trial=async(elapsed=0,connected=true)=>{
-  const timers=[],loader={isConnected:connected};
-  const root={querySelector:()=>loader};
-  const finish=new Function('root','performance','setTimeout',code)(
-   root,{now:()=>elapsed},(resolve,ms)=>{timers.push(ms);resolve();});
-  const first=await finish();
-  const second=await finish();
-  return {first,second,timers};
+ assert.ok(start>=0&&end>start,'boot duration logic must be present');
+ const code=app.slice(start,end)+'\nreturn {finishInitialTruckLoading,renderFirstBootGate};';
+ const trial=async({now=0,connected=true,withLoader=true}={})=>{
+  const timers=[],shown=[],loader={isConnected:connected};
+  const root={querySelector:()=>withLoader?loader:null};
+  const renderAccountGate=message=>shown.push(message||'login');
+  const {finishInitialTruckLoading,renderFirstBootGate}=new Function(
+   'root','performance','setTimeout','renderAccountGate',code)(
+   root,{now:()=>now},(resolve,ms)=>{timers.push(ms);resolve();},renderAccountGate);
+  const first=await finishInitialTruckLoading();
+  const second=await finishInitialTruckLoading();
+  await renderFirstBootGate('Accesso autisti');
+  return {first,second,timers,shown};
  };
- assert.deepEqual(await trial(0),{first:true,second:true,timers:[4000]});
- assert.deepEqual(await trial(1000),{first:true,second:true,timers:[4000]});
- // The timer starts when app.mjs initializes, not when its archive fetch completes.
- const later=(()=>{
-   const timers=[],root={querySelector:()=>({isConnected:true})};
-   const fn=new Function('root','performance','setTimeout',code)(
-    root,{now:(()=>{let n=0;return()=>[0,6000][n++]||0})()},
-    (resolve,ms)=>{timers.push(ms);resolve();});
-   return {fn,timers};
- })();
- assert.equal(await later.fn(),true);
- assert.deepEqual(later.timers,[]);
- assert.deepEqual(await trial(0,false),{first:false,second:false,timers:[4000]});
+ assert.deepEqual(await trial(),{first:true,second:true,timers:[6000],shown:['Accesso autisti']});
+ assert.deepEqual(await trial({now:6900}),{first:true,second:true,timers:[],shown:['Accesso autisti']});
+ assert.deepEqual(await trial({connected:false}),{first:false,second:false,timers:[6000],shown:[]});
+ assert.deepEqual(await trial({withLoader:false}),{first:true,second:true,timers:[],shown:['Accesso autisti']});
+ assert.match(app,/catch\(error\)\{\s*await renderFirstBootGate\(error[.]offline/);
+ assert.match(app,/if\(!accountAccess[.]hasSession\(\)\)\{\s*await renderFirstBootGate\(\);return;/);
  assert.match(app,/if\(!\(await finishInitialTruckLoading\(\)\)\)return;\s*render\(\)/);
- assert.doesNotMatch(code,/animation[.]finished|waitForTruckStage/);
- assert.match(sw,/20261106-full-scania-photo-v7/);
+ assert.match(sw,/20261106-full-scania-photo-v8/);
 });
 
 test('activation confirmation is visible and personal register requires verified login',()=>{
