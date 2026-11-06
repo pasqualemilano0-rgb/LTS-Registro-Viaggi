@@ -50,3 +50,18 @@ test('company tariffs are limited to verified admin UI and the restricted backen
  assert.match(css,/#dashboard\[data-view="rates"\]/);
  assert.match(read('app.mjs'),/Tariffa aziendale gestita dall’amministratore/);
 });
+
+test('drivers see company tariffs as read-only, with manual and automatic refresh',()=>{
+ const app=read('app.mjs'),store=read('client-store.mjs');
+ assert.match(app,/tariff[.]id[.]startsWith\('company:'\)/);
+ assert.match(app,/Tariffa aziendale · sincronizzata/);
+ assert.match(app,/Sola lettura/);
+ assert.match(app,/Aggiorna tariffe/);
+ assert.match(app,/await store[.]syncPending\(\)/);
+ assert.match(app,/next==='tariffs'&&store[.]usingAccount\(\)/);
+ assert.match(store,/setInterval\(refreshSoon, 20000\)/);
+ assert.match(store,/window[.]addEventListener\('online', refreshSoon\)/);
+ assert.match(store,/document[.]addEventListener\('visibilitychange'/);
+ const css=read('app.css');
+ assert.match(css,/tariff-company-sync/);
+});
