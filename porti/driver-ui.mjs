@@ -101,5 +101,69 @@ shortcuts.addEventListener('click',event=>{
   });
 });
 
+/** Compact, authenticated Porti homepage. Reuse committed terminal PNGs rather
+ * than approximated logos. All legacy booking fields, state and listeners remain. */
+function setupPortiHomepage(){
+ const main=document.querySelector('.shell main');
+ const search=document.querySelector('.search-panel');
+ const form=get('search-form');
+ const notice=document.querySelector('.driver-notice');
+ if(!main||!search||!form||get('lts-porti-terminals'))return;
+ const make=(tag,cls,value='')=>{
+  const result=document.createElement(tag);
+  if(cls)result.className=cls;
+  if(value)result.textContent=value;
+  return result;
+ };
+ const links=make('section','lts-porti-officials');
+ links.id='lts-porti-terminals';
+ links.setAttribute('aria-labelledby','lts-porti-links-title');
+ const title=make('h2','lts-porti-officials-title','Terminal e collegamenti ufficiali');
+ title.id='lts-porti-links-title';
+ const intro=make('p','lts-porti-officials-intro','Siti e servizi dei terminal. Controlla sempre le indicazioni ufficiali.');
+ const grid=make('div','lts-porti-official-grid');
+ const terminals=[
+  {name:'CO.NA.TE.CO.',alt:'Logo CO.NA.TE.CO.',image:'conateco.png',
+   href:'https://www.conateco.it/booking-export/',width:250,height:71},
+  {name:'TFG · Terminal Flavio Gioia',alt:'Logo TFG · Terminal Flavio Gioia',
+   image:'tfg-portal.png',href:'https://tfg.bucci.it/@/TFGW_TP_ETA',width:182,height:122},
+  {name:'SCT · Salerno Container Terminal',alt:'Logo SCT · Salerno Container Terminal',
+   image:'sct-compact.png',href:'https://www.salernocontainerterminal.com/vessel-schedule/',
+   width:182,height:90}
+ ];
+ for(const item of terminals){
+  const link=document.createElement('a');
+  link.className='lts-porti-terminal-link';link.href=item.href;
+  link.target='_blank';link.rel='noopener noreferrer';
+  link.setAttribute('aria-label','Apri sito ufficiale '+item.name+' in una nuova scheda');
+  const plate=make('span','lts-porti-terminal-plate');
+  const image=document.createElement('img');
+  image.src='assets/terminal-logos/'+item.image;
+  image.alt=item.alt;image.width=item.width;image.height=item.height;
+  image.loading='lazy';image.decoding='async';
+  plate.append(image);
+  link.append(plate,make('span','lts-porti-terminal-action','Accedi al sito ↗'));
+  grid.append(link);
+ }
+ links.append(title,intro,grid);
+ search.insertAdjacentElement('afterend',links);
+ const tools=make('details','lts-porti-operational');
+ tools.id='lts-porti-operational';
+ const summary=make('summary','lts-porti-operational-toggle','Verifica booking e consulta navi');
+ tools.append(summary,form);
+ links.insertAdjacentElement('afterend',tools);
+ // Move safety information below the short official-link cards.
+ if(notice)tools.insertAdjacentElement('afterend',notice);
+ const changeTitle=()=>{
+  const city=document.querySelector('input[name="port"]:checked')?.value;
+  summary.textContent=city==='salerno'?'Consulta il programma navi SCT':
+    'Verifica booking e consulta navi · Napoli';
+  if(city==='salerno'&&tools.open===false)tools.open=true;
+ };
+ document.querySelectorAll('input[name="port"]').forEach(r=>r.addEventListener('change',changeTitle));
+ changeTitle();
+}
+setupPortiHomepage();
+
 // The LTS shell already supplies its own heading when this document is embedded.
 document.documentElement.classList.toggle('lts-embedded', window.self !== window.top);
