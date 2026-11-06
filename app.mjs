@@ -1367,7 +1367,7 @@ function renderAccountGate(message=''){
   unmountPorti();state=D.emptyState();user=null;draft=newDraft();
   pdfReport=null;editingId=null;editingBaseline=null;busy=false;
   document.querySelectorAll('dialog[open]').forEach(node=>node.close());
-  const gate=el('section',{class:'boot account-gate'},
+  const gate=el('section',{class:'boot account-gate account-gate-premium'},
     el('div',{class:'account-hero'},
       el('div',{class:'account-hero-brand'},
         el('img',{src:'/LTS-Registro-Viaggi/assets/lts-logo.png',alt:'LTS Registro Viaggi'}),
