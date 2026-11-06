@@ -507,3 +507,38 @@ h1,h2,h3{letter-spacing:-.035em}
 .tariff-card .tariff-footer .linked-label{min-width:0;overflow-wrap:anywhere}
 @media(max-width:520px){.tariff-company-sync{grid-template-columns:auto minmax(0,1fr)}
  .tariff-company-sync>.secondary-button{grid-column:1/-1;justify-self:stretch;width:100%}}
+
+/* LTS Porti 2026 · compact high-resolution vector harbor hero. */
+.app-main.view-porti{background:#f5fafc}
+.porti-hero{
+ position:relative;isolation:isolate;overflow:hidden;flex:none;min-height:156px;
+ display:flex;align-items:center;justify-content:flex-end;
+ padding:22px clamp(18px,4vw,38px);
+ background-image:linear-gradient(90deg,rgba(2,34,64,.12) 0%,rgba(4,41,68,.24) 48%,rgba(3,32,60,.96) 100%),
+  url('/LTS-Registro-Viaggi/assets/login-harbor.svg');
+ background-position:center 45%;background-repeat:no-repeat;background-size:cover;
+ border-bottom:1px solid #bddce8;box-shadow:0 3px 12px #082d4812;
+}
+.porti-hero-copy{z-index:1;display:grid;gap:5px;text-align:right;color:#fff;max-width:52%;text-shadow:0 2px 8px #062c4885}
+.porti-hero-kicker{font-size:10px;font-weight:800;letter-spacing:.15em;color:#b5e8f3}
+.porti-hero h1{color:#fff;font-size:clamp(32px,6vw,53px);letter-spacing:-.045em;line-height:1.05}
+.porti-hero p{color:#e0f3fb;font-size:clamp(11px,2.7vw,14px);line-height:1.45;font-weight:650}
+.porti-hero-tricolore{position:absolute;bottom:0;right:0;height:5px;width:min(42%,230px);
+ background:linear-gradient(90deg,#009b55 0 33%,#fff 33% 66%,#d81e39 66% 100%);
+ border-radius:5px 0 0 0}
+.porti-frame{background:#f6f9fc}
+@media(max-width:600px){
+ .porti-hero{min-height:136px;padding:14px 18px;background-position:42% center;
+  background-image:linear-gradient(90deg,rgba(2,37,63,.13) 0%,rgba(2,37,63,.27) 42%,rgba(3,32,60,.97) 100%),
+   url('/LTS-Registro-Viaggi/assets/login-harbor.svg')}
+ .porti-hero-copy{max-width:53%;gap:5px}
+ .porti-hero h1{font-size:clamp(30px,9vw,40px)}
+ .porti-hero-kicker{font-size:9px;letter-spacing:.06em}
+ .porti-hero p{font-size:11px}
+}
+@media(max-width:370px){
+ .porti-hero{min-height:120px}
+ .porti-hero-copy{max-width:56%}
+ .porti-hero-kicker{font-size:8px}
+ .porti-hero p{font-size:10px}
+}
