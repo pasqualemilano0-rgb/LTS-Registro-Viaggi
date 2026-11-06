@@ -661,7 +661,7 @@ test('photo splash is paired with immutable offline image and safe accessible lo
  assert.match(photo,/left:8[.]05%/);
  assert.match(photo,/background:linear-gradient/);
  assert.match(photo,/prefers-reduced-motion:reduce/);
- assert.match(app,/root[.]querySelector\('[".]photo-splash[".]'\)/);
+ assert.match(app,/root[.]querySelector\('\.photo-splash'\)/);
  assert.doesNotMatch(photo,/url\(["']?https?:/);
 });
 
