@@ -1,6 +1,5 @@
 import * as D from '/LTS-Registro-Viaggi/shared/domain.mjs';
 import { quickTripFromRoute } from '/LTS-Registro-Viaggi/shared/quick-trip.mjs';
-import { PORT_SOURCE_FEEDS, describePortSource } from '/LTS-Registro-Viaggi/shared/port-source-status.mjs';
 import {unionStates} from '/LTS-Registro-Viaggi/shared/sync-merge.mjs';
 import * as store from '/LTS-Registro-Viaggi/client-store.mjs';
 import runtimeConfig from '/LTS-Registro-Viaggi/runtime-config.mjs';
@@ -190,63 +189,18 @@ function render(){
  scroll.scrollTop=scrollTop;
 }
 function renderPorti(main){
- const formatTime=value=>value?new Intl.DateTimeFormat('it-IT',{
-  day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'
- }).format(new Date(value)):'Non dichiarata';
- const tiles=PORT_SOURCE_FEEDS.map(feed=>{
-  const signal=el('span',{class:'porti-source-signal',dataset:{state:'loading'}},
-   feed.id.toUpperCase(),' · Verifica…');
-  const copied=el('p',{class:'porti-source-timestamp'},'Copia acquisita: in verifica');
-  const official=el('p',{class:'porti-source-timestamp'},'Aggiornamento fonte: in verifica');
-  const detail=el('p',{class:'porti-source-note'},'Il programma non certifica un booking.');
-  const card=el('div',{class:'porti-source-card'},
-   el('div',{class:'porti-source-card-head'},el('strong',{},feed.label),
-    el('a',{href:feed.official,target:'_blank',rel:'noopener noreferrer'},'Fonte ufficiale')),
-   copied,official,detail);
-  return {feed,signal,copied,official,detail,card};
- });
- const overview=el('section',{class:'porti-source-overview',
-  'aria-label':'Aggiornamento dei programmi navi'},
-  el('div',{class:'porti-source-intro'},
-   el('strong',{},'Stato dei programmi navi'),
-   el('span',{},'Copia acquisita ≠ conferma del carico')),
-  el('div',{class:'porti-source-signals',role:'status','aria-live':'polite'},
-   tiles.map(tile=>tile.signal)),
-  el('details',{class:'porti-source-details'},
-   el('summary',{},'Orari delle fonti e collegamenti ufficiali'),
-   el('div',{class:'porti-source-cards'},tiles.map(tile=>tile.card))));
+ // This is a visual shell. The secured Porti iframe retains all booking,
+ // vessel and operational verification workflows unchanged.
  const url=(runtimeConfig.basePath??'/')+'porti/index.html';
- portiFrame=el('iframe',{class:'porti-frame',src:url,title:'Porti e booking',referrerpolicy:'no-referrer'});
- main.append(el('div',{class:'porti-heading'},el('h1',{},'Porti')),overview,portiFrame);
- portiSourceAbort?.abort();
- const controller=new AbortController();
- portiSourceAbort=controller;
- // Only public, nonpersonal vessel snapshots are read; never fetch booking values.
- for(const tile of tiles)void (async()=>{
-  try{
-   const path=new URL((runtimeConfig.basePath??'/')+'porti/data/'+tile.feed.file,location.origin);
-   if(path.origin!==location.origin)throw new Error('Origine non attendibile');
-   const response=await fetch(path.href,{cache:'no-store',credentials:'omit',
-    redirect:'error',signal:controller.signal});
-   if(!response.ok||response.redirected)throw new Error('Copia non disponibile');
-   const body=await response.text();
-   if(body.length>256*1024)throw new Error('Copia fuori limite');
-   const described=describePortSource(JSON.parse(body),tile.feed);
-   if(controller.signal.aborted||!overview.isConnected)return;
-   tile.signal.dataset.state=described.state;
-   tile.signal.textContent=tile.feed.id.toUpperCase()+' · '+described.label;
-   tile.copied.textContent='Copia acquisita: '+formatTime(described.acquiredAt);
-   tile.official.textContent='Aggiornamento dichiarato dalla fonte: '+formatTime(described.sourceUpdatedAt);
-   tile.detail.textContent=described.detail;
-  }catch(error){
-   if(controller.signal.aborted||!overview.isConnected)return;
-   tile.signal.dataset.state='unknown';
-   tile.signal.textContent=tile.feed.id.toUpperCase()+' · Non verificabile';
-   tile.copied.textContent='Copia non consultabile al momento';
-   tile.official.textContent='Aggiornamento della fonte: non verificato';
-   tile.detail.textContent='Usa il collegamento al sito ufficiale del terminal.';
-  }
- })();
+ portiFrame=el('iframe',{class:'porti-frame',src:url,
+  title:'Terminal e collegamenti portuali',referrerpolicy:'no-referrer'});
+ const hero=el('section',{class:'porti-hero','aria-labelledby':'porti-hero-title'},
+  el('div',{class:'porti-hero-copy'},
+   el('span',{class:'porti-hero-kicker'},'LTS · LOGISTICA PORTUALE'),
+   el('h1',{id:'porti-hero-title'},'Porti'),
+   el('p',{},'Napoli e Salerno · Terminal e collegamenti ufficiali')),
+  el('span',{class:'porti-hero-tricolore','aria-hidden':'true'}));
+ main.append(hero,portiFrame);
 }
 // The port module is a subview of a verified LTS account, not a public standalone app.
 window.addEventListener('message',event=>{
