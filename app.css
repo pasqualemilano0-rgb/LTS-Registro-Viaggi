@@ -577,6 +577,11 @@ h1,h2,h3{letter-spacing:-.035em}
  border:0!important;overflow:hidden;background:none!important;
  border-radius:0!important;box-shadow:none!important;line-height:0
 }
+.porti-hero-reference .sr-only{
+ position:absolute!important;width:1px!important;height:1px!important;padding:0!important;
+ margin:-1px!important;border:0!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;
+ white-space:nowrap!important;clip-path:inset(50%)!important
+}
 .porti-hero-reference-image{
  display:block;width:100%;height:auto;max-width:none;
  aspect-ratio:1152/345;object-fit:cover;object-position:center;
