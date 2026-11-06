@@ -29,7 +29,7 @@
  filter:drop-shadow(0 8px 5px #254a5d40);
  animation:lts-truck-approach 1.9s ease-out both
 }
-.truck-loader-art{
+.boot .truck-loader-art{
  display:block;width:100%;height:100%;object-fit:contain;object-position:center bottom;
  transform-origin:50% 82%;animation:lts-truck-suspension .63s ease-in-out infinite
 }
