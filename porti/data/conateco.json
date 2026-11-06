@@ -124,7 +124,7 @@
     {
       "vessel": "MSC GRETA III",
       "voyage": "AC643A",
-      "eta": "2026-11-05 22:25",
+      "eta": "2026-11-05 22:30",
       "vessel_status": "ARR",
       "category": "ORMEGGIATE",
       "voyage_id": "202600358",
@@ -136,6 +136,23 @@
       "opening": "2026-10-27 12:00",
       "closing": "2026-11-05 12:00",
       "notes": "LOAD ALSO LEVANTE CARGO",
+      "source_conflict": false
+    },
+    {
+      "vessel": "JOLLY GIADA",
+      "voyage": "326",
+      "eta": "2026-11-06 00:00",
+      "vessel_status": "PRE",
+      "category": "PRESENTI",
+      "voyage_id": "202600370",
+      "carrier": "LINEA I.MESSINA",
+      "acceptance_flag": "1",
+      "acceptance_icon": "ACCETTA_CARICO",
+      "stop_cargo": "",
+      "external_depot": "",
+      "opening": "2026-11-02 06:30",
+      "closing": "2026-11-06 14:00",
+      "notes": "ACCETT.RETROPORTO 29/10 07:00",
       "source_conflict": false
     },
     {
@@ -153,23 +170,6 @@
       "opening": "2026-10-31 06:30",
       "closing": "2026-11-05 17:00",
       "notes": "",
-      "source_conflict": false
-    },
-    {
-      "vessel": "JOLLY GIADA",
-      "voyage": "326",
-      "eta": "2026-11-07 00:00",
-      "vessel_status": "PRE",
-      "category": "PREVISTE",
-      "voyage_id": "202600370",
-      "carrier": "LINEA I.MESSINA",
-      "acceptance_flag": "1",
-      "acceptance_icon": "ACCETTA_CARICO",
-      "stop_cargo": "",
-      "external_depot": "",
-      "opening": "2026-11-02 06:30",
-      "closing": "2026-11-06 14:00",
-      "notes": "ACCETT.RETROPORTO 29/10 07:00",
       "source_conflict": false
     },
     {
@@ -649,5 +649,5 @@
       "source_conflict": false
     }
   ],
-  "acquired_at": "2026-11-06T07:00:16.917Z"
+  "acquired_at": "2026-11-06T08:00:16.490Z"
 }
