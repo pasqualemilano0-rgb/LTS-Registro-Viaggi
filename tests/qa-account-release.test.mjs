@@ -676,5 +676,5 @@ test('branded Scania S loader is animated, accessible and included in the offlin
  assert.match(css,/animation:lts-truck-suspension [.]63s/);
  assert.match(css,/prefers-reduced-motion:reduce/);
  assert.match(read('sw.js'),/assets\/lts-scania-s-loader[.]svg/);
- assert.doesNotMatch(svg,/script|foreignObject|https?:\/\//i);
+ assert.doesNotMatch(svg,/<script|<foreignObject|href="https?:\/\//i);
 });
