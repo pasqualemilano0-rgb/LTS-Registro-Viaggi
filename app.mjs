@@ -31,6 +31,7 @@ let syncWarning = false;
 let pdfReport = null;
 let toastTimer;
 let refreshView = null;
+let refreshTripCustomerSuggestions=null;
 let portiFrame = null;
 let portiSourceAbort = null;
 let subscribed = false;
@@ -163,6 +164,7 @@ function navigate(next){if(tab==='porti'&&next!==tab)unmountPorti();tab=next;sea
 function render(){
  const scrollTop=document.querySelector('.app-scroll')?.scrollTop||0;
  refreshView=null;
+ refreshTripCustomerSuggestions=null;
  const frame=el('div',{class:'app-frame'});
  const header=el('header',{class:'topbar'},el('div',{class:'brand'},el('img',{src:'/LTS-Registro-Viaggi/assets/lts-logo.png',alt:'LTS',width:116,height:46}),el('div',{class:'brand-copy'},el('p',{class:'eyebrow'},'Registro viaggi'),el('p',{class:'brand-title'},name()||'Il tuo registro'))),el('div',{class:'header-actions'},el('button',{class:'install-icon-button',type:'button','data-install-trigger':true,hidden:isInstalled(),'aria-label':'Installa app',title:'Installa LTS sul telefono',on:{click:startInstall}},icon('download')),el('button',{class:'profile-button',type:'button','aria-label':`Profilo di ${name()||'autista'}`,title:'Profilo e backup',on:{click:()=>openProfile()}},initials())));
  const main=el('main',{class:`app-main view-${tab}`,id:'main-content'});
@@ -276,6 +278,7 @@ async function refreshCompanyCustomers(){
   if(owner!==accountAccess.getAccountId())return;
   companyCustomers=customers;
   companyCustomersError='';
+  if(tab==='insert')refreshTripCustomerSuggestions?.();
   // Keep the currently edited trip, caret, keyboard and open dialogs intact.
   // A background catalog sync must only refresh suggestions/list contents,
   // never reconstruct the entire screen with render().
@@ -326,38 +329,6 @@ function updateCompanyCustomersPanel(panel=document.querySelector('.company-cust
   ?'Nessun cliente condiviso ancora disponibile, oppure elenco non sincronizzato.'
   :'Nessuna sede corrisponde alla ricerca. Prova un altro nome o una località.';
 }
-/** A visible, searchable picker: native datalist suggestions are unreliable on mobile. */
-function chooseTripCustomer(onPick){
- const {dialog,body}=modal('Scegli cliente e località',{subtitle:'Cerca tra clienti personali, viaggi già salvati e sedi Google Maps aziendali.'});
- const search=el('input',{type:'search',placeholder:'Nome cliente, città o indirizzo',
-  'aria-label':'Cerca cliente o località',autocomplete:'off',on:{input:()=>draw()}});
- const count=el('p',{class:'trip-customer-picker-count',role:'status','aria-live':'polite'});
- const status=el('p',{class:'trip-customer-picker-status',role:'status'});
- const options=el('div',{class:'trip-customer-picker-options'});
- function draw(){
-  const rows=combinedTripCustomerChoices({personal:state.customers,trips:state.trips,shared:companyCustomers});
-  const found=filterSharedCustomers(rows,search.value);
-  count.textContent=`${found.length} sedi disponibili${search.value.trim()?' per questa ricerca':''}`;
-  status.textContent=companyCustomersError||'';
-  status.hidden=!companyCustomersError;
-  options.replaceChildren(...found.map(customer=>el('button',{
-   type:'button',class:'trip-customer-picker-choice',
-   on:{click:()=>{onPick(customer);dialog.close();}}
-  },el('strong',{},customer.name),
-    el('span',{},customer.city||'Località da completare'),
-    customer.address?el('small',{},customer.address):null,
-    el('small',{class:'trip-customer-picker-source'},customer.fromCompany?'Google Maps aziendale':'Rubrica e viaggi personali'))));
-  if(!found.length)options.append(el('p',{class:'trip-customer-picker-empty'},
-   search.value.trim()?'Nessun cliente trovato: prova un altro nome o una località.':'Nessun cliente disponibile. Puoi inserire un cliente manualmente.'));
- }
- body.append(el('label',{class:'field'},el('span',{class:'field-label'},'Cerca cliente o località'),search),
-  count,status,options);
- draw();
- search.focus();
- // Refresh without resetting the open trip form or discarding the current draft.
- void refreshCompanyCustomers().then(()=>{if(dialog.open)draw();});
-}
-
 function companyCustomersPanel(){
  if(!sharedMapsEnabled())return null;
  const panel=el('section',{class:'panel company-customer-list','aria-label':'Registro clienti condiviso'});
@@ -405,43 +376,61 @@ function renderInsert(main){
     'aria-label':'Aggiungi un cliente da Google Maps'})));
  const container=decorateTripField(field('Sigla container','container',draft.container,{placeholder:'MSDU345676.8',class:'container-input',required:true,maxlength:500}),'addTrip','container-field');
  const customerListId='trip-customers'; const cityListId='trip-cities';
- const client=decorateTripField(field('Cliente','client',draft.client,{placeholder:'Nome cliente',list:customerListId,required:true,maxlength:500}),'users');
+ const client=decorateTripField(field('Cliente','client',draft.client,{placeholder:'Nome cliente',required:true,maxlength:500}),'users');
  const city=decorateTripField(field('Località','city',draft.city,{placeholder:'Es. Napoli',list:cityListId,required:true,maxlength:500}),'pin');
  const hint=el('p',{class:'field-hint',id:'tariff-hint'});city.wrap.append(hint);
- form.append(el('div',{class:'trip-fields'},container.wrap,client.wrap,
-  button('Cerca nell’elenco clienti','secondary',()=>openTripCustomerPicker(),'search',
-   {class:'secondary-button trip-client-picker-button'}),city.wrap),datalist(customerListId,[...state.customers.map(c=>c.name),...state.trips.map(t=>t.client),...companyCustomers.map(c=>c.name)]));
+ const suggestionRefreshes=[];
+ form.append(el('div',{class:'trip-fields'},container.wrap,tripCustomerAutocomplete(client,city),city.wrap),datalist(customerListId,[...state.customers.map(c=>c.name),...state.trips.map(t=>t.client),...companyCustomers.map(c=>c.name)]));
  let cities=datalist(cityListId,citySuggestions(draft.client));form.append(cities);
  const add=el('button',{type:'button',class:'add-pickup trip-option','aria-label':draft.second?'Rimuovi seconda presa':'Aggiungi una seconda presa','aria-expanded':String(Boolean(draft.second)),on:{click:()=>{collect();draft.second=!draft.second;if(!draft.second){draft.secondClient='';draft.secondCity='';}render();}}},icon('pin'),el('span',{class:'tile-label'},'Seconda presa'),el('span',{class:'plus-disc','aria-hidden':'true'},draft.second?'−':'+'));
  const options=el('div',{class:'trip-options','aria-label':'Opzioni del viaggio'},add);form.append(options);
  let secondClient=null,secondCity=null;
  if(draft.second){
-  secondClient=field('Cliente','secondClient',draft.secondClient,{placeholder:'Cliente seconda presa',list:customerListId,required:true,maxlength:500});
+  secondClient=field('Cliente','secondClient',draft.secondClient,{placeholder:'Cliente seconda presa',required:true,maxlength:500});
   secondCity=field('Località','secondCity',draft.secondCity,{placeholder:'Città seconda presa',list:'second-cities',required:true,maxlength:500});
-  form.append(el('section',{class:'second-pickup'},el('div',{class:'pickup-heading'},'Seconda presa · stesso container'),secondClient.wrap,
-   button('Cerca cliente seconda presa','secondary',()=>openTripCustomerPicker(true),'search',
-    {class:'secondary-button trip-client-picker-button'}),secondCity.wrap,datalist('second-cities',citySuggestions(draft.secondClient))));
+  form.append(el('section',{class:'second-pickup'},el('div',{class:'pickup-heading'},'Seconda presa · stesso container'),tripCustomerAutocomplete(secondClient,secondCity,true),secondCity.wrap,datalist('second-cities',citySuggestions(draft.secondClient))));
   secondClient.input.addEventListener('change',()=>{autofillCity(secondClient.input,secondCity.input);updateEstimate();});
  }
- function openTripCustomerPicker(second=false){
-  // Choosing a location changes only the current draft, never saved customers or trips.
-  const targetClient=second?secondClient:client;
-  const targetCity=second?secondCity:city;
-  if(!targetClient||!targetCity)return;
-  collect();
-  chooseTripCustomer(customer=>{
-   targetClient.input.value=customer.name;
-   targetCity.input.value=customer.city;
-   if(second){
-    const current=form.querySelector('#second-cities');
-    current?.replaceWith(datalist('second-cities',citySuggestions(customer.name)));
-   }else{
-    const updated=datalist(cityListId,citySuggestions(customer.name));
-    cities.replaceWith(updated);cities=updated;
-   }
+ /** Client suggestions appear beneath the existing input, without another search field. */
+ function tripCustomerAutocomplete(clientField,cityField,second=false){
+  const input=clientField.input;
+  const menu=el('div',{class:'trip-client-suggestions',id:second?'trip-client-suggestions-second':'trip-client-suggestions-main',role:'listbox','aria-label':'Clienti memorizzati',hidden:true});
+  const holder=el('div',{class:'trip-client-autocomplete'},clientField.wrap,menu);
+  input.setAttribute('autocomplete','off');
+  input.setAttribute('role','combobox');input.setAttribute('aria-autocomplete','list');
+  input.setAttribute('aria-controls',menu.id);input.setAttribute('aria-expanded','false');
+  let choices=[],active=-1;
+  function hide(){menu.hidden=true;active=-1;input.setAttribute('aria-expanded','false');input.removeAttribute('aria-activedescendant');}
+  function pick(customer){
+   input.value=customer.name;cityField.input.value=customer.city;hide();
+   if(second){form.querySelector('#second-cities')?.replaceWith(datalist('second-cities',citySuggestions(customer.name)));}
+   else{const updated=datalist(cityListId,citySuggestions(customer.name));cities.replaceWith(updated);cities=updated;}
    updateEstimate();
+  }
+  function highlight(){
+   [...menu.children].forEach((option,index)=>{option.classList.toggle('active',index===active);option.setAttribute('aria-selected',String(index===active));});
+   if(active>=0){input.setAttribute('aria-activedescendant',menu.children[active].id);menu.children[active].scrollIntoView({block:'nearest'});}
+   else input.removeAttribute('aria-activedescendant');
+  }
+  function draw(){
+   const query=input.value.trim();
+   if(!query||document.activeElement!==input){hide();return;}
+   const all=combinedTripCustomerChoices({personal:state.customers,trips:state.trips,shared:companyCustomers});
+   choices=filterSharedCustomers(all,query).slice(0,12);active=-1;
+   if(!choices.length){hide();return;}
+   menu.replaceChildren(...choices.map((customer,index)=>el('button',{type:'button',id:menu.id+'-'+index,role:'option','aria-selected':'false',class:'trip-client-suggestion',on:{pointerdown:event=>{event.preventDefault();pick(customer);},click:()=>pick(customer)}},el('strong',{},customer.name),el('span',{},customer.city||'Località da completare'),customer.address?el('small',{},customer.address):null)));
+   menu.hidden=false;input.setAttribute('aria-expanded','true');
+  }
+  input.addEventListener('input',draw);input.addEventListener('focus',draw);input.addEventListener('blur',hide);
+  input.addEventListener('keydown',event=>{
+   if(menu.hidden)return;
+   if(event.key==='Escape'){event.preventDefault();hide();}
+   else if(event.key==='ArrowDown'||event.key==='ArrowUp'){event.preventDefault();active=event.key==='ArrowDown'?(active+1)%choices.length:(active+choices.length)%choices.length;highlight();}
+   else if(event.key==='Enter'&&active>=0){event.preventDefault();pick(choices[active]);}
   });
+  suggestionRefreshes.push(draw);return holder;
  }
+ refreshTripCustomerSuggestions=()=>{for(const draw of suggestionRefreshes)draw();};
  const noteInput=el('textarea',{id:'trip-note',name:'note',value:draft.note||'',maxlength:2000,rows:3,autocapitalize:'characters',spellcheck:'false',placeholder:'Scrivi una nota per questo viaggio'});
  const noteEditor=el('section',{class:'trip-note-editor',id:'trip-note-editor',hidden:!draft.noteOpen},el('label',{class:'field-label',for:'trip-note'},'Nota del viaggio',el('span',{class:'optional'},'Facoltativa')),noteInput,el('p',{class:'trip-note-help'},icon('lock'),'Visibile solo nell’app · esclusa dal PDF mensile'));
  const noteSymbol=el('span',{class:'plus-disc','aria-hidden':'true'},draft.noteOpen?'−':'+');
@@ -507,6 +496,7 @@ function renderInsert(main){
   const list=form.querySelector(`#${customerListId}`);
   list?.replaceWith(datalist(customerListId,[...state.customers.map(c=>c.name),...state.trips.map(t=>t.client),...companyCustomers.map(c=>c.name)]));
   const nextCities=datalist(cityListId,citySuggestions(client.input.value));cities.replaceWith(nextCities);cities=nextCities;
+  refreshTripCustomerSuggestions?.();
   if(secondClient){const list=form.querySelector('#second-cities');list?.replaceWith(datalist('second-cities',citySuggestions(secondClient.input.value)));}
   const latest=D.sortTrips(state.trips)[0];
   const currentAmounts=D.buildTripAmountContext(state);
