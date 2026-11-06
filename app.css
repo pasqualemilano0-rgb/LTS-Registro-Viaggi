@@ -497,3 +497,13 @@ h1,h2,h3{letter-spacing:-.035em}
  .account-gate .account-install-banner-mark{animation:none!important}
  .account-gate .account-install-banner-action{transition:none!important}
 }
+
+/* Sync of administrator-managed tariffs in the driver's private register. */
+.tariff-company-sync{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:11px;
+ background:linear-gradient(105deg,#e7f6f7,#f1fafb);border:1px solid #c6e5e8;padding:14px 16px}
+.tariff-company-sync>.icon{margin:0;color:#05768a}
+.tariff-company-sync>span{font-size:12px;font-weight:600;color:#285d6b;overflow-wrap:anywhere}
+.tariff-company-sync>.secondary-button{font-size:12px;min-height:40px;padding:9px 12px;white-space:nowrap}
+.tariff-card .tariff-footer .linked-label{min-width:0;overflow-wrap:anywhere}
+@media(max-width:520px){.tariff-company-sync{grid-template-columns:auto minmax(0,1fr)}
+ .tariff-company-sync>.secondary-button{grid-column:1/-1;justify-self:stretch;width:100%}}
