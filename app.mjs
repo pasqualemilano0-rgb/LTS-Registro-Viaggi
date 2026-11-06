@@ -1407,16 +1407,14 @@ document.addEventListener('visibilitychange',async()=>{
 });
 
 
-/** The truck completes the road only after the initial view is ready.
- * It approaches while authentication/data load, waits near the destination if needed,
- * then finishes the last stretch; the app replaces the splash at animation completion.
- * Auth failures and reduced-motion users bypass the journey without extra delay.
- */
-/** Hold the full Scania photograph for at least four seconds on first boot.
+/** Show the full Scania photograph during first boot. Keep the still truck visible,
+ * with the progress bar moving, for a minimum interval after the app starts.
+ * This is visual feedback only: account verification still gates all private data. */
+/** Hold the full Scania photograph for at least six seconds on first boot.
  * The truck stays still and the CSS loading bar continues its animation.
  * Never turn this timer into an authentication shortcut: the archive must
  * finish verification first, and slow loads remain visible until ready. */
-const MIN_INITIAL_SPLASH_MS=4000;
+const MIN_INITIAL_SPLASH_MS=6000;
 const initialSplashStartedAt=performance.now();
 let initialLoaderClosed=false;
 let initialLoaderWait=null;
@@ -1434,6 +1432,12 @@ async function finishInitialTruckLoading(){
  initialLoaderClosed=true;
  return true;
 }
+/** Every initial destination, including the login gate, respects the splash
+ * duration. Later account lockouts stay immediate, because the splash is gone. */
+async function renderFirstBootGate(message=''){
+ if(root.querySelector('.photo-splash') && !(await finishInitialTruckLoading()))return;
+ renderAccountGate(message);
+}
 
 async function initialize(){
  try{
@@ -1442,21 +1446,20 @@ async function initialize(){
     if(!accountAccess.hasSession()){
       try{await accountAccess.restoreDriverSession();}
       catch(error){
-        renderAccountGate(error.offline
+        await renderFirstBootGate(error.offline
           ?'Serve Internet per verificare la sessione salvata. Riprova quando torna la connessione.'
           :error.message||'Accesso automatico non riuscito.');
         return;
       }
       if(!accountAccess.hasSession()){
-        if(!(await finishInitialTruckLoading()))return;
-        renderAccountGate();return;
+        await renderFirstBootGate();return;
       }
     }
     try{
       result=await store.activateAccountFromSession();
     }catch(error){
       // Never unlock an old local account archive without live verification.
-      renderAccountGate(error.offline
+      await renderFirstBootGate(error.offline
         ?'Per riaprire un archivio protetto dopo il riavvio serve Internet. I dati offline precedenti restano conservati.'
         :error.message||'Accesso account non verificato.');
       return;
@@ -1480,6 +1483,7 @@ async function initialize(){
   if(!activationFirstOpen&&(!state.profile.firstName||!state.profile.lastName))openProfile(true);
   if(new URL(location.href).searchParams.get('installa')==='1'&&!isInstalled())installDialog();
  }catch(err){
+  if(root.querySelector('.photo-splash') && !(await finishInitialTruckLoading()))return;
   root.replaceChildren(el('div',{class:'boot'},el('img',{src:'/LTS-Registro-Viaggi/assets/lts-logo.png',alt:'LTS'}),el('div',{class:'boot-error'},el('h2',{},'Il registro non è disponibile'),el('p',{class:'subtitle'},err.message||'Controlla la connessione e riprova.'),button('Riprova','primary',()=>initialize(),'refresh'))));
  }
 }
