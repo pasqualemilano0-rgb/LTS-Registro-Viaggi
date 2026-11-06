@@ -578,56 +578,33 @@ test('embedded access cannot display register or admin credential inputs',()=>{
  assert.doesNotMatch(app,/frame-ancestors.*<meta/i);
 });
 
-test('animated shipping truck travels toward the destination and finishes on readiness',()=>{
- const truckStyles=read('truck-loader.css');
+test('Scania S stays still while the loading bar animates until access is ready',()=>{
+ const css=read('truck-loader.css');
  assert.match(html,/class="truck-loader"/);
  assert.match(html,/class="truck-loader-vehicle"/);
  assert.match(html,/class="truck-loader-road"/);
  assert.match(html,/Caricamento LTS in corso/);
- assert.match(sw,/truck-loader[.]css/);
- assert.match(truckStyles,/@keyframes lts-truck-approach/);
- assert.match(truckStyles,/@keyframes lts-truck-arrive/);
- assert.match(truckStyles,/animation:lts-truck-approach 1[.]9s/);
- assert.match(truckStyles,/animation:lts-truck-arrive [.]6s/);
- assert.match(truckStyles,/is-arriving/);
- assert.match(truckStyles,/@keyframes lts-road-dashes/);
- assert.match(truckStyles,/prefers-reduced-motion:reduce/);
- assert.doesNotMatch(truckStyles,/lts-truck-drive/);
- assert.doesNotMatch(html,/class="loader" aria-label="Caricamento"/);
+ assert.match(css,/@keyframes lts-loading-current/);
+ assert.match(css,/@keyframes lts-road-dashes/);
+ assert.match(css,/animation:lts-loading-current 1[.]55s linear infinite/);
+ assert.match(css,/truck-loader-vehicle[^}]*animation:none!important/);
+ assert.match(css,/truck-loader-art[^}]*animation:none!important/);
+ assert.doesNotMatch(css,/@keyframes lts-truck-approach/);
+ assert.doesNotMatch(css,/@keyframes lts-truck-arrive/);
+ assert.doesNotMatch(css,/@keyframes lts-truck-suspension/);
+ assert.match(css,/prefers-reduced-motion:reduce/);
 });
-
-test('ready app opens after the truck completes both road stages',async()=>{
- const start=app.indexOf('const firstBootStartedAt=performance.now();');
+test('verified register opens immediately after readiness, without timed truck stages',async()=>{
+ const start=app.indexOf('let initialLoaderClosed=false;');
  const end=app.indexOf('\nasync function initialize(){',start);
- assert.ok(start>=0&&end>start,'boot timing logic must be present');
- const script=app.slice(start,end)+'\nreturn finishInitialTruckLoading;';
- const trial=async(elapsed,reducedMotion,animationsAvailable=true)=>{
-  const events=[],timers=[];
-  let arriving=false;
-  const truck={isConnected:true,
-   querySelector:()=>vehicle,
-   classList:{add(name){events.push(name);arriving=true;}}};
-  const vehicle=animationsAvailable ? {getAnimations:()=>[{
-   animationName:arriving?'lts-truck-arrive':'lts-truck-approach',
-   finished:Promise.resolve().then(()=>events.push(arriving?'end-of-road':'approach-complete'))
-  }]} : {};
-  const root={querySelector:()=>truck};
-  const win={matchMedia:()=>({matches:reducedMotion})};
-  const schedule=(callback,ms)=>{timers.push(ms);callback();};
-  const clock={value:0};
-  const fn=new Function('performance','root','window','setTimeout',script)(
-   {now:()=>clock.value},root,win,schedule);
-  clock.value=elapsed;
-  assert.equal(await fn(),true);
-  return {events,timers};
- };
- assert.deepEqual(await trial(500,false),{
-  events:['approach-complete','is-arriving','end-of-road'],timers:[]});
- assert.deepEqual(await trial(500,true),{events:[],timers:[]});
- // Browsers without Web Animations API use a 1.9s approach and a .6s finish.
- assert.deepEqual(await trial(100,false,false),{
-  events:['is-arriving'],timers:[1800,600]});
+ assert.ok(start>=0&&end>start,'boot readiness logic must be present');
+ const code=app.slice(start,end)+'\nreturn finishInitialTruckLoading;';
+ const root={querySelector:()=>({isConnected:true})};
+ const finish=new Function('root',code)(root);
+ assert.equal(await finish(),true);
+ assert.equal(await finish(),true);
  assert.match(app,/if\(!\(await finishInitialTruckLoading\(\)\)\)return;\s*render\(\)/);
+ assert.doesNotMatch(code,/setTimeout|animation[.]finished|waitForTruckStage/);
  assert.match(sw,/20261106-scania-s-v4/);
 });
 
@@ -670,10 +647,10 @@ test('branded Scania S loader is animated, accessible and included in the offlin
  }
  assert.match(svg,/SCANIA/);
  assert.match(svg,/LTS/);
- assert.match(css,/@keyframes lts-truck-approach/);
- assert.match(css,/@keyframes lts-truck-arrive/);
+ assert.doesNotMatch(css,/@keyframes lts-truck-approach/);
+ assert.doesNotMatch(css,/@keyframes lts-truck-arrive/);
  assert.match(css,/@keyframes lts-road-dashes/);
- assert.match(css,/animation:lts-truck-suspension [.]63s/);
+ assert.match(css,/animation:lts-loading-current 1[.]55s linear infinite/);
  assert.match(css,/prefers-reduced-motion:reduce/);
  assert.match(read('sw.js'),/assets\/lts-scania-s-loader[.]svg/);
  assert.doesNotMatch(svg,/<script|<foreignObject|href="https?:\/\//i);
