@@ -383,3 +383,19 @@ h1,h2,h3{letter-spacing:-.035em}
 .dashboard-maps-shortcut-button{flex:0 0 auto;min-height:46px;padding:11px 13px;border-color:#acd4df;background:#fff;color:#006c85;font-size:12px}
 .dashboard-maps-shortcut-button:focus-visible{outline:3px solid #48b9d1;outline-offset:2px}
 @media(max-width:560px){.dashboard-maps-shortcut-button{width:100%}}
+
+/* Explicit customer picker for mobile: personal and Maps locations are read-only suggestions. */
+.trip-client-picker-button{width:100%;justify-content:flex-start;min-height:43px;margin:0 0 4px;border-color:#c2dde3;background:#f7fbfc}
+.trip-customer-picker-count{font-size:12px;font-weight:750;color:var(--teal);margin:3px 0 12px}
+.trip-customer-picker-status{color:#945a21;font-size:12px;line-height:1.5;margin-bottom:10px}
+.trip-customer-picker-status[hidden]{display:none}
+.trip-customer-picker-options{display:grid;gap:8px;max-height:45dvh;overflow-y:auto;overscroll-behavior:contain}
+.trip-customer-picker-choice{display:grid;gap:4px;width:100%;text-align:left;background:#fff;border:1px solid #cbdfe5;border-radius:12px;padding:12px 14px;min-height:70px;color:var(--ink)}
+.trip-customer-picker-choice:hover,.trip-customer-picker-choice:focus-visible{border-color:var(--teal);background:#f3fafb}
+.trip-customer-picker-choice strong{font-size:13px;overflow-wrap:anywhere}
+.trip-customer-picker-choice span{font-size:12px;color:#456879;overflow-wrap:anywhere}
+.trip-customer-picker-choice small{font-size:11px;color:#687f8b;overflow-wrap:anywhere}
+.trip-customer-picker-choice .trip-customer-picker-source{font-weight:750;color:var(--teal)}
+.trip-customer-picker-empty{padding:20px 10px;font-size:12px;line-height:1.5;color:var(--muted)}
+.company-customer-error{color:#945a21;font-size:12px;line-height:1.5;margin-bottom:10px}
+.company-customer-error[hidden]{display:none}

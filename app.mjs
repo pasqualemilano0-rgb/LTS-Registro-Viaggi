@@ -7,6 +7,7 @@ import runtimeConfig from '/LTS-Registro-Viaggi/runtime-config.mjs';
 import * as accountAccess from '/LTS-Registro-Viaggi/account-access.mjs';
 import {sharedMapsEnabled,sharedMapsCustomers,saveSharedMapsCustomer} from '/LTS-Registro-Viaggi/shared-maps-client.mjs';
 import {mapsLinkForCompanySync,filterSharedCustomers} from '/LTS-Registro-Viaggi/shared/maps-company-routing.mjs';
+import {combinedTripCustomerChoices} from '/LTS-Registro-Viaggi/shared/trip-customer-choices.mjs';
 import { appendPushSettings } from '/LTS-Registro-Viaggi/push-client.mjs';
 import { parseCustomerCsv, mergeCustomerCsv, exportCustomerCsv, MAX_CUSTOMER_CSV_BYTES } from '/LTS-Registro-Viaggi/shared/customer-csv.mjs';
 
@@ -14,6 +15,7 @@ const root = document.querySelector('#app');
 const today = () => { const now = new Date(); return `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`; };
 let state = D.emptyState();
 let companyCustomers=[]; // In-memory shared list, never part of personal archive/backup.
+let companyCustomersError='';
 let companyCustomerSearch=''; // Independent filter for the read-only company list.
 let user = null;
 let tab = 'insert';
@@ -157,7 +159,7 @@ function unmountPorti(){
  // Leaving Porti stops its polling and discards the in-frame booking query.
  portiFrame.src='about:blank';portiFrame.remove();portiFrame=null;
 }
-function navigate(next){if(tab==='porti'&&next!==tab)unmountPorti();tab=next;searchValue='';render();const scroll=document.querySelector('.app-scroll');if(scroll)scroll.scrollTop=0;window.scrollTo({top:0,behavior:'auto'});}
+function navigate(next){if(tab==='porti'&&next!==tab)unmountPorti();tab=next;searchValue='';render();if(next==='insert'||next==='customers')void refreshCompanyCustomers();const scroll=document.querySelector('.app-scroll');if(scroll)scroll.scrollTop=0;window.scrollTo({top:0,behavior:'auto'});}
 function render(){
  const scrollTop=document.querySelector('.app-scroll')?.scrollTop||0;
  refreshView=null;
@@ -273,6 +275,7 @@ async function refreshCompanyCustomers(){
   const customers=await sharedMapsCustomers();
   if(owner!==accountAccess.getAccountId())return;
   companyCustomers=customers;
+  companyCustomersError='';
   // Keep the currently edited trip, caret, keyboard and open dialogs intact.
   // A background catalog sync must only refresh suggestions/list contents,
   // never reconstruct the entire screen with render().
@@ -292,7 +295,10 @@ async function refreshCompanyCustomers(){
    }
   }
  }catch{
-  // An offline/unauthorized shared list must never overwrite personal archives.
+  // Keep the existing personal data and previously loaded shared suggestions.
+  if(owner!==accountAccess.getAccountId())return;
+  companyCustomersError='Impossibile aggiornare l’elenco Google Maps. Verifica la connessione e riprova.';
+  if(tab==='customers')updateCompanyCustomersPanel();
  }
 }
 /** Update only the company list, leaving the search field, caret and keyboard intact. */
@@ -302,6 +308,8 @@ function updateCompanyCustomersPanel(panel=document.querySelector('.company-cust
  const count=panel.querySelector('.company-customer-count');
  const list=panel.querySelector('.company-customer-items');
  const empty=panel.querySelector('.company-customer-empty');
+ const status=panel.querySelector('.company-customer-error');
+ if(status){status.textContent=companyCustomersError;status.hidden=!companyCustomersError;}
  count.textContent=companyCustomerSearch.trim()
   ?`${found.length} di ${companyCustomers.length} sedi trovate`
   :`${companyCustomers.length} clienti disponibili a tutti gli autisti autorizzati`;
@@ -318,6 +326,38 @@ function updateCompanyCustomersPanel(panel=document.querySelector('.company-cust
   ?'Nessun cliente condiviso ancora disponibile, oppure elenco non sincronizzato.'
   :'Nessuna sede corrisponde alla ricerca. Prova un altro nome o una località.';
 }
+/** A visible, searchable picker: native datalist suggestions are unreliable on mobile. */
+function chooseTripCustomer(onPick){
+ const {dialog,body}=modal('Scegli cliente e località',{subtitle:'Cerca tra clienti personali, viaggi già salvati e sedi Google Maps aziendali.'});
+ const search=el('input',{type:'search',placeholder:'Nome cliente, città o indirizzo',
+  'aria-label':'Cerca cliente o località',autocomplete:'off',on:{input:()=>draw()}});
+ const count=el('p',{class:'trip-customer-picker-count',role:'status','aria-live':'polite'});
+ const status=el('p',{class:'trip-customer-picker-status',role:'status'});
+ const options=el('div',{class:'trip-customer-picker-options'});
+ function draw(){
+  const rows=combinedTripCustomerChoices({personal:state.customers,trips:state.trips,shared:companyCustomers});
+  const found=filterSharedCustomers(rows,search.value);
+  count.textContent=`${found.length} sedi disponibili${search.value.trim()?' per questa ricerca':''}`;
+  status.textContent=companyCustomersError||'';
+  status.hidden=!companyCustomersError;
+  options.replaceChildren(...found.map(customer=>el('button',{
+   type:'button',class:'trip-customer-picker-choice',
+   on:{click:()=>{onPick(customer);dialog.close();}}
+  },el('strong',{},customer.name),
+    el('span',{},customer.city||'Località da completare'),
+    customer.address?el('small',{},customer.address):null,
+    el('small',{class:'trip-customer-picker-source'},customer.fromCompany?'Google Maps aziendale':'Rubrica e viaggi personali'))));
+  if(!found.length)options.append(el('p',{class:'trip-customer-picker-empty'},
+   search.value.trim()?'Nessun cliente trovato: prova un altro nome o una località.':'Nessun cliente disponibile. Puoi inserire un cliente manualmente.'));
+ }
+ body.append(el('label',{class:'field'},el('span',{class:'field-label'},'Cerca cliente o località'),search),
+  count,status,options);
+ draw();
+ search.focus();
+ // Refresh without resetting the open trip form or discarding the current draft.
+ void refreshCompanyCustomers().then(()=>{if(dialog.open)draw();});
+}
+
 function companyCustomersPanel(){
  if(!sharedMapsEnabled())return null;
  const panel=el('section',{class:'panel company-customer-list','aria-label':'Registro clienti condiviso'});
@@ -334,6 +374,7 @@ function companyCustomersPanel(){
   el('p',{class:'company-customer-count',role:'status','aria-live':'polite'}),
   el('ul',{class:'company-customer-items'}),
   el('p',{class:'company-customer-empty',hidden:true}),
+  el('p',{class:'company-customer-error',role:'status',hidden:!companyCustomersError}),
   button('Aggiorna elenco','secondary',()=>{void refreshCompanyCustomers();},'refresh'));
  updateCompanyCustomersPanel(panel);
  return panel;
@@ -367,7 +408,9 @@ function renderInsert(main){
  const client=decorateTripField(field('Cliente','client',draft.client,{placeholder:'Nome cliente',list:customerListId,required:true,maxlength:500}),'users');
  const city=decorateTripField(field('Località','city',draft.city,{placeholder:'Es. Napoli',list:cityListId,required:true,maxlength:500}),'pin');
  const hint=el('p',{class:'field-hint',id:'tariff-hint'});city.wrap.append(hint);
- form.append(el('div',{class:'trip-fields'},container.wrap,client.wrap,city.wrap),datalist(customerListId,[...state.customers.map(c=>c.name),...state.trips.map(t=>t.client),...companyCustomers.map(c=>c.name)]));
+ form.append(el('div',{class:'trip-fields'},container.wrap,client.wrap,
+  button('Cerca nell’elenco clienti','secondary',()=>openTripCustomerPicker(),'search',
+   {class:'secondary-button trip-client-picker-button'}),city.wrap),datalist(customerListId,[...state.customers.map(c=>c.name),...state.trips.map(t=>t.client),...companyCustomers.map(c=>c.name)]));
  let cities=datalist(cityListId,citySuggestions(draft.client));form.append(cities);
  const add=el('button',{type:'button',class:'add-pickup trip-option','aria-label':draft.second?'Rimuovi seconda presa':'Aggiungi una seconda presa','aria-expanded':String(Boolean(draft.second)),on:{click:()=>{collect();draft.second=!draft.second;if(!draft.second){draft.secondClient='';draft.secondCity='';}render();}}},icon('pin'),el('span',{class:'tile-label'},'Seconda presa'),el('span',{class:'plus-disc','aria-hidden':'true'},draft.second?'−':'+'));
  const options=el('div',{class:'trip-options','aria-label':'Opzioni del viaggio'},add);form.append(options);
@@ -375,8 +418,29 @@ function renderInsert(main){
  if(draft.second){
   secondClient=field('Cliente','secondClient',draft.secondClient,{placeholder:'Cliente seconda presa',list:customerListId,required:true,maxlength:500});
   secondCity=field('Località','secondCity',draft.secondCity,{placeholder:'Città seconda presa',list:'second-cities',required:true,maxlength:500});
-  form.append(el('section',{class:'second-pickup'},el('div',{class:'pickup-heading'},'Seconda presa · stesso container'),secondClient.wrap,secondCity.wrap,datalist('second-cities',citySuggestions(draft.secondClient))));
+  form.append(el('section',{class:'second-pickup'},el('div',{class:'pickup-heading'},'Seconda presa · stesso container'),secondClient.wrap,
+   button('Cerca cliente seconda presa','secondary',()=>openTripCustomerPicker(true),'search',
+    {class:'secondary-button trip-client-picker-button'}),secondCity.wrap,datalist('second-cities',citySuggestions(draft.secondClient))));
   secondClient.input.addEventListener('change',()=>{autofillCity(secondClient.input,secondCity.input);updateEstimate();});
+ }
+ function openTripCustomerPicker(second=false){
+  // Choosing a location changes only the current draft, never saved customers or trips.
+  const targetClient=second?secondClient:client;
+  const targetCity=second?secondCity:city;
+  if(!targetClient||!targetCity)return;
+  collect();
+  chooseTripCustomer(customer=>{
+   targetClient.input.value=customer.name;
+   targetCity.input.value=customer.city;
+   if(second){
+    const current=form.querySelector('#second-cities');
+    current?.replaceWith(datalist('second-cities',citySuggestions(customer.name)));
+   }else{
+    const updated=datalist(cityListId,citySuggestions(customer.name));
+    cities.replaceWith(updated);cities=updated;
+   }
+   updateEstimate();
+  });
  }
  const noteInput=el('textarea',{id:'trip-note',name:'note',value:draft.note||'',maxlength:2000,rows:3,autocapitalize:'characters',spellcheck:'false',placeholder:'Scrivi una nota per questo viaggio'});
  const noteEditor=el('section',{class:'trip-note-editor',id:'trip-note-editor',hidden:!draft.noteOpen},el('label',{class:'field-label',for:'trip-note'},'Nota del viaggio',el('span',{class:'optional'},'Facoltativa')),noteInput,el('p',{class:'trip-note-help'},icon('lock'),'Visibile solo nell’app · esclusa dal PDF mensile'));
@@ -1206,6 +1270,7 @@ async function showLegacyArchiveRecovery(preview=null) {
 }
 function renderAccountGate(message=''){
  companyCustomers=[];
+ companyCustomersError='';
  companyCustomerSearch='';
  const hasPreviousSession=accountAccess.hasSession();
  const recovery=hasPreviousSession?el('div',{class:'account-session-recovery'},
