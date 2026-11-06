@@ -30,6 +30,8 @@ let syncMessage = 'Archivio personale';
 let syncWarning = false;
 let pdfReport = null;
 let toastTimer;
+let activationWelcome=false;
+let activationFirstOpen=false;
 let refreshView = null;
 let refreshTripCustomerSuggestions=null;
 let portiFrame = null;
@@ -160,7 +162,7 @@ function unmountPorti(){
  // Leaving Porti stops its polling and discards the in-frame booking query.
  portiFrame.src='about:blank';portiFrame.remove();portiFrame=null;
 }
-function navigate(next){if(tab==='porti'&&next!==tab)unmountPorti();tab=next;searchValue='';render();if(next==='insert'||next==='customers')void refreshCompanyCustomers();const scroll=document.querySelector('.app-scroll');if(scroll)scroll.scrollTop=0;window.scrollTo({top:0,behavior:'auto'});}
+function navigate(next){if(next!=='register')activationWelcome=false;if(tab==='porti'&&next!==tab)unmountPorti();tab=next;searchValue='';render();if(next==='insert'||next==='customers')void refreshCompanyCustomers();const scroll=document.querySelector('.app-scroll');if(scroll)scroll.scrollTop=0;window.scrollTo({top:0,behavior:'auto'});}
 function render(){
  const scrollTop=document.querySelector('.app-scroll')?.scrollTop||0;
  refreshView=null;
@@ -539,6 +541,18 @@ function tripCard(trip,amountContext){
  return card;
 }
 function renderRegister(main){
+ if(activationWelcome){
+  const needsProfile=!state.profile.firstName||!state.profile.lastName;
+  main.append(el('section',{class:'activation-register-welcome',role:'status','aria-live':'polite','aria-label':'Conferma attivazione account'},
+    el('span',{class:'activation-register-check','aria-hidden':'true'},icon('check')),
+    el('div',{class:'activation-register-text'},
+      el('strong',{},'Account attivato. Benvenuto in LTS!'),
+      el('p',{},'Il tuo Registro Viaggi è aperto e collegato al tuo account. I viaggi precedenti restano conservati.'),
+      needsProfile?el('p',{class:'activation-register-tip'},'Completa nome e cognome dal profilo per personalizzare il registro.'):null),
+    needsProfile?button('Completa profilo','secondary',()=>openProfile(true),'users',{class:'secondary-button activation-profile-action'}):null,
+    button('Chiudi','text',()=>{activationWelcome=false;render();},'close',
+      {class:'text-button activation-register-dismiss','aria-label':'Chiudi conferma attivazione'})));
+ }
  main.append(heading('TUTTO AL SUO POSTO','Registro mensile','I tuoi viaggi, dal più recente al meno recente.',el('div',{class:'month-control'},el('label',{class:'visually-hidden',for:'month-select'},'Mese del registro'),el('span',{class:'month-caption','aria-hidden':'true'},D.formatMonth(month)),el('input',{id:'month-select',type:'month',value:month,min:'1900-01',max:'2199-12',on:{change:event=>{if(/^\d{4}-(0[1-9]|1[0-2])$/.test(event.target.value)){month=event.target.value;pdfReport=null;render();}}}}))));
  const amountContext=D.buildTripAmountContext(state);const summary=D.monthlySummary(state,month);const trips=D.monthlyTrips(state,month);
  main.append(el('section',{class:'panel overview','aria-label':'Riepilogo del mese'},el('div',{class:'overview-top'},el('div',{},el('p',{class:'overview-label'},'Totale trasferte ed extra'),el('p',{class:'overview-amount'},D.formatMoney(summary.totalCents))),el('span',{class:'trip-count'},`${summary.count} ${summary.count===1?'viaggio':'viaggi'}`)),el('div',{class:'overview-bottom'},el('div',{},'TRASFERTE',el('strong',{},D.formatMoney(summary.pickupCents))),el('div',{},'SERVIZI EXTRA',el('strong',{},D.formatMoney(summary.extraCents))))));
@@ -1028,6 +1042,31 @@ function showAccountLogin(){
     'Se devi recuperare viaggi precedenti, esportali prima dall’archivio dispositivo. Dopo il login usa Importa backup e conferma.'));
 }
 
+/** Success is announced only after the onboarding endpoint confirms redemption. */
+function showActivationOpening(){
+ const overlay=el('div',{class:'activation-feedback-layer',role:'status','aria-live':'polite'},
+   el('section',{class:'activation-feedback-card','aria-label':'Conferma attivazione account'},
+     el('span',{class:'activation-feedback-check','aria-hidden':'true'},icon('check')),
+     el('p',{class:'activation-feedback-eyebrow'},'ACCESSO AUTISTI LTS'),
+     el('h2',{},'Account attivato!'),
+     el('p',{class:'activation-feedback-message'},'Attivazione confermata. Sto aprendo il tuo Registro Viaggi in sicurezza…'),
+     el('span',{class:'activation-feedback-progress','aria-hidden':'true'})));
+ document.body.append(overlay);
+ return {
+  close:()=>overlay.remove(),
+  manualAccess:()=>{
+   overlay.setAttribute('role','alert');
+   const card=overlay.querySelector('.activation-feedback-card');
+   card.querySelector('.activation-feedback-progress')?.remove();
+   card.querySelector('.activation-feedback-message').textContent=
+     'Account attivato correttamente. Non è stato possibile aprire automaticamente il registro. Accedi con il tuo numero e la password appena scelta.';
+   card.append(button('Accedi al Registro Viaggi','primary',()=>{
+     overlay.remove();renderAccountGate();
+     root.querySelector('input[name="phone"]')?.focus();
+   },'arrow',{class:'primary-button full activation-feedback-action'}));
+  }
+ };
+}
 function showDriverActivation(){
  const {dialog,body}=modal('Attiva o ripristina il tuo account',{
    subtitle:'Per la prima attivazione o il reinserimento dello stesso autista, usa il codice ricevuto privatamente dall’amministratore. Il codice dura 24 ore e si usa una sola volta.'});
@@ -1053,11 +1092,36 @@ function showDriverActivation(){
    }
    submit.disabled=true;
    try{
-     const result=await accountAccess.activateDriverInvitation({phone:phone.value.trim(),code:code.value.trim(),password:password.value});
+     const activationPhone=phone.value.trim();
+     const currentPassword=password.value; // In-memory only; never saved or logged.
+     await accountAccess.activateDriverInvitation({
+       phone:activationPhone,code:code.value.trim(),password:currentPassword
+     });
      password.value='';confirm.value='';code.value='';
      dialog.close();
-     showAccountLogin();
-     toast(result?.message||'Attivazione o ripristino completato. Accedi con il numero e la nuova password.');
+     const feedback=showActivationOpening();
+     try{
+       // An invitation redemption is not itself an authenticated session.
+       const signInPhone=/^3\d{9}$/.test(activationPhone)?'+39'+activationPhone:activationPhone;
+       const logged=await accountAccess.login(signInPhone,currentPassword);
+       if(logged.role!=='driver'||!accountAccess.isVerified()){
+         accountAccess.signOut();
+         throw new Error('Identità autista non verificata.');
+       }
+       tab='register';month=today().slice(0,7);
+       activationFirstOpen=true;activationWelcome=true;
+       await initialize();
+       activationFirstOpen=false;
+       if(!accountAccess.isVerified()||!store.usingAccount()||!root.querySelector('.app-frame'))
+         throw new Error('Registro personale non disponibile.');
+       feedback.close();
+       if(!logged.remembered)
+         toast('Registro aperto. Il browser potrebbe richiedere un nuovo accesso dopo la chiusura.',true);
+     }catch(openError){
+       // The account is active, but no register is claimed open after failure.
+       activationFirstOpen=false;activationWelcome=false;
+       feedback.manualAccess();
+     }
    }catch(err){
      // New and already-registered drivers must both reject breached passwords.
      // Server checks a breach before claiming the one-time invitation/reset code.
@@ -1409,14 +1473,14 @@ async function initialize(){
   if(!(await finishInitialTruckLoading()))return;
   render();
   void refreshCompanyCustomers();
-  if(store.usingAccount() && !store.hasImportedLegacyArchive() &&
+  if(!activationFirstOpen && store.usingAccount() && !store.hasImportedLegacyArchive() &&
     state.trips.length===0 && state.customers.length===0 && state.tariffs.length===0) {
     try {
       const previous=await store.previewLegacyArchive();
       if(previous){await showLegacyArchiveRecovery(previous);return;}
     }catch{ /* Never block the verified account if old device storage is unavailable. */ }
   }
-  if(!state.profile.firstName||!state.profile.lastName)openProfile(true);
+  if(!activationFirstOpen&&(!state.profile.firstName||!state.profile.lastName))openProfile(true);
   if(new URL(location.href).searchParams.get('installa')==='1'&&!isInstalled())installDialog();
  }catch(err){
   root.replaceChildren(el('div',{class:'boot'},el('img',{src:'/LTS-Registro-Viaggi/assets/lts-logo.png',alt:'LTS'}),el('div',{class:'boot-error'},el('h2',{},'Il registro non è disponibile'),el('p',{class:'subtitle'},err.message||'Controlla la connessione e riprova.'),button('Riprova','primary',()=>initialize(),'refresh'))));
