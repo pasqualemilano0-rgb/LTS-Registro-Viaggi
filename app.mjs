@@ -186,7 +186,7 @@ function render(){
  scroll.scrollTop=scrollTop;
 }
 function renderPorti(main){
- const url=(runtimeConfig.basePath??'/')+'porti/index.html';
+ const url=(runtimeConfig.basePath??'/')+'porti/index.html?v=20261106-porti-clean-v2';
  portiFrame=el('iframe',{class:'porti-frame',src:url,title:'Porti e booking',referrerpolicy:'no-referrer'});
  main.append(el('div',{class:'porti-heading'},el('h1',{},'Porti')),portiFrame);
 }
