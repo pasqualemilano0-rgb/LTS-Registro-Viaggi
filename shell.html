@@ -33,17 +33,21 @@
   <link rel="icon" type="image/png" href="/LTS-Registro-Viaggi/assets/icon-192.png">
   <link rel="stylesheet" href="/LTS-Registro-Viaggi/app.css?v=20261106-truck-road-sync-v2">
   <link rel="stylesheet" href="/LTS-Registro-Viaggi/truck-loader.css?v=20261106-scania-s-v1">
+  <link rel="stylesheet" href="/LTS-Registro-Viaggi/photo-splash.css?v=20261106-scania-photo-v1">
   <link rel="stylesheet" href="/LTS-Registro-Viaggi/activation-feedback.css?v=20261106-onboarding-v1">
 </head>
 <body>
-  <div id="app"><div class="boot"><img src="/LTS-Registro-Viaggi/assets/lts-logo.png" alt="LTS"><p>Il tuo registro, sempre con te.</p><div class="truck-loader" role="status" aria-label="Caricamento LTS in corso">
-      <span class="truck-loader-scene" aria-hidden="true">
-        <span class="truck-loader-road"><span class="truck-loader-lane"></span></span>
-        <span class="truck-loader-vehicle">
-          <img class="truck-loader-art" src="/LTS-Registro-Viaggi/assets/lts-scania-s-loader.svg" alt="" width="720" height="330" decoding="async">
-        </span>
-      </span>
-    </div></div></div>
+  <div id="app">
+    <div class="boot boot-photo-intro">
+      <div class="photo-splash" role="status" aria-label="Caricamento LTS in corso">
+        <img class="photo-splash-art"
+             src="/LTS-Registro-Viaggi/assets/lts-full-photo.webp"
+             alt="LTS Registro Viaggi: Scania Serie S bianco, rimorchio blu, panorama al tramonto e logo aziendale."
+             width="841" height="1550" decoding="async" fetchpriority="high">
+        <span class="photo-loading-bar" aria-hidden="true"></span>
+      </div>
+    </div>
+  </div>
   <noscript>Per usare LTS Registro Viaggi attiva JavaScript nelle impostazioni di Safari.</noscript>
   <script src="/LTS-Registro-Viaggi/assets/vendor/jspdf.umd.min.js" defer></script>
   <script src="/LTS-Registro-Viaggi/assets/vendor/jspdf.plugin.autotable.min.js" defer></script>
