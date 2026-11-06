@@ -9,6 +9,7 @@ export default Object.freeze({
     "archiveEndpoint": "https://otrqynkscpbeyuvdlgpg.supabase.co/functions/v1/lts-account-state",
     "onboardingEndpoint": "https://otrqynkscpbeyuvdlgpg.supabase.co/functions/v1/lts-driver-onboarding",
     "reportEndpoint": "https://otrqynkscpbeyuvdlgpg.supabase.co/functions/v1/lts-company-report",
+    "tariffsEndpoint": "https://otrqynkscpbeyuvdlgpg.supabase.co/functions/v1/lts-company-tariffs",
     "sharedMapsEndpoint": "https://otrqynkscpbeyuvdlgpg.supabase.co/functions/v1/lts-shared-maps"
   }
 });
