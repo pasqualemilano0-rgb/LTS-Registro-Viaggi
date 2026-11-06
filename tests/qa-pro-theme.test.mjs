@@ -11,8 +11,8 @@ test('driver entrypoints load the original LTS theme and preserve account routes
   assert.match(source,/app[.]css[?]v=20261106-truck-road-sync-v2/);
   assert.doesNotMatch(source,/href="[^"]*pro-theme[.]css/);
   assert.match(source,/app[.]mjs[?]v=20261106-scania-pause-v3/);
-  assert.match(source,/photo-splash[.]css[?]v=20261106-scania-photo-v1/);
-  assert.match(source,/assets\/lts-full-photo[.]webp/);
+  assert.match(source,/photo-splash[.]css[?]v=20261106-scania-photo-hd-v2/);
+  assert.match(source,/assets\/lts-full-photo-hd[.]webp/);
  }
  assert.match(css,/\.overview\{background:var\(--teal\);color:#fff/);
  assert.match(css,/\.section-hero\{[^}]*background:linear-gradient\(115deg,#005f77,#087d94\)/);
@@ -27,7 +27,7 @@ test('driver entrypoints load the original LTS theme and preserve account routes
 
 test('new PWA worker precaches the original stylesheet, not the unused override',()=>{
  const sw=read('sw.js');
- assert.match(sw,/const CACHE = PREFIX \+ '20261106-full-scania-photo-v9'/);
+ assert.match(sw,/const CACHE = PREFIX \+ '20261106-full-scania-photo-hd-v10'/);
  assert.match(sw,/"\/LTS-Registro-Viaggi\/app[.]css"/);
  assert.doesNotMatch(sw,/"\/LTS-Registro-Viaggi\/pro-theme[.]css"/);
  assert.doesNotMatch(sw,/service_role|sb_secret_/i);
