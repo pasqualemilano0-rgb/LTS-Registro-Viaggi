@@ -575,40 +575,53 @@ test('embedded access cannot display register or admin credential inputs',()=>{
  assert.doesNotMatch(app,/frame-ancestors.*<meta/i);
 });
 
-test('animated shipping truck replaces the initial loading spinner',()=>{
+test('animated shipping truck travels toward the destination and finishes on readiness',()=>{
  const truckStyles=read('truck-loader.css');
  assert.match(html,/class="truck-loader"/);
  assert.match(html,/class="truck-loader-vehicle"/);
  assert.match(html,/class="truck-loader-road"/);
  assert.match(html,/Caricamento LTS in corso/);
  assert.match(sw,/truck-loader[.]css/);
- assert.match(truckStyles,/@keyframes lts-truck-drive/);
+ assert.match(truckStyles,/@keyframes lts-truck-approach/);
+ assert.match(truckStyles,/@keyframes lts-truck-arrive/);
+ assert.match(truckStyles,/animation:lts-truck-approach 1[.]9s/);
+ assert.match(truckStyles,/animation:lts-truck-arrive [.]6s/);
+ assert.match(truckStyles,/is-arriving/);
  assert.match(truckStyles,/@keyframes lts-road-dashes/);
  assert.match(truckStyles,/prefers-reduced-motion:reduce/);
+ assert.doesNotMatch(truckStyles,/lts-truck-drive/);
  assert.doesNotMatch(html,/class="loader" aria-label="Caricamento"/);
 });
 
-test('the first truck splash lasts 2500ms on fast boot without slowing a long load',async()=>{
+test('ready app opens after the truck completes both road stages',async()=>{
  const start=app.indexOf('const firstBootStartedAt=performance.now();');
  const end=app.indexOf('\nasync function initialize(){',start);
  assert.ok(start>=0&&end>start,'boot timing logic must be present');
  const script=app.slice(start,end)+'\nreturn finishInitialTruckLoading;';
- const trial=async(elapsed,reducedMotion)=>{
-  const clock={value:0};
-  const timers=[];
-  const indicator={isConnected:true};
-  const root={querySelector:()=>indicator};
+ const trial=async(elapsed,reducedMotion,animationsAvailable=true)=>{
+  const events=[],timers=[];
+  let arriving=false;
+  const truck={isConnected:true,
+   querySelector:()=>vehicle,
+   classList:{add(name){events.push(name);arriving=true;}}};
+  const vehicle=animationsAvailable ? {getAnimations:()=>[{
+   animationName:arriving?'lts-truck-arrive':'lts-truck-approach',
+   finished:Promise.resolve().then(()=>events.push(arriving?'end-of-road':'approach-complete'))
+  }]} : {};
+  const root={querySelector:()=>truck};
   const win={matchMedia:()=>({matches:reducedMotion})};
   const schedule=(callback,ms)=>{timers.push(ms);callback();};
   const fn=new Function('performance','root','window','setTimeout',script)(
-   {now:()=>clock.value},root,win,schedule);
-  clock.value=elapsed;
+   {now:()=>elapsed},root,win,schedule);
   assert.equal(await fn(),true);
-  return timers;
+  return {events,timers};
  };
- assert.deepEqual(await trial(500,false),[2000]);
- assert.deepEqual(await trial(3000,false),[]);
- assert.deepEqual(await trial(500,true),[]);
+ assert.deepEqual(await trial(500,false),{
+  events:['approach-complete','is-arriving','end-of-road'],timers:[]});
+ assert.deepEqual(await trial(500,true),{events:[],timers:[]});
+ // Browsers without Web Animations API use a 1.9s approach and a .6s finish.
+ assert.deepEqual(await trial(100,false,false),{
+  events:['is-arriving'],timers:[1800,600]});
  assert.match(app,/if\(!\(await finishInitialTruckLoading\(\)\)\)return;\s*render\(\)/);
- assert.match(sw,/20261106-truck-splash-2500-v1/);
+ assert.match(sw,/20261106-truck-road-sync-v2/);
 });
