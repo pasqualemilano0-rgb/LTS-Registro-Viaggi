@@ -611,8 +611,10 @@ test('ready app opens after the truck completes both road stages',async()=>{
   const root={querySelector:()=>truck};
   const win={matchMedia:()=>({matches:reducedMotion})};
   const schedule=(callback,ms)=>{timers.push(ms);callback();};
+  const clock={value:0};
   const fn=new Function('performance','root','window','setTimeout',script)(
-   {now:()=>elapsed},root,win,schedule);
+   {now:()=>clock.value},root,win,schedule);
+  clock.value=elapsed;
   assert.equal(await fn(),true);
   return {events,timers};
  };
