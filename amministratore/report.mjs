@@ -1,5 +1,6 @@
 /** Administrator reporting UI. Aggregates are authoritative only when returned by the API. */
 import {setupInsights} from './report-insights.mjs?v=20261104-company-v3';
+import {setupCustomerOverview} from './customer-overview.mjs?v=20261106-directory-v1';
 const el=id=>document.getElementById(id);
 function node(tag,className='',value=''){
  const e=document.createElement(tag);
@@ -181,6 +182,7 @@ export function setupReport(account){
  month.value=currentMonth();
  let requestSeq=0,rows=[],page=null,loading=false,focusOnDriver=false;
  const insights=setupInsights(account);
+ const companyDirectory=setupCustomerOverview(account);
  const driverSearch=el('report-driver-search');
  function selectDriver(id){
   if(driver.value===id&&page)return;
@@ -208,7 +210,7 @@ export function setupReport(account){
  }
  function reset(){
   requestSeq++;rows=[];page=null;loading=false;
-  clearData();insights.reset();el('report-empty').hidden=true;el('report-status').textContent='';
+  clearData();insights.reset();companyDirectory.reset();el('report-empty').hidden=true;el('report-status').textContent='';
   el('report-error').hidden=true;el('report-next').disabled=false;
   updateDriverOptions([]);
   driverSearch.value='';
@@ -219,6 +221,7 @@ export function setupReport(account){
   if(!account.isVerified()||account.getRole()!=='admin')return;
   if(!views.some(v=>v[0]===view))return;
   const wasReport=!report.hidden,showReport=!['drivers','security'].includes(view);
+  if(view!=='overview')companyDirectory.reset();
   // Never retain a one-time invite or password-reset code on another page.
   if(view!=='drivers'){
    el('secret-code').value='';
@@ -229,6 +232,7 @@ export function setupReport(account){
    tabs(view);
   }else{
    tabs(view);
+   if(view==='overview')void companyDirectory.load();
    if(!wasReport||(!page&&!loading)){rows=[];void load(false);}
   }
   window.scrollTo({top:0,behavior:'instant'});
@@ -303,7 +307,10 @@ export function setupReport(account){
  for(const button of document.querySelectorAll('[data-open-section]')){
   button.addEventListener('click',()=>open(button.dataset.openSection));
  }
- el('report-refresh').addEventListener('click',()=>{rows=[];void load(false);});
+ el('report-refresh').addEventListener('click',()=>{
+  rows=[];void load(false);
+  if(el('dashboard').dataset.view==='overview')void companyDirectory.load();
+ });
  month.addEventListener('change',()=>{rows=[];void load(false);});
  driver.addEventListener('change',()=>{rows=[];focusOnDriver=Boolean(driver.value);void load(false);});
  driverSearch.addEventListener('input',()=>{
