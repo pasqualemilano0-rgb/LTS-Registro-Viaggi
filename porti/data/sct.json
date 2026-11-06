@@ -48,6 +48,15 @@
       "status": "PENDING"
     },
     {
+      "vessel": "OOCL KOBE",
+      "voyage": "643N",
+      "eta": "07/11/2026 00:00",
+      "closing": "07/11/2026 12:00",
+      "acceptance_dry": "CARGO ACCEPTED",
+      "acceptance_reef": "CARGO ACCEPTED",
+      "status": "PENDING"
+    },
+    {
       "vessel": "CONTSHIP ERA",
       "voyage": "93E",
       "eta": "07/11/2026 00:00",
@@ -66,17 +75,8 @@
       "status": "PENDING"
     },
     {
-      "vessel": "OOCL KOBE",
-      "voyage": "643N",
-      "eta": "07/11/2026 00:00",
-      "closing": "07/11/2026 12:00",
-      "acceptance_dry": "CARGO ACCEPTED",
-      "acceptance_reef": "CARGO ACCEPTED",
-      "status": "PENDING"
-    },
-    {
-      "vessel": "VENTO DI GRECALE",
-      "voyage": "637",
+      "vessel": "ULYSSE",
+      "voyage": "081126E",
       "eta": "08/11/2026 00:00",
       "closing": "07/11/2026 10:00",
       "acceptance_dry": "CARGO ACCEPTED",
@@ -93,18 +93,9 @@
       "status": "PENDING"
     },
     {
-      "vessel": "ULYSSE",
-      "voyage": "081126E",
+      "vessel": "VENTO DI GRECALE",
+      "voyage": "637",
       "eta": "08/11/2026 00:00",
-      "closing": "07/11/2026 10:00",
-      "acceptance_dry": "CARGO ACCEPTED",
-      "acceptance_reef": "CARGO ACCEPTED",
-      "status": "PENDING"
-    },
-    {
-      "vessel": "X-PRESS ANTLIA",
-      "voyage": "020W",
-      "eta": "09/11/2026 00:00",
       "closing": "07/11/2026 10:00",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
@@ -113,6 +104,15 @@
     {
       "vessel": "LIDER TRABZON",
       "voyage": "1126",
+      "eta": "09/11/2026 00:00",
+      "closing": "07/11/2026 10:00",
+      "acceptance_dry": "CARGO ACCEPTED",
+      "acceptance_reef": "CARGO ACCEPTED",
+      "status": "PENDING"
+    },
+    {
+      "vessel": "X-PRESS ANTLIA",
+      "voyage": "020W",
       "eta": "09/11/2026 00:00",
       "closing": "07/11/2026 10:00",
       "acceptance_dry": "CARGO ACCEPTED",
@@ -129,19 +129,19 @@
       "status": "PENDING"
     },
     {
-      "vessel": "MEDKON NLS",
-      "voyage": "324",
+      "vessel": "JAKARTA EXPRESS",
+      "voyage": "14W46",
       "eta": "10/11/2026 00:00",
-      "closing": "09/11/2026 17:00",
+      "closing": "10/11/2026 17:00",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
     },
     {
-      "vessel": "JAKARTA EXPRESS",
-      "voyage": "14W46",
+      "vessel": "MEDKON NLS",
+      "voyage": "324",
       "eta": "10/11/2026 00:00",
-      "closing": "10/11/2026 17:00",
+      "closing": "09/11/2026 17:00",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
@@ -158,6 +158,15 @@
     {
       "vessel": "JOANNA BORCHARD",
       "voyage": "1194",
+      "eta": "11/11/2026 00:00",
+      "closing": "10/11/2026 17:00",
+      "acceptance_dry": "CARGO ACCEPTED",
+      "acceptance_reef": "CARGO ACCEPTED",
+      "status": "PENDING"
+    },
+    {
+      "vessel": "RACHEL BORCHARD",
+      "voyage": "1033",
       "eta": "11/11/2026 00:00",
       "closing": "10/11/2026 17:00",
       "acceptance_dry": "CARGO ACCEPTED",
@@ -201,15 +210,6 @@
       "status": "PENDING"
     },
     {
-      "vessel": "DEPE",
-      "voyage": "DEP1426W",
-      "eta": "12/11/2026 00:00",
-      "closing": "11/11/2026 17:00",
-      "acceptance_dry": "CARGO ACCEPTED",
-      "acceptance_reef": "CARGO ACCEPTED",
-      "status": "PENDING"
-    },
-    {
       "vessel": "MIRIAM BORCHARD",
       "voyage": "1045",
       "eta": "12/11/2026 00:00",
@@ -219,10 +219,10 @@
       "status": "PENDING"
     },
     {
-      "vessel": "KOBE EXPRESS",
-      "voyage": "645W",
-      "eta": "13/11/2026 00:00",
-      "closing": "12/11/2026 17:00",
+      "vessel": "DEPE",
+      "voyage": "DEP1426W",
+      "eta": "12/11/2026 00:00",
+      "closing": "11/11/2026 17:00",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
@@ -230,6 +230,15 @@
     {
       "vessel": "MASTERY D",
       "voyage": "0926E",
+      "eta": "13/11/2026 00:00",
+      "closing": "12/11/2026 17:00",
+      "acceptance_dry": "CARGO ACCEPTED",
+      "acceptance_reef": "CARGO ACCEPTED",
+      "status": "PENDING"
+    },
+    {
+      "vessel": "KOBE EXPRESS",
+      "voyage": "645W",
       "eta": "13/11/2026 00:00",
       "closing": "12/11/2026 17:00",
       "acceptance_dry": "CARGO ACCEPTED",
@@ -246,7 +255,7 @@
       "status": "PENDING"
     }
   ],
-  "acquired_at": "2026-11-06T14:15:16.632Z",
-  "data_changed_at": "2026-11-05T23:00:16.906Z",
-  "updated_at": "2026-11-06T14:15:16.632Z"
+  "acquired_at": "2026-11-06T15:15:16.954Z",
+  "data_changed_at": "2026-11-06T15:00:16.896Z",
+  "updated_at": "2026-11-06T15:15:16.954Z"
 }
