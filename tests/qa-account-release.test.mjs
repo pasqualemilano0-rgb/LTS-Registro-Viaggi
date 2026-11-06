@@ -42,7 +42,7 @@ test('account archive ID must derive from verified session, not user input',()=>
   assert.match(store,/account[.]archiveRequest\(method, body\)/);
 });
 test('offline worker activates new cache and precaches auth code without caching server data',()=>{
-  assert.match(sw,/const CACHE = PREFIX \+ '20261106-scania-s-v4'/);
+  assert.match(sw,/const CACHE = PREFIX \+ '20261106-full-scania-photo-v6'/);
   assert.match(sw,/\/LTS-Registro-Viaggi\/account-access[.]mjs/);
   assert.match(sw,/\/LTS-Registro-Viaggi\/shared\/quick-trip[.]mjs/);
   assert.match(sw,/\/LTS-Registro-Viaggi\/shared\/port-source-status[.]mjs/);
@@ -328,7 +328,7 @@ test('the main register CSP is restrictive, loads before scripts, and preserves 
  const porti=read('porti/index.html');
  assert.match(porti,/https:\/\/api\.conateco\.it/);
  assert.match(porti,/https:\/\/container-booking-backend\.pasqualemilano0\.workers\.dev/);
- assert.match(sw,/const CACHE = PREFIX \+ '20261106-scania-s-v4'/);
+ assert.match(sw,/const CACHE = PREFIX \+ '20261106-full-scania-photo-v6'/);
 });
 
 test('logout is authenticated on the server and remote driver disconnection is admin-only',()=>{
@@ -344,7 +344,7 @@ test('logout is authenticated on the server and remote driver disconnection is a
  assert.match(admin,/account[.]manageDrivers\(action,data\)/);
  assert.match(admin,/account[.]logout\(\)/);
  assert.match(admin,/Sessioni revocate/);
- assert.match(sw,/const CACHE = PREFIX \+ '20261106-scania-s-v4'/);
+ assert.match(sw,/const CACHE = PREFIX \+ '20261106-full-scania-photo-v6'/);
  assert.doesNotMatch([app,auth,admin,sw].join('\n'),/SUPABASE_SERVICE_ROLE_KEY|sb_secret_[A-Za-z0-9_-]+/);
 });
 
@@ -383,7 +383,7 @@ test('TOTP admin flow uses verified backend session and never exposes secret in 
  assert.match(auth,/export async function verifyAdminTotp\(code,factorId=null\)/);
  assert.match(auth,/verified=!mfaEnrolled\|\|mfaVerified/);
  assert.match(app,/logged\.mfa_enrolled&&!logged\.mfa_verified/);
- assert.match(sw,/20261106-scania-s-v4/);
+ assert.match(sw,/20261106-full-scania-photo-v6/);
  assert.match(css,/#mfa-setup-secret/);
  for(const item of [html,admin,auth,app]){
   assert.doesNotMatch(item,/SUPABASE_SERVICE_ROLE_KEY|sb_secret_[A-Za-z0-9_-]+/);
@@ -417,7 +417,7 @@ test('Authenticator app switching preserves the existing enrollment instead of r
  assert.match(html,/senza conservare QR e chiave/);
  assert.doesNotMatch(admin,/sessionStorage|localStorage|innerHTML/);
  assert.doesNotMatch(auth,/sessionStorage[.]setItem\(MFA_PENDING_KEY,JSON[.]stringify\(\{[^\n]*(?:qr_code|secret|code)/);
- assert.match(sw,/20261106-scania-s-v4/);
+ assert.match(sw,/20261106-full-scania-photo-v6/);
 });
 
 test('administrator has separately verified backup authenticator without bypassing AAL2',()=>{
@@ -436,7 +436,7 @@ test('administrator has separately verified backup authenticator without bypassi
  assert.match(auth,/rememberPendingAdminMfa\(result[.]factor_id,'backup'\)/);
  assert.doesNotMatch(admin,/localStorage|sessionStorage|innerHTML|sb_secret_/i);
  assert.match(html,/Non caricare mai QR, chiavi TOTP/);
- assert.match(sw,/20261106-scania-s-v4/);
+ assert.match(sw,/20261106-full-scania-photo-v6/);
 });
 
 test('Porti can start only after verified account handshake from the LTS parent',()=>{
@@ -574,25 +574,37 @@ test('embedded access cannot display register or admin credential inputs',()=>{
  assert.match(admin,/field[.]value='';field[.]disabled=true/);
  assert.match(admin,/if\(!denyEmbeddedAdmin\(\)\)authenticate\(\)/);
  assert.match(html,/20261106-truck-road-sync-v2/);
- assert.match(sw,/20261106-scania-s-v4/);
+ assert.match(sw,/20261106-full-scania-photo-v6/);
  assert.doesNotMatch(app,/frame-ancestors.*<meta/i);
 });
 
-test('Scania S stays still while the loading bar animates until access is ready',()=>{
- const css=read('truck-loader.css');
- assert.match(html,/class="truck-loader"/);
- assert.match(html,/class="truck-loader-vehicle"/);
- assert.match(html,/class="truck-loader-road"/);
- assert.match(html,/Caricamento LTS in corso/);
- assert.match(css,/@keyframes lts-loading-current/);
- assert.match(css,/@keyframes lts-road-dashes/);
- assert.match(css,/animation:lts-loading-current 1[.]55s linear infinite/);
- assert.match(css,/truck-loader-vehicle[^}]*animation:none!important/);
- assert.match(css,/truck-loader-art[^}]*animation:none!important/);
- assert.doesNotMatch(css,/@keyframes lts-truck-approach/);
- assert.doesNotMatch(css,/@keyframes lts-truck-arrive/);
- assert.doesNotMatch(css,/@keyframes lts-truck-suspension/);
- assert.match(css,/prefers-reduced-motion:reduce/);
+test('complete LTS Scania photo stays still while only the progress bar moves',()=>{
+ const photoCss=read('photo-splash.css'),fallbackCss=read('truck-loader.css');
+ for(const page of ['index.html','shell.html']){
+  const doc=read(page);
+  assert.match(doc,/class="boot boot-photo-intro"/);
+  assert.match(doc,/class="photo-splash"/);
+  assert.match(doc,/class="photo-loading-bar"/);
+  assert.match(doc,/assets\/lts-full-photo[.]webp/);
+  assert.match(doc,/photo-splash[.]css[?]v=20261106-scania-photo-v1/);
+  assert.match(doc,/aria-label="Caricamento LTS in corso"/);
+  assert.doesNotMatch(doc,/class="truck-loader-vehicle"/);
+ }
+ assert.match(photoCss,/object-fit:contain/);
+ assert.match(photoCss,/aspect-ratio:841\/1550/);
+ assert.match(photoCss,/@keyframes lts-photo-bar-sweep/);
+ assert.match(photoCss,/animation:lts-photo-bar-sweep 1[.]65s ease-in-out infinite/);
+ assert.match(photoCss,/@keyframes lts-photo-bar-lanes/);
+ assert.doesNotMatch(photoCss,/truck.*animation|truck.*transform/i);
+ assert.doesNotMatch(fallbackCss,/@keyframes lts-truck-approach/);
+ assert.doesNotMatch(fallbackCss,/@keyframes lts-truck-arrive/);
+ assert.match(photoCss,/prefers-reduced-motion:reduce/);
+ assert.match(sw,/assets\/lts-full-photo[.]webp/);
+ assert.match(sw,/photo-splash[.]css/);
+ const image=readFileSync(new URL('../assets/lts-full-photo.webp',import.meta.url));
+ assert.ok(image.length>7000 && image.length<100000);
+ assert.equal(image.toString('ascii',0,4),'RIFF');
+ assert.equal(image.toString('ascii',8,12),'WEBP');
 });
 test('verified register opens immediately after readiness, without timed truck stages',async()=>{
  const start=app.indexOf('let initialLoaderClosed=false;');
@@ -605,7 +617,7 @@ test('verified register opens immediately after readiness, without timed truck s
  assert.equal(await finish(),true);
  assert.match(app,/if\(!\(await finishInitialTruckLoading\(\)\)\)return;\s*render\(\)/);
  assert.doesNotMatch(code,/setTimeout|animation[.]finished|waitForTruckStage/);
- assert.match(sw,/20261106-scania-s-v4/);
+ assert.match(sw,/20261106-full-scania-photo-v6/);
 });
 
 test('activation confirmation is visible and personal register requires verified login',()=>{
@@ -635,23 +647,21 @@ test('activation confirmation is visible and personal register requires verified
  assert.match(read('sw.js'),/activation-feedback[.]css/);
 });
 
-test('branded Scania S loader is animated, accessible and included in the offline cache',()=>{
- const svg=read('assets/lts-scania-s-loader.svg');
- const css=read('truck-loader.css');
- for(const page of ['index.html','shell.html']){
-   const html=read(page);
-   assert.match(html,/assets\/lts-scania-s-loader[.]svg/);
-   assert.match(html,/truck-loader[.]css[?]v=20261106-scania-s-v1/);
-   assert.match(html,/aria-label="Caricamento LTS in corso"/);
-   assert.doesNotMatch(html,/id="lts-loader-container"/);
+test('photo splash is paired with immutable offline image and safe accessible loading state',()=>{
+ const photo=read('photo-splash.css');
+ for(const p of ['index.html','shell.html']){
+  const doc=read(p);
+  assert.match(doc,/class="photo-splash-art"/);
+  assert.match(doc,/src="\/LTS-Registro-Viaggi\/assets\/lts-full-photo[.]webp"/);
+  assert.match(doc,/role="status" aria-label="Caricamento LTS in corso"/);
+  assert.match(doc,/fetchpriority="high"/);
+  assert.match(doc,/class="photo-loading-bar" aria-hidden="true"/);
  }
- assert.match(svg,/SCANIA/);
- assert.match(svg,/LTS/);
- assert.doesNotMatch(css,/@keyframes lts-truck-approach/);
- assert.doesNotMatch(css,/@keyframes lts-truck-arrive/);
- assert.match(css,/@keyframes lts-road-dashes/);
- assert.match(css,/animation:lts-loading-current 1[.]55s linear infinite/);
- assert.match(css,/prefers-reduced-motion:reduce/);
- assert.match(read('sw.js'),/assets\/lts-scania-s-loader[.]svg/);
- assert.doesNotMatch(svg,/<script|<foreignObject|href="https?:\/\//i);
+ assert.match(photo,/top:72[.]13%/);
+ assert.match(photo,/left:8[.]05%/);
+ assert.match(photo,/background:linear-gradient/);
+ assert.match(photo,/prefers-reduced-motion:reduce/);
+ assert.match(app,/root[.]querySelector\('[".]photo-splash[".]'\)/);
+ assert.doesNotMatch(photo,/url\(["']?https?:/);
 });
+
