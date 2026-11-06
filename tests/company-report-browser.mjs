@@ -285,7 +285,7 @@ try{
  assert.equal(await page.locator('#report-panel').isVisible(),false);
  await openAdminTab('report-tab');
  await page.waitForFunction(()=>document.querySelector('#report-count').textContent==='2');
- // All seven navigation pages are real, separate, keyboard-accessible views.
+ // All eight navigation pages are real, separate, keyboard-accessible views.
  const sectionCases=[
   ['overview-tab','overview','#console-overview'],
   ['management-tab','drivers','#invite-form'],
@@ -324,7 +324,7 @@ try{
  assert.equal(errors.length,0,'No JavaScript errors: '+errors.join(';'));
  // Data source remains read-only, notes never render as HTML, and no horizontal page scroll on mobile.
  assert.equal(await page.locator('#report-month').inputValue(),'2026-11');
- console.log('PASS Chromium mobile 390px: seven real pages, admin MFA, charts, filters, PDF/Excel, anomaly drill-down, security, logout wipe');
+ console.log('PASS Chromium mobile 390px: eight real pages, admin MFA, charts, filters, PDF/Excel, anomaly drill-down, security, logout wipe');
  await page.close();
  // Desktop navigation: the protected dashboard must retain working tabs with its
  // new dark sidebar; never make a non-verified page visible via CSS.
@@ -338,7 +338,7 @@ try{
   'Professional left sidebar must be beside the admin content');
  assert.equal(await nav.evaluate(e=>getComputedStyle(e).position),'sticky');
  assert.equal(await desktop.locator('.admin-nav-brand').isVisible(),true);
- assert.equal(await nav.locator('button').count(),7);
+ assert.equal(await nav.locator('button').count(),8);
  assert.equal(await desktop.locator('#dashboard').getAttribute('data-view'),'overview');
  await desktop.locator('#report-tab').click();
  await desktop.waitForFunction(()=>document.querySelector('#report-count').textContent==='2');
