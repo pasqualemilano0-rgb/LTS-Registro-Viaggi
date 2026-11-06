@@ -1,0 +1,51 @@
+/* Full LTS photograph: the Scania and scenery remain stationary.
+   Only the existing photographed progress bar's interior moves. */
+.boot.boot-photo-intro{
+ width:100%;min-height:100dvh;margin:0;padding:0;
+ display:flex;align-items:center;justify-content:center;overflow:hidden;
+ background:linear-gradient(180deg,#dcebfa 0%,#d0e1f4 58%,#2671a3 100%);
+}
+.boot-photo-intro .photo-splash{
+ position:relative;display:block;flex:none;
+ width:min(100vw,54.258dvh);max-width:100%;aspect-ratio:841/1550;
+ margin:0;overflow:hidden;isolation:isolate;
+ box-shadow:0 0 38px rgba(12,63,103,.025);
+}
+.boot-photo-intro .photo-splash-art{
+ display:block;width:100%;height:100%;object-fit:contain;
+ object-position:center;user-select:none;-webkit-user-drag:none;
+}
+.boot-photo-intro .photo-loading-bar{
+ position:absolute;left:8.05%;top:72.13%;width:83.85%;height:2.39%;
+ border-radius:999px;overflow:hidden;
+ background:linear-gradient(180deg,#173e52,#354656);
+ box-shadow:inset 0 0 3px #071d2a88;
+}
+.boot-photo-intro .photo-loading-bar::before{
+ content:'';position:absolute;inset:0 auto 0 -48%;width:48%;
+ border-radius:inherit;
+ background:linear-gradient(90deg,#057a9f 0%,#06cbd2 34%,#60ffff 63%,#05afc8 100%);
+ box-shadow:0 0 15px #3dfff9,0 0 8px #78f8fd;
+ animation:lts-photo-bar-sweep 1.65s ease-in-out infinite;
+}
+.boot-photo-intro .photo-loading-bar::after{
+ content:'';position:absolute;inset:0;
+ background:repeating-linear-gradient(115deg,transparent 0 12px,#c6ffff9c 12px 20px,transparent 20px 34px);
+ background-size:54px 100%;opacity:.33;
+ animation:lts-photo-bar-lanes .9s linear infinite;
+}
+@keyframes lts-photo-bar-sweep{
+ 0%{left:-48%}100%{left:100%}
+}
+@keyframes lts-photo-bar-lanes{
+ from{background-position:0 0}to{background-position:54px 0}
+}
+/* The full photo is always contained, never cropped or zoomed. */
+@media (orientation:landscape){
+ .boot-photo-intro .photo-splash{width:min(54.258dvh,100vw)}
+}
+@media(prefers-reduced-motion:reduce){
+ .boot-photo-intro .photo-loading-bar::before,
+ .boot-photo-intro .photo-loading-bar::after{animation:none!important}
+ .boot-photo-intro .photo-loading-bar::before{left:0;width:62%}
+}
