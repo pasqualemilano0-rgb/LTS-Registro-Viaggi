@@ -1029,8 +1029,8 @@ function showAccountLogin(){
 }
 
 function showDriverActivation(){
- const {dialog,body}=modal('Attiva il tuo account',{
-   subtitle:'Inserisci il numero autorizzato dall’amministratore e il codice ricevuto privatamente. Il codice dura 24 ore e si usa una sola volta.'});
+ const {dialog,body}=modal('Attiva o ripristina il tuo account',{
+   subtitle:'Per la prima attivazione o il reinserimento dello stesso autista, usa il codice ricevuto privatamente dall’amministratore. Il codice dura 24 ore e si usa una sola volta.'});
  const form=el('form',{class:'panel form-panel',novalidate:true});
  const error=el('p',{class:'form-error',role:'alert'});
  const phone=el('input',{type:'tel',autocomplete:'tel',inputmode:'tel',placeholder:'3XXXXXXXXX',maxlength:40,required:true,'aria-label':'Numero di cellulare'});
@@ -1039,7 +1039,9 @@ function showDriverActivation(){
  const confirm=el('input',{type:'password',autocomplete:'new-password',minlength:12,maxlength:128,required:true,'aria-label':'Ripeti password'});
  const submit=el('button',{type:'submit',class:'primary-button full'},'Attiva account');
  const fieldNode=(label,node)=>el('div',{class:'field'},el('label',{class:'field-label'},label),node);
- form.append(error,fieldNode('Numero di telefono (+39 automatico)',phone),
+ const existingNote=el('div',{class:'info-note account-activation-existing'},icon('info'),
+   el('span',{},'Stesso autista già registrato? Non serve creare un altro account. Se devi ripristinare la password, usa lo stesso numero e il codice di reinserimento fornito dall’amministratore. I tuoi viaggi restano collegati all’account originale.'));
+ form.append(existingNote,error,fieldNode('Numero di telefono (+39 automatico)',phone),
    fieldNode('Codice invito monouso',code),fieldNode('Scegli la password (almeno 12 caratteri, lettere e numeri)',password),
    fieldNode('Conferma password',confirm),submit,
    el('p',{class:'field-hint'},'La password viene inviata via HTTPS a Supabase Auth. Non è visibile all’amministratore e non viene memorizzata nel registro. Il codice invito non costituisce una verifica SMS.'));
@@ -1051,15 +1053,25 @@ function showDriverActivation(){
    }
    submit.disabled=true;
    try{
-     await accountAccess.activateDriverInvitation({phone:phone.value.trim(),code:code.value.trim(),password:password.value});
+     const result=await accountAccess.activateDriverInvitation({phone:phone.value.trim(),code:code.value.trim(),password:password.value});
      password.value='';confirm.value='';code.value='';
      dialog.close();
      showAccountLogin();
-     toast('Account attivato. Accedi con il numero e la password scelta.');
-   }catch(err){error.textContent=err.message||'Attivazione non riuscita. Richiedi un nuovo invito.';}
+     toast(result?.message||'Attivazione o ripristino completato. Accedi con il numero e la nuova password.');
+   }catch(err){
+     // New and already-registered drivers must both reject breached passwords.
+     // Server checks a breach before claiming the one-time invitation/reset code.
+     const message=err?.message||'Operazione non riuscita. Chiedi aiuto all’amministratore.';
+     error.textContent=/Password già presente in violazioni note/i.test(message)
+       ?'Questa password risulta compromessa. Anche se sei lo stesso autista, scegline una nuova. Il codice non è stato utilizzato e i viaggi sono conservati.'
+       :message;
+   }
    finally{password.value='';confirm.value='';submit.disabled=false;}
  });
- body.append(form);phone.focus();
+ body.append(form,el('div',{class:'account-activation-help'},
+   el('p',{class:'field-hint'},'Se ricordi la password del tuo account già attivo, accedi direttamente. Per ripristinarla chiedi un codice all’amministratore.'),
+   button('Torna all’accesso','text',()=>{dialog.close();showAccountLogin();},'log-in')));
+ phone.focus();
 }
 function showDriverAdmin(){
  if(!store.usingAccount()||accountAccess.getRole()!=='admin'||!accountAccess.isVerified()){
