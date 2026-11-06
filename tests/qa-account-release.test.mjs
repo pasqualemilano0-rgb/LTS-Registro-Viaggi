@@ -42,7 +42,7 @@ test('account archive ID must derive from verified session, not user input',()=>
   assert.match(store,/account[.]archiveRequest\(method, body\)/);
 });
 test('offline worker activates new cache and precaches auth code without caching server data',()=>{
-  assert.match(sw,/const CACHE = PREFIX \+ '20261106-selected-porti-v16'/);
+  assert.match(sw,/const CACHE = PREFIX \+ '20261106-hide-port-links-v17'/);
   assert.match(sw,/\/LTS-Registro-Viaggi\/account-access[.]mjs/);
   assert.match(sw,/\/LTS-Registro-Viaggi\/shared\/quick-trip[.]mjs/);
   assert.match(sw,/\/LTS-Registro-Viaggi\/shared\/port-source-status[.]mjs/);
@@ -328,7 +328,7 @@ test('the main register CSP is restrictive, loads before scripts, and preserves 
  const porti=read('porti/index.html');
  assert.match(porti,/https:\/\/api\.conateco\.it/);
  assert.match(porti,/https:\/\/container-booking-backend\.pasqualemilano0\.workers\.dev/);
- assert.match(sw,/const CACHE = PREFIX \+ '20261106-selected-porti-v16'/);
+ assert.match(sw,/const CACHE = PREFIX \+ '20261106-hide-port-links-v17'/);
 });
 
 test('logout is authenticated on the server and remote driver disconnection is admin-only',()=>{
@@ -344,7 +344,7 @@ test('logout is authenticated on the server and remote driver disconnection is a
  assert.match(admin,/account[.]manageDrivers\(action,data\)/);
  assert.match(admin,/account[.]logout\(\)/);
  assert.match(admin,/Sessioni revocate/);
- assert.match(sw,/const CACHE = PREFIX \+ '20261106-selected-porti-v16'/);
+ assert.match(sw,/const CACHE = PREFIX \+ '20261106-hide-port-links-v17'/);
  assert.doesNotMatch([app,auth,admin,sw].join('\n'),/SUPABASE_SERVICE_ROLE_KEY|sb_secret_[A-Za-z0-9_-]+/);
 });
 
@@ -383,7 +383,7 @@ test('TOTP admin flow uses verified backend session and never exposes secret in 
  assert.match(auth,/export async function verifyAdminTotp\(code,factorId=null\)/);
  assert.match(auth,/verified=!mfaEnrolled\|\|mfaVerified/);
  assert.match(app,/logged\.mfa_enrolled&&!logged\.mfa_verified/);
- assert.match(sw,/20261106-selected-porti-v16/);
+ assert.match(sw,/20261106-hide-port-links-v17/);
  assert.match(css,/#mfa-setup-secret/);
  for(const item of [html,admin,auth,app]){
   assert.doesNotMatch(item,/SUPABASE_SERVICE_ROLE_KEY|sb_secret_[A-Za-z0-9_-]+/);
@@ -417,7 +417,7 @@ test('Authenticator app switching preserves the existing enrollment instead of r
  assert.match(html,/senza conservare QR e chiave/);
  assert.doesNotMatch(admin,/sessionStorage|localStorage|innerHTML/);
  assert.doesNotMatch(auth,/sessionStorage[.]setItem\(MFA_PENDING_KEY,JSON[.]stringify\(\{[^\n]*(?:qr_code|secret|code)/);
- assert.match(sw,/20261106-selected-porti-v16/);
+ assert.match(sw,/20261106-hide-port-links-v17/);
 });
 
 test('administrator has separately verified backup authenticator without bypassing AAL2',()=>{
@@ -436,7 +436,7 @@ test('administrator has separately verified backup authenticator without bypassi
  assert.match(auth,/rememberPendingAdminMfa\(result[.]factor_id,'backup'\)/);
  assert.doesNotMatch(admin,/localStorage|sessionStorage|innerHTML|sb_secret_/i);
  assert.match(html,/Non caricare mai QR, chiavi TOTP/);
- assert.match(sw,/20261106-selected-porti-v16/);
+ assert.match(sw,/20261106-hide-port-links-v17/);
 });
 
 test('Porti can start only after verified account handshake from the LTS parent',()=>{
@@ -574,7 +574,7 @@ test('embedded access cannot display register or admin credential inputs',()=>{
  assert.match(admin,/field[.]value='';field[.]disabled=true/);
  assert.match(admin,/if\(!denyEmbeddedAdmin\(\)\)authenticate\(\)/);
  assert.match(html,/20261106-selected-porti-v1/);
- assert.match(sw,/20261106-selected-porti-v16/);
+ assert.match(sw,/20261106-hide-port-links-v17/);
  assert.doesNotMatch(app,/frame-ancestors.*<meta/i);
 });
 
@@ -633,7 +633,7 @@ test('Scania photo waits 2.5 seconds before showing login or personal register',
  assert.match(app,/catch\(error\)\{\s*await renderFirstBootGate\(error[.]offline/);
  assert.match(app,/if\(!accountAccess[.]hasSession\(\)\)\{\s*await renderFirstBootGate\(\);return;/);
  assert.match(app,/if\(!\(await finishInitialTruckLoading\(\)\)\)return;\s*render\(\)/);
- assert.match(sw,/20261106-selected-porti-v16/);
+ assert.match(sw,/20261106-hide-port-links-v17/);
 });
 
 test('activation confirmation is visible and personal register requires verified login',()=>{
@@ -715,10 +715,12 @@ test('approved Porti screen uses HD picture assets and keeps operational tools a
  assert.match(app,/porti-hero-reference-image/);
  assert.match(app,/lts-porti-hero-hd[.]webp/);
  assert.match(appCss,/porti-hero-reference/);
- assert.match(portal,/approved-screen[.]css[?]v=20261106-selected-porti-v1/);
+ assert.match(portal,/approved-screen[.]css[?]v=20261106-hide-port-links-v2/);
  assert.match(view,/lts-porti-napoli-hd[.]webp/);
  assert.match(view,/lts-porti-salerno-hd[.]webp/);
  assert.match(view,/lts-porti-official-grid/);
+ assert.match(view,/html[.]lts-embedded [.]lts-porti-officials\{display:none!important\}/);
+ assert.match(view,/html[.]lts-embedded [.]search-panel [.]ports/);
  assert.match(ui,/lts-porti-operational/);
  assert.match(ui,/tools[.]append\(summary,form\)/);
  assert.match(gate,/driver-ui[.]mjs[?]v=20261106-selected-porti-v1/);
