@@ -425,4 +425,11 @@ window.addEventListener('pagehide',rememberAdminPosition);
 window.addEventListener('pageshow',event=>{if(event.persisted)resumeWhenSafe();});
 window.addEventListener('online',resumeWhenSafe);
 document.addEventListener('visibilitychange',resumeWhenSafe);
-authenticate();
+/** Do not activate the administrator login inside an external site frame. */
+function denyEmbeddedAdmin(){
+ if(window.top===window.self)return false;
+ document.querySelectorAll('input').forEach(field=>{field.value='';field.disabled=true;});
+ document.querySelector('main')?.replaceChildren(make('p','notice','Per sicurezza, apri il pannello LTS direttamente nel browser.'));
+ return true;
+}
+if(!denyEmbeddedAdmin())authenticate();
