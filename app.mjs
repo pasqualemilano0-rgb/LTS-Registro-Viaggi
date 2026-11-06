@@ -1417,7 +1417,7 @@ document.addEventListener('visibilitychange',async()=>{
  * No artificial animation timeout or progress percentage is imposed. */
 let initialLoaderClosed=false;
 async function finishInitialTruckLoading(){
- const loader=root.querySelector('.truck-loader');
+ const loader=root.querySelector('.photo-splash');
  if(initialLoaderClosed||!loader)return true;
  initialLoaderClosed=true;
  return loader.isConnected;
