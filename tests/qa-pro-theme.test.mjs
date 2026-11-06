@@ -8,7 +8,7 @@ const html=read('amministratore/index.html');
 test('driver entrypoints load the original LTS theme and preserve account routes',()=>{
  for(const p of ['index.html','shell.html']){
   const source=read(p);
-  assert.match(source,/app[.]css[?]v=20261106-selected-porti-v1/);
+  assert.match(source,/app[.]css[?]v=20261106-porti-compact-banner-v2/);
   assert.doesNotMatch(source,/href="[^"]*pro-theme[.]css/);
   assert.match(source,/app[.]mjs[?]v=20261106-selected-porti-v1/);
   assert.match(source,/photo-splash[.]css[?]v=20261106-scania-photo-hd-v2/);
@@ -27,7 +27,7 @@ test('driver entrypoints load the original LTS theme and preserve account routes
 
 test('new PWA worker precaches the original stylesheet, not the unused override',()=>{
  const sw=read('sw.js');
- assert.match(sw,/const CACHE = PREFIX \+ '20261106-hide-port-links-v17'/);
+ assert.match(sw,/const CACHE = PREFIX \+ '20261106-porti-compact-banner-v18'/);
  assert.match(sw,/"\/LTS-Registro-Viaggi\/app[.]css"/);
  assert.doesNotMatch(sw,/"\/LTS-Registro-Viaggi\/pro-theme[.]css"/);
  assert.doesNotMatch(sw,/service_role|sb_secret_/i);
