@@ -26,7 +26,7 @@ test('dashboard accessibile solo dal pannello admin, CSP e versioni coerenti',()
  assert.match(report,/function driverProfile\(/);
  assert.match(report,/function driverDirectory\(/);
  assert.match(report,/function renderAmountChart\(/);
- assert.match(js,/report\.mjs\?v=20261104-console-v5/);
+ assert.match(js,/report\.mjs\?v=20261106-company-directory-v1/);
  assert.match(report,/setupInsights\(account\)/);
  const advanced=read('amministratore/report-insights.mjs');
  const exportsModule=read('amministratore/report-export.mjs');
@@ -66,4 +66,36 @@ test('consultazione aziendale prima della pubblicazione: informativa esplicita',
  assert.match(privacy,/non sono consultabili dall'amministratore/);
  assert.match(privacy,/non sostituisce l'informativa e gli adempimenti del datore di lavoro/);
  assert.match(privacy,/Aggiornamento: 4 novembre 2026/);
+});
+
+test('anagrafica dashboard: dati verificati dalla sessione, soli campi pubblici, nessun dato simulato', async()=>{
+ const html=read('amministratore/index.html');
+ const report=read('amministratore/report.mjs');
+ const ui=read('amministratore/customer-overview.mjs');
+ const css=read('amministratore/customer-overview.css');
+ for(const id of ['customer-overview','customer-overview-total','customer-overview-complete',
+   'customer-overview-missing','customer-overview-percent','customer-overview-progress',
+   'customer-overview-filter','customer-overview-list','customer-overview-refresh',
+   'customer-overview-more'])
+   assert.match(html,new RegExp('id="'+id+'"'));
+ assert.match(html,/customer-overview\.css\?v=20261106-directory-v1/);
+ assert.match(report,/companyDirectory\.reset\(\)/);
+ assert.match(report,/companyDirectory\.load\(\)/);
+ assert.match(ui,/sharedMapsCustomers\(\)/);
+ assert.match(ui,/account\.isVerified\(\)/);
+ assert.match(ui,/account\.getRole\(\)==='admin'/);
+ assert.match(ui,/rel='noopener noreferrer'/);
+ assert.doesNotMatch(ui,/innerHTML|localStorage|sessionStorage|eval\(/);
+ assert.match(css,/#dashboard:not\(\[data-view="overview"\]\) #customer-overview/);
+ const model=await import('../amministratore/customer-overview-model.mjs');
+ const samples=[
+  {name:'B',city:'NAPOLI',address:'INDIRIZZO STRADALE DA CONFERMARE - NAPOLI'},
+  {name:'A',city:'ROMA',address:'VIA ESEMPIO 10, ROMA'},
+  {name:'C',city:'MILANO',address:'SANTA PALOMBA (INDIRIZZO STRADALE DA CONFERMARE)'}
+ ];
+ assert.equal(model.hasUsableAddress('SANTA PALOMBA (INDIRIZZO STRADALE DA CONFERMARE)'),false);
+ assert.equal(model.hasUsableAddress('Via Roma 1, Milano'),true);
+ assert.deepEqual(model.customerDirectoryStats(samples),{total:3,complete:1,incomplete:2,coverage:33});
+ assert.equal(model.selectedCustomerSites(samples,'incomplete').length,2);
+ assert.equal(model.selectedCustomerSites(samples,'complete')[0].name,'A');
 });
