@@ -142,3 +142,6 @@ html.lts-embedded .app-footer{font-size:10px!important}
 @media(prefers-reduced-motion:reduce){
  html.lts-embedded .search-panel .ports .port-logo-choice{transition:none}
 }
+
+/* The user chose to hide the whole terminal-links section from the Porti home screen. */
+html.lts-embedded .lts-porti-officials{display:none!important}
