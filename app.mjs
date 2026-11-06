@@ -1258,16 +1258,19 @@ async function showLegacyArchiveRecovery(preview=null) {
   });
   body.append(details,message,error,backup,restore,later);
 }
-/** Installation is optional: the login gate never requires installing the PWA. */
+/** Promotional installation card displayed only before login and outside standalone mode.
+ * Uses the existing browser-native PWA installation flow, never changes authentication. */
 function accountInstallBanner(){
  return el('aside',{class:'account-install-banner','data-install-trigger':true,
   hidden:isInstalled(),'aria-label':'Installa LTS sul telefono'},
-  el('span',{class:'account-install-banner-mark','aria-hidden':'true'},icon('download')),
-  el('div',{class:'account-install-banner-copy'},
-   el('strong',{},'LTS sempre con te'),
-   el('p',{},'Aggiungi l’app alla schermata Home del telefono.')),
+  el('div',{class:'account-install-banner-main'},
+   el('span',{class:'account-install-banner-mark','aria-hidden':'true'},icon('download')),
+   el('div',{class:'account-install-banner-copy'},
+    el('strong',{},'LTS sempre con te'),
+    el('p',{},'Aggiungi l’app alla schermata Home del telefono.'))),
   button('Installa app','secondary',startInstall,'download',
-   {class:'account-install-banner-action','aria-label':'Installa LTS sul dispositivo'}));
+   {class:'account-install-banner-action','aria-label':'Installa LTS sul dispositivo'}),
+  el('span',{class:'account-install-banner-wave','aria-hidden':'true'}));
 }
 function renderAccountGate(message=''){
  companyCustomers=[];
