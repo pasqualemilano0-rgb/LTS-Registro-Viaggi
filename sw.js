@@ -1,6 +1,6 @@
 const BASE = "/LTS-Registro-Viaggi/";
 const PREFIX = "lts-iphone-pages-0aa8d087d02b-";
-const CACHE = PREFIX + '20261106-porti-modern-v15';
+const CACHE = PREFIX + '20261106-selected-porti-v16';
 const CORE = [
   "/LTS-Registro-Viaggi/account-access.mjs",
   "/LTS-Registro-Viaggi/app.css",
@@ -39,6 +39,10 @@ const CORE = [
   "/LTS-Registro-Viaggi/porti/conateco_rules.mjs",
   "/LTS-Registro-Viaggi/porti/delivery_location.mjs",
   "/LTS-Registro-Viaggi/porti/driver-ui.css",
+  "/LTS-Registro-Viaggi/porti/approved-screen.css",
+  "/LTS-Registro-Viaggi/porti/assets/lts-porti-hero-hd.webp",
+  "/LTS-Registro-Viaggi/porti/assets/lts-porti-napoli-hd.webp",
+  "/LTS-Registro-Viaggi/porti/assets/lts-porti-salerno-hd.webp",
   "/LTS-Registro-Viaggi/porti/driver-ui.mjs",
   "/LTS-Registro-Viaggi/porti/favicon.svg",
   "/LTS-Registro-Viaggi/porti/index.html",
