@@ -1343,21 +1343,34 @@ document.addEventListener('visibilitychange',async()=>{
 });
 
 
-/** Keep the animated boot briefly visible after a fast load.
- * The timer runs alongside session verification; slow loads are not delayed further.
- * Accessibility preference and session-lock/error screens are never held back.
+/** The truck completes the road only after the initial view is ready.
+ * It approaches while authentication/data load, waits near the destination if needed,
+ * then finishes the last stretch; the app replaces the splash at animation completion.
+ * Auth failures and reduced-motion users bypass the journey without extra delay.
  */
 const firstBootStartedAt=performance.now();
 let firstBootHoldUsed=false;
+async function waitForTruckStage(vehicle,name,fallbackMs){
+ const animation=vehicle?.getAnimations?.().find(item=>item.animationName===name);
+ if(animation){
+  try{await animation.finished;}catch{} // The splash may be removed by an auth/error screen.
+ }else if(fallbackMs>0){
+  await new Promise(resolve=>setTimeout(resolve,fallbackMs));
+ }
+}
 async function finishInitialTruckLoading(){
  const truck=root.querySelector('.truck-loader');
  if(firstBootHoldUsed||!truck)return true;
  firstBootHoldUsed=true;
- const elapsed=performance.now()-firstBootStartedAt;
- const remaining=Math.max(0,2500-elapsed);
- if(remaining>0&&!window.matchMedia('(prefers-reduced-motion: reduce)').matches){
-  await new Promise(resolve=>setTimeout(resolve,remaining));
- }
+ if(window.matchMedia('(prefers-reduced-motion: reduce)').matches)return truck.isConnected;
+ const vehicle=truck.querySelector('.truck-loader-vehicle');
+ if(!vehicle)return truck.isConnected;
+ // Wait for the approach to reach its holding position; this runs in parallel with load.
+ await waitForTruckStage(vehicle,'lts-truck-approach',Math.max(0,1900-(performance.now()-firstBootStartedAt)));
+ if(!truck.isConnected)return false;
+ truck.classList.add('is-arriving');
+ // Reading animations activates the new CSS stage; await its real ending, not a separate timer.
+ await waitForTruckStage(vehicle,'lts-truck-arrive',600);
  return truck.isConnected;
 }
 
