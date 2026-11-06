@@ -65,3 +65,16 @@ test('drivers see company tariffs as read-only, with manual and automatic refres
  const css=read('app.css');
  assert.match(css,/tariff-company-sync/);
 });
+
+test('driver receives the full authenticated corporate tariff catalog including personal-rate overlaps',()=>{
+ const app=read('app.mjs'),access=read('account-access.mjs');
+ assert.match(app,/refreshCompanyRates\(/);
+ assert.match(app,/companyRatesLoaded/);
+ assert.match(app,/const corporate=companyRatesLoaded/);
+ assert.match(app,/const all=\[\.\.\.corporate,\.\.\.personal\]/);
+ assert.match(app,/await Promise[.]all\(\[store[.]syncPending\(\),refreshCompanyRates/);
+ assert.match(access,/export async function driverCompanyTariffs\(/);
+ assert.match(access,/action:'list'/);
+ assert.match(app,/companyRatesRequest\+\+/);
+ assert.match(app,/if\(tab==='tariffs'&&tariffTab==='base'/);
+});
