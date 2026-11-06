@@ -64,7 +64,7 @@ if(MAINTENANCE_ENABLED){
   authorized=true;clearTimeout(timeout);
   try{
    await import('./porti/app.js?v=20261102-lts-v66');
-   await import('./porti/driver-ui.mjs?v=20261031-v44');
+   await import('./porti/driver-ui.mjs?v=20261106-porti-modern-v1');
    document.body.hidden=false;
   }catch{
    authorized=false;denied();
