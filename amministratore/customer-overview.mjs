@@ -22,6 +22,7 @@ export function setupCustomerOverview(account){
     el('customer-overview-progress').setAttribute('aria-valuenow','0');
     el('customer-overview-caption').textContent='La presenza di un indirizzo non ne certifica la validità su Google Maps.';
     status.textContent='Apri la panoramica per aggiornare il catalogo condiviso.';
+    el('customer-overview-matching').textContent='Nessun dato confermato';
     more.hidden=true;refresh.disabled=false;
   }
   function render(){
