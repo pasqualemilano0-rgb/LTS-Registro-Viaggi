@@ -273,7 +273,7 @@ test('dedicated admin console loads only verified administrative transport',asyn
  const model=await import('../amministratore/model.mjs');
  assert.match(adminHtml,/Content-Security-Policy/);
  assert.match(adminHtml,/src="\.\/admin[.]mjs\?v=20261106-company-rates-v1"/);
- assert.match(adminJs,/import \* as account from '\.\.\/account-access[.]mjs\?v=20261104-company-v3'/);
+ assert.match(adminJs,/import \* as account from '\.\.\/account-access[.]mjs\?v=20261106-company-tariffs-v1'/);
  assert.match(adminJs,/await account[.]verifySession\(\)/);
  assert.match(adminJs,/account[.]getRole\(\)!=='admin'/);
  assert.ok(adminJs.includes("account.manageDrivers('list')"));
