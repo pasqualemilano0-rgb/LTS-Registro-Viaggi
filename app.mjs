@@ -15,6 +15,9 @@ const root = document.querySelector('#app');
 const today = () => { const now = new Date(); return `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`; };
 let state = D.emptyState();
 let companyCustomers=[]; // In-memory shared list, never part of personal archive/backup.
+let companyRates=[]; // Complete corporate catalog, even if a personal rate overrides a route.
+let companyRatesLoaded=false;
+let companyRatesRequest=0;
 let companyCustomersError='';
 let companyCustomerSearch=''; // Independent filter for the read-only company list.
 let user = null;
@@ -162,7 +165,7 @@ function unmountPorti(){
  // Leaving Porti stops its polling and discards the in-frame booking query.
  portiFrame.src='about:blank';portiFrame.remove();portiFrame=null;
 }
-function navigate(next){if(next!=='register')activationWelcome=false;if(tab==='porti'&&next!==tab)unmountPorti();tab=next;searchValue='';render();if(next==='insert'||next==='customers')void refreshCompanyCustomers();if(next==='tariffs'&&store.usingAccount()&&navigator.onLine!==false)void store.syncPending().catch(()=>{});const scroll=document.querySelector('.app-scroll');if(scroll)scroll.scrollTop=0;window.scrollTo({top:0,behavior:'auto'});}
+function navigate(next){if(next!=='register')activationWelcome=false;if(tab==='porti'&&next!==tab)unmountPorti();tab=next;searchValue='';render();if(next==='insert'||next==='customers')void refreshCompanyCustomers();if(next==='tariffs'&&store.usingAccount()&&navigator.onLine!==false){void store.syncPending().catch(()=>{});void refreshCompanyRates();}const scroll=document.querySelector('.app-scroll');if(scroll)scroll.scrollTop=0;window.scrollTo({top:0,behavior:'auto'});}
 function render(){
  const scrollTop=document.querySelector('.app-scroll')?.scrollTop||0;
  refreshView=null;
@@ -271,6 +274,27 @@ function receiveState(record,{source}={}){
  if(refreshView)refreshView();else render();
 }
 function emptyState(title,message,ico='truck',action=null){return el('section',{class:'panel empty-state'},el('div',{class:'empty-icon'},icon(ico)),el('h3',{},title),el('p',{},message),action);}
+/** Read-only tariff list for every verified driver. The personal archive
+ * remains the source of trips; the separate catalog shows company prices even
+ * on routes for which a driver already has a personal rate. */
+async function refreshCompanyRates({quiet=true}={}){
+ if(!store.usingAccount()||!accountAccess.isVerified())return false;
+ const owner=accountAccess.getAccountId(),request=++companyRatesRequest;
+ try{
+  const rates=await accountAccess.driverCompanyTariffs();
+  if(owner!==accountAccess.getAccountId()||request!==companyRatesRequest)return false;
+  companyRates=rates.map(item=>({id:'company:'+item.id,customerId:null,
+   client:D.normalizeText(item.client),city:D.normalizeText(item.city),cents:item.cents}));
+  companyRatesLoaded=true;
+  if(tab==='tariffs'&&tariffTab==='base'&&refreshView)refreshView();
+  return true;
+ }catch(error){
+  // An offline/cache failure must never erase a previously verified catalog
+  // or cause a driver to lose access to their personal trip drafts.
+  if(!quiet)throw error;
+  return false;
+ }
+}
 /** Read-only shared list. An unavailable network never unlocks an account. */
 async function refreshCompanyCustomers(){
  if(!sharedMapsEnabled()||!store.usingAccount()||!accountAccess.isVerified())return;
@@ -603,7 +627,7 @@ function renderTariffs(main){
    refresh.disabled=true;
    companyStatus.textContent='Aggiornamento tariffe in corso…';
    try{
-    await store.syncPending();
+    await Promise.all([store.syncPending(),refreshCompanyRates({quiet:false})]);
     companyStatus.textContent='Tariffe aggiornate dal gestionale aziendale.';
     toast('Tariffe aziendali sincronizzate.');
    }catch(error){
@@ -616,15 +640,20 @@ function renderTariffs(main){
  main.append(banner);
  function draw(){
   const filter=D.normalizeText(searchValue);
-  const tariffs=[...state.tariffs].filter(t=>`${t.client} ${t.city}`.includes(filter))
-   .sort((a,b)=>a.client.localeCompare(b.client,'it')||a.city.localeCompare(b.city,'it'));
-  const companyCount=state.tariffs.filter(t=>t.id.startsWith('company:')).length;
-  const personalCount=state.tariffs.length-companyCount;
-  count.textContent=`${state.tariffs.length} tariffe · ${companyCount} aziendali · ${personalCount} personali`;
+  const personal=state.tariffs.filter(t=>!t.id.startsWith('company:'));
+  const corporate=companyRatesLoaded
+   ?companyRates:state.tariffs.filter(t=>t.id.startsWith('company:'));
+  const all=[...corporate,...personal];
+  const tariffs=all.filter(t=>`${t.client} ${t.city}`.includes(filter))
+   .sort((a,b)=>a.client.localeCompare(b.client,'it')||
+     a.city.localeCompare(b.city,'it')||(a.id.startsWith('company:')?-1:1));
+  const companyCount=corporate.length;
+  const personalCount=personal.length;
+  count.textContent=`${all.length} tariffe · ${companyCount} aziendali · ${personalCount} personali`;
   if(!companyStatus.textContent.includes('corso')&&!companyStatus.textContent.includes('aggiornate')&&
     !companyStatus.textContent.includes('Errore')&&!companyStatus.textContent.includes('possibile'))
    companyStatus.textContent=companyCount
-    ?`${companyCount} tariffe aziendali ricevute. Si aggiornano all'apertura e durante la sincronizzazione online.`
+    ?`${companyCount} tariffe aziendali disponibili per tutti gli autisti. Si aggiornano in automatico con Internet attivo.`
     :'Il tariffario aziendale sarà visualizzato qui appena saranno disponibili le tariffe.';
   const cards=tariffs.map(tariff=>{
    const corporate=tariff.id.startsWith('company:');
@@ -1417,6 +1446,7 @@ function renderAccountGate(message=''){
  companyCustomers=[];
  companyCustomersError='';
  companyCustomerSearch='';
+ companyRates=[];companyRatesLoaded=false;companyRatesRequest++;
  const hasPreviousSession=accountAccess.hasSession();
  const recovery=hasPreviousSession?el('div',{class:'account-session-recovery'},
    el('p',{},'Questo dispositivo conserva una sessione precedente. Per rientrare nello stesso account, inserisci nuovamente la password. Per usare un altro account, esci prima.'),
@@ -1464,7 +1494,7 @@ let resumingVerification=false;
 document.addEventListener('visibilitychange',async()=>{
  if(document.hidden||resumingVerification||!store.usingAccount()||!accountAccess.hasSession())return;
  resumingVerification=true;
- try{await accountAccess.verifySession();void refreshCompanyCustomers();}
+ try{await accountAccess.verifySession();void refreshCompanyCustomers();if(tab==='tariffs')void refreshCompanyRates();}
  catch{
    store.lockRevokedAccount();
    renderAccountGate('Impossibile verificare la sessione. Riprova con Internet attivo.');
@@ -1538,6 +1568,7 @@ async function initialize(){
   if(!(await finishInitialTruckLoading()))return;
   render();
   void refreshCompanyCustomers();
+  void refreshCompanyRates();
   if(!activationFirstOpen && store.usingAccount() && !store.hasImportedLegacyArchive() &&
     state.trips.length===0 && state.customers.length===0 && state.tariffs.length===0) {
     try {
@@ -1552,6 +1583,15 @@ async function initialize(){
   root.replaceChildren(el('div',{class:'boot'},el('img',{src:'/LTS-Registro-Viaggi/assets/lts-logo.png',alt:'LTS'}),el('div',{class:'boot-error'},el('h2',{},'Il registro non è disponibile'),el('p',{class:'subtitle'},err.message||'Controlla la connessione e riprova.'),button('Riprova','primary',()=>initialize(),'refresh'))));
  }
 }
+// Update the complete read-only corporate catalog while drivers are looking at it.
+// The private archive still synchronizes separately in client-store.mjs.
+setInterval(()=>{
+ if(tab==='tariffs'&&tariffTab==='base'&&!document.hidden&&navigator.onLine!==false&&
+   store.usingAccount()&&accountAccess.isVerified())void refreshCompanyRates();
+},20000);
+window.addEventListener('online',()=>{
+ if(tab==='tariffs'&&store.usingAccount()&&accountAccess.isVerified())void refreshCompanyRates();
+});
 window.addEventListener('beforeunload',event=>{if(busy){event.preventDefault();event.returnValue='';}});
 navigator.serviceWorker?.addEventListener('message',event=>{
  const data=event.data;
