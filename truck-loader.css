@@ -1,14 +1,18 @@
-/* LTS road loader: indeterminate motion, no artificial loading percentage. */
+/* LTS road loader: approach while loading, complete the road when the app is ready. */
 .boot .truck-loader{display:block;width:min(84vw,360px);max-width:100%;height:113px;margin-top:-2px;flex:none}
 .truck-loader-scene{position:relative;display:block;width:100%;height:100%}
 .truck-loader-road{position:absolute;inset:auto 2% 8px;height:22px;overflow:hidden;border:3px solid #fff;border-radius:25px;background:linear-gradient(180deg,#596f7b,#2b4254);box-shadow:0 5px 15px #214e5e33,0 0 0 1px #bfd5dc}
-.truck-loader-road::before{content:'';position:absolute;inset:0 auto 0 0;width:45%;border-radius:inherit;background:linear-gradient(90deg,#008ea9,#12d2d4,#008ea9);box-shadow:0 0 11px #2eece6;animation:lts-truck-glow 4s ease-in-out infinite}
+.truck-loader-road::before{content:'';position:absolute;inset:0 auto 0 0;width:17%;border-radius:inherit;background:linear-gradient(90deg,#008ea9,#12d2d4,#008ea9);box-shadow:0 0 11px #2eece6;animation:lts-truck-glow-approach 1.9s ease-out both}
 .truck-loader-lane{position:absolute;z-index:1;inset:50% 0 auto;height:2px;transform:translateY(-50%);background:repeating-linear-gradient(90deg,#eafbff 0 13px,transparent 13px 26px);opacity:.95;animation:lts-road-dashes 1.15s linear infinite}
-.truck-loader-vehicle{position:absolute;z-index:2;bottom:18px;left:0;width:44%;height:80px;filter:drop-shadow(0 4px 3px #20556c3d);animation:lts-truck-drive 4s ease-in-out infinite}
+.truck-loader-vehicle{position:absolute;z-index:2;bottom:18px;left:0;width:44%;height:80px;filter:drop-shadow(0 4px 3px #20556c3d);animation:lts-truck-approach 1.9s ease-out both}
+.truck-loader.is-arriving .truck-loader-vehicle{animation:lts-truck-arrive .6s ease-in-out forwards}
+.truck-loader.is-arriving .truck-loader-road::before{animation:lts-truck-glow-arrive .6s ease-in-out forwards}
 .truck-loader-art{display:block;width:100%;height:100%;overflow:visible;transform-origin:50% 80%;animation:lts-truck-suspension .6s ease-in-out infinite}
 
-@keyframes lts-truck-drive{0%,100%{left:0}48%,54%{left:55%}}
-@keyframes lts-truck-glow{0%,100%{width:17%}48%,54%{width:89%}}
+@keyframes lts-truck-approach{from{left:0}to{left:42%}}
+@keyframes lts-truck-arrive{from{left:42%}to{left:55%}}
+@keyframes lts-truck-glow-approach{from{width:17%}to{width:72%}}
+@keyframes lts-truck-glow-arrive{from{width:72%}to{width:89%}}
 @keyframes lts-road-dashes{to{background-position:-26px 0}}
 @keyframes lts-truck-suspension{0%,100%{transform:translateY(0)}50%{transform:translateY(-1px)}}
-@media(prefers-reduced-motion:reduce){.truck-loader-vehicle,.truck-loader-art,.truck-loader-wheels,.truck-loader-lane,.truck-loader-road::before{animation:none!important}.truck-loader-vehicle{left:29%!important}.truck-loader-road::before{width:53%!important}}
+@media(prefers-reduced-motion:reduce){.truck-loader-vehicle,.truck-loader-art,.truck-loader-wheels,.truck-loader-lane,.truck-loader-road::before{animation:none!important}.truck-loader-vehicle{left:55%!important}.truck-loader-road::before{width:89%!important}}
