@@ -1,5 +1,5 @@
 /** Admin-only read-only overview. No customer data is kept in browser storage. */
-import {sharedMapsCustomers} from '../shared-maps-client.mjs';
+// Load the authenticated company catalog only after the overview is opened.
 import {customerDirectoryStats,hasUsableAddress,selectedCustomerSites} from './customer-overview-model.mjs';
 const el=id=>document.getElementById(id);
 const text=(tag,cls,value)=>{
@@ -71,6 +71,7 @@ export function setupCustomerOverview(account){
     refresh.disabled=true;more.hidden=true;list.replaceChildren();
     status.textContent='Caricamento sedi aziendali da Supabase…';
     try{
+      const {sharedMapsCustomers}=await import('../shared-maps-client.mjs');
       const data=await sharedMapsCustomers();
       if(token!==generation||!active())return;
       records=data;
