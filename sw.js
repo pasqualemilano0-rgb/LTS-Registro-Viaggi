@@ -1,6 +1,6 @@
 const BASE = "/LTS-Registro-Viaggi/";
 const PREFIX = "lts-iphone-pages-0aa8d087d02b-";
-const CACHE = PREFIX + '20261105-dashboard-maps-quick-add-v1';
+const CACHE = PREFIX + '20261106-google-maps-client-picker-v1';
 const CORE = [
   "/LTS-Registro-Viaggi/account-access.mjs",
   "/LTS-Registro-Viaggi/app.css",
@@ -49,6 +49,7 @@ const CORE = [
   "/LTS-Registro-Viaggi/shared/customer-csv.mjs",
   "/LTS-Registro-Viaggi/shared/domain.mjs",
   "/LTS-Registro-Viaggi/shared/maps-client.mjs",
+  "/LTS-Registro-Viaggi/shared/trip-customer-choices.mjs",
   "/LTS-Registro-Viaggi/shared/pdf.mjs",
   "/LTS-Registro-Viaggi/shared/port-source-status.mjs",
   "/LTS-Registro-Viaggi/shared/quick-trip.mjs",
@@ -62,7 +63,8 @@ const PORT_BASE = BASE + 'porti/';
 // still uses only the current static cache; personal records are never cached.
 const NETWORK_FIRST_CODE = new Set([
   BASE + 'app.mjs', BASE + 'porti-access.mjs', BASE + 'account-access.mjs', BASE + 'driver-session-vault.mjs',
-  BASE + 'runtime-config.mjs', BASE + 'client-store.mjs', BASE + 'porti/app.js'
+  BASE + 'runtime-config.mjs', BASE + 'client-store.mjs', BASE + 'porti/app.js',
+  BASE + 'shared/trip-customer-choices.mjs'
 ]);
 self.addEventListener('install', event => {
   event.waitUntil((async () => {
