@@ -159,12 +159,12 @@
       "vessel": "JOLLY BLUE",
       "voyage": "368",
       "eta": "2026-11-06 07:20",
-      "vessel_status": "ARR",
-      "category": "ORMEGGIATE",
+      "vessel_status": "CHI",
+      "category": "PRESENTI",
       "voyage_id": "202600378",
       "carrier": "LINEA I.MESSINA",
       "acceptance_flag": "0",
-      "acceptance_icon": "NO_ACCETTA_CARICO",
+      "acceptance_icon": "CHIUSA",
       "stop_cargo": "S",
       "external_depot": "",
       "opening": "2026-10-31 06:30",
@@ -649,5 +649,5 @@
       "source_conflict": false
     }
   ],
-  "acquired_at": "2026-11-06T13:15:17.034Z"
+  "acquired_at": "2026-11-06T14:15:16.632Z"
 }
