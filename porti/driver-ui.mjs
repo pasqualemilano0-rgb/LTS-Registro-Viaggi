@@ -158,7 +158,7 @@ function setupPortiHomepage(){
   const city=document.querySelector('input[name="port"]:checked')?.value;
   summary.textContent=city==='salerno'?'Consulta il programma navi SCT':
     'Verifica booking e consulta navi · Napoli';
-  if(city==='salerno'&&tools.open===false)tools.open=true;
+  // Keep the home screen compact for both ports. Operations open on demand.
  };
  document.querySelectorAll('input[name="port"]').forEach(r=>r.addEventListener('change',changeTitle));
  changeTitle();
