@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="330" viewBox="0 0 720 330" role="img" aria-label="Camion europeo Scania Serie S con livrea LTS">
+<defs>
+ <linearGradient id="trail" x1="0" y1="0" x2=".95" y2="1"><stop stop-color="#0b598c"/><stop offset=".42" stop-color="#093e77"/><stop offset="1" stop-color="#062748"/></linearGradient>
+ <linearGradient id="truckwhite" x1="0" y1="0" x2=".85" y2="1"><stop stop-color="#ffffff"/><stop offset=".48" stop-color="#eff6fa"/><stop offset="1" stop-color="#a6bccd"/></linearGradient>
+ <linearGradient id="window" x1=".1" y1="0" x2=".9" y2="1"><stop stop-color="#162b42"/><stop offset=".45" stop-color="#3d6077"/><stop offset="1" stop-color="#081421"/></linearGradient>
+ <linearGradient id="metal" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#5b6b73"/><stop offset=".54" stop-color="#283038"/><stop offset="1" stop-color="#0a111b"/></linearGradient>
+ <linearGradient id="face" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#d9e8ed"/><stop offset=".65" stop-color="#f7fbff"/><stop offset="1" stop-color="#a2b6c0"/></linearGradient>
+ <linearGradient id="cyan" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#0d79ad"/><stop offset="1" stop-color="#45cbf6"/></linearGradient>
+ <filter id="shadow" x="-30%" y="-100%" width="170%" height="300%"><feGaussianBlur stdDeviation="8"/></filter>
+ <filter id="subtle" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#112d46" flood-opacity=".25"/></filter>
+</defs>
+<ellipse cx="351" cy="302" rx="314" ry="12" fill="#193e54" opacity=".16" filter="url(#shadow)"/>
+<!-- trailer chassis -->
+<path d="M48 238 418 252 560 271 553 288 59 287z" fill="#222f3b"/>
+<path d="M65 258 554 269v10H65z" fill="#5b6971" opacity=".75"/>
+<g fill="#a2b3c2" stroke="#283848" stroke-width="4"><rect x="175" y="253" width="126" height="25" rx="3"/><rect x="305" y="257" width="65" height="20" rx="3"/></g>
+<!-- trailer blue side, slightly perspective, top slopes toward cab -->
+<path d="M48 105 390 34 443 42 445 251 48 254Z" fill="url(#trail)" stroke="#163449" stroke-width="5" stroke-linejoin="round"/>
+<path d="M50 105 390 35 443 42 95 116Z" fill="#3c83a5" opacity=".78"/>
+<path d="M59 114 398 46 435 50" fill="none" stroke="#86bbca" stroke-width="3" opacity=".8"/>
+<path d="M62 125v122M103 116v132M144 107v141M185 98v149M226 89v160M267 81v168M308 73v176M349 65v184M390 55v195M423 51v198" stroke="#7bc7e8" stroke-width="1.7" opacity=".12"/>
+<path d="M49 253 445 250" stroke="#031c35" stroke-width="8"/>
+<!-- sweeping red white wave -->
+<path d="M54 212 C181 207 266 168 444 164 L444 195 C279 192 180 235 54 240Z" fill="#f1faff"/>
+<path d="M52 223 C193 214 281 180 445 183 L445 202 C283 198 192 246 52 245Z" fill="#db1839"/>
+<path d="M54 246 L443 217 L443 248 L54 250Z" fill="#06517f"/>
+<!-- LTS brand logo and red airplane crest -->
+<g filter="url(#subtle)">
+<path d="M146 133h44l15 12v-18l31-4v-13l13 15 58-13-60 30v27h-17v-27l-29-10v15z" fill="#ec1d39" stroke="#ffffff" stroke-width="2.4"/>
+<text x="147" y="205" font-family="Arial Black,Arial,sans-serif" font-size="91" font-weight="900" font-style="italic" letter-spacing="-10" fill="#e61a38" stroke="#ffffff" stroke-width="8" paint-order="stroke">LTS</text>
+<text x="144" y="202" font-family="Arial Black,Arial,sans-serif" font-size="85" font-weight="900" font-style="italic" letter-spacing="-10" fill="#f9fcff" stroke="#1b7fc4" stroke-width="1.5" paint-order="stroke">LTS</text>
+</g>
+<!-- running gear: wheel wells -->
+<path d="M62 264h388l37 23H67z" fill="#1e2a33"/>
+<g fill="#121e29" stroke="#556d7c" stroke-width="4">
+<circle cx="102" cy="277" r="25"/><circle cx="154" cy="278" r="25"/><circle cx="206" cy="278" r="25"/><circle cx="326" cy="286" r="27"/><circle cx="443" cy="290" r="30"/>
+</g>
+<g fill="#bacbd5" stroke="#f0f4f8" stroke-width="3"><circle cx="102" cy="277" r="16"/><circle cx="154" cy="278" r="16"/><circle cx="206" cy="278" r="16"/><circle cx="326" cy="286" r="18"/><circle cx="443" cy="290" r="20"/></g>
+<g fill="#526d7a"><circle cx="102" cy="277" r="8"/><circle cx="154" cy="278" r="8"/><circle cx="206" cy="278" r="8"/><circle cx="326" cy="286" r="9"/><circle cx="443" cy="290" r="9"/></g>
+<g fill="#fbfcff"><circle cx="102" cy="263" r="2"/><circle cx="154" cy="263" r="2"/><circle cx="206" cy="263" r="2"/><circle cx="326" cy="270" r="2"/><circle cx="443" cy="272" r="2"/></g>
+<!-- white Scania S cab high roof and angular side, right three-quarter view -->
+<path d="M409 88 436 54Q464 35 503 32H561Q584 33 604 55L630 88 652 131 674 153 687 261 673 289 465 282 421 259Z" fill="url(#truckwhite)" stroke="#829eac" stroke-width="3.5" stroke-linejoin="round"/>
+<path d="M438 59Q469 42 502 41H558Q584 45 600 63" stroke="#ffffff" stroke-width="5" fill="none"/>
+<path d="M431 101Q485 75 562 82L592 97 595 177 434 173Z" fill="url(#window)" stroke="#d4e7ee" stroke-width="5"/>
+<path d="M453 107 493 90 571 102" fill="none" stroke="#a6cadb" stroke-width="4" opacity=".5"/>
+<!-- windscreen large front high roof -->
+<path d="M594 98Q619 107 638 142L658 182 605 179Z" fill="url(#window)" stroke="#cddde3" stroke-width="4"/>
+<path d="M594 181 660 184 676 256 662 285 607 282Z" fill="#e8f0f5" stroke="#849eae" stroke-width="2"/>
+<path d="M611 194 657 195 665 254 612 255Z" fill="url(#metal)" stroke="#9facb5" stroke-width="3"/>
+<path d="M617 207h43M618 218h44M619 228h44M620 239h42" stroke="#82929c" stroke-width="3"/>
+<path d="M617 201h41" stroke="#111c27" stroke-width="7"/>
+<text x="617" y="197" fill="#ffffff" font-family="Arial, sans-serif" font-size="13" font-weight="800" textLength="42" lengthAdjust="spacingAndGlyphs">SCANIA</text>
+<path d="M436 173 592 177 593 268 456 261Q446 226 436 173Z" fill="url(#face)" opacity=".92"/>
+<path d="M447 171 469 167 462 257 451 259Z" fill="#e0e8f0" stroke="#9bb0c0" stroke-width="2"/>
+<path d="M471 177 570 181" fill="none" stroke="#b7c7d1" stroke-width="2"/>
+<!-- white cab blue and red branded side ribbons -->
+<path d="M440 207 C499 223 548 237 594 239v13c-48-7-92-17-153-33Z" fill="#0c79bc"/>
+<path d="M439 218 C493 227 540 246 595 250v9c-58-5-102-18-155-32Z" fill="#e61b36"/>
+<text x="477" y="226" fill="#e61b36" stroke="#ffffff" stroke-width="3" paint-order="stroke" font-family="Arial Black,Arial,sans-serif" font-size="25" font-style="italic" font-weight="900">LTS</text>
+<path d="M421 129 413 129Q402 130 402 139v19l13 4 13-6Z" fill="#253744" stroke="#7c9bae" stroke-width="2"/>
+<path d="M596 136 606 139 606 182 595 186" fill="#1d2938" stroke="#728b98" stroke-width="2"/>
+<!-- front lamps and marker lights -->
+<path d="M616 261h44l-7 13h-38z" fill="#e3fcff" stroke="#849aa9" stroke-width="2"/>
+<path d="M618 265h32" stroke="#45c7ff" stroke-width="5"/>
+<path d="M469 49 509 47 514 51 469 53Z" fill="#fff"/>
+<g fill="#ffcb65"><rect x="478" y="46" width="9" height="4" rx="2"/><rect x="500" y="46" width="9" height="4" rx="2"/><rect x="525" y="47" width="9" height="4" rx="2"/><rect x="547" y="48" width="9" height="4" rx="2"/></g>
+<path d="M664 246h12v7h-12z" fill="#ffb56d"/>
+<!-- cab front fender and tire overlay -->
+<path d="M456 284Q470 254 491 260L535 267 551 284 548 294H456Z" fill="#cad6e0" stroke="#7f98a8" stroke-width="2"/>
+<circle cx="510" cy="286" r="30" fill="#18252f" stroke="#5a7080" stroke-width="5"/>
+<circle cx="510" cy="286" r="20" fill="#dbe4ea" stroke="#f6fafc" stroke-width="3"/>
+<circle cx="510" cy="286" r="10" fill="#839baa"/>
+<g fill="#546d7b"><circle cx="509" cy="272" r="2.2"/><circle cx="524" cy="284" r="2.2"/><circle cx="510" cy="301" r="2.2"/><circle cx="495" cy="286" r="2.2"/></g>
+<path d="M540 277 671 278v11H542Z" fill="#526573"/>
+<path d="M553 280h113" stroke="#b4c6cd" stroke-width="2"/>
+</svg>
