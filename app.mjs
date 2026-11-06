@@ -1395,4 +1395,13 @@ navigator.serviceWorker?.addEventListener('message',event=>{
  document.querySelectorAll('dialog[open]').forEach(dialog=>dialog.close());
  navigate(data.section);
 });
-initialize();
+/** Embedded credential entry is disabled where host-level frame headers are unavailable. */
+function denyEmbeddedRegister(){
+ if(window.top===window.self)return false;
+ root.replaceChildren(el('div',{class:'boot boot-error'},
+  el('h2',{},'Apri LTS direttamente'),
+  el('p',{class:'subtitle'},'Per sicurezza, l’accesso non è disponibile nelle pagine incorporate in altri siti.'),
+  el('a',{href:'https://pasqualemilano0-rgb.github.io/LTS-Registro-Viaggi/',target:'_top',rel:'noopener noreferrer'},'Apri LTS nel browser')));
+ return true;
+}
+if(!denyEmbeddedRegister())initialize();
