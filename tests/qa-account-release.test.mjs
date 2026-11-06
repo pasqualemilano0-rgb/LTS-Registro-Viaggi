@@ -42,7 +42,7 @@ test('account archive ID must derive from verified session, not user input',()=>
   assert.match(store,/account[.]archiveRequest\(method, body\)/);
 });
 test('offline worker activates new cache and precaches auth code without caching server data',()=>{
-  assert.match(sw,/const CACHE = PREFIX \+ '20261106-truck-road-sync-v2'/);
+  assert.match(sw,/const CACHE = PREFIX \+ '20261106-driver-onboarding-v3'/);
   assert.match(sw,/\/LTS-Registro-Viaggi\/account-access[.]mjs/);
   assert.match(sw,/\/LTS-Registro-Viaggi\/shared\/quick-trip[.]mjs/);
   assert.match(sw,/\/LTS-Registro-Viaggi\/shared\/port-source-status[.]mjs/);
@@ -328,7 +328,7 @@ test('the main register CSP is restrictive, loads before scripts, and preserves 
  const porti=read('porti/index.html');
  assert.match(porti,/https:\/\/api\.conateco\.it/);
  assert.match(porti,/https:\/\/container-booking-backend\.pasqualemilano0\.workers\.dev/);
- assert.match(sw,/const CACHE = PREFIX \+ '20261106-truck-road-sync-v2'/);
+ assert.match(sw,/const CACHE = PREFIX \+ '20261106-driver-onboarding-v3'/);
 });
 
 test('logout is authenticated on the server and remote driver disconnection is admin-only',()=>{
@@ -344,7 +344,7 @@ test('logout is authenticated on the server and remote driver disconnection is a
  assert.match(admin,/account[.]manageDrivers\(action,data\)/);
  assert.match(admin,/account[.]logout\(\)/);
  assert.match(admin,/Sessioni revocate/);
- assert.match(sw,/const CACHE = PREFIX \+ '20261106-truck-road-sync-v2'/);
+ assert.match(sw,/const CACHE = PREFIX \+ '20261106-driver-onboarding-v3'/);
  assert.doesNotMatch([app,auth,admin,sw].join('\n'),/SUPABASE_SERVICE_ROLE_KEY|sb_secret_[A-Za-z0-9_-]+/);
 });
 
@@ -383,7 +383,7 @@ test('TOTP admin flow uses verified backend session and never exposes secret in 
  assert.match(auth,/export async function verifyAdminTotp\(code,factorId=null\)/);
  assert.match(auth,/verified=!mfaEnrolled\|\|mfaVerified/);
  assert.match(app,/logged\.mfa_enrolled&&!logged\.mfa_verified/);
- assert.match(sw,/20261106-truck-road-sync-v2/);
+ assert.match(sw,/20261106-driver-onboarding-v3/);
  assert.match(css,/#mfa-setup-secret/);
  for(const item of [html,admin,auth,app]){
   assert.doesNotMatch(item,/SUPABASE_SERVICE_ROLE_KEY|sb_secret_[A-Za-z0-9_-]+/);
@@ -417,7 +417,7 @@ test('Authenticator app switching preserves the existing enrollment instead of r
  assert.match(html,/senza conservare QR e chiave/);
  assert.doesNotMatch(admin,/sessionStorage|localStorage|innerHTML/);
  assert.doesNotMatch(auth,/sessionStorage[.]setItem\(MFA_PENDING_KEY,JSON[.]stringify\(\{[^\n]*(?:qr_code|secret|code)/);
- assert.match(sw,/20261106-truck-road-sync-v2/);
+ assert.match(sw,/20261106-driver-onboarding-v3/);
 });
 
 test('administrator has separately verified backup authenticator without bypassing AAL2',()=>{
@@ -436,7 +436,7 @@ test('administrator has separately verified backup authenticator without bypassi
  assert.match(auth,/rememberPendingAdminMfa\(result[.]factor_id,'backup'\)/);
  assert.doesNotMatch(admin,/localStorage|sessionStorage|innerHTML|sb_secret_/i);
  assert.match(html,/Non caricare mai QR, chiavi TOTP/);
- assert.match(sw,/20261106-truck-road-sync-v2/);
+ assert.match(sw,/20261106-driver-onboarding-v3/);
 });
 
 test('Porti can start only after verified account handshake from the LTS parent',()=>{
@@ -556,7 +556,10 @@ test('same driver credential recovery is explained and exposed passwords remain 
  assert.match(section,/Non serve creare un altro account/);
  assert.match(section,/I tuoi viaggi restano collegati/);
  assert.match(section,/Il codice non è stato utilizzato e i viaggi sono conservati/);
- assert.match(section,/toast\(result\?[.]message/);
+ assert.match(section,/showActivationOpening\(\)/);
+ assert.match(section,/accountAccess[.]login\(signInPhone,currentPassword\)/);
+ assert.match(section,/tab='register'/);
+ assert.match(section,/feedback[.]manualAccess\(\)/);
  assert.match(section,/Torna all.accesso/);
  assert.doesNotMatch(section,/createUser\(|disable.*breach/);
 });
@@ -571,7 +574,7 @@ test('embedded access cannot display register or admin credential inputs',()=>{
  assert.match(admin,/field[.]value='';field[.]disabled=true/);
  assert.match(admin,/if\(!denyEmbeddedAdmin\(\)\)authenticate\(\)/);
  assert.match(html,/20261106-truck-road-sync-v2/);
- assert.match(sw,/20261106-truck-road-sync-v2/);
+ assert.match(sw,/20261106-driver-onboarding-v3/);
  assert.doesNotMatch(app,/frame-ancestors.*<meta/i);
 });
 
@@ -625,5 +628,32 @@ test('ready app opens after the truck completes both road stages',async()=>{
  assert.deepEqual(await trial(100,false,false),{
   events:['is-arriving'],timers:[1800,600]});
  assert.match(app,/if\(!\(await finishInitialTruckLoading\(\)\)\)return;\s*render\(\)/);
- assert.match(sw,/20261106-truck-road-sync-v2/);
+ assert.match(sw,/20261106-driver-onboarding-v3/);
+});
+
+test('activation confirmation is visible and personal register requires verified login',()=>{
+ const source=read('app.mjs');
+ const activation=source.slice(source.indexOf('function showDriverActivation('),source.indexOf('function showDriverAdmin('));
+ const overlay=source.slice(source.indexOf('function showActivationOpening('),source.indexOf('function showDriverActivation('));
+ const register=source.slice(source.indexOf('function renderRegister('),source.indexOf('function searchBox('));
+ assert.match(activation,/await accountAccess[.]activateDriverInvitation\(/);
+ assert.match(activation,/const logged=await accountAccess[.]login\(/);
+ assert.match(activation,/logged[.]role!=='driver'/);
+ assert.match(activation,/accountAccess[.]isVerified\(\)/);
+ assert.match(activation,/await initialize\(\)/);
+ assert.match(activation,/store[.]usingAccount\(\)/);
+ assert.match(activation,/feedback[.]manualAccess\(\)/);
+ assert.match(overlay,/Account attivato!/);
+ assert.match(overlay,/Non è stato possibile aprire automaticamente il registro/);
+ assert.match(register,/activation-register-welcome/);
+ assert.match(register,/role:'status'/);
+ assert.match(source,/if\(!activationFirstOpen && store[.]usingAccount\(\)/);
+ assert.match(source,/if\(!activationFirstOpen&&\(!state[.]profile[.]firstName/);
+ assert.doesNotMatch(activation,/localStorage|sessionStorage|console[.]log/);
+ const css=read('activation-feedback.css');
+ assert.match(css,/prefers-reduced-motion:reduce/);
+ assert.match(css,/activation-register-welcome/);
+ for(const name of ['index.html','shell.html'])
+   assert.match(read(name),/activation-feedback[.]css[?]v=20261106-onboarding-v1/);
+ assert.match(read('sw.js'),/activation-feedback[.]css/);
 });
