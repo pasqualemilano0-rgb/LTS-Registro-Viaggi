@@ -11,6 +11,8 @@ test('driver entrypoints load the original LTS theme and preserve account routes
   assert.match(source,/app[.]css[?]v=20261106-truck-road-sync-v2/);
   assert.doesNotMatch(source,/href="[^"]*pro-theme[.]css/);
   assert.match(source,/app[.]mjs[?]v=20261106-truck-road-sync-v2/);
+  assert.match(source,/photo-splash[.]css[?]v=20261106-scania-photo-v1/);
+  assert.match(source,/assets\/lts-full-photo[.]webp/);
  }
  assert.match(css,/\.overview\{background:var\(--teal\);color:#fff/);
  assert.match(css,/\.section-hero\{[^}]*background:linear-gradient\(115deg,#005f77,#087d94\)/);
