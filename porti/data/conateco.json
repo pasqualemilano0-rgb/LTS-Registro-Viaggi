@@ -142,8 +142,8 @@
       "vessel": "JOLLY GIADA",
       "voyage": "326",
       "eta": "2026-11-06 00:00",
-      "vessel_status": "PRE",
-      "category": "PRESENTI",
+      "vessel_status": "ARR",
+      "category": "ORMEGGIATE",
       "voyage_id": "202600370",
       "carrier": "LINEA I.MESSINA",
       "acceptance_flag": "0",
@@ -649,5 +649,5 @@
       "source_conflict": false
     }
   ],
-  "acquired_at": "2026-11-06T18:15:16.833Z"
+  "acquired_at": "2026-11-06T19:15:16.708Z"
 }
