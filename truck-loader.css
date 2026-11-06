@@ -1,4 +1,4 @@
-/* LTS • branded Scania S loading journey. Always animated while boot loads. */
+/* LTS — Scania S stays stationary; only the road progress bar animates. */
 .boot .truck-loader{
  display:block;width:min(94vw,520px);max-width:100%;height:clamp(182px,47vw,285px);
  margin-top:4px;flex:none;position:relative
@@ -11,11 +11,11 @@
  box-shadow:0 9px 23px #17435927,0 0 0 1px #bfd8df,0 0 12px #0bb5c244
 }
 .truck-loader-road::before{
- content:'';position:absolute;inset:0 auto 0 0;width:17%;
- border-radius:inherit;
- background:linear-gradient(90deg,#087da1 0%,#0ebbbf 46%,#20e8df 100%);
+ content:'';position:absolute;inset:0;width:100%;border-radius:inherit;
+ background:linear-gradient(90deg,#087da1 0%,#11d5d6 30%,#02839f 55%,#1ce6dc 80%,#087da1 100%);
+ background-size:230% 100%;
  box-shadow:0 0 18px #2deae6,0 0 8px #a1ffff;
- animation:lts-truck-glow-approach 1.9s ease-out both
+ animation:lts-loading-current 1.55s linear infinite
 }
 .truck-loader-lane{
  position:absolute;z-index:1;inset:50% 0 auto;height:3px;
@@ -24,36 +24,28 @@
  filter:drop-shadow(0 0 2px #fff);
  animation:lts-road-dashes 1s linear infinite
 }
+/* Stationary Scania S truck, including the cab, suspension and wheels. */
 .truck-loader-vehicle{
  position:absolute;z-index:2;bottom:28px;left:0;width:95%;height:calc(100% - 20px);
  filter:drop-shadow(0 8px 5px #254a5d40);
- animation:lts-truck-approach 1.9s ease-out both
+ animation:none!important;transform:none!important
 }
 .boot .truck-loader-art{
  display:block;width:100%;height:100%;object-fit:contain;object-position:center bottom;
- transform-origin:50% 82%;animation:lts-truck-suspension .63s ease-in-out infinite
+ animation:none!important;transform:none!important
 }
 .truck-loader.is-arriving .truck-loader-vehicle{
- animation:lts-truck-arrive .6s ease-in-out forwards
+ left:0;animation:none!important
 }
 .truck-loader.is-arriving .truck-loader-road::before{
- animation:lts-truck-glow-arrive .6s ease-in-out forwards
+ animation:lts-loading-current 1.55s linear infinite
 }
-@keyframes lts-truck-approach{from{left:-13%}to{left:0%}}
-@keyframes lts-truck-arrive{from{left:0%}to{left:5%}}
-@keyframes lts-truck-glow-approach{from{width:17%}to{width:72%}}
-@keyframes lts-truck-glow-arrive{from{width:72%}to{width:94%}}
+@keyframes lts-loading-current{from{background-position:100% 0}to{background-position:-100% 0}}
 @keyframes lts-road-dashes{to{background-position:-33px 0}}
-@keyframes lts-truck-suspension{
- 0%,100%{transform:translateY(0)}
- 50%{transform:translateY(-1.5px)}
-}
 @media(max-width:380px){
  .boot .truck-loader{width:min(96vw,360px);height:190px}
  .truck-loader-vehicle{bottom:27px}
 }
 @media(prefers-reduced-motion:reduce){
- .truck-loader-vehicle,.truck-loader-art,.truck-loader-lane,.truck-loader-road::before{animation:none!important}
- .truck-loader-vehicle{left:5%!important}
- .truck-loader-road::before{width:94%!important}
+ .truck-loader-lane,.truck-loader-road::before{animation:none!important}
 }
