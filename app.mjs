@@ -1343,6 +1343,24 @@ document.addEventListener('visibilitychange',async()=>{
 });
 
 
+/** Keep the animated boot briefly visible after a fast load.
+ * The timer runs alongside session verification; slow loads are not delayed further.
+ * Accessibility preference and session-lock/error screens are never held back.
+ */
+const firstBootStartedAt=performance.now();
+let firstBootHoldUsed=false;
+async function finishInitialTruckLoading(){
+ const truck=root.querySelector('.truck-loader');
+ if(firstBootHoldUsed||!truck)return true;
+ firstBootHoldUsed=true;
+ const elapsed=performance.now()-firstBootStartedAt;
+ const remaining=Math.max(0,2500-elapsed);
+ if(remaining>0&&!window.matchMedia('(prefers-reduced-motion: reduce)').matches){
+  await new Promise(resolve=>setTimeout(resolve,remaining));
+ }
+ return truck.isConnected;
+}
+
 async function initialize(){
  try{
   let result;
@@ -1355,7 +1373,10 @@ async function initialize(){
           :error.message||'Accesso automatico non riuscito.');
         return;
       }
-      if(!accountAccess.hasSession()){renderAccountGate();return;}
+      if(!accountAccess.hasSession()){
+        if(!(await finishInitialTruckLoading()))return;
+        renderAccountGate();return;
+      }
     }
     try{
       result=await store.activateAccountFromSession();
@@ -1372,6 +1393,7 @@ async function initialize(){
   if(!subscribed&&store.subscribeState){store.subscribeState(receiveState);subscribed=true;}
   if(result?.status)setStatus(result.status);
   const notificationTab=location.hash.slice(1);if(['insert','register'].includes(notificationTab))tab=notificationTab;
+  if(!(await finishInitialTruckLoading()))return;
   render();
   void refreshCompanyCustomers();
   if(store.usingAccount() && !store.hasImportedLegacyArchive() &&
