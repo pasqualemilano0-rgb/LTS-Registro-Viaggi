@@ -1,6 +1,7 @@
 /** Administrator reporting UI. Aggregates are authoritative only when returned by the API. */
 import {setupInsights} from './report-insights.mjs?v=20261104-company-v3';
 import {setupCustomerOverview} from './customer-overview.mjs?v=20261106-directory-v1';
+import {setupCompanyRates} from './company-rates.mjs?v=20261106-rates-v1';
 const el=id=>document.getElementById(id);
 function node(tag,className='',value=''){
  const e=document.createElement(tag);
@@ -173,6 +174,7 @@ export function setupReport(account){
   ['overview','overview-tab','Panoramica aziendale','Indicatori, andamento e anomalie dei viaggi sincronizzati.'],
   ['drivers','management-tab','Gestione autisti','Account, inviti, ripristino credenziali e autorizzazioni.'],
   ['trips','report-tab','Registro viaggi','Consulta gli inserimenti e ricerca i viaggi del periodo.'],
+  ['rates','rates-tab','Tariffe aziendali','Gestione centralizzata delle tariffe per cliente e località.'],
   ['analysis','analysis-tab','Analisi e grafici','Confronti tra autisti, clienti, località e andamento storico.'],
   ['alerts','alerts-tab','Centro anomalie','Controlla le segnalazioni generate dai viaggi sincronizzati.'],
   ['exports','exports-tab','Report PDF ed Excel','Applica i filtri ed esporta soltanto i dati autorizzati.'],
@@ -183,6 +185,7 @@ export function setupReport(account){
  let requestSeq=0,rows=[],page=null,loading=false,focusOnDriver=false;
  const insights=setupInsights(account);
  const companyDirectory=setupCustomerOverview(account);
+ const companyRates=setupCompanyRates(account);
  const driverSearch=el('report-driver-search');
  function selectDriver(id){
   if(driver.value===id&&page)return;
@@ -210,7 +213,7 @@ export function setupReport(account){
  }
  function reset(){
   requestSeq++;rows=[];page=null;loading=false;
-  clearData();insights.reset();companyDirectory.reset();el('report-empty').hidden=true;el('report-status').textContent='';
+  clearData();insights.reset();companyDirectory.reset();companyRates.reset();el('report-empty').hidden=true;el('report-status').textContent='';
   el('report-error').hidden=true;el('report-next').disabled=false;
   updateDriverOptions([]);
   driverSearch.value='';
@@ -220,8 +223,11 @@ export function setupReport(account){
  function open(view){
   if(!account.isVerified()||account.getRole()!=='admin')return;
   if(!views.some(v=>v[0]===view))return;
+  const lastView=el('dashboard').dataset.view;
   const wasReport=!report.hidden,showReport=!['drivers','security'].includes(view);
   if(view!=='overview')companyDirectory.reset();
+  if(view!=='rates')companyRates.reset();
+  if(lastView==='rates')page=null;
   // Never retain a one-time invite or password-reset code on another page.
   if(view!=='drivers'){
    el('secret-code').value='';
@@ -232,8 +238,13 @@ export function setupReport(account){
    tabs(view);
   }else{
    tabs(view);
-   if(view==='overview')void companyDirectory.load();
-   if(!wasReport||(!page&&!loading)){rows=[];void load(false);}
+   if(view==='rates'){
+    requestSeq++;loading=false;rows=[];page=null;
+    void companyRates.load();
+   }else{
+    if(view==='overview')void companyDirectory.load();
+    if(!wasReport||(!page&&!loading)){rows=[];void load(false);}
+   }
   }
   window.scrollTo({top:0,behavior:'instant'});
  }
