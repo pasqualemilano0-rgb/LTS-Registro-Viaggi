@@ -729,3 +729,123 @@ button:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid #48
   .results-panel{padding:13px}
   .booking-api-actions{grid-template-columns:1fr}
 }
+
+/* LTS Porti – compact mobile restyling with official local terminal logos.
+ * Only presentation changes; all search/booking workflows stay within
+ * the authenticated Porti subdocument. */
+.lts-embedded body{background:#f5f9fc}
+.lts-embedded .shell{max-width:900px;padding:0 clamp(10px,2.9vw,19px) max(22px,env(safe-area-inset-bottom))}
+.lts-embedded main{padding-top:0}
+.lts-embedded .search-panel{
+ border:0;box-shadow:none;border-radius:0;background:transparent;
+ margin:0;padding:18px 4px 4px;overflow:visible
+}
+.lts-embedded .search-panel .panel-head{
+ min-height:0;margin:0 0 17px;padding:0;border:0;border-radius:0;
+ background:transparent;display:flex;align-items:center;box-shadow:none
+}
+.lts-embedded .search-panel .panel-head h2{
+ color:#113651;font-size:clamp(19px,5.2vw,25px);font-weight:850;
+ line-height:1.18;letter-spacing:-.04em
+}
+.lts-embedded .search-panel .panel-head::before{
+ content:"";display:block;flex:0 0 24px;width:24px;height:24px;
+ margin-right:10px;border-radius:6px;
+ background:#d4eef7;
+ mask:url('data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"%3E%3Cpath d="M12 2v20M4 8l8-6 8 6M4 15l8 7 8-7M4 8v7h16V8" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/%3E%3C/svg%3E') center/contain no-repeat;
+ background-color:#08718d
+}
+.lts-embedded .search-panel .ports{
+ display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+ gap:11px;margin:0 0 9px;padding:0;border:0
+}
+.lts-embedded .search-panel .ports .port-logo-choice{
+ position:relative;min-height:108px;padding:14px 9px;gap:7px;
+ display:flex;flex-direction:column;align-items:center;justify-content:center;
+ border:1.5px solid #cddfea;border-radius:18px;
+ background:linear-gradient(145deg,#fff,#eef7fc);
+ color:#1a475b;box-shadow:0 3px 10px #184a6910;
+ transition:background .15s,border-color .15s,box-shadow .15s
+}
+.lts-embedded .search-panel .ports .port-logo-choice:has(input:checked){
+ border-color:#21b9e8;background:linear-gradient(155deg,#075f93,#033e70);
+ box-shadow:0 0 0 2px #b2edff,0 8px 18px #053d692c
+}
+.lts-embedded .search-panel .ports .port-choice-head{
+ display:flex;align-items:center;justify-content:center;gap:8px
+}
+.lts-embedded .search-panel .ports .driver-port-icon{font-size:26px;line-height:1}
+.lts-embedded .search-panel .ports .terminal-title{
+ font-size:clamp(16px,4.2vw,20px);line-height:1.13;
+ color:#16435e;font-weight:850;letter-spacing:-.02em
+}
+.lts-embedded .search-panel .ports .terminal-sub{
+ font-size:clamp(10px,2.7vw,12px);color:#55788e;line-height:1.35;
+ text-align:center;font-weight:650
+}
+.lts-embedded .search-panel .ports .port-logo-choice:has(input:checked) .terminal-title,
+.lts-embedded .search-panel .ports .port-logo-choice:has(input:checked) .terminal-sub{color:#fff}
+.lts-embedded .search-panel .ports .port-logo-choice:has(input:checked)::after{
+ content:"✓";display:grid;place-items:center;position:absolute;top:8px;right:8px;
+ width:22px;height:22px;border-radius:50%;background:#fff;color:#096c93;
+ font-size:14px;font-weight:900
+}
+.lts-porti-officials{margin:10px 0 13px;padding:3px 4px}
+.lts-porti-officials-title{margin:0;color:#143954;font-size:clamp(17px,4.2vw,22px);line-height:1.2;font-weight:850}
+.lts-porti-officials-intro{margin:5px 0 12px;font-size:11px;color:#647d89;line-height:1.4}
+.lts-porti-official-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
+.lts-porti-terminal-link{
+ min-width:0;display:flex;flex-direction:column;overflow:hidden;
+ border:1px solid #cfdfeb;border-radius:14px;background:white;
+ box-shadow:0 3px 10px #102d4910;text-decoration:none;color:#08496f
+}
+.lts-porti-terminal-link:focus-visible{outline:3px solid #19abdd;outline-offset:3px}
+.lts-porti-terminal-plate{
+ display:grid;place-items:center;flex:1;min-height:83px;padding:10px 6px;background:#fff
+}
+.lts-porti-terminal-plate img{
+ display:block;width:auto;height:auto;max-width:100%;max-height:65px;
+ object-fit:contain;image-rendering:auto
+}
+.lts-porti-terminal-action{
+ display:flex;justify-content:center;align-items:center;min-height:42px;
+ padding:6px 3px;background:#07598c;color:#fff;text-align:center;
+ font-size:clamp(10px,2.7vw,12px);font-weight:800;line-height:1.3
+}
+.lts-porti-terminal-link:hover .lts-porti-terminal-action{background:#0873a9}
+.lts-porti-operational{
+ margin:12px 3px 12px;border:1px solid #d2e4ec;border-radius:14px;
+ background:#fff;overflow:hidden;box-shadow:0 2px 8px #12364d0b
+}
+.lts-porti-operational>summary{
+ display:flex;align-items:center;justify-content:space-between;gap:12px;
+ min-height:49px;padding:13px 15px;cursor:pointer;
+ color:#075a78;font-size:13px;font-weight:800;line-height:1.3
+}
+.lts-porti-operational>summary::after{content:"⌄";font-size:23px;line-height:1;color:#0a7795}
+.lts-porti-operational[open]>summary::after{transform:rotate(180deg)}
+.lts-porti-operational[open]>summary{border-bottom:1px solid #d6e6ee;background:#f6fbfd}
+.lts-porti-operational #search-form{padding:14px}
+.lts-embedded .driver-notice{
+ display:block;margin:12px 3px 18px;border:1px solid #d3e7f0;
+ border-left:3px solid #0a7897;border-radius:11px;
+ background:#e9f6fb;padding:12px 13px;
+ color:#3a6173;font-size:11px;line-height:1.5
+}
+.lts-embedded .sources{display:none}
+.lts-embedded .app-footer{margin:10px 3px 16px;color:#6c8593;font-size:10px}
+.lts-embedded .napoli-advanced{margin:12px 3px 8px}
+.lts-embedded .results-panel{margin:12px 3px}
+.lts-embedded .search-panel .ports input:focus-visible + .port-choice-head{
+ outline:3px solid #15bde7;outline-offset:4px;border-radius:7px
+}
+@media(max-width:400px){
+ .lts-porti-official-grid{gap:7px}
+ .lts-porti-terminal-plate{min-height:72px;padding:8px 3px}
+ .lts-porti-terminal-plate img{max-height:53px}
+ .lts-porti-terminal-action{min-height:40px;font-size:10px}
+ .lts-embedded .search-panel .ports .port-logo-choice{min-height:101px}
+}
+@media(prefers-reduced-motion:reduce){
+ .lts-embedded .search-panel .ports .port-logo-choice{transition:none}
+}
