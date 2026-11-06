@@ -42,7 +42,7 @@ test('account archive ID must derive from verified session, not user input',()=>
   assert.match(store,/account[.]archiveRequest\(method, body\)/);
 });
 test('offline worker activates new cache and precaches auth code without caching server data',()=>{
-  assert.match(sw,/const CACHE = PREFIX \+ '20261106-porti-compact-banner-v18'/);
+  assert.match(sw,/const CACHE = PREFIX \+ '20261106-porti-original-v19'/);
   assert.match(sw,/\/LTS-Registro-Viaggi\/account-access[.]mjs/);
   assert.match(sw,/\/LTS-Registro-Viaggi\/shared\/quick-trip[.]mjs/);
   assert.match(sw,/\/LTS-Registro-Viaggi\/shared\/port-source-status[.]mjs/);
@@ -52,8 +52,8 @@ test('offline worker activates new cache and precaches auth code without caching
 });
 test('HTML entry points are identical and use the new cache buster',()=>{
   assert.equal(html,shell);
-  assert.match(html,/app[.]css[?]v=20261106-porti-compact-banner-v2/);
-  assert.match(html,/app[.]mjs[?]v=20261106-selected-porti-v1/);
+  assert.match(html,/app[.]css[?]v=20261106-porti-original-v1/);
+  assert.match(html,/app[.]mjs[?]v=20261106-porti-original-v1/);
   assert.match(html,/<script type="module"/);
 });
 test('ports section stays integrated, untouched backups and no new bundled private backend',()=>{
@@ -235,7 +235,7 @@ test('LTS Porti fallback reads LTS public snapshots, not the old Booking reposit
  const lts='https://raw.githubusercontent.com/pasqualemilano0-rgb/LTS-Registro-Viaggi/main/porti/data/';
  assert.equal(port.split(lts).length-1,3);
  assert.ok(!port.includes('raw.githubusercontent.com/pasqualemilano0-rgb/container-booking-web-/'));
- assert.match(index,/porti-access[.]mjs[?]v=20261103-lts-gate-v1/);
+ assert.match(index,/porti-access[.]mjs[?]v=20261106-porti-original-v1/);
  const files=new Map(provenance.files.map(item=>[item.path,item]));
  assert.equal(files.get('app.js').sha256,'e13b15529d8cee5ba3bc330c1748b49492beb799dae818a523fa63ade66d4095');
  assert.equal(files.get('index.html').sha256,'e214deb437467b2e43ed62f39dcfff8e40008bb8c10116dd092ec3927a058d98');
@@ -328,7 +328,7 @@ test('the main register CSP is restrictive, loads before scripts, and preserves 
  const porti=read('porti/index.html');
  assert.match(porti,/https:\/\/api\.conateco\.it/);
  assert.match(porti,/https:\/\/container-booking-backend\.pasqualemilano0\.workers\.dev/);
- assert.match(sw,/const CACHE = PREFIX \+ '20261106-porti-compact-banner-v18'/);
+ assert.match(sw,/const CACHE = PREFIX \+ '20261106-porti-original-v19'/);
 });
 
 test('logout is authenticated on the server and remote driver disconnection is admin-only',()=>{
@@ -344,7 +344,7 @@ test('logout is authenticated on the server and remote driver disconnection is a
  assert.match(admin,/account[.]manageDrivers\(action,data\)/);
  assert.match(admin,/account[.]logout\(\)/);
  assert.match(admin,/Sessioni revocate/);
- assert.match(sw,/const CACHE = PREFIX \+ '20261106-porti-compact-banner-v18'/);
+ assert.match(sw,/const CACHE = PREFIX \+ '20261106-porti-original-v19'/);
  assert.doesNotMatch([app,auth,admin,sw].join('\n'),/SUPABASE_SERVICE_ROLE_KEY|sb_secret_[A-Za-z0-9_-]+/);
 });
 
@@ -383,7 +383,7 @@ test('TOTP admin flow uses verified backend session and never exposes secret in 
  assert.match(auth,/export async function verifyAdminTotp\(code,factorId=null\)/);
  assert.match(auth,/verified=!mfaEnrolled\|\|mfaVerified/);
  assert.match(app,/logged\.mfa_enrolled&&!logged\.mfa_verified/);
- assert.match(sw,/20261106-porti-compact-banner-v18/);
+ assert.match(sw,/20261106-porti-original-v19/);
  assert.match(css,/#mfa-setup-secret/);
  for(const item of [html,admin,auth,app]){
   assert.doesNotMatch(item,/SUPABASE_SERVICE_ROLE_KEY|sb_secret_[A-Za-z0-9_-]+/);
@@ -417,7 +417,7 @@ test('Authenticator app switching preserves the existing enrollment instead of r
  assert.match(html,/senza conservare QR e chiave/);
  assert.doesNotMatch(admin,/sessionStorage|localStorage|innerHTML/);
  assert.doesNotMatch(auth,/sessionStorage[.]setItem\(MFA_PENDING_KEY,JSON[.]stringify\(\{[^\n]*(?:qr_code|secret|code)/);
- assert.match(sw,/20261106-porti-compact-banner-v18/);
+ assert.match(sw,/20261106-porti-original-v19/);
 });
 
 test('administrator has separately verified backup authenticator without bypassing AAL2',()=>{
@@ -436,7 +436,7 @@ test('administrator has separately verified backup authenticator without bypassi
  assert.match(auth,/rememberPendingAdminMfa\(result[.]factor_id,'backup'\)/);
  assert.doesNotMatch(admin,/localStorage|sessionStorage|innerHTML|sb_secret_/i);
  assert.match(html,/Non caricare mai QR, chiavi TOTP/);
- assert.match(sw,/20261106-porti-compact-banner-v18/);
+ assert.match(sw,/20261106-porti-original-v19/);
 });
 
 test('Porti can start only after verified account handshake from the LTS parent',()=>{
@@ -573,8 +573,8 @@ test('embedded access cannot display register or admin credential inputs',()=>{
  assert.match(admin,/function denyEmbeddedAdmin\(\)/);
  assert.match(admin,/field[.]value='';field[.]disabled=true/);
  assert.match(admin,/if\(!denyEmbeddedAdmin\(\)\)authenticate\(\)/);
- assert.match(html,/20261106-selected-porti-v1/);
- assert.match(sw,/20261106-porti-compact-banner-v18/);
+ assert.match(html,/20261106-porti-original-v1/);
+ assert.match(sw,/20261106-porti-original-v19/);
  assert.doesNotMatch(app,/frame-ancestors.*<meta/i);
 });
 
@@ -633,7 +633,7 @@ test('Scania photo waits 2.5 seconds before showing login or personal register',
  assert.match(app,/catch\(error\)\{\s*await renderFirstBootGate\(error[.]offline/);
  assert.match(app,/if\(!accountAccess[.]hasSession\(\)\)\{\s*await renderFirstBootGate\(\);return;/);
  assert.match(app,/if\(!\(await finishInitialTruckLoading\(\)\)\)return;\s*render\(\)/);
- assert.match(sw,/20261106-porti-compact-banner-v18/);
+ assert.match(sw,/20261106-porti-original-v19/);
 });
 
 test('activation confirmation is visible and personal register requires verified login',()=>{
@@ -706,44 +706,33 @@ test('approved high-resolution login art leaves native secure account entry usab
 });
 
 
-test('approved Porti screen uses HD picture assets and keeps operational tools accessible',()=>{
- const portal=read('porti/index.html');
- const view=read('porti/approved-screen.css');
- const ui=read('porti/driver-ui.mjs');
- const appCss=read('app.css');
- const gate=read('porti-access.mjs');
- assert.match(app,/porti-hero-reference-image/);
- assert.match(app,/lts-porti-hero-hd[.]webp/);
- assert.match(appCss,/porti-hero-reference/);
- assert.match(appCss,/Porti banner approved 06\/11/);
- assert.match(appCss,/flex:0 0 auto!important/);
- assert.match(appCss,/height:clamp\(72px,18vw,88px\)!important/);
- assert.match(appCss,/object-fit:cover!important/);
- assert.match(portal,/approved-screen[.]css[?]v=20261106-hide-port-links-v2/);
- assert.match(view,/lts-porti-napoli-hd[.]webp/);
- assert.match(view,/lts-porti-salerno-hd[.]webp/);
- assert.match(view,/lts-porti-official-grid/);
- assert.match(view,/html[.]lts-embedded [.]lts-porti-officials\{display:none!important\}/);
- assert.match(view,/html[.]lts-embedded [.]search-panel [.]ports/);
- assert.match(ui,/lts-porti-operational/);
- assert.match(ui,/tools[.]append\(summary,form\)/);
- assert.match(gate,/driver-ui[.]mjs[?]v=20261106-selected-porti-v1/);
- assert.doesNotMatch(app,/Stato dei programmi navi/);
- for(const [file,min] of [
-  ['porti/assets/lts-porti-hero-hd.webp',35000],
-  ['porti/assets/lts-porti-napoli-hd.webp',5500],
-  ['porti/assets/lts-porti-salerno-hd.webp',5500]
- ]){
-  const data=readFileSync(new URL('../'+file,import.meta.url));
-  assert.ok(data.length>min,'High-resolution image missing: '+file);
-  assert.equal(data.subarray(0,4).toString('ascii'),'RIFF','Invalid WEBP asset: '+file);
- }
- for(const asset of ['lts-porti-hero-hd.webp','lts-porti-napoli-hd.webp','lts-porti-salerno-hd.webp'])
-  assert.ok(sw.includes(asset),'Photo is not in offline precache: '+asset);
- for(const brand of ['conateco.png','tfg-portal.png','sct-compact.png']){
-  assert.match(ui,new RegExp(brand.replace('.','[.]')));
-  assert.ok(existsSync(new URL('../porti/assets/terminal-logos/'+brand,import.meta.url)));
- }
+test('Porti is restored to its original compact booking interface and source statuses',()=>{
+ const portal=read('porti/index.html'),ui=read('porti/driver-ui.mjs');
+ const appCss=read('app.css'),gate=read('porti-access.mjs'),sw=read('sw.js');
+ assert.match(app,/Stato dei programmi navi/);
+ assert.match(app,/describePortSource/);
+ assert.match(app,/porti-source-overview/);
+ assert.match(app,/Copia acquisita ≠ conferma del carico/);
+ assert.match(app,/Orari delle fonti e collegamenti ufficiali/);
+ assert.match(appCss,/\.porti-source-overview/);
+ assert.match(portal,/Dove devi consegnare[?]/);
+ assert.match(portal,/napoli-booking-details/);
+ assert.match(portal,/data-booking-target="cnt"/);
+ assert.match(portal,/data-booking-target="tfg"/);
+ assert.match(portal,/sct-vessel-list/);
+ assert.match(portal,/driver-ui[.]css[?]v=20261106-porti-original-v1/);
+ assert.match(gate,/driver-ui[.]mjs[?]v=20261031-v44/);
  assert.match(gate,/lts-porti-authorized/);
- assert.match(ui,/document[.]querySelectorAll\('input\[name="port"\]'\)/);
+ assert.match(ui,/syncNapoliTerminalPanels/);
+ assert.doesNotMatch(ui,/setupPortiHomepage/);
+ assert.doesNotMatch(app,/porti-hero-reference-image|lts-porti-hero-hd[.]webp/);
+ assert.doesNotMatch(appCss,/porti-hero-reference|Porti banner approved 06\/11/);
+ assert.doesNotMatch(portal,/approved-screen[.]css/);
+ assert.ok(!existsSync(new URL('../porti/approved-screen.css',import.meta.url)));
+ for(const file of ['lts-porti-hero-hd.webp','lts-porti-napoli-hd.webp','lts-porti-salerno-hd.webp']){
+  assert.ok(!existsSync(new URL('../porti/assets/'+file,import.meta.url)));
+  assert.ok(!sw.includes(file));
+ }
+ for(const brand of ['conateco.png','tfg-portal.png','sct-compact.png'])
+  assert.ok(existsSync(new URL('../porti/assets/terminal-logos/'+brand,import.meta.url)));
 });
