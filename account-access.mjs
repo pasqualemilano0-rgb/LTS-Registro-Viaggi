@@ -419,3 +419,19 @@ export async function companyTariffs(action='list',data={}){
   ()=>api('tariffsEndpoint',payload,readStored()?.access_token),
   async()=>{await verifySession();if(getRole()!=='admin')throw new Error('Ruolo amministratore non valido.');});
 }
+
+/** Read-only company catalog for every verified driver or administrator.
+ * The server independently authorizes the active JWT/session; no personal
+ * archives are exposed and only the admin can write these prices. */
+export async function driverCompanyTariffs(){
+ if(!isVerified()||!hasSession())throw new Error('Accedi per consultare il tariffario aziendale.');
+ const result=await withSessionRetry(
+  ()=>api('tariffsEndpoint',{action:'list'},readStored()?.access_token),
+  ()=>verifySession());
+ if(!Array.isArray(result?.tariffs)||result.tariffs.length>500||
+   result.tariffs.some(row=>typeof row?.client!=='string'||typeof row?.city!=='string'||
+   !Number.isSafeInteger(row?.cents)||row.cents<0||row.cents>99999999||
+   typeof row?.id!=='string'))
+  throw new Error('Tariffario aziendale incompleto. Riprova.');
+ return result.tariffs;
+}
