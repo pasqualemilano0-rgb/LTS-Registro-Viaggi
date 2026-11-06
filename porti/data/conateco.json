@@ -320,8 +320,8 @@
       "acceptance_icon": "",
       "stop_cargo": "",
       "external_depot": "",
-      "opening": "",
-      "closing": "",
+      "opening": "2026-11-09 12:00",
+      "closing": "2027-11-12 17:00",
       "notes": "",
       "source_conflict": false
     },
@@ -565,7 +565,7 @@
     },
     {
       "vessel": "MSC CHARLESTON",
-      "voyage": "FD647A",
+      "voyage": "FD647E",
       "eta": "2026-11-26 00:00",
       "vessel_status": "PRE",
       "category": "PREVISTE",
@@ -649,5 +649,5 @@
       "source_conflict": false
     }
   ],
-  "acquired_at": "2026-11-06T09:45:16.602Z"
+  "acquired_at": "2026-11-06T10:15:16.956Z"
 }
