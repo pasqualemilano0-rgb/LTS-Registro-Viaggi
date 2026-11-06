@@ -632,7 +632,7 @@ test('Scania photo stays visible at least four seconds while the register loads'
  })();
  assert.equal(await later.fn(),true);
  assert.deepEqual(later.timers,[]);
- assert.deepEqual(await trial(0,false),{first:false,second:false,timers:[4000,4000]});
+ assert.deepEqual(await trial(0,false),{first:false,second:false,timers:[4000]});
  assert.match(app,/if\(!\(await finishInitialTruckLoading\(\)\)\)return;\s*render\(\)/);
  assert.doesNotMatch(code,/animation[.]finished|waitForTruckStage/);
  assert.match(sw,/20261106-full-scania-photo-v7/);
