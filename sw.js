@@ -1,13 +1,13 @@
 const BASE = "/LTS-Registro-Viaggi/";
 const PREFIX = "lts-iphone-pages-0aa8d087d02b-";
-const CACHE = PREFIX + '20261106-full-scania-photo-v9';
+const CACHE = PREFIX + '20261106-full-scania-photo-hd-v10';
 const CORE = [
   "/LTS-Registro-Viaggi/account-access.mjs",
   "/LTS-Registro-Viaggi/app.css",
   "/LTS-Registro-Viaggi/activation-feedback.css",
   "/LTS-Registro-Viaggi/truck-loader.css",
   "/LTS-Registro-Viaggi/photo-splash.css",
-  "/LTS-Registro-Viaggi/assets/lts-full-photo.webp",
+  "/LTS-Registro-Viaggi/assets/lts-full-photo-hd.webp",
   "/LTS-Registro-Viaggi/assets/lts-scania-s-loader.svg",
   "/LTS-Registro-Viaggi/app.mjs",
   "/LTS-Registro-Viaggi/assets/apple-touch-icon.png",
