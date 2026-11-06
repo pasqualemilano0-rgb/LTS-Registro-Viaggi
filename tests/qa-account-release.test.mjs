@@ -704,3 +704,40 @@ test('approved high-resolution login art leaves native secure account entry usab
  assert.match(sw,/assets\/lts-login-hero-hd[.]webp/);
  assert.match(sw,/login-premium[.]css/);
 });
+
+
+test('approved Porti screen uses HD picture assets and keeps operational tools accessible',()=>{
+ const portal=read('porti/index.html');
+ const view=read('porti/approved-screen.css');
+ const ui=read('porti/driver-ui.mjs');
+ const appCss=read('app.css');
+ const gate=read('porti-access.mjs');
+ assert.match(app,/porti-hero-reference-image/);
+ assert.match(app,/lts-porti-hero-hd[.]webp/);
+ assert.match(appCss,/porti-hero-reference/);
+ assert.match(portal,/approved-screen[.]css[?]v=20261106-selected-porti-v1/);
+ assert.match(view,/lts-porti-napoli-hd[.]webp/);
+ assert.match(view,/lts-porti-salerno-hd[.]webp/);
+ assert.match(view,/lts-porti-official-grid/);
+ assert.match(ui,/lts-porti-operational/);
+ assert.match(ui,/tools[.]append\(summary,form\)/);
+ assert.match(gate,/driver-ui[.]mjs[?]v=20261106-selected-porti-v1/);
+ assert.doesNotMatch(app,/Stato dei programmi navi/);
+ for(const [file,min] of [
+  ['porti/assets/lts-porti-hero-hd.webp',35000],
+  ['porti/assets/lts-porti-napoli-hd.webp',5500],
+  ['porti/assets/lts-porti-salerno-hd.webp',5500]
+ ]){
+  const data=readFileSync(new URL('../'+file,import.meta.url));
+  assert.ok(data.length>min,'High-resolution image missing: '+file);
+  assert.equal(data.subarray(0,4).toString('ascii'),'RIFF','Invalid WEBP asset: '+file);
+ }
+ for(const asset of ['lts-porti-hero-hd.webp','lts-porti-napoli-hd.webp','lts-porti-salerno-hd.webp'])
+  assert.ok(sw.includes(asset),'Photo is not in offline precache: '+asset);
+ for(const brand of ['conateco.png','tfg-portal.png','sct-compact.png']){
+  assert.match(ui,new RegExp(brand.replace('.','[.]')));
+  assert.ok(existsSync(new URL('../porti/assets/terminal-logos/'+brand,import.meta.url)));
+ }
+ assert.match(gate,/lts-porti-authorized/);
+ assert.match(ui,/document[.]querySelectorAll\('input\[name="port"\]'\)/);
+});
