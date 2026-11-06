@@ -1412,15 +1412,27 @@ document.addEventListener('visibilitychange',async()=>{
  * then finishes the last stretch; the app replaces the splash at animation completion.
  * Auth failures and reduced-motion users bypass the journey without extra delay.
  */
-/** Keep the Scania S still and the bar moving while authentication loads.
- * The verified register opens immediately when its data is ready.
- * No artificial animation timeout or progress percentage is imposed. */
+/** Hold the full Scania photograph for at least four seconds on first boot.
+ * The truck stays still and the CSS loading bar continues its animation.
+ * Never turn this timer into an authentication shortcut: the archive must
+ * finish verification first, and slow loads remain visible until ready. */
+const MIN_INITIAL_SPLASH_MS=4000;
+const initialSplashStartedAt=performance.now();
 let initialLoaderClosed=false;
+let initialLoaderWait=null;
 async function finishInitialTruckLoading(){
  const loader=root.querySelector('.photo-splash');
  if(initialLoaderClosed||!loader)return true;
+ if(!initialLoaderWait){
+  const remaining=Math.max(0,MIN_INITIAL_SPLASH_MS-(performance.now()-initialSplashStartedAt));
+  initialLoaderWait=remaining>0
+   ?new Promise(resolve=>setTimeout(resolve,remaining))
+   :Promise.resolve();
+ }
+ await initialLoaderWait;
+ if(!loader.isConnected)return false;
  initialLoaderClosed=true;
- return loader.isConnected;
+ return true;
 }
 
 async function initialize(){
