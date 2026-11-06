@@ -10,7 +10,7 @@ test('driver entrypoints load the original LTS theme and preserve account routes
   const source=read(p);
   assert.match(source,/app[.]css[?]v=20261106-truck-road-sync-v2/);
   assert.doesNotMatch(source,/href="[^"]*pro-theme[.]css/);
-  assert.match(source,/app[.]mjs[?]v=20261106-scania-pause-v3/);
+  assert.match(source,/app[.]mjs[?]v=20261106-company-tariffs-v1/);
   assert.match(source,/photo-splash[.]css[?]v=20261106-scania-photo-hd-v2/);
   assert.match(source,/assets\/lts-full-photo-hd[.]webp/);
  }
