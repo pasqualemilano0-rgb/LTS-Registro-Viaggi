@@ -1,0 +1,51 @@
+/* LTS protected company tariff management */
+#company-rates{display:none}
+#dashboard[data-view="rates"] #report-panel{display:block!important}
+#dashboard[data-view="rates"] #report-panel>:not(#company-rates){display:none!important}
+#dashboard[data-view="rates"] #company-rates{display:grid;gap:18px;max-width:1100px;margin:0 auto}
+#company-rates .company-rates-heading{padding:25px 25px 23px;border-radius:20px;
+ background:linear-gradient(112deg,#053e56,#08798d);color:#fff;display:flex;align-items:center;
+ justify-content:space-between;gap:20px;flex-wrap:wrap}
+#company-rates .company-rates-heading .eyebrow{color:#b9edf1;font-size:11px}
+#company-rates h1{margin:7px 0;font-size:clamp(23px,3.5vw,32px);color:#fff}
+#company-rates .company-rates-heading p:last-of-type{max-width:65ch;color:#def8fb;font-size:13px;line-height:1.55}
+#company-rates .company-rates-guide{padding:15px 18px;background:#eef9f7;
+ border:1px solid #cee9e1;border-radius:14px;color:#285d5a;font-size:13px;line-height:1.65}
+#company-rates .company-rates-editor,#company-rates .company-rates-catalog{
+ background:#fff;border:1px solid #d9e7eb;border-radius:19px;padding:23px}
+#company-rates h2{font-size:20px;color:#153e50;margin:0 0 8px}
+#company-rates .company-rates-note{color:#537381;font-size:12px;line-height:1.6;margin-bottom:17px}
+#company-rates .company-rates-fields{display:grid;grid-template-columns:1.2fr 1fr .7fr;gap:13px;align-items:end}
+#company-rates .company-rates-fields label{display:grid;gap:7px;font-size:12px;font-weight:750;color:#315e6f}
+#company-rates .company-rates-fields input{min-width:0;min-height:48px;font-size:16px;background:#f8fcfd;border:1px solid #cee1e7;border-radius:11px;padding:11px 12px}
+#company-rates .company-rates-fields input:focus{outline:3px solid #9ce1e6;outline-offset:1px;border-color:#168d9c}
+#company-rates .company-rates-fields input:disabled{opacity:1;background:#e9f1f4;color:#536f7a}
+#company-rates .company-rates-actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:15px}
+#company-rates .company-rates-actions button{min-height:45px}
+#company-rates-status{color:#376673;font-size:12px;line-height:1.55;min-height:20px}
+#company-rates-status[data-error="true"]{color:#ae324e}
+#company-rates .company-rates-catalog-head{display:flex;justify-content:space-between;align-items:end;gap:15px;flex-wrap:wrap}
+#company-rates .company-rates-catalog-head input{max-width:275px;width:100%;min-height:45px;border-radius:10px;padding:10px 13px;font-size:16px}
+#company-rates-count{font-size:12px;color:#5b7885;margin:0 0 10px}
+#company-rates-list{display:grid;gap:9px;margin-top:13px}
+#company-rates .company-rate-row{display:flex;gap:14px;align-items:center;min-width:0;background:#f8fbfc;
+ border:1px solid #dce9ee;border-radius:13px;padding:14px 15px}
+#company-rates .company-rate-main{display:grid;gap:4px;min-width:0;flex:1}
+#company-rates .company-rate-name{font-size:14px;color:#183e4d;overflow-wrap:anywhere}
+#company-rates .company-rate-city{font-size:12px;color:#567485}
+#company-rates .company-rate-updated{font-size:10px;color:#81939b}
+#company-rates .company-rate-price{font-size:19px;color:#077686;white-space:nowrap;font-variant-numeric:tabular-nums}
+#company-rates .company-rate-edit{flex:none;min-height:40px}
+#company-rates .company-rates-empty{padding:18px;color:#5e7b86;text-align:center;font-size:13px}
+@media(max-width:760px){
+ #company-rates .company-rates-heading{padding:20px 17px}
+ #company-rates .company-rates-editor,#company-rates .company-rates-catalog{padding:17px}
+ #company-rates .company-rates-fields{grid-template-columns:1fr 1fr}
+ #company-rates .company-rates-fields label:first-child{grid-column:1/-1}
+ #company-rates .company-rate-row{flex-wrap:wrap}
+ #company-rates .company-rate-main{flex-basis:100%}
+ #company-rates .company-rates-catalog-head input{max-width:none}
+}
+@media(max-width:390px){#company-rates .company-rates-fields{grid-template-columns:1fr}
+ #company-rates .company-rates-fields label:first-child{grid-column:auto}}
+@media(prefers-reduced-motion:reduce){#company-rates *{scroll-behavior:auto!important}}
