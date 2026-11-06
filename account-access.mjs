@@ -37,7 +37,7 @@ function url(which){
  if(result.protocol!=='https:'||
      result.hostname!=='otrqynkscpbeyuvdlgpg.supabase.co'||
      result.username||result.password||result.search||result.hash||
-     !['/functions/v1/lts-phone-auth','/functions/v1/lts-account-state','/functions/v1/lts-driver-onboarding','/functions/v1/lts-company-report'].includes(result.pathname))
+     !['/functions/v1/lts-phone-auth','/functions/v1/lts-account-state','/functions/v1/lts-driver-onboarding','/functions/v1/lts-company-report','/functions/v1/lts-company-tariffs'].includes(result.pathname))
    throw new Error('Servizio account non configurato in modo sicuro.');
  return result.href;
 }
@@ -408,4 +408,14 @@ export async function companyInsights({month,driverId=null,compareDriverId=null,
  return withSessionRetry(
   ()=>api('reportEndpoint',payload,readStored()?.access_token),
   async()=>{await verifySession();if(getRole()!=='admin')throw new Error('Ruolo non autorizzato.');});
+}
+
+/** Admin-only central base tariffs, protected again by the backend MFA/session checks. */
+export async function companyTariffs(action='list',data={}){
+ if(!isVerified()||getRole()!=='admin')throw new Error('Accesso amministratore richiesto.');
+ if(!['list','save'].includes(action))throw new Error('Operazione tariffa non valida.');
+ const payload={action,...data};
+ return withSessionRetry(
+  ()=>api('tariffsEndpoint',payload,readStored()?.access_token),
+  async()=>{await verifySession();if(getRole()!=='admin')throw new Error('Ruolo amministratore non valido.');});
 }
