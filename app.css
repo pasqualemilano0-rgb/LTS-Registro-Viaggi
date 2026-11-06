@@ -401,48 +401,99 @@ h1,h2,h3{letter-spacing:-.035em}
 .company-customer-error{color:#945a21;font-size:12px;line-height:1.5;margin-bottom:10px}
 .company-customer-error[hidden]{display:none}
 
-/* Install CTA on the login screen; no overlays or additional network assets. */
+/* LTS login install card: coastal teal, softly animated highlights and layered waves.
+   Scoped to the login screen; no images or external requests. */
 .account-gate .account-install-banner{
- position:relative;isolation:isolate;overflow:hidden;display:flex;align-items:center;
- gap:12px;margin:15px 0 0;padding:12px 13px;border-radius:16px;
- border:1px solid #a7d4dc;background:linear-gradient(108deg,#e0f4f8,#f7fcfd 61%,#e5f6f7);
- box-shadow:0 8px 25px #163e5212;
+ position:relative;isolation:isolate;overflow:hidden;display:flex;flex-direction:column;
+ align-items:stretch;gap:17px;margin:18px 0 0;padding:23px 21px 22px;
+ border:1px solid #51cbd1;border-radius:24px;
+ background:radial-gradient(ellipse 70% 80% at 104% -10%,#4adbd9a3,transparent 72%),
+  linear-gradient(118deg,#098b98 0%,#006d82 48%,#009da5 100%);
+ box-shadow:0 12px 29px #0d597b24,0 2px 5px #07566c12;
+ color:#fff;text-align:left;
 }
 .account-gate .account-install-banner::before{
- content:'';position:absolute;z-index:0;inset:0;transform:translateX(-115%) skewX(-20deg);
- width:65%;background:linear-gradient(90deg,transparent,#ffffffa8,transparent);
- animation:lts-login-install-sheen 7s ease-in-out infinite;pointer-events:none;
+ content:'';position:absolute;z-index:0;inset:-40% auto -30% -110%;width:65%;
+ transform:rotate(13deg);background:linear-gradient(90deg,transparent,#ffffff2f,transparent);
+ pointer-events:none;animation:lts-install-highlight 8s ease-in-out infinite;
 }
-.account-gate .account-install-banner-mark,.account-gate .account-install-banner-copy,.account-gate .account-install-banner-action{position:relative;z-index:1}
+.account-gate .account-install-banner::after{
+ content:'';position:absolute;z-index:0;left:-15%;right:-15%;bottom:-89px;height:130px;
+ border-top:1px solid #befcf99c;border-radius:54% 61% 0 0 / 55% 52% 0 0;
+ transform:rotate(4deg);
+ background:linear-gradient(100deg,#0de1d57a,#61eee967 44%,#0a9dabc2);
+ pointer-events:none;animation:lts-install-wave 6.6s ease-in-out infinite;
+}
+.account-gate .account-install-banner-main{
+ position:relative;z-index:2;display:grid;grid-template-columns:70px minmax(0,1fr);
+ gap:18px;align-items:center;min-width:0;
+}
 .account-gate .account-install-banner-mark{
- display:grid;place-items:center;flex:none;width:42px;height:42px;
- border-radius:13px;background:#00758c;color:#fff;box-shadow:0 4px 12px #006f892c;
- animation:lts-login-install-float 3.2s ease-in-out infinite;
+ display:grid;place-items:center;width:70px;height:70px;flex:none;
+ border:1px solid #e4ffffcf;border-radius:22px;
+ background:linear-gradient(145deg,#e5ffff,#a5eff0 68%,#8bd6df);
+ box-shadow:0 0 0 4px #9af4f31a,0 0 20px #a9ffff9e,0 5px 12px #00465c4d;
+ color:#006b82;animation:lts-install-badge 4s ease-in-out infinite;
 }
-.account-gate .account-install-banner-mark .icon{width:23px;height:23px}
-.account-gate .account-install-banner-copy{min-width:0;flex:1}
-.account-gate .account-install-banner-copy strong{display:block;font-size:13px;font-weight:850;line-height:1.35;color:#0b5369}
-.account-gate .account-install-banner-copy p{margin-top:3px;font-size:11px;line-height:1.45;color:#3b6978}
+.account-gate .account-install-banner-mark .icon{width:36px;height:36px;stroke-width:2.2}
+.account-gate .account-install-banner-copy{
+ position:relative;min-width:0;padding-left:17px;
+ border-left:1px solid #d3ffffb3;text-shadow:0 1px 7px #00364a26;
+}
+.account-gate .account-install-banner-copy strong{
+ display:block;font-family:Manrope,-apple-system,BlinkMacSystemFont,sans-serif;
+ font-size:clamp(19px,5.4vw,23px);font-weight:850;line-height:1.19;
+ letter-spacing:-.04em;color:#fff;
+}
+.account-gate .account-install-banner-copy p{
+ margin:8px 0 0;max-width:27ch;font-size:clamp(12px,3.4vw,14px);
+ font-weight:470;line-height:1.45;color:#e6fcff;
+}
 .account-gate .account-install-banner-action{
- flex:none;min-height:44px;min-width:112px;padding:10px 11px;
- border:1px solid #006d83;border-radius:11px;background:#006f89;color:white;
- font-size:12px;font-weight:800;white-space:nowrap;box-shadow:0 3px 10px #0b667d19;
+ position:relative;z-index:2;display:flex;justify-content:center;align-items:center;align-self:center;
+ gap:11px;width:min(100%,246px);min-height:53px;padding:13px 19px;
+ border:1px solid #e9ffff;border-radius:16px;background:linear-gradient(180deg,#fff,#effcfd);
+ box-shadow:0 7px 17px #00445542;color:#006d82;
+ font-size:16px;font-weight:850;letter-spacing:-.015em;
+ transition:transform .18s ease,box-shadow .18s ease,background .18s ease;
 }
-.account-gate .account-install-banner-action .icon{width:16px;height:16px}
-.account-gate .account-install-banner-action:focus-visible{outline:3px solid #32b7cf;outline-offset:3px}
-@keyframes lts-login-install-sheen{
- 0%,22%,100%{transform:translateX(-120%) skewX(-20deg)}
- 42%,55%{transform:translateX(240%) skewX(-20deg)}
+.account-gate .account-install-banner-action .icon{width:22px;height:22px}
+.account-gate .account-install-banner-action:hover{
+ transform:translateY(-2px);background:#fff;box-shadow:0 11px 24px #00445557;
 }
-@keyframes lts-login-install-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+.account-gate .account-install-banner-action:active{transform:translateY(0)}
+.account-gate .account-install-banner-action:focus-visible{outline:3px solid #b5fbff;outline-offset:3px}
+.account-gate .account-install-banner-wave{
+ position:absolute;z-index:1;bottom:-74px;right:-30%;width:85%;height:147px;
+ border-top:2px solid #b7fffbd0;border-radius:65% 42% 0 0 / 70% 75% 0 0;
+ transform:rotate(-9deg);
+ background:linear-gradient(130deg,#12ddd21a,#4bf3ed56);
+ pointer-events:none;animation:lts-install-wave-back 7.5s ease-in-out infinite;
+}
+@keyframes lts-install-highlight{
+ 0%,18%,100%{left:-110%}
+ 43%,59%{left:150%}
+}
+@keyframes lts-install-badge{
+ 0%,100%{transform:translateY(0);box-shadow:0 0 0 4px #9af4f31a,0 0 20px #a9ffff9e,0 5px 12px #00465c4d}
+ 50%{transform:translateY(-2px);box-shadow:0 0 0 6px #9af4f321,0 0 27px #bcffffb8,0 8px 16px #00465c42}
+}
+@keyframes lts-install-wave{0%,100%{transform:rotate(4deg) translateY(0)}50%{transform:rotate(3deg) translateY(-6px)}}
+@keyframes lts-install-wave-back{0%,100%{transform:rotate(-9deg) translateY(0)}50%{transform:rotate(-8deg) translateY(-7px)}}
 @media(max-width:390px){
- .account-gate .account-install-banner{gap:8px;padding:10px}
- .account-gate .account-install-banner-mark{width:36px;height:36px}
- .account-gate .account-install-banner-action{min-width:102px;padding:9px 8px}
- .account-gate .account-install-banner-action .icon{display:none}
- .account-gate .account-install-banner-copy strong{font-size:12px}
- .account-gate .account-install-banner-copy p{font-size:10px}
+ .account-gate .account-install-banner{gap:14px;padding:20px 15px 20px;border-radius:21px}
+ .account-gate .account-install-banner-main{grid-template-columns:58px minmax(0,1fr);gap:12px}
+ .account-gate .account-install-banner-mark{width:58px;height:58px;border-radius:18px}
+ .account-gate .account-install-banner-mark .icon{width:31px;height:31px}
+ .account-gate .account-install-banner-copy{padding-left:12px}
+ .account-gate .account-install-banner-copy strong{font-size:clamp(17px,5.1vw,21px)}
+ .account-gate .account-install-banner-copy p{font-size:12px}
+ .account-gate .account-install-banner-action{width:min(100%,220px);min-height:50px}
 }
 @media(prefers-reduced-motion:reduce){
- .account-gate .account-install-banner::before,.account-gate .account-install-banner-mark{animation:none!important;transform:none!important}
+ .account-gate .account-install-banner::before,
+ .account-gate .account-install-banner::after,
+ .account-gate .account-install-banner-wave,
+ .account-gate .account-install-banner-mark{animation:none!important}
+ .account-gate .account-install-banner-action{transition:none!important}
 }
