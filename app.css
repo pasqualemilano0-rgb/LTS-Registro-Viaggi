@@ -400,3 +400,49 @@ h1,h2,h3{letter-spacing:-.035em}
 .trip-client-suggestion:hover,.trip-client-suggestion.active,.trip-client-suggestion:focus-visible{background:#e9f6fa}
 .company-customer-error{color:#945a21;font-size:12px;line-height:1.5;margin-bottom:10px}
 .company-customer-error[hidden]{display:none}
+
+/* Install CTA on the login screen; no overlays or additional network assets. */
+.account-gate .account-install-banner{
+ position:relative;isolation:isolate;overflow:hidden;display:flex;align-items:center;
+ gap:12px;margin:15px 0 0;padding:12px 13px;border-radius:16px;
+ border:1px solid #a7d4dc;background:linear-gradient(108deg,#e0f4f8,#f7fcfd 61%,#e5f6f7);
+ box-shadow:0 8px 25px #163e5212;
+}
+.account-gate .account-install-banner::before{
+ content:'';position:absolute;z-index:0;inset:0;transform:translateX(-115%) skewX(-20deg);
+ width:65%;background:linear-gradient(90deg,transparent,#ffffffa8,transparent);
+ animation:lts-login-install-sheen 7s ease-in-out infinite;pointer-events:none;
+}
+.account-gate .account-install-banner-mark,.account-gate .account-install-banner-copy,.account-gate .account-install-banner-action{position:relative;z-index:1}
+.account-gate .account-install-banner-mark{
+ display:grid;place-items:center;flex:none;width:42px;height:42px;
+ border-radius:13px;background:#00758c;color:#fff;box-shadow:0 4px 12px #006f892c;
+ animation:lts-login-install-float 3.2s ease-in-out infinite;
+}
+.account-gate .account-install-banner-mark .icon{width:23px;height:23px}
+.account-gate .account-install-banner-copy{min-width:0;flex:1}
+.account-gate .account-install-banner-copy strong{display:block;font-size:13px;font-weight:850;line-height:1.35;color:#0b5369}
+.account-gate .account-install-banner-copy p{margin-top:3px;font-size:11px;line-height:1.45;color:#3b6978}
+.account-gate .account-install-banner-action{
+ flex:none;min-height:44px;min-width:112px;padding:10px 11px;
+ border:1px solid #006d83;border-radius:11px;background:#006f89;color:white;
+ font-size:12px;font-weight:800;white-space:nowrap;box-shadow:0 3px 10px #0b667d19;
+}
+.account-gate .account-install-banner-action .icon{width:16px;height:16px}
+.account-gate .account-install-banner-action:focus-visible{outline:3px solid #32b7cf;outline-offset:3px}
+@keyframes lts-login-install-sheen{
+ 0%,22%,100%{transform:translateX(-120%) skewX(-20deg)}
+ 42%,55%{transform:translateX(240%) skewX(-20deg)}
+}
+@keyframes lts-login-install-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+@media(max-width:390px){
+ .account-gate .account-install-banner{gap:8px;padding:10px}
+ .account-gate .account-install-banner-mark{width:36px;height:36px}
+ .account-gate .account-install-banner-action{min-width:102px;padding:9px 8px}
+ .account-gate .account-install-banner-action .icon{display:none}
+ .account-gate .account-install-banner-copy strong{font-size:12px}
+ .account-gate .account-install-banner-copy p{font-size:10px}
+}
+@media(prefers-reduced-motion:reduce){
+ .account-gate .account-install-banner::before,.account-gate .account-install-banner-mark{animation:none!important;transform:none!important}
+}
