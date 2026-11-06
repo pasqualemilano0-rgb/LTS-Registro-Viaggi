@@ -4,9 +4,9 @@ const more=document.getElementById('admin-nav-more');
 if(dashboard&&more){
   const query=window.matchMedia('(max-width: 1029px)');
   const summary=more.querySelector('summary');
-  const extraViews=new Set(['alerts','exports','security']);
+  const extraViews=new Set(['alerts','rates','exports','security']);
   function syncMode(){
-    // The desktop sidebar must expose all seven existing navigation actions.
+    // The desktop sidebar must expose all authorized navigation actions.
     more.open=!query.matches;
   }
   function syncSelection(){
