@@ -122,33 +122,6 @@ h1,h2,h3{letter-spacing:-.035em}
 .trip-repeat-action:focus-visible{outline:3px solid #48b9d1;outline-offset:3px}
 .trip-repeat-action .icon{width:17px;height:17px;flex-shrink:0}
 
-/* Porti: snapshot provenance, deliberately separate from booking acceptance. */
-.porti-source-overview{flex:none;background:#fff;border-bottom:1px solid var(--line);padding:9px 18px 10px}
-.porti-source-intro{display:flex;align-items:center;flex-wrap:wrap;justify-content:space-between;gap:6px 13px;margin-bottom:7px;color:var(--ink);font-size:12px}
-.porti-source-intro strong{font-size:12px;font-weight:800}
-.porti-source-intro span{font-size:10px;color:#647b87;font-weight:650}
-.porti-source-signals{display:flex;flex-wrap:wrap;gap:6px}
-.porti-source-signal{display:inline-flex;align-items:center;min-height:29px;border-radius:8px;padding:5px 9px;background:#f1f5f7;color:#48616c;border:1px solid #dbe5ea;font-size:11px;font-weight:750}
-.porti-source-signal[data-state="recent"]{background:#eaf5f0;color:#24694c;border-color:#cee5d7}
-.porti-source-signal[data-state="verify"],.porti-source-signal[data-state="outdated"]{background:#fff5e4;color:#8b5e17;border-color:#eddfb9}
-.porti-source-signal[data-state="unknown"]{background:#f8edf0;color:#8a3b52;border-color:#ecd4db}
-.porti-source-details{margin-top:7px;font-size:11px}
-.porti-source-details summary{color:var(--teal);font-size:11px;font-weight:750;cursor:pointer;min-height:25px}
-.porti-source-details summary:focus-visible{outline:3px solid #48b9d1;outline-offset:2px}
-.porti-source-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin-top:8px;max-height:190px;overflow:auto}
-.porti-source-card{min-width:0;border:1px solid #dbe5ea;border-radius:9px;background:#f7fafb;padding:9px}
-.porti-source-card-head{display:flex;align-items:center;flex-wrap:wrap;gap:5px;justify-content:space-between;margin-bottom:6px}
-.porti-source-card-head strong{font-size:11px;color:var(--ink)}
-.porti-source-card-head a{color:var(--teal);font-size:10px;text-decoration:underline}
-.porti-source-timestamp,.porti-source-note{font-size:10px;line-height:1.45;color:#556f7e;margin:3px 0}
-.porti-source-note{color:#704f25}
-@media(max-width:600px){
- .porti-source-overview{padding:8px 12px 9px}
- .porti-source-cards{grid-template-columns:1fr;max-height:165px}
- .porti-source-card{padding:8px 10px}
- .porti-source-intro span{font-size:10px}
-}
-
 /* Login LTS — coastal logistics identity, isolated from the trip register. */
 .boot.account-gate{
  display:block;width:100%;max-width:none;min-height:100dvh;height:100dvh;
