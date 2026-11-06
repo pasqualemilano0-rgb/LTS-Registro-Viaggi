@@ -396,10 +396,21 @@ function updateTripFields(trip, fields, updatedAt) {
 export function reconcileTripTariffs(state) {
   const normalized = validateState(state);
   const now = new Date().toISOString();
-  const prices = new Map(normalized.tariffs.map(tariff => [JSON.stringify([tariff.client, tariff.city]), tariff.cents]));
+  // Personal tariffs retain their historical reprice behavior. Company tariffs
+  // are defaults: they can fill missing amounts, but must never overwrite a
+  // non-null fare already recorded by an individual driver.
+  const personal = new Map(normalized.tariffs
+    .filter(rate => !/^company:[0-9a-f-]{36}$/iu.test(rate.id))
+    .map(rate => [JSON.stringify([rate.client, rate.city]), rate.cents]));
+  const company = new Map(normalized.tariffs
+    .filter(rate => /^company:[0-9a-f-]{36}$/iu.test(rate.id))
+    .map(rate => [JSON.stringify([rate.client, rate.city]), rate.cents]));
   const trips = normalized.trips.map(trip => {
-    const first = prices.get(JSON.stringify([trip.client, trip.city]));
-    const second = trip.secondCity ? prices.get(JSON.stringify([trip.secondClient, trip.secondCity])) : undefined;
+    const firstKey = JSON.stringify([trip.client, trip.city]);
+    const secondKey = JSON.stringify([trip.secondClient, trip.secondCity]);
+    const first = personal.get(firstKey) ?? (trip.fareCents ?? company.get(firstKey));
+    const second = trip.secondCity
+      ? (personal.get(secondKey) ?? (trip.secondFareCents ?? company.get(secondKey))) : undefined;
     const extraCents = { ...trip.extraCents };
     for (const service of trip.services) {
       if (normalized.extraRates[service] !== null) extraCents[service] = normalized.extraRates[service];
