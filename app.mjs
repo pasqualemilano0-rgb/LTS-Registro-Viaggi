@@ -1410,11 +1410,11 @@ document.addEventListener('visibilitychange',async()=>{
 /** Show the full Scania photograph during first boot. Keep the still truck visible,
  * with the progress bar moving, for a minimum interval after the app starts.
  * This is visual feedback only: account verification still gates all private data. */
-/** Hold the full Scania photograph for at least six seconds on first boot.
+/** Hold the full Scania photograph for at least 2.5 seconds on first boot.
  * The truck stays still and the CSS loading bar continues its animation.
  * Never turn this timer into an authentication shortcut: the archive must
  * finish verification first, and slow loads remain visible until ready. */
-const MIN_INITIAL_SPLASH_MS=6000;
+const MIN_INITIAL_SPLASH_MS=2500;
 const initialSplashStartedAt=performance.now();
 let initialLoaderClosed=false;
 let initialLoaderWait=null;
