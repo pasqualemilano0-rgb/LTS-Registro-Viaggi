@@ -555,3 +555,45 @@ h1,h2,h3{letter-spacing:-.035em}
 }
 .app-frame:has(.view-porti) .bottom-nav .nav-item.active::before{background:#7ce9fb}
 .app-frame:has(.view-porti) .bottom-nav .nav-item:not(.active):hover{color:#fff;background:#164b6b}
+
+/* Selected LTS Porti screen: real HD banner from the approved reference. */
+.app-scroll:has(.view-porti)>.topbar{
+ min-height:65px;flex:none;padding:10px 16px 9px;
+ background:linear-gradient(112deg,#083359,#032548 65%,#052f56)!important;
+ color:#fff!important;border-bottom:1px solid #174b73
+}
+.app-scroll:has(.view-porti)>.topbar .brand img{width:94px;height:38px;object-fit:contain}
+.app-scroll:has(.view-porti)>.topbar .brand-copy{border-left-color:#b7d9f075;padding-left:11px}
+.app-scroll:has(.view-porti)>.topbar .eyebrow{color:#bed3e2}
+.app-scroll:has(.view-porti)>.topbar .brand-title{color:#fff;font-size:13px}
+.app-scroll:has(.view-porti)>.topbar .profile-button{
+ background:linear-gradient(145deg,#0c8ed3,#07537e);color:#fff;border:1px solid #3ba4d4
+}
+.app-scroll:has(.view-porti)>.topbar button:not(.profile-button),
+.app-scroll:has(.view-porti)>.topbar a{color:#eefaff}
+.porti-hero.porti-hero-reference{
+ position:relative;display:block!important;flex:none;min-height:0!important;
+ width:100%;height:auto!important;padding:0!important;margin:0!important;
+ border:0!important;overflow:hidden;background:none!important;
+ border-radius:0!important;box-shadow:none!important;line-height:0
+}
+.porti-hero-reference-image{
+ display:block;width:100%;height:auto;max-width:none;
+ aspect-ratio:1152/345;object-fit:cover;object-position:center;
+ image-rendering:auto
+}
+.app-main.view-porti>.porti-frame{background:#f4f9fd}
+@media(max-width:600px){
+ .app-scroll:has(.view-porti)>.topbar{min-height:59px;gap:9px;padding:9px 12px}
+ .app-scroll:has(.view-porti)>.topbar .brand{gap:9px}
+ .app-scroll:has(.view-porti)>.topbar .brand img{width:77px;height:34px}
+ .app-scroll:has(.view-porti)>.topbar .brand-copy{padding-left:8px;line-height:1.25}
+ .app-scroll:has(.view-porti)>.topbar .brand-title{font-size:11px}
+ .app-scroll:has(.view-porti)>.topbar .eyebrow{font-size:8px}
+ .app-scroll:has(.view-porti)>.topbar .profile-button{height:36px;width:36px}
+ .porti-hero-reference-image{aspect-ratio:1152/345}
+}
+@media(max-width:370px){
+ .app-scroll:has(.view-porti)>.topbar .brand img{width:65px;height:30px}
+ .app-scroll:has(.view-porti)>.topbar .brand-title{font-size:10px}
+}
