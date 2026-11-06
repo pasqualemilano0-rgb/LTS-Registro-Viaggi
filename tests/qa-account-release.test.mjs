@@ -615,9 +615,11 @@ test('Scania photo waits six seconds before showing login or personal register',
   const timers=[],shown=[],loader={isConnected:connected};
   const root={querySelector:()=>withLoader?loader:null};
   const renderAccountGate=message=>shown.push(message||'login');
+  const clock={value:0}; // The splash timer starts when the module executes.
   const {finishInitialTruckLoading,renderFirstBootGate}=new Function(
    'root','performance','setTimeout','renderAccountGate',code)(
-   root,{now:()=>now},(resolve,ms)=>{timers.push(ms);resolve();},renderAccountGate);
+   root,{now:()=>clock.value},(resolve,ms)=>{timers.push(ms);resolve();},renderAccountGate);
+  clock.value=now; // Simulate elapsed time before authentication finishes.
   const first=await finishInitialTruckLoading();
   const second=await finishInitialTruckLoading();
   await renderFirstBootGate('Accesso autisti');
