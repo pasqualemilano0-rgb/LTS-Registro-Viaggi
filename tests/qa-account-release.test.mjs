@@ -52,7 +52,7 @@ test('offline worker activates new cache and precaches auth code without caching
 });
 test('HTML entry points are identical and use the new cache buster',()=>{
   assert.equal(html,shell);
-  assert.match(html,/app[.]css[?]v=20261106-truck-road-sync-v2/);
+  assert.match(html,/app[.]css[?]v=20261106-company-tariff-sync-v2/);
   assert.match(html,/app[.]mjs[?]v=20261106-company-tariff-sync-v2/);
   assert.match(html,/<script type="module"/);
 });
@@ -273,7 +273,7 @@ test('dedicated admin console loads only verified administrative transport',asyn
  const model=await import('../amministratore/model.mjs');
  assert.match(adminHtml,/Content-Security-Policy/);
  assert.match(adminHtml,/src="\.\/admin[.]mjs\?v=20261106-company-rates-v1"/);
- assert.match(adminJs,/import \* as account from '\.\.\/account-access[.]mjs\?v=20261106-company-tariff-sync-v2'/);
+ assert.match(adminJs,/import \* as account from '\.\.\/account-access[.]mjs\?v=20261106-company-tariffs-v1'/);
  assert.match(adminJs,/await account[.]verifySession\(\)/);
  assert.match(adminJs,/account[.]getRole\(\)!=='admin'/);
  assert.ok(adminJs.includes("account.manageDrivers('list')"));
@@ -573,7 +573,7 @@ test('embedded access cannot display register or admin credential inputs',()=>{
  assert.match(admin,/function denyEmbeddedAdmin\(\)/);
  assert.match(admin,/field[.]value='';field[.]disabled=true/);
  assert.match(admin,/if\(!denyEmbeddedAdmin\(\)\)authenticate\(\)/);
- assert.match(html,/20261106-truck-road-sync-v2/);
+ assert.match(html,/20261106-company-tariff-sync-v2/);
  assert.match(sw,/20261106-company-tariff-sync-v13/);
  assert.doesNotMatch(app,/frame-ancestors.*<meta/i);
 });
