@@ -602,3 +602,49 @@ h1,h2,h3{letter-spacing:-.035em}
  .app-scroll:has(.view-porti)>.topbar .brand img{width:65px;height:30px}
  .app-scroll:has(.view-porti)>.topbar .brand-title{font-size:10px}
 }
+
+/* Porti banner approved 06/11: a short, non-overlapping photographic strip.
+ * Reserve its exact height in the flex layout so the iframe begins underneath. */
+.app-main.view-porti>.porti-hero.porti-hero-reference{
+ display:block!important;
+ position:relative!important;
+ z-index:0;
+ isolation:isolate;
+ flex:0 0 auto!important;
+ align-self:center;
+ box-sizing:border-box;
+ width:calc(100% - 28px)!important;
+ height:clamp(76px,11vw,118px)!important;
+ min-height:0!important;
+ margin:12px 14px 11px!important;
+ padding:0!important;
+ border-radius:14px!important;
+ overflow:hidden!important;
+ background:#052e50!important;
+ box-shadow:0 4px 12px #123c5c1a!important;
+}
+.app-main.view-porti>.porti-hero.porti-hero-reference .porti-hero-reference-image{
+ display:block!important;
+ width:100%!important;
+ height:100%!important;
+ max-height:100%!important;
+ aspect-ratio:auto!important;
+ object-fit:cover!important;
+ object-position:50% 50%;
+}
+.app-main.view-porti>.porti-frame{
+ display:block!important;
+ position:relative;
+ z-index:0;
+ flex:1 1 0%!important;
+ min-height:0!important;
+ height:auto!important;
+}
+@media(max-width:600px){
+ .app-main.view-porti>.porti-hero.porti-hero-reference{
+  height:clamp(72px,18vw,88px)!important;
+  width:calc(100% - 24px)!important;
+  margin:10px 12px 10px!important;
+  border-radius:12px!important;
+ }
+}
