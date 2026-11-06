@@ -1258,6 +1258,17 @@ async function showLegacyArchiveRecovery(preview=null) {
   });
   body.append(details,message,error,backup,restore,later);
 }
+/** Installation is optional: the login gate never requires installing the PWA. */
+function accountInstallBanner(){
+ return el('aside',{class:'account-install-banner','data-install-trigger':true,
+  hidden:isInstalled(),'aria-label':'Installa LTS sul telefono'},
+  el('span',{class:'account-install-banner-mark','aria-hidden':'true'},icon('download')),
+  el('div',{class:'account-install-banner-copy'},
+   el('strong',{},'LTS sempre con te'),
+   el('p',{},'Aggiungi l’app alla schermata Home del telefono.')),
+  button('Installa app','secondary',startInstall,'download',
+   {class:'account-install-banner-action','aria-label':'Installa LTS sul dispositivo'}));
+}
 function renderAccountGate(message=''){
  companyCustomers=[];
  companyCustomersError='';
@@ -1291,6 +1302,7 @@ function renderAccountGate(message=''){
       message?el('p',{class:'form-error account-gate-error',role:'alert'},message):null,
       recovery,
       accountLoginFields({fromGate:true}),
+      accountInstallBanner(),
       el('div',{class:'account-login-extras'},
         button('Riprova accesso automatico','secondary',()=>initialize(),'refresh',
           {class:'secondary-button account-retry-button'})),
