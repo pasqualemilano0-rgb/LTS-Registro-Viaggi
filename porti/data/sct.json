@@ -3,15 +3,6 @@
   "source_updated_at": null,
   "rows": [
     {
-      "vessel": "ALOPO",
-      "voyage": "2026W",
-      "eta": "06/11/2026 00:00",
-      "closing": "05/11/2026 17:00 CLOSED",
-      "acceptance_dry": "CARGO ACCEPTED",
-      "acceptance_reef": "CARGO ACCEPTED",
-      "status": "ARRIVED"
-    },
-    {
       "vessel": "OOCL KOBE",
       "voyage": "643N",
       "eta": "07/11/2026 00:00",
@@ -138,6 +129,15 @@
       "status": "PENDING"
     },
     {
+      "vessel": "ECO OSTRO",
+      "voyage": "646W",
+      "eta": "11/11/2026 00:00",
+      "closing": "10/11/2026 17:00",
+      "acceptance_dry": "CARGO ACCEPTED",
+      "acceptance_reef": "CARGO ACCEPTED",
+      "status": "PENDING"
+    },
+    {
       "vessel": "JOANNA BORCHARD",
       "voyage": "1194",
       "eta": "11/11/2026 00:00",
@@ -165,15 +165,6 @@
       "status": "PENDING"
     },
     {
-      "vessel": "ECO OSTRO",
-      "voyage": "646W",
-      "eta": "11/11/2026 00:00",
-      "closing": "10/11/2026 17:00",
-      "acceptance_dry": "CARGO ACCEPTED",
-      "acceptance_reef": "CARGO ACCEPTED",
-      "status": "PENDING"
-    },
-    {
       "vessel": "ASTRAIOS",
       "voyage": "0HWLAE1MA",
       "eta": "12/11/2026 00:00",
@@ -183,8 +174,8 @@
       "status": "PENDING"
     },
     {
-      "vessel": "MIRIAM BORCHARD",
-      "voyage": "1045",
+      "vessel": "DEPE",
+      "voyage": "DEP1426W",
       "eta": "12/11/2026 00:00",
       "closing": "11/11/2026 17:00",
       "acceptance_dry": "CARGO ACCEPTED",
@@ -192,8 +183,8 @@
       "status": "PENDING"
     },
     {
-      "vessel": "DEPE",
-      "voyage": "DEP1426W",
+      "vessel": "MIRIAM BORCHARD",
+      "voyage": "1045",
       "eta": "12/11/2026 00:00",
       "closing": "11/11/2026 17:00",
       "acceptance_dry": "CARGO ACCEPTED",
@@ -228,6 +219,15 @@
       "status": "PENDING"
     },
     {
+      "vessel": "MEDKON PERLA",
+      "voyage": "645E",
+      "eta": "14/11/2026 00:00",
+      "closing": "13/11/2026 17:00",
+      "acceptance_dry": "CARGO ACCEPTED",
+      "acceptance_reef": "CARGO ACCEPTED",
+      "status": "PENDING"
+    },
+    {
       "vessel": "CRISTINA A",
       "voyage": "MAS31E26",
       "eta": "14/11/2026 00:00",
@@ -237,16 +237,25 @@
       "status": "PENDING"
     },
     {
-      "vessel": "MEDKON PERLA",
-      "voyage": "645E",
-      "eta": "14/11/2026 00:00",
-      "closing": "13/11/2026 17:00",
+      "vessel": "MSC ELENI",
+      "voyage": "CD646A",
+      "eta": "15/11/2026 00:00",
+      "closing": "14/11/2026 10:00",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
+    },
+    {
+      "vessel": "MSC BARBADOS",
+      "voyage": "CD647A",
+      "eta": "15/11/2026 00:00",
+      "closing": "14/11/2026 10:00",
+      "acceptance_dry": "CARGO NOT ACCEPTED",
+      "acceptance_reef": "CARGO NOT ACCEPTED",
+      "status": "PENDING"
     }
   ],
-  "acquired_at": "2026-11-07T22:15:16.615Z",
-  "data_changed_at": "2026-11-07T12:00:17.469Z",
-  "updated_at": "2026-11-07T22:15:16.615Z"
+  "acquired_at": "2026-11-07T23:15:16.526Z",
+  "data_changed_at": "2026-11-07T23:00:16.845Z",
+  "updated_at": "2026-11-07T23:15:16.526Z"
 }
