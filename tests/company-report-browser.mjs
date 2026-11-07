@@ -63,10 +63,11 @@ export const adminRecords=async(action,data={})=>{
  if(action==='list')return {drivers:[{id:'11111111-1111-4111-8111-111111111111',
   name:'Mario Rossi',phone:'+393331111111',status:'active',revision:adminArchiveRevision,
   updatedAt:'2026-11-04T08:00:00Z',counts:{trips:1,customers:2,legacyTariffs:0}}]};
- if(action==='read')return {archive:{revision:adminArchiveRevision,
+ if(action==='read'){await new Promise(resolve=>setTimeout(resolve,90));return {archive:{revision:adminArchiveRevision,
   state:structuredClone(adminArchive),updatedAt:new Date().toISOString()},
-  audit:structuredClone(adminAudit)};
+  audit:structuredClone(adminAudit)};}
  if(action==='mutate'){
+  await new Promise(resolve=>setTimeout(resolve,90));
   if(data.expectedRevision!==adminArchiveRevision)throw new Error('Revision conflict');
   const rows=adminArchive.trips,idx=rows.findIndex(x=>x.id===data.recordId);
   if(data.operation!=='update')throw new Error('Mock action unavailable');
@@ -459,6 +460,12 @@ try{
  assert.equal(await page.locator('#records-customers').textContent(),'2');
  assert.match(await page.locator('#records-list').textContent(),/NOTA INIZIALE/);
  await page.locator('#records-list .records-card-actions button').first().click();
+ // Two overlapping owner reads must not freeze the refresh button.
+ await page.locator('#records-driver').dispatchEvent('change');
+ await page.locator('#records-driver').dispatchEvent('change');
+ await page.waitForFunction(()=>!document.querySelector('#records-refresh').disabled);
+ assert.equal(await page.locator('#records-revision').textContent(),'3');
+ await page.locator('#records-list .records-card-actions button').first().click();
  // Compact page-native searchable customer picker.
  const primarySite=page.locator('#records-editor .records-site-picker').first();
  assert.equal(await primarySite.locator('select').count(),0);
@@ -483,8 +490,19 @@ try{
  assert.equal(await page.locator('#records-editor input[name="client"]').inputValue(),'CLIENTE ALFA');
  assert.equal(await page.locator('#records-editor input[name="city"]').inputValue(),'NAPOLI');
  assert.equal(await page.locator('#records-editor input[name="fareCents"]').inputValue(),'150,00');
+ await page.locator('#records-editor textarea[name="note"]').fill('BOZZA NON SALVATA');
+ await page.locator('#records-search').fill('NESSUN RISULTATO');
+ assert.equal(await page.locator('#records-editor textarea[name="note"]').inputValue(),'BOZZA NON SALVATA',
+  'Search must not destroy an unsaved editor');
+ await page.locator('#records-search').fill('');
+ page.once('dialog',dialog=>dialog.dismiss());
+ await openAdminTab('management-tab');
+ assert.equal(await page.locator('#dashboard').getAttribute('data-view'),'records');
+ assert.equal(await page.locator('#records-editor textarea[name="note"]').inputValue(),'BOZZA NON SALVATA');
  await page.locator('#records-editor textarea[name="note"]').fill('NOTA CORRETTA DA ADMIN');
  await page.locator('#records-editor button[type="submit"]').click();
+ await page.waitForFunction(()=>document.querySelector('#records-driver').disabled);
+ assert.equal(await page.locator('#records-driver').isDisabled(),true);
  await page.waitForFunction(()=>document.querySelector('#records-revision').textContent==='4');
  assert.match(await page.locator('#records-list').textContent(),/NOTA CORRETTA DA ADMIN/);
  await page.locator('#records-tabs button[data-kind="history"]').click();
