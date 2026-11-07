@@ -1,3 +1,5 @@
+import assert from 'node:assert/strict';
+import {checkedGoogleMapsUrl,mergeMapsProposal} from '../shared/maps-client.mjs';
 /** Transient diagnostic for Google Maps' public shortlink redirect chain.
  * Print host + path only, never credentials, query strings or IP addresses.
  */
@@ -22,5 +24,16 @@ for(let i=0;i<6;i++){
   nextHost:next?.hostname||null,nextPath:next?.pathname||null,
   contentType:response.headers.get('content-type')?.split(';')[0]||null}));
  if(!next||![301,302,303,307,308].includes(response.status))break;
+ if(i===0){
+  // This exact shortlink is a place on Google Maps, not an external site.
+  const canonical=checkedGoogleMapsUrl(next.href);
+  const proposed=mergeMapsProposal(canonical.href);
+  console.log('MAPS_VERIFIED_PROPOSAL '+JSON.stringify({
+   name:proposed.name,city:proposed.city,address:proposed.address
+  }));
+  assert.match(proposed.name,/SCARABELLI/u);
+  assert.match(proposed.city,/MONOPOLI/u);
+  assert.match(proposed.address,/ROMUALDO/u);
+ }
  current=next;
 }
