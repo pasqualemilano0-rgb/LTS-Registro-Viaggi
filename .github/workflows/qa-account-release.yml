@@ -21,6 +21,7 @@ on:
       - 'sw.js'
       - 'shell.html'
       - 'index.html'
+      - 'tests/maps-redirect-diagnostic.mjs'
       - 'tests/qa-maps-reader-live.test.mjs'
       - 'tests/qa-account-release.test.mjs'
       - 'tests/leaked-password-protection.test.mjs'
@@ -46,6 +47,7 @@ on:
       - 'sw.js'
       - 'shell.html'
       - 'index.html'
+      - 'tests/maps-redirect-diagnostic.mjs'
       - 'tests/qa-maps-reader-live.test.mjs'
       - 'tests/qa-account-release.test.mjs'
       - 'tests/leaked-password-protection.test.mjs'
@@ -76,3 +78,5 @@ jobs:
           node --test tests/qa-account-release.test.mjs tests/driver-session-vault.test.mjs tests/leaked-password-protection.test.mjs tests/qa-company-tariffs.test.mjs tests/customer-site-matches.test.mjs
       - name: Verify live Maps reader CORS and authentication boundary
         run: node --test tests/qa-maps-reader-live.test.mjs
+      - name: Diagnose Google Maps short-link redirect targets
+        run: node tests/maps-redirect-diagnostic.mjs
