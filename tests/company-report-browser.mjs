@@ -17,9 +17,18 @@ export const getAccountId=()=> 'account:33333333-3333-4333-8333-333333333333';
 export const verifySession=async()=>({mfa_enrolled:true,mfa_verified:true});
 export const listAdminMfaFactors=async()=>[{label:'Principale',id:'a'}];
 export const manageDrivers=async(action)=>action==='list'?{drivers:[]}:{};
-export const companyTariffs=async(action)=>action==='list'?
- {tariffs:[{id:'1',client:'CLIENTE ALFA',city:'NAPOLI',cents:15000,revision:1,
-  updatedAt:'2026-11-06T12:00:00Z'}]}:{saved:true};
+let mockRates=[{id:'1',client:'CLIENTE ALFA',city:'NAPOLI',cents:15000,revision:1,
+ updatedAt:'2026-11-06T12:00:00Z'}];
+export const companyTariffs=async(action,data={})=>{
+ if(action==='list')return {tariffs:structuredClone(mockRates)};
+ if(action!=='save')throw Error('Unknown tariff action');
+ const i=mockRates.findIndex(r=>r.client===data.client&&r.city===data.city);
+ if(i>=0){
+  if(data.expectedRevision!==mockRates[i].revision)throw Error('Rate conflict');
+  mockRates[i]={...mockRates[i],cents:data.cents,revision:mockRates[i].revision+1};
+ }else mockRates.push({id:'rate'+mockRates.length,...data,revision:1,updatedAt:new Date().toISOString()});
+ return {saved:true};
+};
 
 let adminArchiveRevision=3;
 let adminAudit=[];
@@ -45,12 +54,14 @@ export const adminRecords=async(action,data={})=>{
  if(action==='mutate'){
   if(data.expectedRevision!==adminArchiveRevision)throw new Error('Revision conflict');
   const rows=adminArchive.trips,idx=rows.findIndex(x=>x.id===data.recordId);
-  if(data.operation!=='update'||data.category!=='trip'||idx<0)
-   throw new Error('Mock action unavailable');
-  rows[idx]={...rows[idx],...data.patch,updatedAt:new Date().toISOString()};
+  if(data.operation!=='update')throw new Error('Mock action unavailable');
+   if(data.category==='trip'&&idx>=0)
+    rows[idx]={...rows[idx],...data.patch,updatedAt:new Date().toISOString()};
+   else if(data.category==='extra')adminArchive.extraRates[data.recordId]=data.patch.cents;
+   else throw new Error('Mock action unavailable');
   adminArchiveRevision++;
   adminAudit.unshift({id:'44444444-4444-4444-8444-444444444444',at:new Date().toISOString(),
-   category:'trip',action:'update',recordId:data.recordId,reason:data.reason||'',
+   category:data.category,action:'update',recordId:data.recordId,reason:data.reason||'',
    beforeRevision:adminArchiveRevision-1,afterRevision:adminArchiveRevision});
   return {revision:adminArchiveRevision,state:structuredClone(adminArchive),
    audit:structuredClone(adminAudit)};
@@ -138,7 +149,7 @@ export const companyInsights=async({month,driverId=null,compareDriverId=null,fro
 };
 `;
 const mockSharedMaps=String.raw`
-export const sharedMapsCustomers=async()=>[
+let rows=[
  {name:'CLIENTE ALFA',city:'NAPOLI',address:'VIA TEST 1, NAPOLI',
   mapsUrl:'https://maps.app.goo.gl/exampleA',source:'google_maps_link',operationalNotes:''},
  {name:'CLIENTE BETA',city:'SALERNO',address:'VIA TEST 2, SALERNO',
@@ -146,12 +157,25 @@ export const sharedMapsCustomers=async()=>[
  {name:'CLIENTE GAMMA',city:'ROMA',address:'INDIRIZZO STRADALE DA CONFERMARE',
   mapsUrl:'https://maps.app.goo.gl/exampleC',source:'google_maps_link',operationalNotes:''}
 ];
+export const sharedMapsCustomers=async()=>structuredClone(rows);
+export const saveSharedMapsCustomer=async(mapsUrl,site)=>{
+ const known=rows.find(row=>row.mapsUrl===mapsUrl);
+ if(known)return {customer:structuredClone(known),created:false};
+ const created={...site,mapsUrl,source:'google_maps_link',operationalNotes:''};
+ rows.push(created);return {customer:structuredClone(created),created:true};
+};
+`;
+const mockMapsReader=String.raw`
+export const readMapsCustomer=async(link)=>link==='https://maps.app.goo.gl/newDepot'
+ ?{name:'CLIENTE DELTA',city:'CASERTA',address:'VIA PORTO 8, CASERTA',mapsUrl:link,warnings:[]}
+ :{name:'CLIENTE ALFA',city:'NAPOLI',address:'VIA TEST 1, NAPOLI',mapsUrl:link,warnings:[]};
 `;
 const root=resolve(dir),mime={'.html':'text/html','.css':'text/css','.mjs':'text/javascript','.png':'image/png'};
 const server=createServer(async(req,res)=>{
  const path=new URL(req.url,'http://localhost').pathname;
  if(path==='/account-access.mjs'){res.writeHead(200,{'Content-Type':'text/javascript','Cache-Control':'no-store'}).end(mockAccount);return;}
  if(path==='/shared-maps-client.mjs'){res.writeHead(200,{'Content-Type':'text/javascript','Cache-Control':'no-store'}).end(mockSharedMaps);return;}
+  if(path==='/maps-reader-client.mjs'){res.writeHead(200,{'Content-Type':'text/javascript','Cache-Control':'no-store'}).end(mockMapsReader);return;}
  const file=path==='/amministratore/'?'amministratore/index.html':path.slice(1);
  const target=resolve(root,file);
  if(target!==root&&!target.startsWith(root+sep)){res.writeHead(403).end();return;}
@@ -400,6 +424,24 @@ try{
  assert.match(await page.locator('#records-list').textContent(),/NOTA CORRETTA DA ADMIN/);
  await page.locator('#records-tabs button[data-kind="history"]').click();
  assert.match(await page.locator('#records-list').textContent(),/UPDATE/);
+ // Per-driver extras: the rate is saved through the secured archive endpoint.
+ await openAdminTab('rates-tab');
+ await page.locator('#company-extra-driver').selectOption('11111111-1111-4111-8111-111111111111');
+ await page.waitForFunction(()=>document.querySelectorAll('.company-extra-row').length===8);
+ await page.locator('.company-extra-row[data-service="adr"] input').fill('12,50');
+ page.once('dialog',dialog=>dialog.accept());
+ await page.locator('.company-extra-row[data-service="adr"] button').click();
+ await page.waitForFunction(()=>document.querySelector('#company-extra-status').textContent.includes('Revisione 5'));
+ assert.equal(await page.locator('.company-extra-row[data-service="adr"] input').inputValue(),'12,50');
+ // New Google Maps customer and corporate rate, without creating a personal customer.
+ await page.locator('#company-maps-url').fill('https://maps.app.goo.gl/newDepot');
+ await page.locator('#company-maps-read').click();
+ await page.waitForFunction(()=>!document.querySelector('#company-maps-preview').hidden);
+ assert.equal(await page.locator('#company-maps-name').textContent(),'CLIENTE DELTA');
+ await page.locator('#company-maps-amount').fill('95,50');
+ await page.locator('#company-maps-save').click();
+ await page.waitForFunction(()=>document.querySelector('#company-maps-status').textContent.includes('Cliente Google Maps aggiunto'));
+ await page.waitForFunction(()=>document.querySelector('#company-rates-count').textContent.includes('2 tariffe aziendali'));
  await openAdminTab('security-tab');
  await page.locator('#security-check').click();
  await page.waitForFunction(()=>document.querySelector('#security-result').textContent.includes('MFA confermata'));
