@@ -1,7 +1,7 @@
 /** Administrator reporting UI. Aggregates are authoritative only when returned by the API. */
 import {setupInsights} from './report-insights.mjs?v=20261104-company-v3';
 import {setupCustomerOverview} from './customer-overview.mjs?v=20261107-maps-review-v1';
-import {setupCompanyRates} from './company-rates.mjs?v=20261107-maps-extras-v1';
+import {setupCompanyRates} from './company-rates.mjs?v=20261107-manual-shared-v1';
 import {setupDriverRecords} from './driver-records.mjs?v=20261107-driver-customer-picker-v1';
 import {setupCompanyExtras} from './company-extras.mjs?v=20261107-company-extras-v2';
 const el=id=>document.getElementById(id);
@@ -380,6 +380,11 @@ export function setupReport(account){
  for(const [view,id] of views)el(id).addEventListener('click',()=>open(view));
  for(const button of document.querySelectorAll('[data-open-section]')){
   button.addEventListener('click',()=>open(button.dataset.openSection));
+ }
+ for(const button of document.querySelectorAll('[data-open-manual]')){
+  button.addEventListener('click',()=>{
+   open('rates');companyRates.focusManual();
+  });
  }
  for(const button of document.querySelectorAll('[data-open-maps]')){
   button.addEventListener('click',()=>{
