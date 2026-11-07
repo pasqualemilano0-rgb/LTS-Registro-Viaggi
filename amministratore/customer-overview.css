@@ -55,3 +55,17 @@
 }
 @media(prefers-reduced-motion:reduce){#customer-overview .customer-directory-fill{transition:none}}
 @media print{#customer-overview .customer-directory-kpi,#customer-overview .customer-directory-coverage{background:#fff;box-shadow:none}}
+
+
+#customer-overview .customer-directory-site-actions{
+ display:flex;align-items:center;gap:8px;flex-wrap:wrap;flex:none;
+}
+#customer-overview .customer-directory-set-rate{
+ min-height:40px;padding:8px 12px;border-color:#a0d3db;background:#f5fbfc;
+ color:#086b80;font-size:12px;font-weight:800;
+}
+#customer-overview .customer-directory-set-rate:focus-visible{outline:3px solid #17aaa5;outline-offset:2px}
+@media(max-width:680px){
+ #customer-overview .customer-directory-site-actions{display:grid;grid-template-columns:1fr 1fr;width:100%;gap:9px}
+ #customer-overview .customer-directory-site-actions :is(a,button){width:100%;min-width:0;text-align:center}
+}
