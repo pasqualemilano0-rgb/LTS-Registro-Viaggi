@@ -454,7 +454,7 @@ setInterval(()=>{
   if(document.activeElement?.matches?.('input:not([type=hidden]),textarea,select'))return;
   void loadDrivers({silent:true});
  }else companyView.refreshActive();
-},45000);
+},10000);
 window.addEventListener('pagehide',rememberAdminPosition);
 window.addEventListener('pageshow',event=>{if(event.persisted)resumeWhenSafe();});
 window.addEventListener('online',resumeWhenSafe);
