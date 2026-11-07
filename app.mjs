@@ -4,6 +4,7 @@ import {unionStates} from '/LTS-Registro-Viaggi/shared/sync-merge.mjs';
 import * as store from '/LTS-Registro-Viaggi/client-store.mjs';
 import runtimeConfig from '/LTS-Registro-Viaggi/runtime-config.mjs';
 import * as accountAccess from '/LTS-Registro-Viaggi/account-access.mjs';
+import {createLtsRealtime} from '/LTS-Registro-Viaggi/realtime-client.mjs';
 import {sharedMapsEnabled,sharedMapsCustomers,saveSharedMapsCustomer} from '/LTS-Registro-Viaggi/shared-maps-client.mjs';
 import {readMapsCustomer} from '/LTS-Registro-Viaggi/maps-reader-client.mjs';
 import {companyFareSnapshot} from '/LTS-Registro-Viaggi/shared/company-fares.mjs';
@@ -50,6 +51,25 @@ let refreshTripCustomerSuggestions=null;
 let refreshTripFareEstimate=null;
 let portiFrame = null;
 let subscribed = false;
+let realtimeBridge=null;
+function beginLtsRealtime(){
+ if(!store.usingAccount()||!accountAccess.isVerified())return;
+ realtimeBridge?.stop();
+ realtimeBridge=createLtsRealtime({
+  config:runtimeConfig.realtime,
+  authenticate:accountAccess.getRealtimeCredentials,
+  onChange:kind=>{
+   if(!store.usingAccount()||!accountAccess.isVerified())return;
+   if(kind==='archive'||kind==='ready')void store.syncPending().catch(()=>{});
+   if(kind==='catalog'||kind==='ready'){
+    void refreshCompanyCustomers();
+    void refreshCompanyRates();
+   }
+  }
+ });
+ realtimeBridge.start();
+}
+
 let installPrompt = null;
 const standaloneMode = window.matchMedia('(display-mode: standalone)');
 const isInstalled = () => standaloneMode.matches || navigator.standalone === true;
@@ -1579,6 +1599,7 @@ function accountInstallBanner(){
   el('span',{class:'account-install-banner-wave','aria-hidden':'true'}));
 }
 function renderAccountGate(message=''){
+ realtimeBridge?.stop();realtimeBridge=null;
  companyCustomers=[];
  companyCustomersError='';
  companyCustomerSearch='';customerDirectoryScope='all';customerDirectoryLimit=24;companyCustomersLoaded=false;companyCustomersRequest++;
@@ -1704,6 +1725,7 @@ async function initialize(){
   const notificationTab=location.hash.slice(1);if(['insert','register'].includes(notificationTab))tab=notificationTab;
   if(!(await finishInitialTruckLoading()))return;
   render();
+  beginLtsRealtime();
   void refreshCompanyCustomers();
   void refreshCompanyRates();
   if(!activationFirstOpen && store.usingAccount() && !store.hasImportedLegacyArchive() &&
@@ -1770,6 +1792,10 @@ document.addEventListener('visibilitychange',()=>{
  if(!document.hidden)void checkInstalledAppVersion();
 });
 setInterval(()=>void checkInstalledAppVersion(),120000);
+window.addEventListener('online',()=>realtimeBridge?.resume());
+window.addEventListener('focus',()=>realtimeBridge?.resume());
+window.addEventListener('offline',()=>realtimeBridge?.resume());
+document.addEventListener('visibilitychange',()=>realtimeBridge?.resume());
 window.addEventListener('beforeunload',event=>{if(busy){event.preventDefault();event.returnValue='';}});
 navigator.serviceWorker?.addEventListener('message',event=>{
  const data=event.data;
