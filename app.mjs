@@ -290,7 +290,12 @@ function updateCompanyCustomersPanel(panel=document.querySelector('.company-cust
  if(!panel)return;
  const directory=dedupedCustomerDirectory(companyCustomers,state.customers);
  const found=filterSharedCustomers(directory.shared,companyCustomerSearch);
- const personal=filterSharedCustomers(directory.personal,companyCustomerSearch);
+ // "Tutti" has one card per physical site; "Miei" still lets the driver
+ // inspect/edit every original private contact, including older duplicates.
+ const personal=filterSharedCustomers(
+  customerDirectoryScope==='personal'?state.customers:directory.personal,
+  companyCustomerSearch);
+ const personalTotal=filterSharedCustomers(state.customers,companyCustomerSearch).length;
  const all=[...found.map(customer=>({...customer,directorySource:'shared'})),
   ...personal.map(customer=>({...customer,directorySource:'personal'}))];
  const visible=all.filter(customer=>customerDirectoryScope==='all'||
@@ -315,7 +320,7 @@ function updateCompanyCustomersPanel(panel=document.querySelector('.company-cust
   button.setAttribute('aria-pressed',String(chosen));
   const number=button.querySelector('.customer-scope-count');
   if(number)number.textContent=String(button.dataset.customerScope==='shared'?
-    found.length:button.dataset.customerScope==='personal'?personal.length:all.length);
+    found.length:button.dataset.customerScope==='personal'?personalTotal:all.length);
  });
  if(list)list.replaceChildren(...visible.slice(0,customerDirectoryLimit).map(customer=>
   customerCard(customer,{shared:customer.directorySource==='shared'})));
