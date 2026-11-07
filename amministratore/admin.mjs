@@ -1,4 +1,6 @@
-import * as account from '../account-access.mjs?v=20261107-records-admin-v2';
+import * as account from '../account-access.mjs?v=20261107-realtime-v1';
+import realtimeConfig from '../runtime-config.mjs';
+import {createLtsRealtime} from '../realtime-client.mjs';
 import {STATUS_LABELS,driverSummary,filterDrivers} from './model.mjs';
 import {setupReport} from './report.mjs?v=20261107-driver-customer-picker-v1';
 import {rememberPosition,readPosition,clearPosition} from './admin-position.mjs';
@@ -26,6 +28,24 @@ function restoreAdminPosition(saved){
  }));
 }
 const companyView=setupReport(account);
+let adminRealtime=null;
+function startAdminRealtime(){
+ if(!account.isVerified()||account.getRole()!=='admin'||dashboard.hidden)return;
+ adminRealtime?.stop();
+ adminRealtime=createLtsRealtime({
+  config:realtimeConfig.realtime,authenticate:account.getRealtimeCredentials,
+  onChange:()=>{
+   if(dashboard.hidden||document.hidden||!account.isVerified()||
+      account.getRole()!=='admin'||resumingDashboard)return;
+   if(dashboard.dataset.view==='drivers'){
+    if(!document.activeElement?.matches?.('input:not([type=hidden]),textarea,select'))
+     void loadDrivers({silent:true});
+   }else companyView.refreshActive();
+  }
+ });
+ adminRealtime.start();
+}
+
 const errorText=(error,fallback)=>error?.message||fallback;
 function inform(message,bad=false){
  const node=byId('notice');node.textContent=message;node.hidden=!message;node.classList.toggle('danger',bad);
@@ -51,6 +71,7 @@ function clearMfa(){
  setError(byId('mfa-error'),'');
 }
 function showMfaPanel(setup=false,resumed=false,purpose='primary'){
+ adminRealtime?.stop();
  if(!setup)clearMfa();
  mfaMode=setup?(purpose==='backup'?'backup':'setup'):'login';
  const backup=mfaMode==='backup';
@@ -101,6 +122,7 @@ async function loadBackupFactors(){
  }catch(error){byId('mfa-backup-status').textContent=errorText(error,'Stato backup non disponibile. Riprova online.');}
 }
 function lock(message='Accedi come amministratore per continuare.'){
+ adminRealtime?.stop();adminRealtime=null;
  clearAdminPosition();
  drivers=[];companyView.reset();clearMfa();
  byId('roster').replaceChildren();hideCode();
@@ -118,6 +140,7 @@ function showDashboard(status={}){
  setError(loginError,'');inform('');
  companyView.open(previousPosition?.view||
   (status.mfa_enrolled===true&&status.mfa_verified===true?'overview':'security'));
+ startAdminRealtime();
  return previousPosition;
 }
 async function authenticate(){
@@ -426,6 +449,7 @@ async function verifyDashboardOnResume(){
   }
   // Do NOT call authenticate()/showDashboard()/companyView.open() here:
   // those reset the selected tab, reports and the scroll position.
+  adminRealtime?.resume();
   if(dashboard.dataset.view===view){
    restoreAdminPosition(saved);
    if(view==='drivers')void loadDrivers({silent:true});
@@ -457,7 +481,11 @@ setInterval(()=>{
 },10000);
 window.addEventListener('pagehide',rememberAdminPosition);
 window.addEventListener('pageshow',event=>{if(event.persisted)resumeWhenSafe();});
+window.addEventListener('online',()=>adminRealtime?.resume());
+window.addEventListener('focus',()=>adminRealtime?.resume());
+window.addEventListener('offline',()=>adminRealtime?.resume());
 window.addEventListener('online',resumeWhenSafe);
+document.addEventListener('visibilitychange',()=>adminRealtime?.resume());
 document.addEventListener('visibilitychange',resumeWhenSafe);
 /** Do not activate the administrator login inside an external site frame. */
 function denyEmbeddedAdmin(){
