@@ -24,7 +24,7 @@
       "vessel": "OOCL KOBE",
       "voyage": "643N",
       "eta": "07/11/2026 00:00",
-      "closing": "07/11/2026 12:00",
+      "closing": "07/11/2026 12:00 CLOSED",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
@@ -33,7 +33,7 @@
       "vessel": "MSC CORNELIA",
       "voyage": "CD645A",
       "eta": "07/11/2026 00:00",
-      "closing": "07/11/2026 12:00",
+      "closing": "07/11/2026 12:00 CLOSED",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
@@ -42,7 +42,7 @@
       "vessel": "CONTSHIP ERA",
       "voyage": "93E",
       "eta": "07/11/2026 00:00",
-      "closing": "07/11/2026 12:00",
+      "closing": "07/11/2026 12:00 CLOSED",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
@@ -246,7 +246,7 @@
       "status": "PENDING"
     }
   ],
-  "acquired_at": "2026-11-07T10:15:16.784Z",
-  "data_changed_at": "2026-11-07T09:00:16.711Z",
-  "updated_at": "2026-11-07T10:15:16.784Z"
+  "acquired_at": "2026-11-07T11:15:16.710Z",
+  "data_changed_at": "2026-11-07T11:00:17.126Z",
+  "updated_at": "2026-11-07T11:15:16.710Z"
 }
