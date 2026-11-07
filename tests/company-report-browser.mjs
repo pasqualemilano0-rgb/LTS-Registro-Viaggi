@@ -191,7 +191,7 @@ try{
  const errors=[];page.on('pageerror',e=>errors.push(String(e)));
  const mobileMore=page.locator('#admin-nav-more');
  async function openAdminTab(id){
-  if(['records-tab','alerts-tab','exports-tab','security-tab'].includes(id)&&
+  if(['records-tab','rates-tab','alerts-tab','exports-tab','security-tab'].includes(id)&&
      !(await mobileMore.evaluate(details=>details.open))){
    await mobileMore.locator('summary').click();
   }
