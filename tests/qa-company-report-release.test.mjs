@@ -111,7 +111,7 @@ test('linked Google Maps refresh distinguishes Supabase polling from reviewed pl
   'customer-maps-results','customer-maps-preview','customer-maps-apply',
   'customer-maps-refresh-status'])
   assert.match(html,new RegExp('id="'+id+'"'));
- assert.match(report,/customer-overview[.]mjs[?]v=20261107-maps-review-v1/);
+ assert.match(report,/customer-overview[.]mjs[?]v=20261107-manual-shared-v1/);
  assert.match(overview,/setupMapsAddressRefresh\(account/);
  assert.match(overview,/Questo controllo NON rilegge Google Maps/);
  assert.match(module,/readMapsCustomer\(site[.]mapsUrl/);
