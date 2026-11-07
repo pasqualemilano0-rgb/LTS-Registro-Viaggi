@@ -424,7 +424,7 @@ export async function companyInsights({month,driverId=null,compareDriverId=null,
 /** Admin-only central base tariffs, protected again by the backend MFA/session checks. */
 export async function companyTariffs(action='list',data={}){
  if(!isVerified()||getRole()!=='admin')throw new Error('Accesso amministratore richiesto.');
- if(!['list','save'].includes(action))throw new Error('Operazione tariffa non valida.');
+ if(!['list','save','extra-save'].includes(action))throw new Error('Operazione tariffa non valida.');
  const payload={action,...data};
  return withSessionRetry(
   ()=>api('tariffsEndpoint',payload,readStored()?.access_token),
@@ -445,6 +445,30 @@ export async function driverCompanyTariffs(){
    typeof row?.id!=='string'))
   throw new Error('Tariffario aziendale incompleto. Riprova.');
  return result.tariffs;
+}
+
+/** Company fares and the eight shared extra rates are fetched atomically
+ * from the same authenticated server response. Never fall back to private
+ * historic rate entries when a shared price is unavailable. */
+export async function driverCompanyCatalog(){
+ if(!isVerified()||!hasSession())throw new Error('Accedi per consultare il tariffario aziendale.');
+ const result=await withSessionRetry(
+  ()=>api('tariffsEndpoint',{action:'list'},readStored()?.access_token),
+  ()=>verifySession());
+ if(!Array.isArray(result?.tariffs)||result.tariffs.length>500||
+   result.tariffs.some(row=>typeof row?.client!=='string'||typeof row?.city!=='string'||
+   !Number.isSafeInteger(row?.cents)||row.cents<0||row.cents>99999999||
+   typeof row?.id!=='string'))
+  throw new Error('Tariffario trasferte aziendale non valido.');
+ const extras=result?.extraRates;
+ const expected=new Set(['facchinaggioBilico','facchinaggioReefer','reefer','adr',
+  'pernotto','sabatoPorto','sabatoTrasferta','preOrario']);
+ if(!Array.isArray(extras)||extras.length!==expected.size||
+   extras.some(row=>!expected.delete(row?.serviceKey)||
+    !(row.cents===null||(Number.isSafeInteger(row.cents)&&row.cents>=0&&row.cents<=99999999))||
+    !Number.isSafeInteger(row.revision)||row.revision<1))
+  throw new Error('Tariffario servizi extra aziendale incompleto.');
+ return {tariffs:result.tariffs,extraRates:extras};
 }
 
 /** Administrator-only per-driver personal records. On the server:
