@@ -250,16 +250,23 @@ export function setupReport(account){
   }
   window.scrollTo({top:0,behavior:'instant'});
  }
- async function load(append=false){
-  if(report.hidden)return;
+ async function load(append=false,{silent=false}={}){
+  if(report.hidden)return false;
+  // A periodic refresh must not collapse pages that were explicitly expanded.
+  if(silent&&(loading||rows.length>40))return false;
+  silent=silent&&Boolean(page);
   if(!account.isVerified()||account.getRole()!=='admin'){
    reset();return;
   }
   const serial=++requestSeq;loading=true;
   el('report-refresh').disabled=true;el('report-next').disabled=true;
-  if(!append){clearData();insights.reset({keepPending:true});el('report-empty').hidden=true;}
-  el('report-error').hidden=true;
-  el('report-status').textContent='Verifica in corso dei dati sincronizzati…';
+  if(!append&&!silent){
+   clearData();insights.reset({keepPending:true});el('report-empty').hidden=true;
+  }
+  if(!silent){
+   el('report-error').hidden=true;
+   el('report-status').textContent='Verifica in corso dei dati sincronizzati…';
+  }
   try{
    const result=await account.companyReport({
     month:month.value,driverId:driver.value||null,offset:append?rows.length:0,limit:40
@@ -268,8 +275,21 @@ export function setupReport(account){
    if(!result||!result.summary||!Array.isArray(result.trips)||!Array.isArray(result.drivers)||
      !Array.isArray(result.chart)||!result.pagination||result.month!==month.value)
     throw new Error('Il servizio ha restituito un report incompleto.');
+   const unchanged=silent&&page&&JSON.stringify([
+    page.summary,page.drivers,page.chart,page.trips,page.incompleteArchives
+   ])===JSON.stringify([
+    result.summary,result.drivers,result.chart,result.trips,result.incompleteArchives
+   ]);
+   if(unchanged){
+    el('report-status').textContent='Dati aziendali controllati alle '+
+     new Date(result.reportedAt).toLocaleString('it-IT')+
+     '. Nessuna variazione nei viaggi ricevuti.';
+    el('report-error').hidden=true;
+    return true;
+   }
    rows=append?[...rows,...result.trips]:result.trips;
    page=result;
+   el('report-error').hidden=true;
    updateDriverOptions(result.drivers);
    const summary=result.summary;
    const selected=driver.value?result.drivers.find(d=>d.id===driver.value):null;
@@ -304,7 +324,13 @@ export function setupReport(account){
     el('report-driver-profile').scrollIntoView({block:'start',behavior:'auto'});
    }
   }catch(error){
-   if(serial!==requestSeq)return;
+   if(serial!==requestSeq)return false;
+   if(silent&&page){
+    el('report-error').textContent=error?.message||'Aggiornamento non riuscito.';
+    el('report-error').hidden=false;
+    el('report-status').textContent='Dati non aggiornati: mostrato l’ultimo report ricevuto.';
+    return false;
+   }
    rows=[];page=null;clearData();
    el('report-empty').hidden=true;
    el('report-error').textContent=error?.message||'Impossibile caricare il report.';
@@ -315,6 +341,26 @@ export function setupReport(account){
   }finally{
    if(serial===requestSeq){loading=false;el('report-refresh').disabled=false;el('report-next').disabled=false;}
   }
+ }
+ /** Refresh only the selected authorized dashboard section; do not navigate,
+  * reset search fields, or lose a trip/fee form that is currently being edited. */
+ function refreshActive(){
+  if(!account.isVerified()||account.getRole()!=='admin'||
+     el('dashboard').hidden||document.hidden||navigator.onLine===false)return false;
+  const view=el('dashboard').dataset.view;
+  if(view==='rates'){void companyRates.load({silent:true});return true;}
+  if(view==='overview'){
+   void companyDirectory.load({silent:true});
+   if(!loading)void load(false,{silent:true});
+   return true;
+  }
+  if(['trips','analysis','alerts','exports'].includes(view)){
+   const focused=document.activeElement;
+   if(focused?.matches?.('input:not([type=hidden]),select,textarea'))return false;
+   if(!loading)void load(false,{silent:true});
+   return true;
+  }
+  return false;
  }
  for(const [view,id] of views)el(id).addEventListener('click',()=>open(view));
  for(const button of document.querySelectorAll('[data-open-section]')){
@@ -334,5 +380,5 @@ export function setupReport(account){
   month.value=currentMonth();driver.value='';driverSearch.value='';rows=[];focusOnDriver=false;void load(false);
  });
  el('report-next').addEventListener('click',()=>void load(true));
- return {reset,open};
+ return {reset,open,refreshActive};
 }
