@@ -8,6 +8,8 @@ on:
       - 'tests/admin-record-operations.test.mjs'
       - 'tests/qa-admin-records-live.test.mjs'
       - 'amministratore/**'
+      - 'shared/company-extras.mjs'
+      - 'supabase/functions/lts-company-tariffs/**'
       - 'pro-theme.css'
       - 'index.html'
       - 'shell.html'
@@ -30,6 +32,8 @@ on:
       - 'tests/admin-record-operations.test.mjs'
       - 'tests/qa-admin-records-live.test.mjs'
       - 'amministratore/**'
+      - 'shared/company-extras.mjs'
+      - 'supabase/functions/lts-company-tariffs/**'
       - 'pro-theme.css'
       - 'index.html'
       - 'shell.html'
@@ -64,6 +68,9 @@ jobs:
           node --check shared/admin-record-operations.mjs
           node --check server/admin-records-core.mjs
           node --check amministratore/driver-records.mjs
+          node --check amministratore/company-extras.mjs
+          node --check shared/company-extras.mjs
+          node --check supabase/functions/lts-company-tariffs/tariff-handler.mjs
           node --check tests/company-report-browser.mjs
           node --check tests/qa-report-production-http-smoke.mjs
           node --test tests/admin-record-operations.test.mjs
