@@ -2,6 +2,7 @@ import test from 'node:test';
 import {runInNewContext} from 'node:vm';
 import {emptyState,upsertCustomer,validateState} from '../shared/domain.mjs';
 import {parseCustomerCsv,mergeCustomerCsv,exportCustomerCsv} from '../shared/customer-csv.mjs';
+import {filterCustomerDirectory} from '../shared/maps-company-routing.mjs';
 import assert from 'node:assert/strict';
 import { readFileSync, existsSync } from 'node:fs';
 const read=name=>readFileSync(new URL('../'+name,import.meta.url),'utf8');
@@ -542,10 +543,10 @@ test('Maps operational hints remain available but stay hidden from compact clien
 test('clients have one live company and personal search with clear source filters',()=>{
  const catalog=app.slice(app.indexOf('function updateCompanyCustomersPanel('),
   app.indexOf('function renderInsert('));
- assert.match(catalog,/filterSharedCustomers\(companyCustomers,companyCustomerSearch\)/);
- assert.match(catalog,/state[.]customers[.]map\(customer=>/);
+ assert.match(catalog,/filterCustomerDirectory\(companyCustomers,companyCustomerSearch\)/);
+ assert.match(catalog,/filterCustomerDirectory\(state[.]customers,companyCustomerSearch\)/);
  assert.match(catalog,/type:'search',id:'company-customer-search'/);
- assert.match(catalog,/Cerca clienti per nome, città, indirizzo o partita IVA/);
+ assert.match(catalog,/Cerca clienti per nome, città, indirizzo o telefono/);
  assert.match(catalog,/customerDirectoryScope/);
  assert.match(catalog,/customer-directory-results/);
  assert.match(catalog,/customerDirectoryLimit\+=24/);
@@ -559,6 +560,44 @@ test('clients have one live company and personal search with clear source filter
  assert.doesNotMatch(app,/Cerca nei clienti personali: nome, località o partita IVA/);
  assert.match(read('app.css'),/customer-scope-button[.]selected/);
  assert.match(read('app.css'),/company-customer-search:focus-within/);
+});
+
+test('customer live search finds the right customer and ignores placeholder wording',()=>{
+ const shared=[
+  {name:'ACETIFICIO ANDREA MILANO SRL',city:'SAN GIOVANNI A TEDUCCIO',
+   address:'INDIRIZZO STRADALE DA CONFERMARE - SAN GIOVANNI A TEDUCCIO'},
+  {name:'DE MATTEIS AGROALIMENTARE S.P.A.',city:'FLUMERI',
+   address:'A.S.I. VALLE UFITA 83040 FLUMERI AV'},
+  {name:'RUMMO SPA',city:'BENEVENTO',address:'VIA DEI GRANDI MAESTRI PASTAI 1'}
+ ];
+ const personal=[
+  {name:'TRASPORTI VERDI',city:'NAPOLI',address:'VIALE AMENDOLA',
+   vat:'12345678901',phone:'+39 081 1234567'}
+ ];
+ assert.deepEqual(filterCustomerDirectory(shared,'acetificio').map(x=>x.name),
+  ['ACETIFICIO ANDREA MILANO SRL']);
+ assert.deepEqual(filterCustomerDirectory(shared,'Giovanni TEDUCCIO').map(x=>x.name),
+  ['ACETIFICIO ANDREA MILANO SRL']);
+ assert.deepEqual(filterCustomerDirectory(shared,'valle 83040').map(x=>x.name),
+  ['DE MATTEIS AGROALIMENTARE S.P.A.']);
+ assert.deepEqual(filterCustomerDirectory(shared,'rummo').map(x=>x.name),['RUMMO SPA']);
+ assert.equal(filterCustomerDirectory(shared,'CONFERMARE').length,0);
+ assert.equal(filterCustomerDirectory(shared,'cliente inesistente').length,0);
+ assert.deepEqual(filterCustomerDirectory(personal,'081 123').map(x=>x.name),['TRASPORTI VERDI']);
+ assert.deepEqual(filterCustomerDirectory(personal,'12345678901').map(x=>x.name),['TRASPORTI VERDI']);
+ assert.deepEqual(filterCustomerDirectory(shared,'').map(x=>x.name),shared.map(x=>x.name));
+ assert.equal(shared[0].address,'INDIRIZZO STRADALE DA CONFERMARE - SAN GIOVANNI A TEDUCCIO');
+});
+test('customer typing works with mobile input and search/clear, without reconstructing screen',()=>{
+ const catalog=app.slice(app.indexOf('function updateCompanyCustomersPanel('),
+  app.indexOf('function renderInsert('));
+ assert.match(catalog,/on:\{input:searchResults,search:searchResults,change:searchResults,compositionend:searchResults\}/);
+ assert.match(catalog,/on:\{click:\(\)=>\{\s*input[.]value='';companyCustomerSearch=''/);
+ assert.match(catalog,/customerDirectoryScope='all'/);
+ assert.match(catalog,/if\(!companyCustomerSearch[.]trim\(\)&&next[.]trim\(\)\)/);
+ assert.match(catalog,/input[.]focus\(\)/);
+ assert.doesNotMatch(catalog,/\brender\(\);/);
+ assert.match(app,/if\(next==='customers'&&tab!=='customers'\)\{companyCustomerSearch=''/);
 });
 
 test('customer cards show only essential location, street and saved phone',()=>{
