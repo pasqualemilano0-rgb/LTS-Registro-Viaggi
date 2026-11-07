@@ -139,7 +139,7 @@ test('dashboard automatically refreshes the active verified section without losi
  assert.match(report,/rows[.]length>40/);
  assert.match(report,/Nessuna variazione nei viaggi ricevuti/);
  assert.match(report,/mostrato l’ultimo report ricevuto/);
- assert.match(report,/return \{reset,open,refreshActive\}/);
+ assert.match(report,/return \{reset,open,refreshActive,openRecordsForPhone/);
  assert.match(directory,/Promise[.]allSettled\(/);
  assert.match(directory,/account[.]companyTariffs\('list'\)/);
  assert.match(directory,/tariffLinkedCustomerSites\(records,tariffRows\)/);
@@ -181,7 +181,7 @@ test('administrator has an MFA-only editor for each driver and all personal reco
  assert.match(editor,/formatMoney/);
  assert.match(editor,/extraCents/);
  assert.match(editor,/Tariffa personale/);
- assert.match(editor,/tariffario aziendale/i);
+ assert.match(html,/Tariffe aziendali/);
  assert.match(css,/records-danger/);
  assert.match(auth,/export async function adminRecords/);
  assert.match(auth,/getRole\(\)!=='admin'/);
@@ -195,14 +195,14 @@ test('server verifies MFA, owns archive CAS and logs every privileged edit atomi
  assert.match(backend,/await checkLtsSession/);
  assert.match(backend,/await requireAdminMfa/);
  assert.match(backend,/mfa[?][.]verified!==true/);
- assert.match(backend,/account[.]role!=='admin'/);
+ assert.match(backend,/access[.]role!=='admin'/);
  assert.match(backend,/data[.]role!=='driver'/);
  assert.match(backend,/p_expected_revision:current[.]revision/);
  assert.match(backend,/lts_admin_archive_commit/);
  assert.match(backend,/lts_admin_archive_audit/);
  assert.match(backend,/beforeRevision/);
  assert.match(backend,/expectedRevision!==current[.]revision/);
- assert.match(backend,/role\W*driver/);
+ assert.match(backend,/eq\('role','driver'\)/);
  assert.doesNotMatch(backend,/innerHTML|eval\(/);
  assert.match(pure,/validateState\(raw\)/);
  assert.match(pure,/createdAt:existing[?][.]createdAt/);
