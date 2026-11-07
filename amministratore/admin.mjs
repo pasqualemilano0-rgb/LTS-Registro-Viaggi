@@ -150,21 +150,35 @@ async function authenticate(){
    lock(errorText(error,'Verifica dell’account non riuscita. Riprova con Internet attivo.'));
  }
 }
-async function loadDrivers(){
- if(!account.isVerified()||account.getRole()!=='admin'){lock();return;}
+let driverRequest=0;
+async function loadDrivers({silent=false}={}){
+ if(!account.isVerified()||account.getRole()!=='admin'){lock();return false;}
  const refresh=byId('refresh');
+ if(silent&&refresh.disabled)return false;
+ const token=++driverRequest;
  refresh.disabled=true;
- setError(listError,'');
+ if(!silent)setError(listError,'');
  try{
    const result=await account.manageDrivers('list');
+   if(token!==driverRequest||dashboard.hidden)return false;
    if(!Array.isArray(result.drivers))throw new Error('Elenco autisti non valido.');
+   const changed=JSON.stringify(drivers)!==JSON.stringify(result.drivers);
    drivers=result.drivers;
-   renderRoster();inform('');
+   if(changed||!silent)renderRoster();
+   setError(listError,'');
+   if(!silent)inform('');
+   return true;
  }catch(error){
-   drivers=[];renderRoster();
-   setError(listError,errorText(error,'Impossibile aggiornare gli autisti.'));
+   if(token!==driverRequest)return false;
+   // Never turn a transient network error into an empty driver roster.
+   setError(listError,'Aggiornamento non riuscito: '+
+    errorText(error,'impossibile leggere gli autisti.')+
+    ' Sono visibili soltanto gli ultimi dati caricati.');
    if(!account.isVerified()||account.getRole()!=='admin')lock('Accesso non più autorizzato.');
- }finally{refresh.disabled=false;}
+   return false;
+ }finally{
+   if(token===driverRequest)refresh.disabled=false;
+ }
 }
 function renderRoster(){
  const summary=driverSummary(drivers);
@@ -406,7 +420,11 @@ async function verifyDashboardOnResume(){
   }
   // Do NOT call authenticate()/showDashboard()/companyView.open() here:
   // those reset the selected tab, reports and the scroll position.
-  if(dashboard.dataset.view===view)restoreAdminPosition(saved);
+  if(dashboard.dataset.view===view){
+   restoreAdminPosition(saved);
+   if(view==='drivers')void loadDrivers({silent:true});
+   else companyView.refreshActive();
+  }
  }catch(error){
   lock(errorText(error,'Verifica amministratore non riuscita. Riprova online.'));
  }finally{
@@ -421,6 +439,16 @@ function resumeWhenSafe(){
  if(!dashboard.hidden){void verifyDashboardOnResume();return;}
  void authenticate();
 }
+// Refresh the active admin pane only. Do not reset the current page, selected
+// month/driver, scroll, MFA workflow or an unsaved tariff form.
+setInterval(()=>{
+ if(dashboard.hidden||document.hidden||navigator.onLine===false||
+    !account.isVerified()||account.getRole()!=='admin'||resumingDashboard)return;
+ if(dashboard.dataset.view==='drivers'){
+  if(document.activeElement?.matches?.('input:not([type=hidden]),textarea,select'))return;
+  void loadDrivers({silent:true});
+ }else companyView.refreshActive();
+},45000);
 window.addEventListener('pagehide',rememberAdminPosition);
 window.addEventListener('pageshow',event=>{if(event.persisted)resumeWhenSafe();});
 window.addEventListener('online',resumeWhenSafe);
