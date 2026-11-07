@@ -116,10 +116,13 @@ function sitePicker(form,{title,client,city,fare}){
    :'Tariffa aziendale applicata: '+money(cents)+'. Salva la modifica per aggiornare il registro dell’autista.';
  });
  for(const input of [client,city])input.addEventListener('input',()=>{
-  if(!ready)return;
   select.value='';fare.value='';
   hint.classList.add('records-site-warning');
   hint.textContent='Cliente o località modificati manualmente. Verifica e imposta la nuova tariffa.';
+ });
+ fare.addEventListener('input',()=>{
+  hint.classList.remove('records-site-warning');
+  hint.textContent='Importo modificato manualmente: il valore sarà salvato soltanto su questo viaggio.';
  });
  return {catalog,unavailable};
 }
