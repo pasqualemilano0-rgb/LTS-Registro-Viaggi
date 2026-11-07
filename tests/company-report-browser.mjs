@@ -377,6 +377,23 @@ try{
  assert.equal(await page.locator('#records-customers').textContent(),'1');
  assert.match(await page.locator('#records-list').textContent(),/NOTA INIZIALE/);
  await page.locator('#records-list .records-card-actions button').first().click();
+ // Selecting a shared customer updates BOTH route fields and its fare.
+ // No company fare must never inherit the previous customer's amount.
+ const primarySite=page.locator('#records-editor .records-site-picker').first();
+ await primarySite.locator('select').waitFor({state:'visible'});
+ await page.waitForFunction(()=>!document.querySelector('.records-site-picker select').disabled);
+ await primarySite.locator('input[type="search"]').fill('CLIENTE BETA');
+ await primarySite.locator('select').selectOption('1');
+ assert.equal(await page.locator('#records-editor input[name="client"]').inputValue(),'CLIENTE BETA');
+ assert.equal(await page.locator('#records-editor input[name="city"]').inputValue(),'SALERNO');
+ assert.equal(await page.locator('#records-editor input[name="fareCents"]').inputValue(),'');
+ assert.match(await primarySite.locator('.records-site-hint').textContent(),/Non esiste una tariffa aziendale/);
+ // Matching the exact shared customer + location restores its configured fare.
+ await primarySite.locator('input[type="search"]').fill('CLIENTE ALFA');
+ await primarySite.locator('select').selectOption('0');
+ assert.equal(await page.locator('#records-editor input[name="client"]').inputValue(),'CLIENTE ALFA');
+ assert.equal(await page.locator('#records-editor input[name="city"]').inputValue(),'NAPOLI');
+ assert.equal(await page.locator('#records-editor input[name="fareCents"]').inputValue(),'150,00');
  await page.locator('#records-editor textarea[name="note"]').fill('NOTA CORRETTA DA ADMIN');
  await page.locator('#records-editor button[type="submit"]').click();
  await page.waitForFunction(()=>document.querySelector('#records-revision').textContent==='4');
