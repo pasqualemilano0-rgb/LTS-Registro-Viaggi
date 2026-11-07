@@ -2,7 +2,7 @@ import * as account from '../account-access.mjs?v=20261107-realtime-v1';
 import realtimeConfig from '../runtime-config.mjs';
 import {createLtsRealtime} from '../realtime-client.mjs';
 import {STATUS_LABELS,driverSummary,filterDrivers} from './model.mjs';
-import {setupReport} from './report.mjs?v=20261107-manual-shared-v1';
+import {setupReport} from './report.mjs?v=20261107-driver-private-customers-v1';
 import {rememberPosition,readPosition,clearPosition} from './admin-position.mjs';
 
 const byId=id=>document.getElementById(id);
