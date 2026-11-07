@@ -2,6 +2,8 @@
  * Customer records remain read-only. No driver archive or historical trip is rewritten. */
 import {tariffLinkedCustomerSites,customerSiteRateKey,hasUsableAddress} from './customer-overview-model.mjs?v=20261107-client-tariff-sync-v2';
 import {setupCompanyMaps} from './company-maps-registration.mjs?v=20261107-maps-extras-v1';
+import {setupCompanyManual} from './company-manual-registration.mjs?v=20261107-manual-shared-v1';
+import {saveSharedManualCustomer} from '../shared-maps-client.mjs';
 
 const get=id=>document.getElementById(id);
 const node=(tag,cls,value)=>{const n=document.createElement(tag);if(cls)n.className=cls;n.textContent=String(value??'');return n;};
@@ -37,6 +39,7 @@ export function setupCompanyRates(account){
  let rows=[],sites=[],editing=null,generation=0,busy=false;
  let ratesLoaded=false,sitesLoaded=false,sitesExpanded=false;
  const maps=setupCompanyMaps(account,{onSaved:async()=>{await load();}});
+ const manual=setupCompanyManual(account,{onSaved:async()=>{await load();}});
  const authorized=()=>account.isVerified()&&account.getRole()==='admin'&&
   !get('dashboard').hidden&&get('dashboard').dataset.view==='rates';
  const feedback=(message,error=false)=>{status.textContent=message;status.dataset.error=String(error);};
@@ -141,7 +144,7 @@ export function setupCompanyRates(account){
   renderRates(term);renderSites();
  }
  function reset(){
-  maps.reset();
+  maps.reset();manual.reset();
   generation++;rows=[];sites=[];ratesLoaded=false;sitesLoaded=false;sitesExpanded=false;
   busy=false;search.value='';list.replaceChildren();sitesList.replaceChildren();
   clearForm();customerChoices();
@@ -216,16 +219,23 @@ export function setupCompanyRates(account){
    if(editing)Object.assign(payload,{id:editing.id,expectedRevision:editing.revision});
   }catch(e){feedback(e.message,true);return;}
   busy=true;submit.disabled=true;refresh.disabled=true;
-  feedback('Salvataggio tariffa aziendale in corso…');
+  feedback('Condivisione cliente e salvataggio della tariffa in corso…');
+  let sharedSaved=false;
   try{
+   if(!editing){
+    // New tariffs must also appear in the shared company customer list.
+    await saveSharedManualCustomer({name:payload.client,city:payload.city});
+    sharedSaved=true;
+   }
    await account.companyTariffs('save',payload);
    clearForm();
    await load();
    if(authorized()&&ratesLoaded)
     feedback('Tariffa salvata e disponibile per tutti gli autisti al prossimo aggiornamento online. Gli importi storici restano invariati.');
-  }catch(e){feedback(e?.message||'Tariffa non salvata. Riprova.',true);}
+  }catch(e){feedback((sharedSaved?'Cliente condiviso, ma la tariffa non è stata salvata. ':
+    'Salvataggio non completato. ')+(e?.message||'Riprova.'),true);}
   finally{busy=false;submit.disabled=!ratesLoaded;if(authorized())refresh.disabled=false;}
  });
  reset();
- return {load,reset,prefillSite,focusMaps(){maps.focus();}};
+ return {load,reset,prefillSite,focusMaps(){maps.focus();},focusManual(){manual.focus();}};
 }
