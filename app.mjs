@@ -39,6 +39,7 @@ let draft = newDraft();
 let busy = false;
 let searchValue = '';
 let syncMessage = 'Archivio personale';
+let syncSavedOnline = false;
 let syncWarning = false;
 let pdfReport = null;
 let toastTimer;
@@ -141,15 +142,17 @@ function decorateTripField(value,ico,kind=''){value.wrap.classList.add('trip-fie
 function datalist(id,values){return el('datalist',{id},unique(values).map(value=>el('option',{value})));}
 function syncNode(compact=false){
   return el('div',{class:`sync-status${compact?' sync-status-top':''}${syncWarning?' warning':''}`,
-    id:compact?'sync-status-top':'sync-status',role:compact?'status':null,
+    id:compact?'sync-status-top':'sync-status',hidden:syncSavedOnline,role:compact?'status':null,
     'aria-live':compact?'polite':null},el('span',{class:'status-dot'}),syncMessage);
 }
 function setStatus(status){
  const value=typeof status==='string'?status:status?.message||status?.status||'';
  const known={saved:'Dati salvati',saving:'Salvataggio in corso…',syncing:'Salvataggio online in corso…',synced:'Archivio online aggiornato',pending:'Salvato sul dispositivo · sincronizzazione in attesa',conflict:'Modifiche da controllare · apri Profilo → Risolvi sincronizzazione',offline:'Offline · dati conservati su questo dispositivo',error:'Sincronizzazione da verificare',online:'Connessione disponibile',local:'Dati salvati su questo dispositivo'};
  syncMessage=known[value]||value||'Archivio personale';syncWarning=/offline|error|errore|locale|pending|conflict|attesa/i.test(typeof status==='string'?status:status?.status||value);
+ syncSavedOnline=!syncWarning&&(status?.status==='synced'||value==='synced'||String(value).trim().toLocaleLowerCase('it-IT')==='dati salvati online');
  const current=document.querySelector('#sync-status');if(current)current.replaceWith(syncNode());
  const top=document.querySelector('#sync-status-top');if(top)top.replaceWith(syncNode(true));
+ const wrap=document.querySelector('.sync-banner-wrap');if(wrap)wrap.hidden=syncSavedOnline;
 }
 async function persist(nextState){
  if(busy)throw new Error('Attendi il salvataggio in corso.');
@@ -191,7 +194,7 @@ function render(){
   return;
  }
  unmountPorti();
- const scroll=el('div',{class:'app-scroll'},header,el('div',{class:'sync-banner-wrap'},syncNode(true)),main);
+ const scroll=el('div',{class:'app-scroll'},header,el('div',{class:'sync-banner-wrap',hidden:syncSavedOnline},syncNode(true)),main);
  frame.append(scroll,nav);root.replaceChildren(frame);
  if(tab==='insert')renderInsert(main); else if(tab==='register')renderRegister(main);else if(tab==='customers')renderCustomers(main);else if(tab==='porti')renderPorti(main);else renderTariffs(main);
  if(tab!=='porti')main.append(syncNode());
