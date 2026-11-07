@@ -10,6 +10,9 @@ on:
       - 'client-store.mjs'
       - 'app.mjs'
       - 'shared/company-fares.mjs'
+      - 'shared/company-extras.mjs'
+      - 'supabase/functions/lts-company-tariffs/**'
+      - 'supabase/migrations/**'
       - 'shared/customer-site-matches.mjs'
       - 'shared-maps-client.mjs'
       - 'tests/customer-site-matches.test.mjs tests/admin-record-operations.test.mjs'
@@ -40,6 +43,9 @@ on:
       - 'client-store.mjs'
       - 'app.mjs'
       - 'shared/company-fares.mjs'
+      - 'shared/company-extras.mjs'
+      - 'supabase/functions/lts-company-tariffs/**'
+      - 'supabase/migrations/**'
       - 'shared/customer-site-matches.mjs'
       - 'shared-maps-client.mjs'
       - 'tests/customer-site-matches.test.mjs'
@@ -76,6 +82,8 @@ jobs:
         run: |
           node --check app.mjs
           node --check shared/company-fares.mjs
+          node --check shared/company-extras.mjs
+          node --check supabase/functions/lts-company-tariffs/tariff-handler.mjs
           node --check shared/customer-site-matches.mjs
           node --check shared/domain.mjs
           node --check client-store.mjs
