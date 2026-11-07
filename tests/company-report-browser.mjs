@@ -50,14 +50,15 @@ let adminArchive={
   extraCents:{adr:null,reefer:null,pernotto:null,preOrario:0,sabatoPorto:null,
    sabatoTrasferta:null,facchinaggioBilico:null,facchinaggioReefer:null},
   createdAt:'2026-11-04T08:00:00Z',updatedAt:'2026-11-04T08:00:00Z'}],
- customers:[{id:'c1',name:'CLIENTE ALFA',city:'NAPOLI',address:'VIA TEST 1',vat:'',phone:''}],
+ customers:[{id:'c1',name:'CLIENTE ALFA',city:'NAPOLI',address:'VIA TEST 1',vat:'',phone:''},
+  {id:'c2',name:'CLIENTE AUTISTA',city:'CASERTA',address:'VIA PERSONALE 7',vat:'',phone:''}],
  tariffs:[],extraRates:{adr:null,reefer:null,pernotto:null,preOrario:0,
   sabatoPorto:null,sabatoTrasferta:null,facchinaggioBilico:null,facchinaggioReefer:null}
 };
 export const adminRecords=async(action,data={})=>{
  if(action==='list')return {drivers:[{id:'11111111-1111-4111-8111-111111111111',
   name:'Mario Rossi',phone:'+393331111111',status:'active',revision:adminArchiveRevision,
-  updatedAt:'2026-11-04T08:00:00Z',counts:{trips:1,customers:1,legacyTariffs:0}}]};
+  updatedAt:'2026-11-04T08:00:00Z',counts:{trips:1,customers:2,legacyTariffs:0}}]};
  if(action==='read')return {archive:{revision:adminArchiveRevision,
   state:structuredClone(adminArchive),updatedAt:new Date().toISOString()},
   audit:structuredClone(adminAudit)};
@@ -415,26 +416,41 @@ try{
   }
   assert.equal(await page.locator(content).isVisible(),true,'Section '+view+' must show actual controls');
  }
+ // Add a manually registered company customer before editing an autista's trip.
+ await openAdminTab('rates-tab');
+ await page.waitForFunction(()=>document.querySelector('#company-rates-count').textContent.includes('1 tariffe aziendali'));
+ await page.locator('#company-rate-client').fill('CLIENTE MANUALE');
+ await page.locator('#company-rate-city').fill('AVELLINO');
+ await page.locator('#company-rate-amount').fill('76,00');
+ await page.locator('#company-rate-submit').click();
+ await page.waitForFunction(()=>document.querySelector('#company-rates-count').textContent.includes('2 tariffe aziendali'));
  // Synthetic end-to-end test of driver record editing and audit.
  await openAdminTab('records-tab');
  await page.waitForFunction(()=>document.querySelector('#records-trips').textContent==='1');
- assert.equal(await page.locator('#records-customers').textContent(),'1');
+ assert.equal(await page.locator('#records-customers').textContent(),'2');
  assert.match(await page.locator('#records-list').textContent(),/NOTA INIZIALE/);
  await page.locator('#records-list .records-card-actions button').first().click();
- // Selecting a shared customer updates BOTH route fields and its fare.
- // No company fare must never inherit the previous customer's amount.
+ // Compact page-native searchable customer picker.
  const primarySite=page.locator('#records-editor .records-site-picker').first();
- await primarySite.locator('select').waitFor({state:'visible'});
- await page.waitForFunction(()=>!document.querySelector('.records-site-picker select').disabled);
+ assert.equal(await primarySite.locator('select').count(),0);
+ await page.waitForFunction(()=>!document.querySelector('.records-site-picker input[type=search]').disabled);
+ await primarySite.locator('input[type="search"]').fill('CLIENTE AUTISTA');
+ await primarySite.locator('.records-site-option').filter({hasText:'CLIENTE AUTISTA'}).click();
+ assert.equal(await page.locator('#records-editor input[name="client"]').inputValue(),'CLIENTE AUTISTA');
+ assert.equal(await page.locator('#records-editor input[name="city"]').inputValue(),'CASERTA');
+ assert.equal(await page.locator('#records-editor input[name="fareCents"]').inputValue(),'');
+ await primarySite.locator('input[type="search"]').fill('CLIENTE MANUALE');
+ await primarySite.locator('.records-site-option').filter({hasText:'CLIENTE MANUALE'}).click();
+ assert.equal(await page.locator('#records-editor input[name="client"]').inputValue(),'CLIENTE MANUALE');
+ assert.equal(await page.locator('#records-editor input[name="city"]').inputValue(),'AVELLINO');
+ assert.equal(await page.locator('#records-editor input[name="fareCents"]').inputValue(),'76,00');
  await primarySite.locator('input[type="search"]').fill('CLIENTE BETA');
- await primarySite.locator('select').selectOption('1');
+ await primarySite.locator('.records-site-option').filter({hasText:'CLIENTE BETA'}).click();
  assert.equal(await page.locator('#records-editor input[name="client"]').inputValue(),'CLIENTE BETA');
  assert.equal(await page.locator('#records-editor input[name="city"]').inputValue(),'SALERNO');
  assert.equal(await page.locator('#records-editor input[name="fareCents"]').inputValue(),'');
- assert.match(await primarySite.locator('.records-site-hint').textContent(),/Non esiste una tariffa aziendale/);
- // Matching the exact shared customer + location restores its configured fare.
  await primarySite.locator('input[type="search"]').fill('CLIENTE ALFA');
- await primarySite.locator('select').selectOption('0');
+ await primarySite.locator('.records-site-option').filter({hasText:'CLIENTE ALFA'}).click();
  assert.equal(await page.locator('#records-editor input[name="client"]').inputValue(),'CLIENTE ALFA');
  assert.equal(await page.locator('#records-editor input[name="city"]').inputValue(),'NAPOLI');
  assert.equal(await page.locator('#records-editor input[name="fareCents"]').inputValue(),'150,00');
@@ -461,7 +477,7 @@ try{
  await page.locator('#company-maps-amount').fill('95,50');
  await page.locator('#company-maps-save').click();
  await page.waitForFunction(()=>document.querySelector('#company-maps-status').textContent.includes('Cliente Google Maps aggiunto'));
- await page.waitForFunction(()=>document.querySelector('#company-rates-count').textContent.includes('2 tariffe aziendali'));
+ await page.waitForFunction(()=>document.querySelector('#company-rates-count').textContent.includes('3 tariffe aziendali'));
  // Already-linked Maps shortlink: review first, then update only its placeholder.
  await openAdminTab('overview-tab');
  await page.waitForFunction(()=>document.querySelector('#customer-overview-missing').textContent==='1');
