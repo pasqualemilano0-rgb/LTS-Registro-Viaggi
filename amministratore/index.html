@@ -14,8 +14,8 @@
   <link rel="stylesheet" href="./dashboard-v6.css?v=20261104-mobile-v7">
   <link rel="stylesheet" href="./customer-overview.css?v=20261107-manual-shared-v1">
   <link rel="stylesheet" href="./company-rates.css?v=20261107-manual-shared-v1">
-  <link rel="stylesheet" href="./driver-records.css?v=20261107-driver-customer-picker-v1">
-  <script type="module" src="./admin.mjs?v=20261107-manual-shared-v1"></script>
+  <link rel="stylesheet" href="./driver-records.css?v=20261107-driver-private-customers-v1">
+  <script type="module" src="./admin.mjs?v=20261107-driver-private-customers-v1"></script>
   <script type="module" src="./dashboard-mobile-nav.mjs?v=20261107-records-admin-v2"></script>
 </head>
 <body>
@@ -196,7 +196,7 @@
             <p class="eyebrow">LTS · AMMINISTRAZIONE ARCHIVI</p>
             <h1 id="records-title">Controllo completo autisti</h1>
             <p>Controlla e modifica i dati sincronizzati di ciascun autista. Ogni modifica viene registrata e può essere verificata.</p>
-            <p class="records-note">Seleziona un autista per vedere, creare, modificare o eliminare viaggi e clienti personali, correggere gli importi registrati e gestire i vecchi tariffari personali. Per cambiare la trasferta condivisa di tutti usa <strong>Tariffe aziendali</strong>. Ogni modifica è tracciata.</p>
+            <p class="records-note">Seleziona un autista e apri <strong>Clienti personali</strong> per correggere nome, località, indirizzo, telefono e partita IVA senza modificarne gli altri clienti. Le modifiche sono tracciate e sincronizzate con il solo proprietario. Per aggiornare i clienti di tutti gli autisti usa invece <strong>Clienti e tariffe aziendali</strong>.</p>
           </div>
         </header>
         <div class="records-controls">
@@ -352,6 +352,7 @@
             <button type="button" data-open-section="drivers">Gestisci autisti <span aria-hidden="true">›</span></button>
             <button type="button" data-open-section="trips">Consulta viaggi <span aria-hidden="true">›</span></button>
             <button type="button" data-open-section="records">Modifica inserimenti autisti <span aria-hidden="true">›</span></button>
+            <button type="button" data-open-private-customers>Modifica clienti personali <span aria-hidden="true">›</span></button>
             <button type="button" data-open-maps>Aggiungi cliente Google Maps <span aria-hidden="true">›</span></button>
             <button type="button" data-open-section="rates">Tariffe e servizi extra <span aria-hidden="true">›</span></button>
             <button type="button" data-open-section="alerts">Controlla anomalie <span aria-hidden="true">›</span></button>
