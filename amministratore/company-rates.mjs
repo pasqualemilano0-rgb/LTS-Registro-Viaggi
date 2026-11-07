@@ -1,6 +1,6 @@
 /** Protected company tariff editor, linked to the shared Google Maps site catalog.
  * Customer records remain read-only. No driver archive or historical trip is rewritten. */
-import {tariffLinkedCustomerSites,customerSiteRateKey,hasUsableAddress} from './customer-overview-model.mjs';
+import {tariffLinkedCustomerSites,customerSiteRateKey,hasUsableAddress} from './customer-overview-model.mjs?v=20261107-client-tariff-sync-v2';
 
 const get=id=>document.getElementById(id);
 const node=(tag,cls,value)=>{const n=document.createElement(tag);if(cls)n.className=cls;n.textContent=String(value??'');return n;};
