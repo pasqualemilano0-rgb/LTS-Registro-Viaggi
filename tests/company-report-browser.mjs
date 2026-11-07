@@ -19,8 +19,18 @@ export const listAdminMfaFactors=async()=>[{label:'Principale',id:'a'}];
 export const manageDrivers=async(action)=>action==='list'?{drivers:[]}:{};
 let mockRates=[{id:'1',client:'CLIENTE ALFA',city:'NAPOLI',cents:15000,revision:1,
  updatedAt:'2026-11-06T12:00:00Z'}];
+let mockExtras=['facchinaggioBilico','facchinaggioReefer','reefer','adr',
+ 'pernotto','sabatoPorto','sabatoTrasferta','preOrario'].map(serviceKey=>({
+ serviceKey,cents:serviceKey==='preOrario'?0:null,revision:1,updatedAt:new Date().toISOString()
+}));
 export const companyTariffs=async(action,data={})=>{
- if(action==='list')return {tariffs:structuredClone(mockRates)};
+ if(action==='list')return {tariffs:structuredClone(mockRates),extraRates:structuredClone(mockExtras)};
+ if(action==='extra-save'){
+  const i=mockExtras.findIndex(x=>x.serviceKey===data.serviceKey);
+  if(i<0||mockExtras[i].revision!==data.expectedRevision)throw Error('Extra conflict');
+  mockExtras[i]={...mockExtras[i],cents:data.cents,revision:mockExtras[i].revision+1};
+  return {extra:structuredClone(mockExtras[i])};
+ }
  if(action!=='save')throw Error('Unknown tariff action');
  const i=mockRates.findIndex(r=>r.client===data.client&&r.city===data.city);
  if(i>=0){
@@ -424,14 +434,14 @@ try{
  assert.match(await page.locator('#records-list').textContent(),/NOTA CORRETTA DA ADMIN/);
  await page.locator('#records-tabs button[data-kind="history"]').click();
  assert.match(await page.locator('#records-list').textContent(),/UPDATE/);
- // Per-driver extras: the rate is saved through the secured archive endpoint.
+ // One shared company extra price: no individual driver selector.
  await openAdminTab('rates-tab');
- await page.locator('#company-extra-driver').selectOption('11111111-1111-4111-8111-111111111111');
  await page.waitForFunction(()=>document.querySelectorAll('.company-extra-row').length===8);
+ assert.equal(await page.locator('#company-extra-driver').count(),0);
  await page.locator('.company-extra-row[data-service="adr"] input').fill('12,50');
  page.once('dialog',dialog=>dialog.accept());
  await page.locator('.company-extra-row[data-service="adr"] button').click();
- await page.waitForFunction(()=>document.querySelector('#company-extra-status').textContent.includes('Revisione 5'));
+ await page.waitForFunction(()=>document.querySelector('#company-extra-status').textContent.includes('tutti gli autisti'));
  assert.equal(await page.locator('.company-extra-row[data-service="adr"] input').inputValue(),'12,50');
  // New Google Maps customer and corporate rate, without creating a personal customer.
  await page.locator('#company-maps-url').fill('https://maps.app.goo.gl/newDepot');
