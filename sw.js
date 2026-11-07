@@ -1,6 +1,6 @@
 const BASE = "/LTS-Registro-Viaggi/";
 const PREFIX = "lts-iphone-pages-0aa8d087d02b-";
-const CACHE = PREFIX + '20261107-compact-clienti-v2';
+const CACHE = PREFIX + '20261107-clienti-search-v3';
 const CORE = [
   "/LTS-Registro-Viaggi/account-access.mjs",
   "/LTS-Registro-Viaggi/app.css",
@@ -72,7 +72,8 @@ const PORT_BASE = BASE + 'porti/';
 const NETWORK_FIRST_CODE = new Set([
   BASE + 'app.mjs', BASE + 'porti-access.mjs', BASE + 'account-access.mjs', BASE + 'driver-session-vault.mjs',
   BASE + 'runtime-config.mjs', BASE + 'client-store.mjs', BASE + 'porti/app.js',
-  BASE + 'shared/trip-customer-choices.mjs', BASE + 'shared/company-fares.mjs', BASE + 'shared/domain.mjs'
+  BASE + 'shared/trip-customer-choices.mjs', BASE + 'shared/maps-company-routing.mjs',
+  BASE + 'shared/company-fares.mjs', BASE + 'shared/domain.mjs'
 ]);
 self.addEventListener('install', event => {
   event.waitUntil((async () => {
