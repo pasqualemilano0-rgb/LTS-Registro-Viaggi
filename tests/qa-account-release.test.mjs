@@ -519,11 +519,13 @@ test('online catalog sync never reconstructs a currently edited trip',()=>{
  assert.match(fn,/form[.]querySelector\('#second-cities'\)/);
  assert.doesNotMatch(fn,/\brender\(\);/);
 });
-test('tariff customer autocomplete includes company names without sharing tariffs',()=>{
- const dialog=app.slice(app.indexOf('function tariffDialog('),app.indexOf('function openProfile('));
- assert.match(dialog,/datalist\('tariff-customers',\[\.\.\.state[.]customers[.]map\(c=>c[.]name\),\.\.\.companyCustomers[.]map\(c=>c[.]name\)\]\)/);
- assert.match(dialog,/D[.]upsertTariff\(state,/);
- assert.doesNotMatch(dialog,/saveSharedMapsCustomer\(/);
+test('drivers use Maps customer suggestions but cannot set individual transfer fares',()=>{
+ assert.match(app,/combinedTripCustomerChoices\(\{personal:state[.]customers,trips:state[.]trips,shared:companyCustomers\}\)/);
+ assert.match(app,/companyFareSnapshot\(companyRates,companyRatesLoaded/);
+ assert.match(app,/Le trasferte sono uguali per tutti gli autisti/);
+ assert.doesNotMatch(app,/function tariffDialog\(/);
+ assert.doesNotMatch(app,/D[.]upsertTariff\(state,/);
+ assert.match(app,/mapsLinkForCompanySync/);
 });
 
 test('curated Maps operational hints show only as read-only site information',()=>{
