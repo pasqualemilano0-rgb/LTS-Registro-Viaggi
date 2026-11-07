@@ -60,7 +60,7 @@ test('drivers can only read and refresh the company tariff catalog',()=>{
  assert.match(app,/Sola lettura/);
  assert.match(app,/Aggiorna tariffe/);
  assert.match(app,/await store[.]syncPending\(\)/);
- assert.match(app,/\['insert','tariffs'\][.]includes\(next\)/);
+ assert.match(app,/\['insert','tariffs','customers'\][.]includes\(next\)/);
  assert.doesNotMatch(app,/Nuova tariffa personale|Aggiungi tariffa personale|function tariffDialog\(/);
  assert.match(store,/setInterval\(refreshSoon, 20000\)/);
  assert.match(store,/window[.]addEventListener\('online', refreshSoon\)/);
@@ -79,5 +79,5 @@ test('driver trip creation and preview use the central company catalog on first 
  assert.match(access,/export async function driverCompanyTariffs\(/);
  assert.match(access,/action:'list'/);
  assert.match(app,/companyRatesRequest\+\+/);
- assert.match(app,/if\(tab==='tariffs'&&tariffTab==='base'/);
+ assert.match(app,/tab==='tariffs'&&tariffTab==='base'/);
 });
