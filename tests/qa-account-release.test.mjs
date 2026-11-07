@@ -1,5 +1,7 @@
 import test from 'node:test';
 import {runInNewContext} from 'node:vm';
+import {emptyState,upsertCustomer,validateState} from '../shared/domain.mjs';
+import {parseCustomerCsv,mergeCustomerCsv,exportCustomerCsv} from '../shared/customer-csv.mjs';
 import assert from 'node:assert/strict';
 import { readFileSync, existsSync } from 'node:fs';
 const read=name=>readFileSync(new URL('../'+name,import.meta.url),'utf8');
@@ -558,6 +560,42 @@ test('clients have one live company and personal search with clear source filter
  assert.match(read('app.css'),/company-customer-search:focus-within/);
 });
 
+test('customer cards show only essential location, street and saved phone',()=>{
+ const card=app.slice(app.indexOf('function customerCard('),app.indexOf('function renderCustomers('));
+ assert.match(card,/directory-card-city/);
+ assert.match(card,/directory-card-address/);
+ assert.match(card,/directory-card-phone/);
+ assert.match(card,/tel:'\+dial/);
+ assert.match(card,/if\(shared\)/);
+ assert.match(card,/Usa nel viaggio/);
+ assert.match(card,/Apri Maps/);
+ assert.doesNotMatch(card,/directory-card-fare/);
+ assert.doesNotMatch(card,/operationalNotes/);
+ assert.doesNotMatch(card,/customerTariffs/);
+ assert.doesNotMatch(card,/customer[.]vat/);
+ assert.match(app,/const phone=field\('Telefono','phone'/);
+ assert.match(app,/phone:phone[.]input[.]value/);
+ const css=read('app.css');
+ assert.match(css,/Essential customer information: compact mobile address book/);
+ assert.match(css,/-webkit-line-clamp:2/);
+});
+
+test('optional personal phone survives state validation, and CSV keeps legacy imports',()=>{
+ const base=emptyState();
+ const saved=upsertCustomer(base,{id:'customer-1',name:'Cliente prova',city:'Napoli',
+  address:'Via Porto 1',vat:'',phone:'+39 081 1234567'});
+ assert.equal(saved.customers[0].phone,'+39 081 1234567');
+ assert.equal(validateState(saved).customers[0].phone,'+39 081 1234567');
+ const csv=exportCustomerCsv(saved);
+ assert.match(csv,/TELEFONO/);
+ const phoneRows=parseCustomerCsv(csv);
+ assert.equal(phoneRows[0].phone,'+39 081 1234567');
+ const merged=mergeCustomerCsv(saved,phoneRows);
+ assert.equal(merged.state.customers[0].phone,'+39 081 1234567');
+ const legacy=parseCustomerCsv('CLIENTE;PARTITA IVA;CITTÀ;INDIRIZZO\nCLIENTE PROVA;;NAPOLI;VIA PORTO 1\n');
+ assert.equal(legacy[0].phone,'');
+ assert.equal(mergeCustomerCsv(saved,legacy).state.customers[0].phone,'+39 081 1234567');
+});
 test('dashboard Maps action reuses secure client import and keeps unsaved trip draft',()=>{
  const insert=app.slice(app.indexOf('function renderInsert('),app.indexOf('function citySuggestions('));
  assert.match(insert,/if\(!editingId\)form[.]append\(el\('section',\{class:'dashboard-maps-shortcut'/);
