@@ -1,6 +1,6 @@
 import * as account from '../account-access.mjs?v=20261107-realtime-v1';
 import realtimeConfig from '../runtime-config.mjs';
-import {createLtsRealtime} from '../realtime-client.mjs';
+import {createLtsRealtime} from '../realtime-client.mjs?v=20261107-roster-realtime-v1';
 import {STATUS_LABELS,driverSummary,filterDrivers} from './model.mjs';
 import {setupReport} from './report.mjs?v=20261107-driver-private-customers-v1';
 import {rememberPosition,readPosition,clearPosition} from './admin-position.mjs';
@@ -35,13 +35,17 @@ function startAdminRealtime(){
  adminRealtime?.stop();
  adminRealtime=createLtsRealtime({
   config:realtimeConfig.realtime,authenticate:account.getRealtimeCredentials,
-  onChange:()=>{
+  onChange:kind=>{
    if(dashboard.hidden||document.hidden||!account.isVerified()||
       account.getRole()!=='admin'||resumingDashboard)return;
-   if(dashboard.dataset.view==='drivers'){
-    if(!document.activeElement?.matches?.('input:not([type=hidden]),textarea,select'))
+   // Invite/access/reset changes refresh the roster without waiting for polling.
+   if(kind==='roster'||kind==='ready'){
+    if(dashboard.dataset.view!=='drivers'||
+       !document.activeElement?.matches?.('input:not([type=hidden]),textarea,select'))
      void loadDrivers({silent:true});
-   }else companyView.refreshActive();
+   }
+   if(kind!=='roster'&&dashboard.dataset.view!=='drivers')
+    companyView.refreshActive();
   }
  });
  adminRealtime.start();
