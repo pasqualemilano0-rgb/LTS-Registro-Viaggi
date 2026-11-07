@@ -9,6 +9,9 @@ on:
       - 'recupera-password.html'
       - 'client-store.mjs'
       - 'app.mjs'
+      - 'shared/company-fares.mjs'
+      - 'shared/domain.mjs'
+      - 'tests/qa-company-tariffs.test.mjs'
       - 'amministratore/**'
       - 'app.css'
       - 'runtime-config.mjs'
@@ -27,6 +30,9 @@ on:
       - 'recupera-password.html'
       - 'client-store.mjs'
       - 'app.mjs'
+      - 'shared/company-fares.mjs'
+      - 'shared/domain.mjs'
+      - 'tests/qa-company-tariffs.test.mjs'
       - 'amministratore/**'
       - 'app.css'
       - 'runtime-config.mjs'
@@ -51,9 +57,11 @@ jobs:
       - name: Static JS syntax and safety assertions
         run: |
           node --check app.mjs
+          node --check shared/company-fares.mjs
+          node --check shared/domain.mjs
           node --check client-store.mjs
           node --check account-access.mjs
           node --check driver-session-vault.mjs
           node --check recupera-password.mjs
           node --check sw.js
-          node --test tests/qa-account-release.test.mjs tests/driver-session-vault.test.mjs tests/leaked-password-protection.test.mjs
+          node --test tests/qa-account-release.test.mjs tests/driver-session-vault.test.mjs tests/leaked-password-protection.test.mjs tests/qa-company-tariffs.test.mjs
