@@ -127,9 +127,10 @@ test('network-first account modules show latest UI while keeping offline fallbac
   assert.equal(calls.length,2);
 });
 
-test('Gmail password recovery is linked, safe and never copies account data',()=>{
-  assert.ok(app.includes('Imposta o recupera password via Gmail'));
-  assert.ok(app.includes('/LTS-Registro-Viaggi/recupera-password.html'));
+test('administrator Gmail recovery remains separate from driver recovery',()=>{
+  assert.doesNotMatch(app,/Imposta o recupera password via Gmail/);
+  assert.doesNotMatch(app,/href:'\/LTS-Registro-Viaggi\/recupera-password[.]html'/);
+  assert.match(read('amministratore/index.html'),/recupera-password[.]html/);
   assert.ok(recovery.includes("SUPABASE+'/auth/v1/'"));
   assert.ok(recovery.includes('recover?redirect_to='));
   assert.ok(recovery.includes("hash.get('type')!=='recovery'"));
@@ -145,6 +146,29 @@ test('Gmail password recovery is linked, safe and never copies account data',()=
   assert.ok(recoveryHtml.includes('type="password"'));
   assert.doesNotMatch(recovery,/SUPABASE_SERVICE_ROLE_KEY|sb_secret_|localStorage[.]setItem|sessionStorage[.]setItem/);
   assert.doesNotMatch(recoveryHtml,/<script[^>]+src="https:/i);
+});
+
+
+test('driver password recovery uses the administrator-issued one-time code, never email or SMS',()=>{
+ const admin=read('amministratore/admin.mjs');
+ const css=read('app.css');
+ assert.match(app,/function showDriverPasswordRecovery\(/);
+ assert.match(app,/accountAccess[.]recoverDriverPassword\(/);
+ assert.match(app,/Recupera password autista/);
+ assert.match(app,/Codice di ripristino/);
+ assert.match(app,/non arriva automaticamente via SMS/);
+ assert.match(app,/newPass!==confirm[.]value/);
+ assert.match(app,/Password aggiornata/);
+ assert.match(app,/account-driver-recovery-success/);
+ assert.match(auth,/export async function recoverDriverPassword\(/);
+ assert.match(auth,/activateDriverInvitation\(\{phone,code,password\}\)/);
+ assert.match(auth,/if\(hasSession\(\)\)throw new Error/);
+ assert.match(app,/password:newPass/);
+ assert.doesNotMatch(app,/recupera-password[.]html/);
+ assert.match(admin,/LTS → Recupera password/);
+ assert.match(admin,/issue-reset/);
+ assert.match(css,/account-driver-recovery-form/);
+ assert.doesNotMatch(app,/recoveryToken|sb_secret_|SMS inviato/i);
 });
 
 test('pending driver can be invited directly from the admin roster',()=>{
