@@ -233,6 +233,12 @@ function renderRoster(){
    else if(['pending','invited','processing','expired','revoked'].includes(entry.status))
      addAction('Rimuovi dall’elenco','remove-pending',{phone:entry.phone},
        'Rimuovere '+entry.phone+' prima dell’attivazione? Eventuali inviti saranno annullati. Il numero potrà essere reinserito.');
+   if(['active','disabled','resetting'].includes(entry.status)){
+    const openData=make('button','button small primary','Apri dati e viaggi');
+    openData.type='button';
+    openData.addEventListener('click',()=>companyView.openRecordsForPhone(entry.phone));
+    actions.prepend(openData);
+   }
    if(actions.childNodes.length)item.append(actions);
    roster.append(item);
  }
