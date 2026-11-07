@@ -246,6 +246,7 @@ export function setupReport(account){
    }else{
     if(view==='overview')void companyDirectory.load();
     if(!wasReport||(!page&&!loading)){rows=[];void load(false);}
+    else if(view!==lastView)void load(false,{silent:true});
    }
   }
   window.scrollTo({top:0,behavior:'instant'});
