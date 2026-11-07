@@ -18,7 +18,7 @@ function isolatedHandler(name,nextName){
 }
 function mockDb(data,error=null){
  const chain={
-  update:()=>chain,eq:()=>chain,is:()=>chain,
+  update:()=>chain,eq:()=>chain,is:()=>chain,gt:()=>chain,
   select:async()=>({data,error})
  };
  return {from:()=>chain};
@@ -43,6 +43,7 @@ test('revoking an already completed password reset must NOT claim success',async
 test('roster queries do not silently truncate account and invitation history',()=>{
  assert.match(backend,/const MAX_DRIVERS = 200/);
  assert.match(backend,/const MAX_HISTORY = 4000/);
+ assert.match(backend,/gt\('expires_at',new Date\(\)[.]toISOString\(\)\)/);
  assert.match(backend,/limit\(MAX_DRIVERS\+1\)/);
  assert.match(backend,/limit\(MAX_HISTORY\+1\)/);
  assert.match(backend,/length>MAX_HISTORY/);
