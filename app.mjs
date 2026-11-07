@@ -310,7 +310,7 @@ async function refreshCompanyCustomers(){
  }catch{
   // Keep the existing personal data and previously loaded shared suggestions.
   if(owner!==accountAccess.getAccountId()||request!==companyCustomersRequest)return;
-  companyCustomersError='Impossibile aggiornare l’elenco Google Maps. Verifica la connessione e riprova.';
+  companyCustomersError='Impossibile aggiornare l’elenco clienti aziendali. Verifica la connessione e riprova.';
   if(tab==='customers')updateCompanyCustomersPanel();
  }
 }
@@ -679,10 +679,10 @@ function customerCard(customer,{shared=false}={}){
  const actions=el('div',{class:'directory-card-actions'},
   el('button',{type:'button',class:'secondary-button directory-use-customer',
    on:{click:()=>useCustomerInTrip(customer)}},icon('plus'),'Usa nel viaggio'));
- if(shared)actions.append(el('a',{class:'directory-open-maps',href:customer.mapsUrl,
+ if(shared&&customer.mapsUrl)actions.append(el('a',{class:'directory-open-maps',href:customer.mapsUrl,
   target:'_blank',rel:'noopener noreferrer',
   'aria-label':`Apri Google Maps per ${customer.name}`},icon('pin'),'Apri Maps'));
- else actions.append(el('button',{type:'button',class:'text-button directory-edit-customer',
+ else if(!shared)actions.append(el('button',{type:'button',class:'text-button directory-edit-customer',
   on:{click:()=>customerDialog(customer)},
   'aria-label':`Modifica cliente ${customer.name}`},icon('edit'),'Modifica'));
  const content=el('div',{class:'directory-card-content'},
