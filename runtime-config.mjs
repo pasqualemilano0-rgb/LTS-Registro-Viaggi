@@ -3,6 +3,11 @@ export default Object.freeze({
   "basePath": "/LTS-Registro-Viaggi/",
   "apiUrl": "https://lts-registro-viaggi-iphone.steadyzebra1.chatgpt.site/api/public-state",
   "deviceToken": true,
+  "realtime": {
+    "enabled": true,
+    "url": "wss://otrqynkscpbeyuvdlgpg.supabase.co/realtime/v1/websocket",
+    "publishableKey": "sb_publishable_9yp1GCs-X5lJ9EJth_oB1g_jzG7m5OJ"
+  },
   "accountAuth": {
     "enabled": true,
     "loginEndpoint": "https://otrqynkscpbeyuvdlgpg.supabase.co/functions/v1/lts-phone-auth",
