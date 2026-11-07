@@ -23,10 +23,13 @@ export function parseEuro(value){
   throw new Error('Tariffa fuori dai limiti consentiti.');
  return cents;
 }
+const normalize=value=>String(value??'').normalize('NFC').trim()
+ .replace(/\s+/gu,' ').toLocaleUpperCase('it-IT');
 export function matchingSite(customers,site){
- const key=customerSiteRateKey(site);
+ const key=customerSiteRateKey(site)+'\u0000'+normalize(site.address);
  return (Array.isArray(customers)?customers:[]).find(row=>
-  row.mapsUrl===site.mapsUrl||customerSiteRateKey(row)===key)||null;
+  row.mapsUrl===site.mapsUrl||
+  (customerSiteRateKey(row)+'\u0000'+normalize(row.address)===key))||null;
 }
 export function matchingRate(rates,site){
  const key=customerSiteRateKey(site);
@@ -129,7 +132,8 @@ export function setupCompanyMaps(account,{onSaved=async()=>{}}={}){
    feedback(known?'Cliente già presente: tariffa verificata e salvata.':
     'Cliente Google Maps aggiunto e tariffa salvata nel listino aziendale. Disponibile agli autisti al prossimo aggiornamento online.');
    form.reset();selected=null;partial=null;rate=null;existing=null;preview.hidden=true;
-   await onSaved(customer);
+   try{await onSaved(customer);}
+   catch{feedback('Cliente e tariffa salvati sul server. Aggiornamento dell’elenco non riuscito: premi Aggiorna elenco.',true);}
   }catch(error){
    if(authorized())feedback((partial
     ?'Cliente presente nell’elenco condiviso, ma la tariffa NON è stata confermata. '
