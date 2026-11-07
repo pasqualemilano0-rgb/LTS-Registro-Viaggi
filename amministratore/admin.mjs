@@ -230,7 +230,7 @@ function revealCode(result,kind){
  const number=result.phone||'questo autista';
  byId('secret-title').textContent=kind==='reset'?'Recupero credenziali':'Invito di attivazione';
  byId('secret-explanation').textContent=kind==='reset'
-  ?'Codice per '+number+'. L’accesso precedente è sospeso. Consegna il codice privatamente: scade fra 24 ore e permette di scegliere una nuova password.'
+  ?'Codice per '+number+'. L’accesso precedente è sospeso. Consegna il codice privatamente: scade fra 24 ore. L’autista apre LTS → Recupera password e sceglie la nuova password.'
   :'Codice per '+number+'. Consegnalo privatamente: scade fra 24 ore ed è utilizzabile una sola volta.';
  byId('secret-code').value=code;
  byId('secret-panel').hidden=false;
