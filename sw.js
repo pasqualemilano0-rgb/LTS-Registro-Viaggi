@@ -1,6 +1,6 @@
 const BASE = "/LTS-Registro-Viaggi/";
 const PREFIX = "lts-iphone-pages-0aa8d087d02b-";
-const CACHE = PREFIX + '20261107-clienti-search-v3';
+const CACHE = PREFIX + '20261107-maps-dedup-v4';
 const CORE = [
   "/LTS-Registro-Viaggi/account-access.mjs",
   "/LTS-Registro-Viaggi/app.css",
@@ -24,6 +24,7 @@ const CORE = [
   "/LTS-Registro-Viaggi/client-store.mjs",
   "/LTS-Registro-Viaggi/shared-maps-client.mjs",
   "/LTS-Registro-Viaggi/shared/maps-company-routing.mjs",
+  "/LTS-Registro-Viaggi/shared/customer-site-matches.mjs",
   "/LTS-Registro-Viaggi/driver-session-vault.mjs",
   "/LTS-Registro-Viaggi/index.html",
   "/LTS-Registro-Viaggi/manifest.webmanifest",
@@ -73,6 +74,7 @@ const NETWORK_FIRST_CODE = new Set([
   BASE + 'app.mjs', BASE + 'porti-access.mjs', BASE + 'account-access.mjs', BASE + 'driver-session-vault.mjs',
   BASE + 'runtime-config.mjs', BASE + 'client-store.mjs', BASE + 'porti/app.js',
   BASE + 'shared/trip-customer-choices.mjs', BASE + 'shared/maps-company-routing.mjs',
+  BASE + 'shared/customer-site-matches.mjs', BASE + 'shared-maps-client.mjs',
   BASE + 'shared/company-fares.mjs', BASE + 'shared/domain.mjs'
 ]);
 self.addEventListener('install', event => {
