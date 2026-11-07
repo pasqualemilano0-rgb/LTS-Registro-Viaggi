@@ -660,6 +660,8 @@ test('Google Maps links use the authenticated allowlisted reader, not the legacy
  assert.match(reader,/checkedGoogleMapsUrl\(link\)/);
  assert.match(reader,/redirect:'error'/);
  assert.match(reader,/credentials:'omit'/);
+ assert.match(reader,/if\(error[?][.]name==='AbortError'\)throw error/);
+ assert.match(reader,/Collegamento al lettore Google Maps non riuscito/);
  assert.match(reader,/source[.]href/);
  const dialog=app.slice(app.indexOf('function mapsCustomerDialog('),
   app.indexOf('async function importCustomersCsv(',app.indexOf('function mapsCustomerDialog(')));
