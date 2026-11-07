@@ -2,7 +2,7 @@
 import {setupInsights} from './report-insights.mjs?v=20261104-company-v3';
 import {setupCustomerOverview} from './customer-overview.mjs?v=20261107-manual-shared-v1';
 import {setupCompanyRates} from './company-rates.mjs?v=20261107-manual-shared-v1';
-import {setupDriverRecords} from './driver-records.mjs?v=20261107-driver-customer-picker-v1';
+import {setupDriverRecords} from './driver-records.mjs?v=20261107-driver-private-customers-v1';
 import {setupCompanyExtras} from './company-extras.mjs?v=20261107-company-extras-v2';
 const el=id=>document.getElementById(id);
 function node(tag,className='',value=''){
@@ -229,7 +229,7 @@ export function setupReport(account){
   el('report-period-title').textContent='—';
   focusOnDriver=false;tabs('drivers');
  }
- function open(view,phone=null){
+ function open(view,phone=null,recordKind='trip'){
   if(!account.isVerified()||account.getRole()!=='admin')return;
   if(!views.some(v=>v[0]===view))return;
   const lastView=el('dashboard').dataset.view;
@@ -246,7 +246,7 @@ export function setupReport(account){
   if(view==='records'){
    requestSeq++;loading=false;rows=[];page=null;
    tabs(view);
-   if(phone)records.openForPhone(phone);
+   if(phone||recordKind==='customer')records.openForPhone(phone||'',recordKind);
    else void records.load();
   }else if(!showReport){
    requestSeq++;loading=false;rows=[];page=null;clearData();insights.reset();
@@ -378,6 +378,9 @@ export function setupReport(account){
   return false;
  }
  for(const [view,id] of views)el(id).addEventListener('click',()=>open(view));
+ for(const button of document.querySelectorAll('[data-open-private-customers]')){
+  button.addEventListener('click',()=>open('records',null,'customer'));
+ }
  for(const button of document.querySelectorAll('[data-open-section]')){
   button.addEventListener('click',()=>open(button.dataset.openSection));
  }
@@ -405,5 +408,7 @@ export function setupReport(account){
   month.value=currentMonth();driver.value='';driverSearch.value='';rows=[];focusOnDriver=false;void load(false);
  });
  el('report-next').addEventListener('click',()=>void load(true));
- return {reset,open,refreshActive,openRecordsForPhone(phone){open('records',phone);}};
+ return {reset,open,refreshActive,
+  openRecordsForPhone(phone,kind='trip'){open('records',phone,kind);},
+  openPrivateCustomers(){open('records',null,'customer');}};
 }
