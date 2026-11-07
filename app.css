@@ -501,3 +501,100 @@ h1,h2,h3{letter-spacing:-.035em}
  border-radius:50%;background:#dff6ea;color:#19704c;margin:0 auto 12px}
 .account-driver-recovery-success h3{font-size:21px;color:#114f52;margin:0 0 8px}
 .account-driver-recovery-success p{font-size:13px;line-height:1.55;color:#3b6471}
+
+
+/* Mobile-first client and tariff directories: compact, clear and consistent. */
+.company-customer-list.customer-hub{
+ margin-top:0;margin-bottom:18px;padding:16px;
+ border:1px solid #d8e6ea;border-radius:17px;background:#f8fbfc;
+ box-shadow:none;
+}
+.customer-hub-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+.customer-hub-heading>div{min-width:0}
+.customer-hub-heading h2{margin:0;font-size:18px;line-height:1.35;color:#173e51}
+.customer-hub-heading .company-customer-help{font-size:11px;margin:5px 0 0;color:#637d88}
+.customer-hub-heading>.text-button{display:flex;align-items:center;gap:5px;flex:none;min-height:42px;padding:8px 4px;font-size:11px}
+.customer-hub .company-customer-search{margin:14px 0 12px;border-radius:12px}
+.customer-scope-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:0 0 13px}
+.customer-scope-button{
+ display:flex;align-items:center;justify-content:center;gap:5px;min-width:0;min-height:43px;
+ padding:8px 5px;border-radius:10px;border:1px solid #d5e4e9;background:#fff;
+ font-size:11px;font-weight:750;color:#486675;text-align:center;cursor:pointer;
+}
+.customer-scope-button.selected{color:#056b82;background:#e5f4f8;border-color:#89becd}
+.customer-scope-button:focus-visible{outline:3px solid #61c0d3;outline-offset:2px}
+.customer-scope-count{font-size:10px;font-weight:800;color:inherit;opacity:.77}
+.customer-hub-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin:0 0 14px}
+.customer-hub-actions button{width:100%;min-width:0;min-height:46px;padding:9px 7px;gap:6px;font-size:11px;line-height:1.3}
+.customer-hub-actions button .icon{width:16px;height:16px;flex:none}
+.customer-hub .company-customer-count{margin:0 0 10px;color:#51717d;font-size:11px;font-weight:700}
+.customer-directory-results{display:grid;gap:10px}
+.customer-hub .directory-card{
+ display:block;min-width:0;margin:0;padding:14px 14px 12px;
+ border:1px solid #d9e8ec;border-radius:13px;background:#fff;box-shadow:none;
+}
+.directory-card-title{display:flex;align-items:flex-start;justify-content:space-between;gap:9px;margin-bottom:7px}
+.directory-card-title h3{min-width:0;margin:0;color:#163b4b;font-size:14px;font-weight:800;line-height:1.35;overflow-wrap:anywhere}
+.customer-source{display:inline-flex;align-items:center;flex:none;padding:4px 7px;border-radius:6px;font-size:9px;line-height:1.4;font-weight:800}
+.customer-source.shared{background:#e8f3f7;color:#086d80}
+.customer-source.personal{background:#eef2f6;color:#496477}
+.directory-card-city,.directory-card-address,.directory-card-vat{
+ margin:0 0 5px;color:#56717f;font-size:11px;line-height:1.5;overflow-wrap:anywhere;
+}
+.directory-card-city{display:flex;align-items:center;gap:5px;font-weight:700;color:#3e6676}
+.directory-card-city .icon{width:14px;height:14px;flex:none;color:#0a7b91}
+.directory-card-fare{
+ display:flex;align-items:center;justify-content:space-between;gap:8px;
+ margin:10px 0 0;padding:9px 0 1px;border-top:1px solid #e8eff2;
+ color:#4d7181;font-size:11px;line-height:1.3;
+}
+.directory-card-fare span{min-width:0;overflow-wrap:anywhere}
+.directory-card-fare strong{font-size:13px;color:#0a7186;white-space:nowrap;font-variant-numeric:tabular-nums}
+.directory-card .company-customer-operations{margin:8px 0 0;font-size:11px;line-height:1.5;color:#76566b}
+.directory-card-actions{display:grid;grid-template-columns:1.35fr 1fr;align-items:center;gap:8px;margin-top:12px}
+.directory-card-actions .directory-use-customer,
+.directory-card-actions .directory-edit-customer,
+.directory-card-actions .directory-open-maps{
+ display:flex;align-items:center;justify-content:center;gap:5px;min-width:0;min-height:42px;
+ padding:8px 7px;border-radius:10px;text-align:center;text-decoration:none;
+ font-size:11px;font-weight:750;line-height:1.3;
+}
+.directory-card-actions .directory-use-customer{border:1px solid #b6dbe4;background:#eff8fa;color:#076a80}
+.directory-card-actions .directory-edit-customer{border:1px solid #d9e5e9;background:#fff;color:#496b79}
+.directory-card-actions .directory-open-maps{border:1px solid #b6dbe4;background:#fff;color:#08758c}
+.directory-card-actions .icon{width:15px;height:15px;flex:none}
+.directory-card-actions :is(button,a):focus-visible{outline:3px solid #61c0d3;outline-offset:2px}
+.customer-more-results{width:100%;min-height:43px;margin:12px 0 0;font-size:12px}
+.customer-more-tools{margin-top:16px;padding-top:12px;border-top:1px solid #e0e9ed}
+.customer-more-tools summary{display:flex;align-items:center;gap:8px;cursor:pointer;color:#4e6c7c;font-size:12px;font-weight:700;min-height:43px;list-style:none}
+.customer-more-tools summary::-webkit-details-marker{display:none}
+.customer-more-tools summary .icon{width:16px;height:16px}
+.customer-more-tools[open] summary{color:#066d84}
+.customer-more-tools .csv-tools{margin-top:8px;display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.customer-more-tools .csv-tools button{width:100%;min-width:0;min-height:42px;font-size:11px;padding:8px 4px}
+.company-route-catalog{display:grid;gap:12px}
+.company-route-card{display:block;padding:0;overflow:hidden}
+.company-route-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 16px;border-bottom:1px solid #e5edf0}
+.company-route-heading h2{min-width:0;margin:0;color:#173d4e;font-size:15px;font-weight:800;line-height:1.3;overflow-wrap:anywhere}
+.company-route-heading span{flex:none;font-size:10px;color:#607b88;white-space:nowrap}
+.company-route-list{list-style:none;padding:4px 16px;margin:0}
+.company-route-list li{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:42px;padding:9px 0;font-size:12px;line-height:1.45}
+.company-route-list li+li{border-top:1px solid #edf2f4}
+.company-route-list li span{min-width:0;color:#52707e;overflow-wrap:anywhere}
+.company-route-list li strong{flex:none;color:#086e84;font-size:14px;font-weight:850;white-space:nowrap;font-variant-numeric:tabular-nums}
+.tariff-company-sync{gap:10px;align-items:center;line-height:1.5}
+.tariff-company-sync .company-rate-sync-status{flex:1;min-width:0;font-size:11px}
+.tariff-company-sync>.secondary-button{flex:none;min-height:42px;padding:9px 11px;font-size:11px}
+@media(min-width:760px){
+ .customer-hub .customer-directory-results{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .company-route-catalog{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:380px){
+ .company-customer-list.customer-hub{padding:13px 10px}
+ .customer-scope-button{font-size:10px}
+ .customer-hub-actions button{font-size:10px}
+ .directory-card-actions{grid-template-columns:1fr 1fr}
+ .directory-card-actions :is(button,a){font-size:10px}
+ .company-route-heading{padding:13px}
+ .company-route-list{padding:3px 13px}
+}
