@@ -151,3 +151,61 @@ test('dashboard automatically refreshes the active verified section without losi
  assert.match(rates,/Ultimo|ultimi disponibili/i);
  assert.doesNotMatch([admin,report,rates,directory].join('\n'),/SUPABASE_SERVICE_ROLE_KEY|sb_secret_/);
 });
+
+test('administrator has an MFA-only editor for each driver and all personal record kinds',()=>{
+ const html=read('amministratore/index.html');
+ const app=read('amministratore/admin.mjs');
+ const report=read('amministratore/report.mjs');
+ const editor=read('amministratore/driver-records.mjs');
+ const css=read('amministratore/driver-records.css');
+ const auth=read('account-access.mjs'),runtime=read('runtime-config.mjs');
+ for(const id of ['records-tab','admin-records-panel','records-driver','records-refresh',
+  'records-tabs','records-search','records-list','records-editor',
+  'records-trips','records-customers','records-tariffs','records-revision'])
+  assert.match(html,new RegExp('id="'+id+'"'));
+ assert.match(report,/\['records','records-tab','Archivi autisti'/);
+ assert.match(report,/records[.]openForPhone\(phone\)/);
+ assert.match(report,/records[.]refreshActive\(\)/);
+ assert.match(app,/Apri dati e viaggi/);
+ assert.match(app,/companyView[.]openRecordsForPhone\(entry[.]phone\)/);
+ assert.match(editor,/account[.]adminRecords\('list'\)/);
+ assert.match(editor,/account[.]adminRecords\('read'/);
+ assert.match(editor,/account[.]adminRecords\('mutate'/);
+ assert.match(editor,/expectedRevision:revision/);
+ assert.match(editor,/requestId:crypto[.]randomUUID\(\)/);
+ assert.match(editor,/operation:'delete'/);
+ assert.match(editor,/operation:'restore'/);
+ assert.match(editor,/auditId:entry[.]id/);
+ assert.match(editor,/window[.]confirm\(/);
+ assert.match(editor,/window[.]prompt\(/);
+ assert.match(editor,/formatMoney/);
+ assert.match(editor,/extraCents/);
+ assert.match(editor,/Tariffa personale/);
+ assert.match(editor,/tariffario aziendale/i);
+ assert.match(css,/records-danger/);
+ assert.match(auth,/export async function adminRecords/);
+ assert.match(auth,/getRole\(\)!=='admin'/);
+ assert.match(auth,/adminRecordsEndpoint/);
+ assert.match(runtime,/\/functions\/v1\/lts-admin-records/);
+});
+test('server verifies MFA, owns archive CAS and logs every privileged edit atomically',()=>{
+ const backend=read('server/admin-records-core.mjs');
+ const pure=read('shared/admin-record-operations.mjs');
+ assert.match(backend,/clients[.]public[.]auth[.]getUser\(match\[1\]\)/);
+ assert.match(backend,/await checkLtsSession/);
+ assert.match(backend,/await requireAdminMfa/);
+ assert.match(backend,/mfa[?][.]verified!==true/);
+ assert.match(backend,/account[.]role!=='admin'/);
+ assert.match(backend,/data[.]role!=='driver'/);
+ assert.match(backend,/p_expected_revision:current[.]revision/);
+ assert.match(backend,/lts_admin_archive_commit/);
+ assert.match(backend,/lts_admin_archive_audit/);
+ assert.match(backend,/beforeRevision/);
+ assert.match(backend,/expectedRevision!==current[.]revision/);
+ assert.match(backend,/role\W*driver/);
+ assert.doesNotMatch(backend,/innerHTML|eval\(/);
+ assert.match(pure,/validateState\(raw\)/);
+ assert.match(pure,/createdAt:existing[?][.]createdAt/);
+ assert.match(pure,/restoreRecord/);
+ assert.match(read('tests/qa-admin-records-live.test.mjs'),/Unauthenticated admin request must be rejected/);
+});
