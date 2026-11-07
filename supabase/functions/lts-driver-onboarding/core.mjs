@@ -251,7 +251,8 @@ async function revokeReset(admin,body) {
   if(!phone)return json({error:'Numero di telefono non valido.'},400);
   const changed=await admin.from('lts_driver_credential_resets')
     .update({revoked_at:new Date().toISOString()}).eq('phone_e164',phone)
-    .is('completed_at',null).is('revoked_at',null).select('id');
+    .is('completed_at',null).is('revoked_at',null)
+    .gt('expires_at',new Date().toISOString()).select('id');
   if(changed.error)throw new Error('reset-revoke-failed');
   if(!Array.isArray(changed.data)||changed.data.length===0)
     return json({error:'Nessun ripristino ancora annullabile. Aggiorna l’elenco autisti.'},409);
@@ -290,7 +291,8 @@ async function revokeInvite(admin,body) {
   const phone=normalizedPhone(body.phone);
   if(!phone)return json({error:'Numero di telefono non valido.'},400);
   const changed=await admin.from('lts_driver_invites').update({revoked_at:new Date().toISOString()})
-    .eq('phone_e164',phone).is('completed_at',null).is('revoked_at',null).select('id');
+    .eq('phone_e164',phone).is('completed_at',null).is('revoked_at',null)
+    .gt('expires_at',new Date().toISOString()).select('id');
   if(changed.error)throw new Error('invite-revoke-failed');
   if(!Array.isArray(changed.data)||changed.data.length===0)
     return json({error:'Invito già utilizzato o annullato. Aggiorna l’elenco autisti.'},409);
