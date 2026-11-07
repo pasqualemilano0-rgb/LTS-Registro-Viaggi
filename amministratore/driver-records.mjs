@@ -124,7 +124,7 @@ function sitePicker(form,{title,client,city,fare}){
   hint.classList.remove('records-site-warning');
   hint.textContent='Importo modificato manualmente: il valore sarà salvato soltanto su questo viaggio.';
  });
- return {catalog,unavailable};
+ return {catalog,unavailable,panel};
 }
 export function setupDriverRecords(account){
  const panel=$('admin-records-panel'),choose=$('records-driver'),
@@ -309,13 +309,17 @@ export function setupDriverRecords(account){
    field(form,'Container','container',values.container||'',{required:true,maxLength:500});
    const fare=field(form,'Tariffa del viaggio (€)','fareCents',euro(values.fareCents),{inputmode:'decimal',
     placeholder:'Vuoto = tariffa da completare'});
-   pickers.push(sitePicker(form,{title:'Cliente principale',client,city,fare}));
+   const primaryPicker=sitePicker(form,{title:'Cliente principale',client,city,fare});
+   form.insertBefore(primaryPicker.panel,client.parentElement);
+   pickers.push(primaryPicker);
    const secondClient=field(form,'Cliente seconda presa','secondClient',values.secondClient||'');
    const secondCity=field(form,'Località seconda presa','secondCity',values.secondCity||'');
    const secondFare=field(form,'Tariffa seconda presa (€)','secondFareCents',euro(values.secondFareCents),
     {inputmode:'decimal'});
-   pickers.push(sitePicker(form,{title:'Cliente seconda presa',client:secondClient,city:secondCity,
-    fare:secondFare}));
+   const secondPicker=sitePicker(form,{title:'Cliente seconda presa',client:secondClient,city:secondCity,
+    fare:secondFare});
+   form.insertBefore(secondPicker.panel,secondClient.parentElement);
+   pickers.push(secondPicker);
    field(form,'Somma le due prese','sumPickupFares',values.sumPickupFares!==false,
     {kind:'checkbox'});
    const section=make('fieldset','records-services');
