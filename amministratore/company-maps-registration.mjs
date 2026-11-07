@@ -50,8 +50,8 @@ export function setupCompanyMaps(account,{onSaved=async()=>{}}={}){
   status.textContent=message;status.dataset.error=String(error);
  }
  function reset(){
-  seq++;selected=null;existing=null;rate=null;partial=null;busy=false;
-  form.reset();preview.hidden=true;read.disabled=false;save.disabled=true;
+  seq++;selected=null;existing=null;rate=null;partial=null;
+  form.reset();preview.hidden=true;read.disabled=busy;url.disabled=busy;save.disabled=true;
   warning.textContent='';duplicate.textContent='';feedback('Incolla un link Google Maps per iniziare.');
  }
  function invalidate(){
@@ -102,7 +102,7 @@ export function setupCompanyMaps(account,{onSaved=async()=>{}}={}){
    'Esiste già una tariffa per '+selected.name+' · '+selected.city+
    '. Sostituire '+euro(rate.cents)+' € con '+euro(cents)+' € per i nuovi viaggi?'))return;
   busy=true;save.disabled=true;read.disabled=true;url.disabled=true;
-  const proposal=selected,accountId=account.getAccountId();
+  const proposal=selected,accountId=account.getAccountId(),saveToken=seq;
   try{
    // Re-read the live registry before deciding whether the customer exists.
    // The server is the final authority for duplicate checks under concurrency.
@@ -133,17 +133,20 @@ export function setupCompanyMaps(account,{onSaved=async()=>{}}={}){
    }
    if(account.getAccountId()!==accountId)
     throw new Error('Account cambiato: verifica lo stato del salvataggio.');
-   if(authorized())feedback(known?'Cliente già presente: tariffa verificata e salvata.':
+   if(saveToken===seq&&authorized())feedback(known?'Cliente già presente: tariffa verificata e salvata.':
     'Cliente Google Maps aggiunto e tariffa salvata nel listino aziendale. Disponibile agli autisti al prossimo aggiornamento online.');
-   form.reset();selected=null;partial=null;rate=null;existing=null;preview.hidden=true;
+   if(saveToken===seq){
+    form.reset();selected=null;partial=null;rate=null;existing=null;preview.hidden=true;
+   }
    try{await onSaved(customer);}
    catch{feedback('Cliente e tariffa salvati sul server. Aggiornamento dell’elenco non riuscito: premi Aggiorna elenco.',true);}
   }catch(error){
-   if(authorized())feedback((partial
+   if(saveToken===seq&&authorized())feedback((partial
     ?'Cliente presente nell’elenco condiviso, ma la tariffa NON è stata confermata. '
     :'Salvataggio non completato. ')+(error?.message||'Riprova dopo aver aggiornato.'),true);
   }finally{
-   busy=false;read.disabled=false;url.disabled=false;save.disabled=!selected;
+   busy=false;read.disabled=false;url.disabled=false;
+   if(saveToken===seq)save.disabled=!selected;
   }
  }
  url.addEventListener('input',invalidate);
