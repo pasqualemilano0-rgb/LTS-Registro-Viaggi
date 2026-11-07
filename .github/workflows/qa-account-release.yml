@@ -86,6 +86,7 @@ jobs:
         run: |
           node --check app.mjs
           node --check realtime-client.mjs
+          node --check supabase/functions/lts-shared-maps/maps-registry-handler.mjs
           node --check shared/company-fares.mjs
           node --check shared/company-extras.mjs
           node --check supabase/functions/lts-company-tariffs/tariff-handler.mjs
@@ -99,7 +100,7 @@ jobs:
           node --check driver-session-vault.mjs
           node --check recupera-password.mjs
           node --check sw.js
-          node --test tests/qa-realtime.test.mjs tests/qa-account-release.test.mjs tests/driver-session-vault.test.mjs tests/leaked-password-protection.test.mjs tests/qa-company-tariffs.test.mjs tests/customer-site-matches.test.mjs
+          node --test tests/qa-manual-customers.test.mjs tests/qa-realtime.test.mjs tests/qa-account-release.test.mjs tests/driver-session-vault.test.mjs tests/leaked-password-protection.test.mjs tests/qa-company-tariffs.test.mjs tests/customer-site-matches.test.mjs
       - name: Verify live protected driver records API
         run: node --test tests/qa-admin-records-live.test.mjs
       - name: Verify live Maps reader CORS and authentication boundary
