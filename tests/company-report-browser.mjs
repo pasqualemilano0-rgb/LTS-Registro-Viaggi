@@ -68,7 +68,13 @@ export const adminRecords=async(action,data={})=>{
   if(data.operation!=='update')throw new Error('Mock action unavailable');
    if(data.category==='trip'&&idx>=0)
     rows[idx]={...rows[idx],...data.patch,updatedAt:new Date().toISOString()};
-   else if(data.category==='extra')adminArchive.extraRates[data.recordId]=data.patch.cents;
+   else if(data.category==='customer'){
+    const customerIndex=adminArchive.customers.findIndex(c=>c.id===data.recordId);
+    if(customerIndex<0)throw new Error('Personal customer missing');
+    adminArchive.customers[customerIndex]={
+     ...adminArchive.customers[customerIndex],...data.patch,updatedAt:new Date().toISOString()
+    };
+   }else if(data.category==='extra')adminArchive.extraRates[data.recordId]=data.patch.cents;
    else throw new Error('Mock action unavailable');
   adminArchiveRevision++;
   adminAudit.unshift({id:'44444444-4444-4444-8444-444444444444',at:new Date().toISOString(),
@@ -479,6 +485,31 @@ try{
  assert.match(await page.locator('#records-list').textContent(),/NOTA CORRETTA DA ADMIN/);
  await page.locator('#records-tabs button[data-kind="history"]').click();
  assert.match(await page.locator('#records-list').textContent(),/UPDATE/);
+ // Edit a driver's personal customer using the direct roster link.
+ await openAdminTab('management-tab');
+ await page.locator('#roster .driver-actions button').filter({hasText:'Clienti personali'}).first().click();
+ await page.waitForFunction(()=>document.querySelector('#dashboard').dataset.view==='records');
+ assert.equal(await page.locator('#records-tabs button[data-kind="customer"]').getAttribute('aria-pressed'),'true');
+ assert.match(await page.locator('#records-list').textContent(),/CLIENTE AUTISTA/);
+ await page.locator('#records-list .records-card')
+  .filter({hasText:'CLIENTE AUTISTA'}).locator('button[aria-label^="Modifica"]').click();
+ assert.match(await page.locator('#records-editor .records-private-note').textContent(),
+  /Cliente personale di Mario Rossi/);
+ await page.locator('#records-editor input[name="name"]').fill('CLIENTE AUTISTA CORRETTO');
+ await page.locator('#records-editor input[name="address"]').fill('VIA PERSONALE 99');
+ await page.locator('#records-editor input[name="phone"]').fill('+390811234567');
+ await page.locator('#records-editor input[name="reason"]').fill('Correzione anagrafica cliente personale');
+ await page.locator('#records-editor button[type="submit"]').click();
+ await page.waitForFunction(()=>document.querySelector('#records-revision').textContent==='5');
+ assert.match(await page.locator('#records-list').textContent(),/CLIENTE AUTISTA CORRETTO/);
+ assert.match(await page.locator('#records-list').textContent(),/VIA PERSONALE 99/);
+ assert.equal(await page.locator('#records-customers').textContent(),'2');
+ // Home shortcut opens the same category without sharing a private record.
+ await openAdminTab('overview-tab');
+ await page.locator('[data-open-private-customers]').click();
+ await page.waitForFunction(()=>document.querySelector('#dashboard').dataset.view==='records');
+ assert.equal(await page.locator('#records-tabs button[data-kind="customer"]').getAttribute('aria-pressed'),'true');
+ assert.match(await page.locator('#records-list').textContent(),/CLIENTE AUTISTA CORRETTO/);
  // One shared company extra price: no individual driver selector.
  await openAdminTab('rates-tab');
  await page.waitForFunction(()=>document.querySelectorAll('.company-extra-row').length===8);
