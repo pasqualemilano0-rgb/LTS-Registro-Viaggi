@@ -755,8 +755,8 @@ function mapsCustomerDialog(){
  const submit=el('button',{type:'submit',class:'primary-button full'},icon('pin'),'Leggi link');
  const help=el('p',{class:'field-hint',hidden:true});
  const manual=button('Compila manualmente','text',()=>{
-  dialog.close();customerDialog(null,{name:'',city:'',address:'',
-   warnings:['Il cliente inserito senza verifica del link rimane personale.']});
+  dialog.close();customerDialog();
+  toast('Il cliente inserito senza verifica del link rimane personale.');
  },null,{class:'text-button full'});
  form.append(el('label',{class:'field'},el('span',{},'Link Google Maps'),input),
   error,help,submit,manual);
