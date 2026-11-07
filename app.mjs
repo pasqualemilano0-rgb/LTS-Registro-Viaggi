@@ -6,7 +6,7 @@ import runtimeConfig from '/LTS-Registro-Viaggi/runtime-config.mjs';
 import * as accountAccess from '/LTS-Registro-Viaggi/account-access.mjs';
 import {sharedMapsEnabled,sharedMapsCustomers,saveSharedMapsCustomer} from '/LTS-Registro-Viaggi/shared-maps-client.mjs';
 import {companyFareSnapshot} from '/LTS-Registro-Viaggi/shared/company-fares.mjs';
-import {mapsLinkForCompanySync,filterSharedCustomers} from '/LTS-Registro-Viaggi/shared/maps-company-routing.mjs';
+import {mapsLinkForCompanySync,filterSharedCustomers,filterCustomerDirectory} from '/LTS-Registro-Viaggi/shared/maps-company-routing.mjs';
 import {combinedTripCustomerChoices} from '/LTS-Registro-Viaggi/shared/trip-customer-choices.mjs';
 import { appendPushSettings } from '/LTS-Registro-Viaggi/push-client.mjs';
 import { parseCustomerCsv, mergeCustomerCsv, exportCustomerCsv, MAX_CUSTOMER_CSV_BYTES } from '/LTS-Registro-Viaggi/shared/customer-csv.mjs';
@@ -167,7 +167,7 @@ function unmountPorti(){
  // Leaving Porti stops its polling and discards the in-frame booking query.
  portiFrame.src='about:blank';portiFrame.remove();portiFrame=null;
 }
-function navigate(next){if(next!=='register')activationWelcome=false;if(tab==='porti'&&next!==tab)unmountPorti();tab=next;searchValue='';render();if(next==='insert'||next==='customers')void refreshCompanyCustomers();if(['insert','tariffs','customers'].includes(next)&&store.usingAccount()&&navigator.onLine!==false){void store.syncPending().catch(()=>{});void refreshCompanyRates();}const scroll=document.querySelector('.app-scroll');if(scroll)scroll.scrollTop=0;window.scrollTo({top:0,behavior:'auto'});}
+function navigate(next){if(next==='customers'&&tab!=='customers'){companyCustomerSearch='';customerDirectoryScope='all';customerDirectoryLimit=24;}if(next!=='register')activationWelcome=false;if(tab==='porti'&&next!==tab)unmountPorti();tab=next;searchValue='';render();if(next==='insert'||next==='customers')void refreshCompanyCustomers();if(['insert','tariffs','customers'].includes(next)&&store.usingAccount()&&navigator.onLine!==false){void store.syncPending().catch(()=>{});void refreshCompanyRates();}const scroll=document.querySelector('.app-scroll');if(scroll)scroll.scrollTop=0;window.scrollTo({top:0,behavior:'auto'});}
 function render(){
  const scrollTop=document.querySelector('.app-scroll')?.scrollTop||0;
  refreshView=null;
@@ -287,9 +287,8 @@ async function refreshCompanyCustomers(){
 /** Combined search without merging or changing the private client archive. */
 function updateCompanyCustomersPanel(panel=document.querySelector('.company-customer-list')){
  if(!panel)return;
- const found=filterSharedCustomers(companyCustomers,companyCustomerSearch);
- const personal=filterSharedCustomers(state.customers.map(customer=>
-  ({...customer,operationalNotes:[customer.vat,customer.phone].filter(Boolean).join(' ')})),companyCustomerSearch);
+ const found=filterCustomerDirectory(companyCustomers,companyCustomerSearch);
+ const personal=filterCustomerDirectory(state.customers,companyCustomerSearch);
  const all=[...found.map(customer=>({...customer,directorySource:'shared'})),
   ...personal.map(customer=>({...customer,directorySource:'personal'}))];
  const visible=all.filter(customer=>customerDirectoryScope==='all'||
@@ -297,10 +296,12 @@ function updateCompanyCustomersPanel(panel=document.querySelector('.company-cust
   .sort((a,b)=>a.name.localeCompare(b.name,'it')||a.city.localeCompare(b.city,'it')||
    (a.directorySource==='shared'?-1:1));
  const count=panel.querySelector('.company-customer-count'),
+  clear=panel.querySelector('.customer-search-clear'),
   list=panel.querySelector('.customer-directory-results'),
   status=panel.querySelector('.company-customer-error'),
   more=panel.querySelector('.customer-more-results');
  if(status){status.textContent=companyCustomersError;status.hidden=!companyCustomersError;}
+ if(clear)clear.hidden=!companyCustomerSearch.trim();
  if(count)count.textContent=visible.length
   ?`${visible.length} ${visible.length===1?'cliente trovato':'clienti trovati'}`
   :companyCustomerSearch.trim()?'Nessun cliente corrisponde alla ricerca.'
@@ -337,11 +338,25 @@ function useCustomerInTrip(customer){
 }
 function companyCustomersPanel(){
  const panel=el('section',{class:'panel company-customer-list customer-hub','aria-label':'Elenco clienti'});
+ const searchResults=()=>{
+  const next=input.value;
+  // On a new search always include both shared and personal customers.
+  // Filters can still be applied deliberately after the user starts searching.
+  if(!companyCustomerSearch.trim()&&next.trim())customerDirectoryScope='all';
+  companyCustomerSearch=next;customerDirectoryLimit=24;
+  updateCompanyCustomersPanel(panel);
+ };
  const input=el('input',{type:'search',id:'company-customer-search',
-  value:companyCustomerSearch,placeholder:'Nome cliente, città, indirizzo…',
-  'aria-label':'Cerca clienti per nome, città, indirizzo o partita IVA',autocomplete:'off',
-  on:{input:event=>{companyCustomerSearch=event.target.value;customerDirectoryLimit=24;
-   updateCompanyCustomersPanel(panel);}}});
+  value:companyCustomerSearch,placeholder:'Cerca nome, località o via…',
+  'aria-label':'Cerca clienti per nome, città, indirizzo o telefono',
+  'aria-controls':'customer-directory-results',autocomplete:'off',
+  on:{input:searchResults,search:searchResults,change:searchResults,compositionend:searchResults}});
+ const clearSearch=el('button',{type:'button',class:'customer-search-clear',
+  hidden:!companyCustomerSearch.trim(),'aria-label':'Cancella ricerca clienti',
+  on:{click:()=>{
+   input.value='';companyCustomerSearch='';customerDirectoryScope='all';
+   customerDirectoryLimit=24;updateCompanyCustomersPanel(panel);input.focus();
+  }}},icon('close'));
  const scope=el('div',{class:'customer-scope-tabs',role:'group','aria-label':'Tipologia di clienti'},
   ...[['all','Tutti'],['shared','Aziendali'],['personal','Miei']].map(([key,label])=>
    el('button',{type:'button',class:'customer-scope-button',dataset:{customerScope:key},
@@ -370,14 +385,14 @@ function companyCustomersPanel(){
     el('p',{class:'company-customer-help'},'Un elenco unico, con clienti aziendali e personali.')),
    button('Aggiorna','text',()=>{void refreshCompanyCustomers();},'refresh',
     {'aria-label':'Aggiorna clienti aziendali'})),
-  el('div',{class:'company-customer-search'},icon('search'),input),
+  el('div',{class:'company-customer-search'},icon('search'),input,clearSearch),
   scope,
   el('div',{class:'customer-hub-actions'},
    button('Da Google Maps','primary',mapsCustomerDialog,'pin'),
    button('Nuovo cliente','secondary',()=>customerDialog(),'plus')),
   el('p',{class:'company-customer-count',role:'status','aria-live':'polite'}),
   el('p',{class:'company-customer-error',role:'status',hidden:!companyCustomersError}),
-  el('div',{class:'catalog-list customer-directory-results'}),
+  el('div',{class:'catalog-list customer-directory-results',id:'customer-directory-results'}),
   more,csvTools);
  updateCompanyCustomersPanel(panel);
  return panel;
