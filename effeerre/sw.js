@@ -1,6 +1,6 @@
 const BASE = "/LTS-Registro-Viaggi/effeerre/";
 const PREFIX = "effeerre-iphone-pages-0ba8c62dd013-";
-const CACHE = PREFIX + 'public-content-20261103-v2';
+const CACHE = PREFIX + '20261107-live-sync-v1';
 const CORE = [
   "/LTS-Registro-Viaggi/effeerre/app.css",
   "/LTS-Registro-Viaggi/effeerre/app.mjs",
@@ -22,6 +22,12 @@ const CORE = [
   "/LTS-Registro-Viaggi/effeerre/shared/vendor/fflate.mjs",
   "/LTS-Registro-Viaggi/effeerre/shell.html"
 ];
+// HTML navigations are already network-first. Keep executable code and CSS
+// network-first too, so the installed PWA cannot pin old app logic indefinitely.
+const NETWORK_FIRST_CODE = new Set([
+  BASE+'app.mjs',BASE+'app.css',BASE+'client-store.mjs',BASE+'runtime-config.mjs',
+  BASE+'shared/domain.mjs',BASE+'shared/android-backup.mjs',BASE+'shared/pdf.mjs'
+]);
 self.addEventListener('install', event => {
   event.waitUntil((async () => {
     const cache = await caches.open(CACHE);
@@ -49,6 +55,19 @@ self.addEventListener('fetch', event => {
     return;
   }
   if (CORE.includes(url.pathname)) {
+    if (NETWORK_FIRST_CODE.has(url.pathname)) {
+      event.respondWith((async () => {
+        try {
+          const fresh = await fetch(request, { cache: 'reload' });
+          if (!fresh.ok || fresh.redirected) throw new Error('Aggiornamento non disponibile');
+          try { await (await caches.open(CACHE)).put(url.pathname, fresh.clone()); } catch {}
+          return fresh;
+        } catch {
+          return (await caches.match(request, { ignoreVary: true, ignoreSearch: true })) || Response.error();
+        }
+      })());
+      return;
+    }
     event.respondWith((async () => (await caches.match(request, { ignoreVary: true, ignoreSearch: true })) || fetch(request))());
   }
 });
