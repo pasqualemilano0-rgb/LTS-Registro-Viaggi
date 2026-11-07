@@ -374,6 +374,16 @@ export async function activateDriverInvitation({phone, code, password} = {}) {
  return api('onboardingEndpoint', {action:'redeem', phone, code, password});
 }
 
+/** Driver password recovery uses the existing administrator-issued, one-use
+ * credential reset. The server maps phone + reset code to the original Auth
+ * user; the personal archive remains bound to the same user_id.
+ * Never send passwords or tokens to the administrator or store them locally. */
+export async function recoverDriverPassword({phone,code,password}={}){
+ if(typeof code!=='string'||!/^[A-Za-z0-9_-]{43}$/.test(code))
+   throw new Error('Inserisci il codice monouso completo ricevuto dall’amministratore.');
+ return activateDriverInvitation({phone,code,password});
+}
+
 /** Admin-only statistical view; backend also validates role, JWT, live session and MFA. */
 export async function companyReport({month,offset=0,limit=40,driverId=null}={}){
  if(!isVerified()||getRole()!=='admin')throw new Error('Accesso amministratore richiesto.');
