@@ -170,15 +170,25 @@ let rows=[
 export const sharedMapsCustomers=async()=>structuredClone(rows);
 export const saveSharedMapsCustomer=async(mapsUrl,site)=>{
  const known=rows.find(row=>row.mapsUrl===mapsUrl);
- if(known)return {customer:structuredClone(known),created:false};
+ if(known){
+  if(known.address.includes('DA CONFERMARE')&&known.name===site.name&&known.city===site.city){
+   known.address=site.address;
+   return {customer:structuredClone(known),created:false,updated:true};
+  }
+  return {customer:structuredClone(known),created:false};
+ }
  const created={...site,mapsUrl,source:'google_maps_link',operationalNotes:''};
  rows.push(created);return {customer:structuredClone(created),created:true};
 };
 `;
 const mockMapsReader=String.raw`
-export const readMapsCustomer=async(link)=>link==='https://maps.app.goo.gl/newDepot'
- ?{name:'CLIENTE DELTA',city:'CASERTA',address:'VIA PORTO 8, CASERTA',mapsUrl:link,warnings:[]}
- :{name:'CLIENTE ALFA',city:'NAPOLI',address:'VIA TEST 1, NAPOLI',mapsUrl:link,warnings:[]};
+export const readMapsCustomer=async(link)=>{
+ if(link==='https://maps.app.goo.gl/newDepot')
+  return {name:'CLIENTE DELTA',city:'CASERTA',address:'VIA PORTO 8, CASERTA',mapsUrl:link,warnings:[]};
+ if(link==='https://maps.app.goo.gl/exampleC')
+  return {name:'CLIENTE GAMMA',city:'ROMA',address:'VIA INDUSTRIA 25, ROMA',mapsUrl:link,warnings:[]};
+ return {name:'CLIENTE ALFA',city:'NAPOLI',address:'VIA TEST 1, NAPOLI',mapsUrl:link,warnings:[]};
+};
 `;
 const root=resolve(dir),mime={'.html':'text/html','.css':'text/css','.mjs':'text/javascript','.png':'image/png'};
 const server=createServer(async(req,res)=>{
@@ -452,6 +462,21 @@ try{
  await page.locator('#company-maps-save').click();
  await page.waitForFunction(()=>document.querySelector('#company-maps-status').textContent.includes('Cliente Google Maps aggiunto'));
  await page.waitForFunction(()=>document.querySelector('#company-rates-count').textContent.includes('2 tariffe aziendali'));
+ // Already-linked Maps shortlink: review first, then update only its placeholder.
+ await openAdminTab('overview-tab');
+ await page.waitForFunction(()=>document.querySelector('#customer-overview-missing').textContent==='1');
+ await page.locator('#customer-maps-scan').click();
+ await page.waitForFunction(()=>document.querySelector('#customer-maps-refresh-status').textContent.includes('Verifica terminata'));
+ assert.match(await page.locator('#customer-maps-results').textContent(),/VIA INDUSTRIA 25/);
+ assert.equal(await page.locator('#customer-overview-missing').textContent(),'1',
+  'Reading Maps must never silently modify shared customer data');
+ await page.locator('#customer-maps-select-all').check();
+ page.once('dialog',dialog=>dialog.accept());
+ await page.locator('#customer-maps-apply').click();
+ await page.waitForFunction(()=>document.querySelector('#customer-overview-missing').textContent==='0');
+ assert.match(await page.locator('#customer-maps-refresh-status').textContent(),/1 indirizzi aggiornati/);
+ assert.equal(await page.locator('#customer-overview-total').textContent(),'3',
+  'Updating a linked Maps address must not create a customer duplicate');
  await openAdminTab('security-tab');
  await page.locator('#security-check').click();
  await page.waitForFunction(()=>document.querySelector('#security-result').textContent.includes('MFA confermata'));
