@@ -74,7 +74,7 @@ async function archive(admin,driverId){
 }
 async function drivers(admin){
  const {data:accounts,error}=await admin.from('lts_account_access')
-  .select('user_id,enabled,removed_at').eq('role','driver').limit(201);
+  .select('user_id,phone_e164,enabled,removed_at').eq('role','driver').limit(201);
  if(error)throw {status:503};
  if(accounts.length>200)throw {status:413};
  const ids=accounts.map(x=>x.user_id);
@@ -100,7 +100,7 @@ async function drivers(admin){
       legacyTariffs:state.tariffs.length};
    }
   }catch{}
-  return {id:account.user_id,
+  return {id:account.user_id,phone:account.phone_e164,
    name:[label?.first_name||profile?.firstName,label?.last_name||profile?.lastName]
     .filter(Boolean).join(' ').trim()||'Autista senza nome',
    status:account.removed_at?'removed':account.enabled?'active':'disabled',
