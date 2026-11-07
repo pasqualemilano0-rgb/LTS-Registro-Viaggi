@@ -670,6 +670,10 @@ test('Google Maps links use the authenticated allowlisted reader, not the legacy
  assert.doesNotMatch(dialog,/\/api\/maps-client/);
  assert.match(dialog,/Il cliente inserito senza verifica del link rimane personale/);
  assert.match(sw,/maps-reader-client[.]mjs/);
+ const live=read('tests/qa-maps-reader-live.test.mjs');
+ assert.match(live,/method:'OPTIONS'/);
+ assert.match(live,/preflight[.]status,204/);
+ assert.match(live,/denied[.]status,401/);
 });
 test('dashboard Maps action reuses secure client import and keeps unsaved trip draft',()=>{
  const insert=app.slice(app.indexOf('function renderInsert('),app.indexOf('function citySuggestions('));
