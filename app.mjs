@@ -289,7 +289,7 @@ function updateCompanyCustomersPanel(panel=document.querySelector('.company-cust
  if(!panel)return;
  const found=filterSharedCustomers(companyCustomers,companyCustomerSearch);
  const personal=filterSharedCustomers(state.customers.map(customer=>
-  ({...customer,operationalNotes:customer.vat||''})),companyCustomerSearch);
+  ({...customer,operationalNotes:[customer.vat,customer.phone].filter(Boolean).join(' ')})),companyCustomerSearch);
  const all=[...found.map(customer=>({...customer,directorySource:'shared'})),
   ...personal.map(customer=>({...customer,directorySource:'personal'}))];
  const visible=all.filter(customer=>customerDirectoryScope==='all'||
@@ -608,14 +608,13 @@ function renderRegister(main){
  main.append(el('p',{class:'subtle-footer'},'Scorri liberamente: tutti i viaggi del mese sono qui.'));
 }
 function searchBox(placeholder,onSearch){const input=el('input',{type:'search',placeholder,value:searchValue,'aria-label':placeholder,autocapitalize:'characters',on:{input:event=>{searchValue=event.target.value;onSearch();}}});return el('div',{class:'search'},icon('search'),input);}
-function customerTariffs(customer){
- return companyRates.filter(rate=>D.normalizeText(rate.client)===D.normalizeText(customer.name))
-  .sort((a,b)=>a.city.localeCompare(b.city,'it'));
-}
+/** Compact customer cards: operational notes and tariff values are kept out of this list. */
 function customerCard(customer,{shared=false}={}){
- const rates=customerTariffs(customer);
- const currentRate=rates.find(rate=>D.normalizeText(rate.city)===D.normalizeText(customer.city));
- const city=customer.city||'Località da completare';
+ const city=String(customer.city||'').trim();
+ const address=String(customer.address||'').trim();
+ const phone=String(customer.phone||'').trim();
+ const dial=phone.replace(/[^0-9+]/gu,'');
+ const canCall=/^\+?[0-9]{5,16}$/u.test(dial);
  const actions=el('div',{class:'directory-card-actions'},
   el('button',{type:'button',class:'secondary-button directory-use-customer',
    on:{click:()=>useCustomerInTrip(customer)}},icon('plus'),'Usa nel viaggio'));
@@ -629,14 +628,10 @@ function customerCard(customer,{shared=false}={}){
   el('div',{class:'directory-card-title'},el('h3',{},customer.name),
    el('span',{class:shared?'customer-source shared':'customer-source personal'},
     shared?'Aziendale':'Personale')),
-  el('p',{class:'directory-card-city'},icon('pin'),city),
-  customer.address?el('p',{class:'directory-card-address'},customer.address):null,
-  !shared&&customer.vat?el('p',{class:'directory-card-vat'},'P. IVA · '+customer.vat):null,
-  shared&&customer.operationalNotes?el('p',{class:'company-customer-operations'},
-   'Indicazioni operative fornite da autista (da ricontrollare): '+customer.operationalNotes):null,
-  currentRate?el('div',{class:'directory-card-fare'},
-   el('span',{},'Trasferta · '+currentRate.city),
-   el('strong',{},D.formatMoney(currentRate.cents))):null);
+  city?el('p',{class:'directory-card-city'},el('span',{class:'directory-field-label'},'Località'),el('span',{},city)):null,
+  address?el('p',{class:'directory-card-address'},el('span',{class:'directory-field-label'},'Via'),el('span',{class:'directory-address-text',title:address},address)):null,
+  phone?el('p',{class:'directory-card-phone'},el('span',{class:'directory-field-label'},'Telefono'),
+   canCall?el('a',{href:'tel:'+dial,'aria-label':`Chiama ${phone}`},icon('phone'),phone):el('span',{},phone)):null);
  return el('article',{class:'panel customer-card directory-card'},content,actions);
 }
 function renderCustomers(main){
@@ -757,13 +752,14 @@ async function importCustomersCsv(file){
 }
 function customerDialog(customer=null,proposal=null,{focusRates=false}={}){
  const expectedCustomer=editorVersion(customer);
- const seed=customer||proposal;const {dialog,body}=modal(customer?'Modifica cliente':proposal?'Controlla cliente da Maps':'Nuovo cliente',{subtitle:proposal?'Controlla nome, città e indirizzo. Completa i dati mancanti: il cliente sarà aggiunto solo premendo Salva cliente.':'I dati del cliente restano collegati alle sue tariffe.'});const form=el('form',{novalidate:true});const error=el('div',{class:'form-error',role:'alert'});
+ const seed=customer||proposal;const {dialog,body}=modal(customer?'Modifica cliente':proposal?'Controlla cliente da Maps':'Nuovo cliente',{subtitle:proposal?'Controlla nome, città e indirizzo. Completa i dati mancanti: il cliente sarà aggiunto solo premendo Salva cliente.':'Inserisci i recapiti utili. Il telefono è facoltativo.'});const form=el('form',{novalidate:true});const error=el('div',{class:'form-error',role:'alert'});
  if(proposal?.warnings?.length)form.append(el('p',{class:'info-note'},proposal.warnings.join(' ')));
  if(proposal?.mapsUrl&&sharedMapsEnabled()){
   form.append(el('p',{class:'info-note'},'Dopo Salva cliente LTS aggiornerà la lista aziendale usando il link Google Maps e i dati di questa scheda che hai controllato. I clienti inseriti manualmente restano personali.'));
  }
  const customerName=field('Nome cliente','name',seed?.name||'',{placeholder:'Ragione sociale',required:true,maxlength:500});const city=field('Località','city',seed?.city||'',{placeholder:'Città',optional:true,maxlength:500});const address=field('Indirizzo','address',seed?.address||'',{placeholder:'Via e numero civico',optional:true,maxlength:1000});const vat=field('Partita IVA','vat',seed?.vat||'',{placeholder:'Partita IVA',optional:true,maxlength:100});
- form.append(error,customerName.wrap,city.wrap,address.wrap,vat.wrap);
+ const phone=field('Telefono','phone',seed?.phone||'',{placeholder:'Numero di telefono (facoltativo)',optional:true,maxlength:40,type:'tel',inputmode:'tel'});
+ form.append(error,customerName.wrap,city.wrap,address.wrap,phone.wrap,vat.wrap);
  form.append(el('p',{class:'info-note'},icon('lock'),'Le trasferte sono uguali per tutti gli autisti e si modificano solo dal tariffario aziendale.'));
  const actions=el('div',{class:'dialog-actions'});
  if(customer)actions.append(button('Elimina','secondary danger',()=>{
@@ -772,7 +768,7 @@ function customerDialog(customer=null,proposal=null,{focusRates=false}={}){
  actions.append(el('button',{type:'submit',class:'primary-button','data-save':true},'Salva cliente'));form.append(actions);
  form.addEventListener('submit',async event=>{event.preventDefault();error.textContent='';try{
   if(customer)requireCurrentEditor(expectedCustomer,state.customers.find(current=>current.id===customer.id),'Il cliente');
-  const next=D.upsertCustomer(state,{id:customer?.id,name:customerName.input.value,city:city.input.value,address:address.input.value,vat:vat.input.value});
+  const next=D.upsertCustomer(state,{id:customer?.id,name:customerName.input.value,city:city.input.value,address:address.input.value,vat:vat.input.value,phone:phone.input.value});
   await persist(next);
   // Provenance check: ONLY the Google Maps flow supplies mapsUrl. Normal
   // manual creation, CSV import, tariff and trip edits NEVER publish customers.
