@@ -677,3 +677,6 @@ h1,h2,h3{letter-spacing:-.035em}
 .customer-hub .company-customer-search .customer-search-clear:focus-visible{
  outline:3px solid #4cb6ce;outline-offset:2px;
 }
+
+/* Hide routine online-save confirmations; offline, pending and conflict warnings stay visible. */
+.sync-status[hidden],.sync-banner-wrap[hidden]{display:none!important}
