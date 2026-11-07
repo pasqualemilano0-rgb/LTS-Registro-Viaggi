@@ -12,10 +12,10 @@
   <link rel="stylesheet" href="./admin.css?v=20261104-company-v3">
   <link rel="stylesheet" href="./pro-theme.css?v=20261104-console-v5">
   <link rel="stylesheet" href="./dashboard-v6.css?v=20261104-mobile-v7">
-  <link rel="stylesheet" href="./customer-overview.css?v=20261107-dashboard-sync-v3">
+  <link rel="stylesheet" href="./customer-overview.css?v=20261107-maps-review-v1">
   <link rel="stylesheet" href="./company-rates.css?v=20261107-company-extras-v2">
   <link rel="stylesheet" href="./driver-records.css?v=20261107-records-admin-v3">
-  <script type="module" src="./admin.mjs?v=20261107-company-extras-v2"></script>
+  <script type="module" src="./admin.mjs?v=20261107-maps-review-v1"></script>
   <script type="module" src="./dashboard-mobile-nav.mjs?v=20261107-records-admin-v2"></script>
 </head>
 <body>
@@ -379,6 +379,25 @@
           </div>
           <p id="customer-overview-status" role="status" aria-live="polite">Caricamento anagrafica…</p>
           <p id="customer-overview-sync-status" class="customer-directory-sync-status" role="status" aria-live="polite">Sincronizzazione clienti e tariffe non ancora verificata.</p>
+          <section class="customer-maps-review" aria-labelledby="customer-maps-review-title">
+            <div class="customer-maps-review-head">
+              <div>
+                <h3 id="customer-maps-review-title">Controllo indirizzi Google Maps</h3>
+                <p>I link già collegati vengono confrontati con i dati della sede. Verifica automaticamente le proposte senza creare nuovi clienti. Nessun indirizzo viene modificato prima della tua conferma.</p>
+              </div>
+              <button type="button" id="customer-maps-scan" class="button outline">Verifica i link già associati</button>
+            </div>
+            <p id="customer-maps-refresh-status" role="status" aria-live="polite">Premi Verifica link per controllare gli indirizzi ancora incompleti.</p>
+            <div id="customer-maps-preview" hidden>
+              <label class="customer-maps-select-label" for="customer-maps-select-all">
+                <input type="checkbox" id="customer-maps-select-all">
+                Seleziona tutte le proposte verificabili dopo averle controllate
+              </label>
+              <div id="customer-maps-results" class="customer-maps-results" aria-label="Risultati verifica dei collegamenti Google Maps"></div>
+              <button type="button" id="customer-maps-apply" class="button primary" disabled>Conferma e aggiorna gli indirizzi selezionati</button>
+              <p class="customer-maps-review-note">Le proposte con nomi, città o indirizzi non corrispondenti restano da verificare manualmente. Nessun prezzo o viaggio viene modificato.</p>
+            </div>
+          </section>
           <div class="customer-directory-kpis" aria-label="Indicatori anagrafica condivisa">
             <div class="customer-directory-kpi"><span>Sedi condivise</span><strong id="customer-overview-total">—</strong></div>
             <div class="customer-directory-kpi"><span>Indirizzi registrati</span><strong id="customer-overview-complete">—</strong></div>
