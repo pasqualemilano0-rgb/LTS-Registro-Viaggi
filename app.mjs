@@ -1307,7 +1307,7 @@ function showDriverAdmin(){
                  try{await navigator.clipboard.writeText(issued.code);toast('Codice copiato.');}
                  catch{code.focus();code.select();toast('Seleziona e copia il codice.');}
                }),
-               el('p',{class:'field-hint'},'L’autista apre LTS → Attiva account, inserisce lo stesso numero, il nuovo codice e una password nuova. Non creare un secondo account: il registro esistente resta collegato.'));
+               el('p',{class:'field-hint'},'L’autista apre LTS → Recupera password, inserisce lo stesso numero, il nuovo codice e una password nuova. Il registro esistente resta collegato.'));
              result.hidden=false;
              await updateList();
              result.scrollIntoView({behavior:'smooth',block:'center'});
