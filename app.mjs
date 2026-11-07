@@ -164,7 +164,7 @@ function unmountPorti(){
  // Leaving Porti stops its polling and discards the in-frame booking query.
  portiFrame.src='about:blank';portiFrame.remove();portiFrame=null;
 }
-function navigate(next){if(next!=='register')activationWelcome=false;if(tab==='porti'&&next!==tab)unmountPorti();tab=next;searchValue='';render();if(next==='insert'||next==='customers')void refreshCompanyCustomers();if(['insert','tariffs'].includes(next)&&store.usingAccount()&&navigator.onLine!==false){void store.syncPending().catch(()=>{});void refreshCompanyRates();}const scroll=document.querySelector('.app-scroll');if(scroll)scroll.scrollTop=0;window.scrollTo({top:0,behavior:'auto'});}
+function navigate(next){if(next!=='register')activationWelcome=false;if(tab==='porti'&&next!==tab)unmountPorti();tab=next;searchValue='';render();if(next==='insert'||next==='customers')void refreshCompanyCustomers();if(['insert','tariffs','customers'].includes(next)&&store.usingAccount()&&navigator.onLine!==false){void store.syncPending().catch(()=>{});void refreshCompanyRates();}const scroll=document.querySelector('.app-scroll');if(scroll)scroll.scrollTop=0;window.scrollTo({top:0,behavior:'auto'});}
 function render(){
  const scrollTop=document.querySelector('.app-scroll')?.scrollTop||0;
  refreshView=null;
@@ -232,7 +232,7 @@ async function refreshCompanyRates({quiet=true}={}){
   companyRates=rates.map(item=>({id:'company:'+item.id,customerId:null,
    client:D.normalizeText(item.client),city:D.normalizeText(item.city),cents:item.cents}));
   companyRatesLoaded=true;
-  if(tab==='tariffs'&&tariffTab==='base'&&refreshView)refreshView();
+  if((tab==='tariffs'&&tariffTab==='base'||tab==='customers')&&refreshView)refreshView();
   if(tab==='insert')refreshTripFareEstimate?.();
   return true;
  }catch(error){
@@ -1539,11 +1539,11 @@ async function initialize(){
 // Update the complete read-only corporate catalog while drivers are looking at it.
 // The private archive still synchronizes separately in client-store.mjs.
 setInterval(()=>{
- if(['insert','tariffs'].includes(tab)&&!document.hidden&&navigator.onLine!==false&&
+ if(['insert','tariffs','customers'].includes(tab)&&!document.hidden&&navigator.onLine!==false&&
    store.usingAccount()&&accountAccess.isVerified())void refreshCompanyRates();
 },20000);
 window.addEventListener('online',()=>{
- if(['insert','tariffs'].includes(tab)&&store.usingAccount()&&accountAccess.isVerified())void refreshCompanyRates();
+ if(['insert','tariffs','customers'].includes(tab)&&store.usingAccount()&&accountAccess.isVerified())void refreshCompanyRates();
 });
 setInterval(()=>{
  if(['insert','customers'].includes(tab)&&!document.hidden&&navigator.onLine!==false&&
