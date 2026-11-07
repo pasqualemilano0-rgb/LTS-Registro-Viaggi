@@ -206,6 +206,10 @@ export function setupDriverRecords(account){
    opt.value=driver.id;choose.append(opt);
   }
   if(selectedId&&drivers.some(x=>x.id===selectedId))choose.value=selectedId;
+  else if(drivers.length){
+   const placeholder=make('option','','Seleziona un autista');
+   placeholder.value='';choose.prepend(placeholder);choose.value='';
+  }
  }
  function source(){
   if(!state)return [];
@@ -295,10 +299,19 @@ export function setupDriverRecords(account){
    if(!Array.isArray(results?.drivers))throw new Error('Elenco autisti non valido.');
    drivers=results.drivers;
    if(desiredPhone){
-    selectedId=drivers.find(x=>x.phone===desiredPhone)?.id||selectedId;
+    const requested=desiredPhone;
     desiredPhone='';
+    const found=drivers.find(x=>x.phone===requested);
+    if(!found){
+     selectedId='';state=null;revision=null;audit=[];options();render();
+     notice('L’autista selezionato non risulta tra gli archivi autorizzati. Nessun altro archivio è stato aperto.',true);
+     return false;
+    }
+    selectedId=found.id;
    }
-   if(!drivers.some(x=>x.id===selectedId))selectedId=drivers[0]?.id||'';
+   if(!selectedId&&!choose.options.length)selectedId=drivers[0]?.id||'';
+   if(selectedId&&!drivers.some(x=>x.id===selectedId))selectedId=drivers[0]?.id||'';
+   if(!selectedId&&drivers.length)selectedId=drivers[0].id;
    options();
    if(selectedId)await readSelected({silent,token});
    else{state=null;revision=null;render();notice('Non ci sono archivi autisti disponibili.');}
@@ -501,13 +514,13 @@ export function setupDriverRecords(account){
  }
  async function remove(item){
   if(!authorized()||!canLeave())return;
-  if(editing)clearEditor();
   const name=summary(item)[0];
   if(!window.confirm('Eliminare '+(labels[category]||'elemento')+' · '+name+
    '? La rimozione verrà tracciata e potrà essere ripristinata. I viaggi storici non vengono cancellati quando elimini un cliente.'))return;
   const reason=window.prompt('Motivo della rimozione (almeno 8 caratteri):','');
   if(reason===null)return;
   if(reason.trim().length<8){notice('Inserisci almeno 8 caratteri per motivare la rimozione.',true);return;}
+  if(editing)clearEditor();
   await mutate({operation:'delete',category,recordId:item.id,reason:reason.trim()});
  }
  async function restore(entry){
@@ -531,6 +544,7 @@ export function setupDriverRecords(account){
   if(!canLeave())return false;
   // Invalidate old list/read and release its loading state before the new fetch.
   epoch++;loading=false;refresh.disabled=false;clearEditor();
+  choose.replaceChildren(); // Old roster options must never point at the wrong driver.
   desiredPhone=typeof phone==='string'?phone:'';
   selectedId='';state=null;revision=null;audit=[];visibleLimit=35;
   filter.value='';category='';setCategory(kind==='customer'?'customer':'trip');
