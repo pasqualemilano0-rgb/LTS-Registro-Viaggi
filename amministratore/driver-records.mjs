@@ -2,6 +2,9 @@
  * All actions need a verified admin session/MFA and a server-side revision CAS.
  */
 import {SERVICES,formatMoney,toCents} from '../shared/domain.mjs';
+import {sharedMapsCustomers} from '../shared-maps-client.mjs';
+import {companyFareSnapshot} from '../shared/company-fares.mjs';
+import {customerSiteRateKey} from './customer-overview-model.mjs?v=20261107-client-tariff-sync-v2';
 const $=id=>document.getElementById(id);
 const make=(tag,className='',txt='')=>{
  const e=document.createElement(tag);
@@ -45,6 +48,81 @@ const price=val=>{
  if(!String(val??'').trim())return null;
  return toCents(String(val));
 };
+const normalizeSearch=value=>String(value??'').normalize('NFD')
+ .replace(/[\u0300-\u036f]/g,'').toLocaleUpperCase('it-IT').trim();
+function sitePicker(form,{title,client,city,fare}){
+ const panel=make('div','records-site-picker');
+ const heading=make('p','records-site-heading',title);
+ const searchLabel=make('label','records-field');
+ searchLabel.append(make('span','','Cerca nell’elenco clienti condiviso'));
+ const search=document.createElement('input');
+ search.type='search';search.placeholder='Nome, località o indirizzo';search.disabled=true;
+ search.setAttribute('aria-label','Cerca '+title.toLowerCase());
+ searchLabel.append(search);
+ const selectLabel=make('label','records-field');
+ selectLabel.append(make('span','','Seleziona cliente e sede'));
+ const select=document.createElement('select');
+ select.className='records-site-select';select.disabled=true;
+ select.setAttribute('aria-label','Seleziona '+title.toLowerCase()+' dalla lista');
+ selectLabel.append(select);
+ const hint=make('p','records-site-hint','Caricamento elenco clienti e tariffe aziendali…');
+ hint.setAttribute('role','status');hint.setAttribute('aria-live','polite');
+ panel.append(heading,searchLabel,selectLabel,hint);form.append(panel);
+ let sites=[],rates=[],ready=false;
+ function filtered(){
+  const words=normalizeSearch(search.value).split(/\s+/u).filter(Boolean);
+  select.replaceChildren();
+  const placeholder=make('option','','Seleziona un cliente dalla lista…');
+  placeholder.value='';select.append(placeholder);
+  const currentKey=customerSiteRateKey({name:client.value,city:city.value});
+  let match='';
+  sites.forEach((site,index)=>{
+   const label=[site.name,site.city,site.address].filter(Boolean).join(' · ');
+   const text=normalizeSearch(label);
+   if(!words.every(word=>text.includes(word)))return;
+   const option=make('option','',label);option.value=String(index);
+   select.append(option);
+   if(!match&&customerSiteRateKey(site)===currentKey)match=String(index);
+  });
+  select.value=match;
+  if(select.options.length===1)select.options[0].textContent='Nessun cliente corrispondente';
+ }
+ function catalog(customers,tariffs){
+  sites=[...customers].filter(site=>site&&typeof site.name==='string'&&
+    typeof site.city==='string'&&site.name.trim()&&site.city.trim())
+   .sort((a,b)=>a.name.localeCompare(b.name,'it')||a.city.localeCompare(b.city,'it')||
+    (a.address||'').localeCompare(b.address||'','it'));
+  rates=tariffs;ready=true;search.disabled=false;select.disabled=false;filtered();
+  hint.textContent=sites.length
+   ?'Scegli una sede: cliente, località e tariffa del viaggio si compilano automaticamente. Nessun altro viaggio viene ricalcolato.'
+   :'Elenco clienti condivisi vuoto. Puoi usare i campi manuali.';
+ }
+ function unavailable(){
+  search.disabled=true;select.disabled=true;
+  select.replaceChildren();hint.classList.add('records-site-warning');
+  hint.textContent='Catalogo o tariffe aziendali non disponibili: verifica i dati manualmente e riprova online.';
+ }
+ search.addEventListener('input',filtered);
+ select.addEventListener('change',()=>{
+  if(!ready||select.value==='')return;
+  const site=sites[Number(select.value)];
+  if(!site)return;
+  client.value=site.name;city.value=site.city;
+  const cents=companyFareSnapshot(rates,true,site.name,site.city);
+  fare.value=euro(cents);
+  hint.classList.toggle('records-site-warning',cents===null);
+  hint.textContent=cents===null
+   ?'Cliente e località impostati. Non esiste una tariffa aziendale per questa sede: inserisci l’importo del viaggio o completa Tariffe aziendali.'
+   :'Tariffa aziendale applicata: '+money(cents)+'. Salva la modifica per aggiornare il registro dell’autista.';
+ });
+ for(const input of [client,city])input.addEventListener('input',()=>{
+  if(!ready)return;
+  select.value='';fare.value='';
+  hint.classList.add('records-site-warning');
+  hint.textContent='Cliente o località modificati manualmente. Verifica e imposta la nuova tariffa.';
+ });
+ return {catalog,unavailable};
+}
 export function setupDriverRecords(account){
  const panel=$('admin-records-panel'),choose=$('records-driver'),
   refresh=$('records-refresh'),status=$('records-status'),
@@ -53,13 +131,13 @@ export function setupDriverRecords(account){
   tabsRoot=$('records-tabs');
  let drivers=[],selectedId='',revision=null,state=null,audit=[],
   category='trip',busy=false,loading=false,editing=false,epoch=0,
-  desiredPhone='',visibleLimit=35;
+  desiredPhone='',visibleLimit=35,catalogRequest=0;
  const authorized=()=>account.isVerified()&&account.getRole()==='admin'&&
   !$('dashboard').hidden&&$('dashboard').dataset.view==='records';
  const notice=(message,problem=false)=>{
   status.textContent=message;status.classList.toggle('records-error',problem);
  };
- function clearEditor(){editor.replaceChildren();editor.hidden=true;editing=false;}
+ function clearEditor(){catalogRequest++;editor.replaceChildren();editor.hidden=true;editing=false;}
  function metrics(){
   const counts=state?
    [state.trips.length,state.customers.length,state.tariffs.length]:null;
@@ -210,6 +288,7 @@ export function setupDriverRecords(account){
   if(!authorized()||busy||!state)return;
   const kind=category;
   if(!['trip','customer','tariff','extra'].includes(kind))return;
+  const catalogToken=++catalogRequest,driverAtOpen=selectedId;
   editing=true;editor.hidden=false;editor.replaceChildren();
   const form=make('form','records-edit-form');
   const title=make('h3','',item?'Modifica '+(labels[kind]||'elemento'):
@@ -219,18 +298,21 @@ export function setupDriverRecords(account){
    'La modifica viene registrata nell’audit amministrativo e sincronizzata sul registro dell’autista.');
   form.append(note);
   const values=item||{};
-  let serviceBoxes=[];
+  let serviceBoxes=[],pickers=[];
   if(kind==='trip'){
    field(form,'Data','date',values.date||new Date().toISOString().slice(0,10),{kind:'date',required:true});
-   field(form,'Cliente','client',values.client||'',{required:true,maxLength:500});
-   field(form,'Località','city',values.city||'',{required:true,maxLength:500});
+   const client=field(form,'Cliente','client',values.client||'',{required:true,maxLength:500});
+   const city=field(form,'Località','city',values.city||'',{required:true,maxLength:500});
    field(form,'Container','container',values.container||'',{required:true,maxLength:500});
-   field(form,'Tariffa registrata (€)','fareCents',euro(values.fareCents),{inputmode:'decimal',
+   const fare=field(form,'Tariffa del viaggio (€)','fareCents',euro(values.fareCents),{inputmode:'decimal',
     placeholder:'Vuoto = tariffa da completare'});
-   field(form,'Cliente seconda presa','secondClient',values.secondClient||'');
-   field(form,'Località seconda presa','secondCity',values.secondCity||'');
-   field(form,'Tariffa seconda presa (€)','secondFareCents',euro(values.secondFareCents),
+   pickers.push(sitePicker(form,{title:'Cliente principale',client,city,fare}));
+   const secondClient=field(form,'Cliente seconda presa','secondClient',values.secondClient||'');
+   const secondCity=field(form,'Località seconda presa','secondCity',values.secondCity||'');
+   const secondFare=field(form,'Tariffa seconda presa (€)','secondFareCents',euro(values.secondFareCents),
     {inputmode:'decimal'});
+   pickers.push(sitePicker(form,{title:'Cliente seconda presa',client:secondClient,city:secondCity,
+    fare:secondFare}));
    field(form,'Somma le due prese','sumPickupFares',values.sumPickupFares!==false,
     {kind:'checkbox'});
    const section=make('fieldset','records-services');
@@ -293,12 +375,25 @@ export function setupDriverRecords(account){
     recordId:item?.id||crypto.randomUUID(),patch,reason:input('reason').value});
   });
   editor.append(form);editor.scrollIntoView({block:'start',behavior:'smooth'});
+  if(kind==='trip'){
+   void Promise.allSettled([sharedMapsCustomers(),account.companyTariffs('list')]).then(results=>{
+    if(catalogToken!==catalogRequest||driverAtOpen!==selectedId||!authorized()||
+       !editor.contains(form))return;
+    const customers=results[0].status==='fulfilled'?results[0].value:null;
+    const tariffs=results[1].status==='fulfilled'?results[1].value?.tariffs:null;
+    if(!Array.isArray(customers)||!Array.isArray(tariffs)){
+     pickers.forEach(p=>p.unavailable());return;
+    }
+    pickers.forEach(p=>p.catalog(customers,tariffs));
+   }).catch(()=>{if(catalogToken===catalogRequest&&editor.contains(form))
+    pickers.forEach(p=>p.unavailable());});
+  }
   form.querySelector('input:not([type=checkbox])')?.focus({preventScroll:true});
  }
  async function mutate({operation,category:kind,recordId,patch={},reason='',auditId=null}){
   if(busy||!authorized()||!state||revision===null)return false;
   busy=true;refresh.disabled=true;
-  editor.querySelectorAll('button,input,textarea').forEach(x=>x.disabled=true);
+  editor.querySelectorAll('button,input,textarea,select').forEach(x=>x.disabled=true);
   notice('Registrazione della modifica in corso…');
   try{
    const r=await account.adminRecords('mutate',{
@@ -308,12 +403,12 @@ export function setupDriverRecords(account){
    if(!Number.isSafeInteger(r?.revision)||!r?.state||!Array.isArray(r.audit))
     throw new Error('Salvataggio non confermato: aggiorna il registro.');
    revision=r.revision;state=r.state;audit=r.audit;
-   render();notice('Modifica registrata e sincronizzata. Revisione '+revision+
-    '. Lo storico precedente è conservato nell’audit.');
+   render();notice('Modifica salvata online (revisione '+revision+
+    '). L’autista la vedrà al prossimo aggiornamento online; lo storico rimane nell’audit.');
    return true;
   }catch(error){
    notice(error?.message||'Salvataggio non riuscito.',true);
-   editor.querySelectorAll('button,input,textarea').forEach(x=>x.disabled=false);
+   editor.querySelectorAll('button,input,textarea,select').forEach(x=>x.disabled=false);
    // Never replace the user's edited form after a 409 conflict.
    return false;
   }finally{busy=false;refresh.disabled=false;}
