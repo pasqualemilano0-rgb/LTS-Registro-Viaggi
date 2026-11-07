@@ -14,6 +14,7 @@
   <link rel="stylesheet" href="./dashboard-v6.css?v=20261104-mobile-v7">
   <link rel="stylesheet" href="./customer-overview.css?v=20261107-dashboard-sync-v3">
   <link rel="stylesheet" href="./company-rates.css?v=20261107-client-tariff-sync-v2">
+  <link rel="stylesheet" href="./driver-records.css?v=20261107-records-admin-v1">
   <script type="module" src="./admin.mjs?v=20261107-dashboard-sync-v4"></script>
   <script type="module" src="./dashboard-mobile-nav.mjs?v=20261106-company-rates-v1"></script>
 </head>
@@ -90,6 +91,7 @@
         <details class="admin-nav-more" id="admin-nav-more" open>
           <summary class="admin-nav-more-toggle" aria-label="Altre sezioni" aria-controls="admin-nav-more-items"><span class="admin-nav-icon"><svg class="admin-nav-svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg></span><span>Altro</span></summary>
           <div class="admin-nav-more-items" id="admin-nav-more-items" role="group" aria-label="Altre sezioni">
+            <button type="button" id="records-tab" class="admin-switch-button" aria-label="Archivi autisti e modifiche" aria-pressed="false"><span class="admin-nav-icon" aria-hidden="true">▤</span><span class="admin-nav-label-full">Archivi autisti</span></button>
             <button type="button" id="rates-tab" class="admin-switch-button" aria-label="Tariffe aziendali" aria-pressed="false"><span class="admin-nav-icon"><svg class="admin-nav-svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16v11H4z"/><path d="M4 11h16M15 15h3"/><circle cx="8" cy="15" r="1"/></svg></span><span class="admin-nav-label-full">Tariffe aziendali</span></button>
             <button type="button" id="alerts-tab" class="admin-switch-button" aria-label="Anomalie" aria-pressed="false"><span class="admin-nav-icon"><svg class="admin-nav-svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3 10 18H2L12 3z"/><path d="M12 9v5M12 18h.01"/></svg></span><span class="admin-nav-label-full">Anomalie</span></button>
             <button type="button" id="exports-tab" class="admin-switch-button" aria-label="Report PDF e Excel" aria-pressed="false"><span class="admin-nav-icon"><svg class="admin-nav-svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 3h9l5 5v13H5zM14 3v5h5M12 11v7m-3-3 3 3 3-3"/></svg></span><span class="admin-nav-label-full">Report PDF e Excel</span></button>
@@ -187,6 +189,41 @@
         <p class="footnote">Non comunicare il codice in chat pubbliche. Non viene inviato automaticamente tramite SMS.</p>
       </section>
       </div>
+
+      <section id="admin-records-panel" class="records-page" aria-labelledby="records-title" hidden>
+        <header class="records-hero">
+          <div>
+            <p class="eyebrow">LTS · AMMINISTRAZIONE ARCHIVI</p>
+            <h1 id="records-title">Archivi degli autisti</h1>
+            <p>Controlla e modifica i dati sincronizzati di ciascun autista. Ogni modifica viene registrata e può essere verificata.</p>
+            <p class="records-note">Tariffe aziendali comuni: usa <strong>Tariffe aziendali</strong>. Qui trovi i prezzi registrati nei viaggi e gli eventuali vecchi tariffari personali.</p>
+          </div>
+        </header>
+        <div class="records-controls">
+          <label>Seleziona autista
+            <select id="records-driver" aria-label="Autista di cui gestire gli inserimenti"></select>
+          </label>
+          <button type="button" id="records-refresh" class="button outline">Aggiorna archivio</button>
+        </div>
+        <p id="records-status" role="status" aria-live="polite">Verifica dell’accesso in corso…</p>
+        <div class="records-counts" aria-label="Numeri dell’archivio selezionato">
+          <div class="records-count"><span>Viaggi</span><strong id="records-trips">—</strong></div>
+          <div class="records-count"><span>Clienti personali</span><strong id="records-customers">—</strong></div>
+          <div class="records-count"><span>Tariffe personali</span><strong id="records-tariffs">—</strong></div>
+          <div class="records-count"><span>Revisione archivio</span><strong id="records-revision">—</strong></div>
+        </div>
+        <div id="records-tabs" class="records-tabs" role="group" aria-label="Tipi di inserimenti da amministrare"></div>
+        <div class="records-head">
+          <label>Cerca negli inserimenti
+            <input id="records-search" type="search" placeholder="Nome, località, container…" autocomplete="off">
+          </label>
+          <button type="button" id="records-add" class="button primary" hidden>Aggiungi viaggio</button>
+        </div>
+        <p id="records-count" class="records-note" role="status"></p>
+        <section id="records-editor" class="records-editor" aria-label="Editor del singolo inserimento" hidden></section>
+        <div id="records-list" class="records-list" aria-label="Inserimenti personali dell’autista"></div>
+        <p class="records-note">Solo i dati già sincronizzati online sono visibili. Un inserimento ancora offline sul telefono dell’autista apparirà dopo la sincronizzazione. Le eliminazioni non cancellano l’audit amministrativo.</p>
+      </section>
       <section id="report-panel" aria-labelledby="report-title" hidden>
         <section id="company-rates" aria-labelledby="company-rates-title">
           <header class="company-rates-heading">
