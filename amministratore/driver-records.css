@@ -37,6 +37,15 @@
 .records-editor[hidden]{display:none!important}
 .records-edit-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}
 .records-edit-form>h3,.records-edit-form>.records-editor-note,.records-edit-form>.records-services,.records-edit-form>.records-form-actions{grid-column:1/-1}
+.records-site-picker{grid-column:1/-1;min-width:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;padding:13px;border:1px solid #b9dce3;border-radius:12px;background:#eff8fa}
+.records-site-heading,.records-site-hint{grid-column:1/-1;margin:0;color:#28576b}
+.records-site-heading{font-size:13px;font-weight:850}
+.records-site-hint{font-size:11px;line-height:1.5}
+.records-site-hint.records-site-warning{color:#a34e21;font-weight:700}
+.records-site-select,.records-site-picker input[type=search]{min-width:0;width:100%;min-height:43px;border:1px solid #b9d2dc;border-radius:9px;background:#fff;color:#183e50;padding:9px 10px;font-size:13px}
+.records-site-select:disabled,.records-site-picker input:disabled{background:#edf1f3;color:#6e858e}
+.records-site-picker label{min-width:0}
+
 .records-edit-form>h3{color:#154354;font-size:18px;margin:0}
 .records-editor-note{font-size:11px;line-height:1.55;color:#577481;margin:0}
 .records-field{display:flex;flex-direction:column;min-width:0;gap:5px;font-size:11px;font-weight:750;color:#3b5c6b}
@@ -62,6 +71,7 @@
  .records-tabs{grid-template-columns:repeat(3,minmax(0,1fr))}
  .records-tab{min-height:44px}
  .records-edit-form{grid-template-columns:1fr}
+ .records-site-picker{grid-template-columns:1fr}
  .records-service-row{grid-template-columns:minmax(0,1fr) 115px;gap:6px}
  .records-card-actions button{flex:1}
 }
