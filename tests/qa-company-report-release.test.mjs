@@ -14,7 +14,7 @@ test('dashboard accessibile solo dal pannello admin, CSP e versioni coerenti',()
    'pro-city','pro-container','pro-compare-driver','pro-alerts','pro-alert-count',
    'pro-export-pdf','pro-export-xlsx','pro-records'])
    assert.match(html,new RegExp('id="'+id+'"'));
- assert.match(html,/admin\.mjs\?v=20261107-company-extras-v2/);
+ assert.match(html,/admin\.mjs\?v=20261107-maps-review-v1/);
  assert.match(html,/admin\.css\?v=20261104-company-v3/);
  assert.match(js,/account-access\.mjs\?v=20261107-records-admin-v2/);
  assert.match(js,/setupReport\(account\)/);
@@ -26,7 +26,7 @@ test('dashboard accessibile solo dal pannello admin, CSP e versioni coerenti',()
  assert.match(report,/function driverProfile\(/);
  assert.match(report,/function driverDirectory\(/);
  assert.match(report,/function renderAmountChart\(/);
- assert.match(js,/report\.mjs\?v=20261107-company-extras-v2/);
+ assert.match(js,/report\.mjs\?v=20261107-maps-review-v1/);
  assert.match(report,/setupInsights\(account\)/);
  const advanced=read('amministratore/report-insights.mjs');
  const exportsModule=read('amministratore/report-export.mjs');
@@ -78,7 +78,7 @@ test('anagrafica dashboard: dati verificati dalla sessione, soli campi pubblici,
    'customer-overview-filter','customer-overview-list','customer-overview-refresh',
    'customer-overview-more'])
    assert.match(html,new RegExp('id="'+id+'"'));
- assert.match(html,/customer-overview\.css\?v=20261107-dashboard-sync-v3/);
+ assert.match(html,/customer-overview\.css\?v=20261107-maps-review-v1/);
  assert.match(report,/companyDirectory\.reset\(\)/);
  assert.match(report,/companyDirectory\.load\(\)/);
  assert.match(ui,/sharedMapsCustomers\(\)/);
@@ -98,6 +98,41 @@ test('anagrafica dashboard: dati verificati dalla sessione, soli campi pubblici,
  assert.deepEqual(model.customerDirectoryStats(samples),{total:3,complete:1,incomplete:2,coverage:33});
  assert.equal(model.selectedCustomerSites(samples,'incomplete').length,2);
  assert.equal(model.selectedCustomerSites(samples,'complete')[0].name,'A');
+});
+
+test('linked Google Maps refresh distinguishes Supabase polling from reviewed place updates', async()=>{
+ const html=read('amministratore/index.html');
+ const overview=read('amministratore/customer-overview.mjs');
+ const module=read('amministratore/maps-address-refresh.mjs');
+ const css=read('amministratore/customer-overview.css');
+ const report=read('amministratore/report.mjs');
+ const helper=await import('../shared/maps-address-review.mjs');
+ for(const id of ['customer-maps-scan','customer-maps-select-all',
+  'customer-maps-results','customer-maps-preview','customer-maps-apply',
+  'customer-maps-refresh-status'])
+  assert.match(html,new RegExp('id="'+id+'"'));
+ assert.match(report,/customer-overview[.]mjs[?]v=20261107-maps-review-v1/);
+ assert.match(overview,/setupMapsAddressRefresh\(account/);
+ assert.match(overview,/Questo controllo NON rilegge Google Maps/);
+ assert.match(module,/readMapsCustomer\(site[.]mapsUrl/);
+ assert.match(module,/reviewLinkedMapsAddress\(site,proposal\)/);
+ assert.match(module,/window[.]confirm\(/);
+ assert.match(module,/saveSharedMapsCustomer\(url/);
+ assert.match(module,/if\(result[.]created\|\|!result[.]updated/);
+ assert.match(css,/customer-maps-review/);
+ assert.doesNotMatch(module,/innerHTML|localStorage|sessionStorage|service_role|sb_secret_/);
+ const site={name:'CLIENTE GAMMA',city:'ROMA (RM)',
+  address:'INDIRIZZO STRADALE DA CONFERMARE - ROMA',
+  mapsUrl:'https://maps.app.goo.gl/existing'};
+ const base={name:'CLIENTE GAMMA',city:'ROMA',
+  address:'VIA INDUSTRIA 12, 00100 ROMA',mapsUrl:site.mapsUrl};
+ assert.equal(helper.isMissingMapsAddress(site),true);
+ assert.equal(helper.reviewLinkedMapsAddress(site,base).eligible,true);
+ assert.equal(helper.reviewLinkedMapsAddress(site,{...base,name:'CLIENTE DIVERSO'}).eligible,false);
+ assert.equal(helper.reviewLinkedMapsAddress(site,{...base,city:'MILANO'}).eligible,false);
+ assert.equal(helper.reviewLinkedMapsAddress(site,{...base,mapsUrl:'https://maps.app.goo.gl/wrong'}).eligible,false);
+ assert.equal(helper.reviewLinkedMapsAddress(site,{...base,address:'ROMA'}).eligible,false);
+ assert.equal(helper.reviewLinkedMapsAddress({...site,address:'VIA ROMA 5'},base).eligible,false);
 });
 
 test('panoramica clienti apre la tariffa della sede Google Maps senza duplicare archivi',()=>{
