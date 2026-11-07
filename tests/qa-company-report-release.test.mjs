@@ -297,9 +297,15 @@ test('administrator has an MFA-only editor for each driver and all personal reco
   'records-trips','records-customers','records-tariffs','records-revision'])
   assert.match(html,new RegExp('id="'+id+'"'));
  assert.match(report,/\['records','records-tab','Archivi autisti'/);
- assert.match(report,/records[.]openForPhone\(phone\)/);
+ assert.match(report,/records[.]openForPhone\(phone\|\|'',recordKind\)/);
  assert.match(report,/records[.]refreshActive\(\)/);
  assert.match(app,/Apri dati e viaggi/);
+  assert.match(app,/Clienti personali/);
+  assert.match(app,/openRecordsForPhone\(entry[.]phone,'customer'\)/);
+  assert.match(html,/data-open-private-customers/);
+  assert.match(report,/open\('records',null,'customer'\)/);
+  assert.match(editor,/Cliente personale di/);
+  assert.match(editor,/setCategory\(kind==='customer'[?]'customer':'trip'\)/);
  assert.match(app,/companyView[.]openRecordsForPhone\(entry[.]phone\)/);
  assert.match(editor,/account[.]adminRecords\('list'\)/);
  assert.match(editor,/account[.]adminRecords\('read'/);
