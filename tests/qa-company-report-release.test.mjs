@@ -117,3 +117,37 @@ test('panoramica clienti apre la tariffa della sede Google Maps senza duplicare 
  assert.match(html,/id="company-rate-client-options"/);
  assert.doesNotMatch(editor,/saveSharedMapsCustomer|state[.]customers|localStorage|innerHTML/);
 });
+
+test('dashboard automatically refreshes the active verified section without losing unsaved edits',()=>{
+ const admin=read('amministratore/admin.mjs');
+ const report=read('amministratore/report.mjs');
+ const rates=read('amministratore/company-rates.mjs');
+ const directory=read('amministratore/customer-overview.mjs');
+ const html=read('amministratore/index.html');
+ for(const id of ['customer-overview-priced','customer-overview-unpriced','customer-overview-sync-status'])
+  assert.match(html,new RegExp('id="'+id+'"'));
+ assert.match(admin,/setInterval\(\(\)=>\{/);
+ assert.match(admin,/45000\)/);
+ assert.match(admin,/if\(dashboard[.]dataset[.]view==='drivers'\)/);
+ assert.match(admin,/else companyView[.]refreshActive\(\)/);
+ assert.match(admin,/restoreAdminPosition\(saved\)/);
+ assert.match(admin,/companyView[.]refreshActive\(\)/);
+ assert.match(report,/function refreshActive\(\)/);
+ assert.match(report,/companyRates[.]load\(\{silent:true\}\)/);
+ assert.match(report,/companyDirectory[.]load\(\{silent:true\}\)/);
+ assert.match(report,/load\(false,\{silent:true\}\)/);
+ assert.match(report,/rows[.]length>40/);
+ assert.match(report,/Nessuna variazione nei viaggi ricevuti/);
+ assert.match(report,/mostrato l’ultimo report ricevuto/);
+ assert.match(report,/return \{reset,open,refreshActive\}/);
+ assert.match(directory,/Promise[.]allSettled\(/);
+ assert.match(directory,/account[.]companyTariffs\('list'\)/);
+ assert.match(directory,/tariffLinkedCustomerSites\(records,tariffRows\)/);
+ assert.match(directory,/Sincronizzazione non completa/);
+ assert.match(directory,/if\(changed\|\|!silent\)render\(\)/);
+ assert.match(rates,/form[.]contains\(document[.]activeElement\)/);
+ assert.match(rates,/if\(changed\|\|!silent\)/);
+ assert.match(rates,/const nextRates=validRates\?rateResult[.]value[.]tariffs:rows/);
+ assert.match(rates,/Ultimo|ultimi disponibili/i);
+ assert.doesNotMatch([admin,report,rates,directory].join('\n'),/SUPABASE_SERVICE_ROLE_KEY|sb_secret_/);
+});
