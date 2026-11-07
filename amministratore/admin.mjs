@@ -1,6 +1,6 @@
 import * as account from '../account-access.mjs?v=20261107-records-admin-v2';
 import {STATUS_LABELS,driverSummary,filterDrivers} from './model.mjs';
-import {setupReport} from './report.mjs?v=20261107-records-admin-v3';
+import {setupReport} from './report.mjs?v=20261107-maps-extras-v1';
 import {rememberPosition,readPosition,clearPosition} from './admin-position.mjs';
 
 const byId=id=>document.getElementById(id);
