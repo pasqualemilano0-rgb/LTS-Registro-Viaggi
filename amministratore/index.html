@@ -13,9 +13,9 @@
   <link rel="stylesheet" href="./pro-theme.css?v=20261104-console-v5">
   <link rel="stylesheet" href="./dashboard-v6.css?v=20261104-mobile-v7">
   <link rel="stylesheet" href="./customer-overview.css?v=20261107-maps-review-v1">
-  <link rel="stylesheet" href="./company-rates.css?v=20261107-company-extras-v2">
+  <link rel="stylesheet" href="./company-rates.css?v=20261107-manual-shared-v1">
   <link rel="stylesheet" href="./driver-records.css?v=20261107-driver-customer-picker-v1">
-  <script type="module" src="./admin.mjs?v=20261107-realtime-v1"></script>
+  <script type="module" src="./admin.mjs?v=20261107-manual-shared-v1"></script>
   <script type="module" src="./dashboard-mobile-nav.mjs?v=20261107-records-admin-v2"></script>
 </head>
 <body>
@@ -234,7 +234,7 @@
             </div>
             <button type="button" class="button outline" id="company-rates-refresh">Aggiorna elenco</button>
           </header>
-          <p class="company-rates-guide">I clienti Google Maps sono condivisi con gli autisti. Per ciascuna sede l’amministratore imposta la trasferta comune: un cliente registrato non ha automaticamente una tariffa. Gli importi dei viaggi già salvati restano invariati.</p>
+          <p class="company-rates-guide">Puoi aggiungere clienti manualmente oppure da Google Maps: entrambi saranno disponibili a tutti gli autisti nella lista condivisa. La tariffa è facoltativa e si applica solo ai nuovi viaggi; quelli già registrati non vengono ricalcolati.</p>
           <section id="company-maps-add" class="company-rates-editor" aria-labelledby="company-maps-title">
             <h2 id="company-maps-title">Aggiungi cliente da Google Maps</h2>
             <p class="company-rates-note">Copia il link condiviso di una sede Google Maps. LTS controlla i dati e i possibili doppioni prima di aggiungerla all’elenco di tutti gli autisti.</p>
@@ -262,9 +262,34 @@
             </form>
             <p id="company-maps-status" role="status" aria-live="polite">Incolla un link Google Maps per iniziare.</p>
           </section>
+          <section id="company-manual-add" class="company-rates-editor" aria-labelledby="company-manual-title">
+            <h2 id="company-manual-title">Aggiungi cliente personalizzato</h2>
+            <p class="company-rates-note">Non serve Google Maps. Il cliente viene salvato nell’elenco condiviso e sarà disponibile a tutti gli autisti. Nome e località sono obbligatori; indirizzo, note e tariffa sono facoltativi.</p>
+            <form id="company-manual-form" autocomplete="off">
+              <div class="company-manual-fields">
+                <label for="company-manual-name">Nome cliente
+                  <input id="company-manual-name" name="name" type="text" maxlength="500" placeholder="Es. LAVORATO PORTO" required>
+                </label>
+                <label for="company-manual-city">Località
+                  <input id="company-manual-city" name="city" type="text" maxlength="500" placeholder="Es. NAPOLI" required>
+                </label>
+                <label for="company-manual-address">Indirizzo (facoltativo)
+                  <input id="company-manual-address" name="address" type="text" maxlength="1000" placeholder="Via, zona o sede operativa">
+                </label>
+                <label for="company-manual-amount">Tariffa aziendale (facoltativa, €)
+                  <input id="company-manual-amount" name="amount" type="text" inputmode="decimal" maxlength="14" placeholder="Es. 25,00">
+                </label>
+                <label class="company-manual-notes-label" for="company-manual-notes">Note operative (facoltative)
+                  <textarea id="company-manual-notes" name="notes" maxlength="1500" rows="2" placeholder="Indicazioni operative visibili agli autisti"></textarea>
+                </label>
+              </div>
+              <button id="company-manual-save" class="button primary" type="submit">Salva nell’elenco condiviso</button>
+            </form>
+            <p id="company-manual-status" role="status" aria-live="polite">Compila il cliente per condividerlo con gli autisti.</p>
+          </section>
           <section id="company-rates-editor" class="company-rates-editor" aria-labelledby="company-rates-form-title">
             <h2 id="company-rates-form-title">Nuova tariffa</h2>
-            <p class="company-rates-note">Scegli una sede dall’elenco in basso: cliente e località si compilano da soli. Inserisci solo l’importo in euro. Puoi anche inserire una sede non ancora presente su Maps.</p>
+            <p class="company-rates-note">Scegli una sede condivisa o digita un nuovo cliente: quando salvi una nuova tariffa, il cliente viene condiviso automaticamente con tutti gli autisti. Per un cliente senza tariffa usa invece “Aggiungi cliente personalizzato”.</p>
             <form id="company-rates-form" autocomplete="off">
               <div class="company-rates-fields">
                 <label>Cliente
@@ -374,7 +399,8 @@
             <div><p class="eyebrow">ANAGRAFICA CONDIVISA · OPERATIVITÀ</p>
               <h2 id="customer-overview-title">Clienti e sedi operative</h2>
               <p>Controlla le sedi condivise dagli autisti, gli indirizzi mancanti e i collegamenti Google Maps senza alterare lo storico dei viaggi.</p></div>
-            <div class="customer-directory-heading-actions"><button type="button" class="button primary" data-open-maps>Aggiungi da Google Maps</button>
+            <div class="customer-directory-heading-actions"><button type="button" class="button primary" data-open-manual>Aggiungi cliente manuale</button>
+            <button type="button" class="button outline" data-open-maps>Aggiungi da Google Maps</button>
             <button id="customer-overview-refresh" class="button outline" type="button">Aggiorna clienti</button></div>
           </div>
           <p id="customer-overview-status" role="status" aria-live="polite">Caricamento anagrafica…</p>
