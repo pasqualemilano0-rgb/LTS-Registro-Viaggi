@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {emptyState,createTrip,reconcileTripTariffs} from '../shared/domain.mjs';
 import {companyFareSnapshot} from '../shared/company-fares.mjs';
+import {tariffLinkedCustomerSites,customerSiteRateKey} from '../amministratore/customer-overview-model.mjs';
 const read=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
 const company=[{id:'company:123e4567-e89b-42d3-a456-426614174000',customerId:null,
  client:'AZIENDA ALFA',city:'ROMA',cents:8550}];
@@ -85,4 +86,46 @@ test('driver trip creation and preview use the central company catalog on first 
  assert.match(access,/action:'list'/);
  assert.match(app,/companyRatesRequest\+\+/);
  assert.match(app,/tab==='tariffs'&&tariffTab==='base'/);
+});
+
+test('company Maps sites connect to an exact centrally-priced client and location without merging sites',()=>{
+ const sites=[
+  {name:'ACETIFICIO ANDREA MILANO SRL',city:'ACERRA (NA)',address:'VIA DELLE INDUSTRIE'},
+  {name:'ACETIFICIO ANDREA MILANO SRL',city:'SAN GIOVANNI A TEDUCCIO',address:'INDIRIZZO STRADALE DA CONFERMARE'},
+  {name:'ACETIFICIO ANDREA MILANO SRL',city:'ACERRA (NA)',address:'DUPLICATE'}
+ ];
+ const rates=[{client:'Acetificio Andrea Milano SRL',city:'Acerra (NA)',cents:8550}];
+ const found=tariffLinkedCustomerSites(sites,rates);
+ assert.deepEqual([found.total,found.priced,found.unpriced],[2,1,1]);
+ assert.equal(found.sites.filter(site=>!site.hasRate)[0].city,'SAN GIOVANNI A TEDUCCIO');
+ assert.equal(found.sites.filter(site=>site.hasRate)[0].city,'ACERRA (NA)');
+ assert.equal(tariffLinkedCustomerSites(sites,rates,'Giovanni').sites.length,1);
+ assert.equal(tariffLinkedCustomerSites(sites,rates,'confermare').sites.length,0);
+ assert.equal(customerSiteRateKey(sites[0]),customerSiteRateKey({...sites[0],name:'acetificio andrea milano srl'}));
+ assert.equal(sites.length,3);
+ assert.equal(rates[0].cents,8550);
+});
+test('admin rate catalog loads both protected Maps customers and company tariff prices',()=>{
+ const editor=read('amministratore/company-rates.mjs');
+ const html=read('amministratore/index.html');
+ const report=read('amministratore/report.mjs');
+ const overview=read('amministratore/customer-overview.mjs');
+ assert.match(editor,/account[.]companyTariffs\('list'\)/);
+ assert.match(editor,/sharedMapsCustomers\(\)/);
+ assert.match(editor,/Promise[.]allSettled\(/);
+ assert.match(editor,/getRole\(\)==='admin'/);
+ assert.match(editor,/customerChoices\(\)/);
+ assert.match(editor,/cityChoices\(\)/);
+ assert.match(editor,/tariffLinkedCustomerSites\(sites,rows/);
+ assert.match(editor,/prefillSite\(site\)/);
+ assert.match(editor,/rows[.]some\(rate=>clean\(rate[.]client\)===name/);
+ assert.match(editor,/await account[.]companyTariffs\('save',payload\)/);
+ assert.match(editor,/Gli importi storici restano invariati/);
+ assert.doesNotMatch(editor,/upsertCustomer|state[.]customers|saveSharedMapsCustomer|innerHTML/);
+ for(const id of ['company-sites-list','company-sites-count','company-sites-more',
+  'company-rate-client-options','company-rate-city-options'])
+  assert.match(html,new RegExp('id="'+id+'"'));
+ assert.match(report,/companyRates[.]prefillSite\(site\)/);
+ assert.match(overview,/if\(active\(\)\)onSetRate\(row\)/);
+ assert.match(overview,/Imposta tariffa/);
 });
