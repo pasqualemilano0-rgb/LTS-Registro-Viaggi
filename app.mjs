@@ -244,7 +244,7 @@ async function refreshCompanyRates({quiet=true}={}){
    JSON.stringify(catalog.extraRates)!==JSON.stringify(companyExtraRates);
   companyRates=updated;companyRatesLoaded=true;
   companyExtraRates=catalog.extraRates;companyExtrasLoaded=true;
-  if(changed&&(tab==='tariffs'&&tariffTab==='base'||tab==='customers')&&refreshView)refreshView();
+  if(changed&&(tab==='tariffs'||tab==='customers')&&refreshView)refreshView();
   if(changed&&tab==='insert')refreshTripFareEstimate?.();
   return true;
  }catch(error){
