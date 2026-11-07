@@ -16,7 +16,11 @@ export const getRole=()=> 'admin';
 export const getAccountId=()=> 'account:33333333-3333-4333-8333-333333333333';
 export const verifySession=async()=>({mfa_enrolled:true,mfa_verified:true});
 export const listAdminMfaFactors=async()=>[{label:'Principale',id:'a'}];
-export const manageDrivers=async(action)=>action==='list'?{drivers:[]}:{};
+export const manageDrivers=async(action)=>action==='list'?{drivers:[
+ {id:'11111111-1111-4111-8111-111111111111',
+  firstName:'Mario',lastName:'Rossi',phone:'+393331111111',
+  status:'active',enabled:true}
+]}:{};
 let mockRates=[{id:'1',client:'CLIENTE ALFA',city:'NAPOLI',cents:15000,revision:1,
  updatedAt:'2026-11-06T12:00:00Z'}];
 let mockExtras=['facchinaggioBilico','facchinaggioReefer','reefer','adr',
