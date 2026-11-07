@@ -234,6 +234,7 @@ export function setupReport(account){
   const wasReport=!report.hidden,showReport=!['drivers','security','records'].includes(view);
   if(view!=='overview')companyDirectory.reset();
   if(view!=='rates')companyRates.reset();
+  if(view!=='records')records.reset();
   if(lastView==='rates')page=null;
   // Never retain a one-time invite or password-reset code on another page.
   if(view!=='drivers'){
