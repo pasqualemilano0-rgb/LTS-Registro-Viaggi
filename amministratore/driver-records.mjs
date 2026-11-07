@@ -396,7 +396,9 @@ export function setupDriverRecords(account){
  async function mutate({operation,category:kind,recordId,patch={},reason='',auditId=null}){
   if(busy||!authorized()||!state||revision===null)return false;
   busy=true;refresh.disabled=true;
-  editor.querySelectorAll('button,input,textarea,select').forEach(x=>x.disabled=true);
+  const controls=[...editor.querySelectorAll('button,input,textarea,select')];
+  const previousDisabled=controls.map(control=>control.disabled);
+  controls.forEach(control=>{control.disabled=true;});
   notice('Registrazione della modifica in corso…');
   try{
    const r=await account.adminRecords('mutate',{
@@ -411,7 +413,7 @@ export function setupDriverRecords(account){
    return true;
   }catch(error){
    notice(error?.message||'Salvataggio non riuscito.',true);
-   editor.querySelectorAll('button,input,textarea,select').forEach(x=>x.disabled=false);
+   controls.forEach((control,index)=>{control.disabled=previousDisabled[index];});
    // Never replace the user's edited form after a 409 conflict.
    return false;
   }finally{busy=false;refresh.disabled=false;}
