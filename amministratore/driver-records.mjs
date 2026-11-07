@@ -162,13 +162,26 @@ export function setupDriverRecords(account){
   tabsRoot=$('records-tabs');
  let drivers=[],selectedId='',revision=null,state=null,audit=[],
   category='trip',busy=false,loading=false,editing=false,epoch=0,
-  desiredPhone='',visibleLimit=35,catalogRequest=0,activePickerDisposers=[];
+  desiredPhone='',visibleLimit=35,catalogRequest=0,activePickerDisposers=[],
+  editorBaseline='',writeSeq=0;
  const authorized=()=>account.isVerified()&&account.getRole()==='admin'&&
   !$('dashboard').hidden&&$('dashboard').dataset.view==='records';
  const notice=(message,problem=false)=>{
   status.textContent=message;status.classList.toggle('records-error',problem);
  };
- function clearEditor(){catalogRequest++;activePickerDisposers.splice(0).forEach(dispose=>dispose());editor.replaceChildren();editor.hidden=true;editing=false;}
+ // Only actual form values count as unsaved changes, not search suggestions.
+ const formSnapshot=form=>JSON.stringify([...new FormData(form).entries()]);
+ function canLeave(){
+  if(busy){notice('Salvataggio in corso: attendi prima di cambiare autista o schermata.',true);return false;}
+  const form=editor.querySelector('form');
+  if(editing&&form&&formSnapshot(form)!==editorBaseline)
+   return window.confirm('Ci sono modifiche non salvate. Vuoi davvero abbandonarle?');
+  return true;
+ }
+ function clearEditor(){
+  catalogRequest++;activePickerDisposers.splice(0).forEach(dispose=>dispose());
+  editor.replaceChildren();editor.hidden=true;editing=false;editorBaseline='';
+ }
  function metrics(){
   const counts=state?
    [state.trips.length,state.customers.length,state.tariffs.length]:null;
@@ -177,11 +190,12 @@ export function setupDriverRecords(account){
   $('records-revision').textContent=revision??'—';
  }
  function reset(){
-  epoch++;drivers=[];selectedId='';revision=null;state=null;audit=[];
+  epoch++;writeSeq++;drivers=[];selectedId='';revision=null;state=null;audit=[];
   category='trip';busy=false;loading=false;desiredPhone='';visibleLimit=35;
   choose.replaceChildren();list.replaceChildren();clearEditor();filter.value='';
   notice('Seleziona Archivi autisti per caricare gli inserimenti sincronizzati.');
-  metrics();counter.textContent='';refresh.disabled=false;add.hidden=true;
+  metrics();counter.textContent='';refresh.disabled=false;choose.disabled=false;
+  filter.disabled=false;add.disabled=false;add.hidden=true;
   tabsRoot.querySelectorAll('button').forEach(b=>b.classList.toggle('selected',b.dataset.kind==='trip'));
  }
  function options(){
@@ -224,8 +238,8 @@ export function setupDriverRecords(account){
    'Revisioni: '+item.beforeRevision+' → '+item.afterRevision,
    item.reason?'Motivo: '+item.reason:''].filter(Boolean);
  }
- function render(){
-  metrics();clearEditor();
+ function render({keepEditor=false}={}){
+  metrics();if(!keepEditor)clearEditor();
   const values=source(),term=filter.value.trim().toLocaleUpperCase('it-IT');
   const matched=values.filter(item=>matches(item,term));
   list.replaceChildren();counter.textContent=matched.length+' elementi visualizzabili';
@@ -265,12 +279,14 @@ export function setupDriverRecords(account){
   if(matched.length>visibleLimit){
    const more=make('button','button outline records-more',
     'Mostra altri '+(matched.length-visibleLimit)+' elementi');
-   more.type='button';more.addEventListener('click',()=>{visibleLimit+=35;render();});
+   more.type='button';more.addEventListener('click',()=>{visibleLimit+=35;render({keepEditor:true});});
    list.append(more);
   }
  }
  async function load({silent=false}={}){
   if(!authorized()||busy||loading||(silent&&editing))return false;
+  if(editing&&!canLeave())return false;
+  if(editing)clearEditor();
   const token=++epoch;loading=true;refresh.disabled=true;
   if(!silent)notice('Aggiornamento archivi degli autisti…');
   try{
@@ -310,15 +326,21 @@ export function setupDriverRecords(account){
     'nessun archivio online. Le modifiche saranno disponibili dopo la prima sincronizzazione.'));
  }
  async function selectDriver(){
-  if(!authorized()||busy)return;
-  selectedId=choose.value;revision=null;state=null;audit=[];filter.value='';
-  visibleLimit=35;clearEditor();render();const token=++epoch;
+  if(!authorized()||!canLeave()){choose.value=selectedId;return;}
+  // Invalidate an older driver read/list, including its loading state.
+  const target=choose.value,token=++epoch;
+  loading=false;refresh.disabled=false;
+  selectedId=target;revision=null;state=null;audit=[];filter.value='';
+  visibleLimit=35;clearEditor();render();
+  loading=true;refresh.disabled=true;
   notice('Caricamento dell’archivio selezionato…');
   try{await readSelected({token});}
   catch(error){if(token===epoch)notice(error.message,true);}
+  finally{if(token===epoch){loading=false;refresh.disabled=false;}}
  }
  function openEditor(item=null){
-  if(!authorized()||busy||!state)return;
+  if(!authorized()||busy||!state||!canLeave())return;
+  clearEditor();
   const kind=category;
   if(!['trip','customer','tariff','extra'].includes(kind))return;
   const catalogToken=++catalogRequest,driverAtOpen=selectedId;
@@ -395,7 +417,7 @@ export function setupDriverRecords(account){
   const submit=make('button','button primary','Salva modifica');
   submit.type='submit';buttons.append(submit);
   const cancelButton=make('button','button outline','Annulla');cancelButton.type='button';
-  cancelButton.addEventListener('click',clearEditor);buttons.append(cancelButton);form.append(buttons);
+  cancelButton.addEventListener('click',()=>{if(canLeave())clearEditor();});buttons.append(cancelButton);form.append(buttons);
   form.addEventListener('submit',event=>{
    event.preventDefault();
    const input=name=>form.elements.namedItem(name);
@@ -417,7 +439,8 @@ export function setupDriverRecords(account){
    void mutate({operation:item?'update':'create',category:kind,
     recordId:item?.id||crypto.randomUUID(),patch,reason:input('reason').value});
   });
-  editor.append(form);editor.scrollIntoView({block:'start',behavior:'smooth'});
+  editor.append(form);editorBaseline=formSnapshot(form);
+  editor.scrollIntoView({block:'start',behavior:'smooth'});
   if(kind==='trip'){
    const personalCustomers=Array.isArray(state?.customers)?state.customers:[];
    void Promise.allSettled([sharedMapsCustomers(),account.companyTariffs('list')]).then(results=>{
@@ -497,7 +520,7 @@ export function setupDriverRecords(account){
  }
  choose.addEventListener('change',()=>void selectDriver());
  refresh.addEventListener('click',()=>void load());
- filter.addEventListener('input',()=>{visibleLimit=35;render();});
+ filter.addEventListener('input',()=>{visibleLimit=35;render({keepEditor:true});});
  add.addEventListener('click',()=>openEditor());
 
  for(const [key,label] of tabs){
