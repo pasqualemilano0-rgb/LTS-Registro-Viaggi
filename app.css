@@ -480,3 +480,24 @@ h1,h2,h3{letter-spacing:-.035em}
 .tariff-card .tariff-footer .linked-label{min-width:0;overflow-wrap:anywhere}
 @media(max-width:520px){.tariff-company-sync{grid-template-columns:auto minmax(0,1fr)}
  .tariff-company-sync>.secondary-button{grid-column:1/-1;justify-self:stretch;width:100%}}
+
+/* Driver credential recovery – restrained, accessible and separate from admin Gmail reset. */
+.account-driver-recovery-form{display:grid;gap:4px;margin:12px 0}
+.account-driver-recovery-form .field{margin-bottom:11px}
+.account-driver-recovery-form .account-recovery-field input{
+ width:100%;min-height:49px;box-sizing:border-box;padding:12px 13px;
+ border:1px solid #c8dce4;border-radius:11px;background:#fff;color:#143b4b;
+ font-size:16px;
+}
+.account-driver-recovery-form .account-recovery-field input:focus{
+ outline:3px solid #b5e7e8;border-color:#087e91;
+}
+.account-driver-recovery-help{display:flex;gap:9px;align-items:flex-start;
+ border:1px solid #d6e9ef;border-radius:11px;padding:11px 12px;
+ background:#f0f8fa;color:#3c6476;font-size:12px;line-height:1.5}
+.account-driver-recovery-help .icon{flex:none;width:16px;height:16px;color:#0b8196}
+.account-driver-recovery-success{text-align:center;padding:12px 10px 18px}
+.account-driver-recovery-check{display:inline-grid;place-items:center;width:48px;height:48px;
+ border-radius:50%;background:#dff6ea;color:#19704c;margin:0 auto 12px}
+.account-driver-recovery-success h3{font-size:21px;color:#114f52;margin:0 0 8px}
+.account-driver-recovery-success p{font-size:13px;line-height:1.55;color:#3b6471}
