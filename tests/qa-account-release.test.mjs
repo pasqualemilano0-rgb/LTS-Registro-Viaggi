@@ -546,7 +546,7 @@ test('clients have one live company and personal search with clear source filter
   app.indexOf('function renderInsert('));
  assert.match(catalog,/dedupedCustomerDirectory\(companyCustomers,state[.]customers\)/);
  assert.match(catalog,/filterSharedCustomers\(directory[.]shared,companyCustomerSearch\)/);
- assert.match(catalog,/filterSharedCustomers\(directory[.]personal,companyCustomerSearch\)/);
+ assert.match(catalog,/customerDirectoryScope==='personal'\?state[.]customers:directory[.]personal/);
  assert.match(catalog,/type:'search',id:'company-customer-search'/);
  assert.match(catalog,/Cerca clienti per nome, città, indirizzo o telefono/);
  assert.match(catalog,/customerDirectoryScope/);
