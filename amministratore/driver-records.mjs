@@ -50,7 +50,7 @@ export function setupDriverRecords(account){
   refresh=$('records-refresh'),status=$('records-status'),
   filter=$('records-search'),list=$('records-list'),
   editor=$('records-editor'),add=$('records-add'),counter=$('records-count'),
-  tabsRoot=$('records-tabs'),cancel=$('records-cancel');
+  tabsRoot=$('records-tabs');
  let drivers=[],selectedId='',revision=null,state=null,audit=[],
   category='trip',busy=false,loading=false,editing=false,epoch=0,
   desiredPhone='',visibleLimit=35;
@@ -349,7 +349,7 @@ export function setupDriverRecords(account){
  refresh.addEventListener('click',()=>void load());
  filter.addEventListener('input',()=>{visibleLimit=35;render();});
  add.addEventListener('click',()=>openEditor());
- cancel.addEventListener('click',clearEditor);
+
  for(const [key,label] of tabs){
   const b=make('button','records-tab'+(key===category?' selected':''),label);
   b.type='button';b.dataset.kind=key;b.setAttribute('aria-pressed',String(key===category));
