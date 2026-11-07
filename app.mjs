@@ -5,6 +5,7 @@ import * as store from '/LTS-Registro-Viaggi/client-store.mjs';
 import runtimeConfig from '/LTS-Registro-Viaggi/runtime-config.mjs';
 import * as accountAccess from '/LTS-Registro-Viaggi/account-access.mjs';
 import {sharedMapsEnabled,sharedMapsCustomers,saveSharedMapsCustomer} from '/LTS-Registro-Viaggi/shared-maps-client.mjs';
+import {companyFareSnapshot} from '/LTS-Registro-Viaggi/shared/company-fares.mjs';
 import {mapsLinkForCompanySync,filterSharedCustomers} from '/LTS-Registro-Viaggi/shared/maps-company-routing.mjs';
 import {combinedTripCustomerChoices} from '/LTS-Registro-Viaggi/shared/trip-customer-choices.mjs';
 import { appendPushSettings } from '/LTS-Registro-Viaggi/push-client.mjs';
@@ -18,6 +19,7 @@ let companyRates=[]; // Complete corporate catalog, even if a personal rate over
 let companyRatesLoaded=false;
 let companyRatesRequest=0;
 let companyCustomersError='';
+let companyCustomersRequest=0;
 let companyCustomerSearch=''; // Independent filter for the read-only company list.
 let user = null;
 let tab = 'insert';
@@ -36,6 +38,7 @@ let activationWelcome=false;
 let activationFirstOpen=false;
 let refreshView = null;
 let refreshTripCustomerSuggestions=null;
+let refreshTripFareEstimate=null;
 let portiFrame = null;
 let subscribed = false;
 let installPrompt = null;
@@ -161,11 +164,12 @@ function unmountPorti(){
  // Leaving Porti stops its polling and discards the in-frame booking query.
  portiFrame.src='about:blank';portiFrame.remove();portiFrame=null;
 }
-function navigate(next){if(next!=='register')activationWelcome=false;if(tab==='porti'&&next!==tab)unmountPorti();tab=next;searchValue='';render();if(next==='insert'||next==='customers')void refreshCompanyCustomers();if(next==='tariffs'&&store.usingAccount()&&navigator.onLine!==false){void store.syncPending().catch(()=>{});void refreshCompanyRates();}const scroll=document.querySelector('.app-scroll');if(scroll)scroll.scrollTop=0;window.scrollTo({top:0,behavior:'auto'});}
+function navigate(next){if(next!=='register')activationWelcome=false;if(tab==='porti'&&next!==tab)unmountPorti();tab=next;searchValue='';render();if(next==='insert'||next==='customers')void refreshCompanyCustomers();if(['insert','tariffs'].includes(next)&&store.usingAccount()&&navigator.onLine!==false){void store.syncPending().catch(()=>{});void refreshCompanyRates();}const scroll=document.querySelector('.app-scroll');if(scroll)scroll.scrollTop=0;window.scrollTo({top:0,behavior:'auto'});}
 function render(){
  const scrollTop=document.querySelector('.app-scroll')?.scrollTop||0;
  refreshView=null;
  refreshTripCustomerSuggestions=null;
+ refreshTripFareEstimate=null;
  const frame=el('div',{class:'app-frame'});
  const header=el('header',{class:'topbar'},el('div',{class:'brand'},el('img',{src:'/LTS-Registro-Viaggi/assets/lts-logo.png',alt:'LTS',width:116,height:46}),el('div',{class:'brand-copy'},el('p',{class:'eyebrow'},'Registro viaggi'),el('p',{class:'brand-title'},name()||'Il tuo registro'))),el('div',{class:'header-actions'},el('button',{class:'install-icon-button',type:'button','data-install-trigger':true,hidden:isInstalled(),'aria-label':'Installa app',title:'Installa LTS sul telefono',on:{click:startInstall}},icon('download')),el('button',{class:'profile-button',type:'button','aria-label':`Profilo di ${name()||'autista'}`,title:'Profilo e backup',on:{click:()=>openProfile()}},initials())));
  const main=el('main',{class:`app-main view-${tab}`,id:'main-content'});
@@ -229,6 +233,7 @@ async function refreshCompanyRates({quiet=true}={}){
    client:D.normalizeText(item.client),city:D.normalizeText(item.city),cents:item.cents}));
   companyRatesLoaded=true;
   if(tab==='tariffs'&&tariffTab==='base'&&refreshView)refreshView();
+  if(tab==='insert')refreshTripFareEstimate?.();
   return true;
  }catch(error){
   // An offline/cache failure must never erase a previously verified catalog
@@ -240,10 +245,10 @@ async function refreshCompanyRates({quiet=true}={}){
 /** Read-only shared list. An unavailable network never unlocks an account. */
 async function refreshCompanyCustomers(){
  if(!sharedMapsEnabled()||!store.usingAccount()||!accountAccess.isVerified())return;
- const owner=accountAccess.getAccountId();
+ const owner=accountAccess.getAccountId(),request=++companyCustomersRequest;
  try{
   const customers=await sharedMapsCustomers();
-  if(owner!==accountAccess.getAccountId())return;
+  if(owner!==accountAccess.getAccountId()||request!==companyCustomersRequest)return;
   companyCustomers=customers;
   companyCustomersError='';
   if(tab==='insert')refreshTripCustomerSuggestions?.();
@@ -267,7 +272,7 @@ async function refreshCompanyCustomers(){
   }
  }catch{
   // Keep the existing personal data and previously loaded shared suggestions.
-  if(owner!==accountAccess.getAccountId())return;
+  if(owner!==accountAccess.getAccountId()||request!==companyCustomersRequest)return;
   companyCustomersError='Impossibile aggiornare l’elenco Google Maps. Verifica la connessione e riprova.';
   if(tab==='customers')updateCompanyCustomersPanel();
  }
@@ -416,7 +421,7 @@ function renderInsert(main){
  function collect(){draft={date:date.input.value,container:container.input.value,client:client.input.value,city:city.input.value,secondClient:secondClient?.input.value||'',secondCity:secondCity?.input.value||'',services:[...form.querySelectorAll('[name=service]:checked')].map(n=>n.value),second:draft.second,note:noteInput.value,noteOpen:Boolean(draft.noteOpen),servicesOpen:Boolean(draft.servicesOpen)};}
  function updateEstimate(){
   collect();
-  const firstTariff=D.findTariff(state,draft.client,draft.city);const secondTariff=draft.second?D.findTariff(state,draft.secondClient,draft.secondCity):null;
+  const firstTariff=companyRatesLoaded?D.findTariff({tariffs:companyRates},draft.client,draft.city):null;
   const existing=state.trips.find(trip=>trip.id===editingId)||null;
   const sameFirst=existing&&D.normalizeText(existing.client)===D.normalizeText(draft.client)&&D.normalizeText(existing.city)===D.normalizeText(draft.city);
   const sameSecond=existing&&D.normalizeText(existing.secondClient)===D.normalizeText(draft.secondClient)&&D.normalizeText(existing.secondCity)===D.normalizeText(draft.secondCity);
@@ -424,10 +429,13 @@ function renderInsert(main){
   for(const service of draft.services){const retained=existing?.services?.includes(service)?existing.extraCents?.[service]??null:null;extraCents[service]=state.extraRates[service]??retained;}
   // Build a read-only candidate even while required fields are incomplete.
   // Replace the edited trip so its own daily allowance is not counted twice.
-  const candidate={...draft,id:estimateId,createdAt:existing?.createdAt||estimateCreatedAt,fareCents:firstTariff?.cents??(sameFirst?existing.fareCents:null),secondFareCents:draft.second&&draft.secondCity?(secondTariff?.cents??(sameSecond?existing.secondFareCents:null)):null,sumPickupFares:Boolean(draft.second&&draft.secondCity),extraCents};
+  const candidate={...draft,id:estimateId,createdAt:existing?.createdAt||estimateCreatedAt,
+   fareCents:companyFareSnapshot(companyRates,companyRatesLoaded,draft.client,draft.city,{unchanged:Boolean(sameFirst),previous:existing?.fareCents}),
+   secondFareCents:draft.second&&draft.secondCity?companyFareSnapshot(companyRates,companyRatesLoaded,draft.secondClient,draft.secondCity,{unchanged:Boolean(sameSecond),previous:existing?.secondFareCents}):null,
+   sumPickupFares:Boolean(draft.second&&draft.secondCity),extraCents};
   const previewContext=D.buildTripAmountContext([...state.trips.filter(trip=>trip.id!==editingId),candidate]);
   const amount=D.tripAmounts(candidate,previewContext);const saturday=D.saturdayAllowanceStatus(candidate,previewContext);
-  hint.textContent=firstTariff?`Tariffa collegata · ${D.formatMoney(firstTariff.cents)}`:'';
+  hint.textContent=firstTariff?`Tariffa aziendale · ${D.formatMoney(firstTariff.cents)}`:'';
   estimate.replaceChildren(el('span',{},icon('wallet'),draft.second?'Trasferte + extra':'Trasferta + extra'),draft.client&&draft.city?el('strong',{},D.formatMoney(amount.totalCents)):el('small',{},'Scegli cliente e città'));
   saturdayNote.textContent=saturdayNoteText(saturday.status);saturdayNote.hidden=saturday.status==='none';saturdayNote.dataset.saturdayStatus=saturday.status;
   const hasAny=Boolean(draft.client||draft.city||draft.services.length);const unknown=(candidate.fareCents===null&&Boolean(draft.client&&draft.city))||(draft.second&&candidate.secondFareCents===null&&Boolean(draft.secondClient&&draft.secondCity))||draft.services.some(key=>extraCents[key]===null&&!(key==='sabatoTrasferta'&&saturday.status==='included'));
@@ -445,13 +453,18 @@ function renderInsert(main){
   try{
    const existing=state.trips.find(t=>t.id===editingId)||null;
    if(editingId&&tripEditVersion(existing)!==editingBaseline)throw new Error('Il viaggio è stato aggiornato o eliminato su un altro dispositivo. La bozza è conservata: annulla la modifica e riapri il viaggio aggiornato dal Registro.');
-   const trip=D.createTrip(draft,state,existing);
+   const trip=D.createTrip(draft,{...state,tariffs:[]},existing);
+   const sameFirst=Boolean(existing&&D.normalizeText(existing.client)===trip.client&&D.normalizeText(existing.city)===trip.city);
+   const sameSecond=Boolean(existing&&D.normalizeText(existing.secondClient)===trip.secondClient&&D.normalizeText(existing.secondCity)===trip.secondCity);
+   trip.fareCents=companyFareSnapshot(companyRates,companyRatesLoaded,trip.client,trip.city,{unchanged:sameFirst,previous:existing?.fareCents});
+   trip.secondFareCents=trip.secondCity?companyFareSnapshot(companyRates,companyRatesLoaded,trip.secondClient,trip.secondCity,{unchanged:sameSecond,previous:existing?.secondFareCents}):null;
    let next={...state,trips:existing?state.trips.map(t=>t.id===existing.id?trip:t):[...state.trips,trip]};
    const clients=[{name:trip.client,city:trip.city},...(trip.secondClient?[{name:trip.secondClient,city:trip.secondCity}]:[])];
    for(const customer of clients)if(!next.customers.some(c=>c.name===customer.name))next=D.upsertCustomer(next,customer);
    await persist(next);const savedDate=draft.date;editingId=null;editingBaseline=null;draft={...newDraft(),date:savedDate};render();toast(existing?'Viaggio aggiornato.':'Viaggio salvato nel registro.');
   }catch(err){error.textContent=err.message||'Salvataggio non riuscito. Riprova.';save.disabled=false;}
  });
+ refreshTripFareEstimate=updateEstimate;
  updateEstimate();layout.append(form);
  const recent=el('aside',{class:'recent-preview'},el('p',{class:'recent-heading'},'L’ULTIMO VIAGGIO'));
  const latest=D.sortTrips(state.trips)[0];
@@ -471,8 +484,8 @@ function renderInsert(main){
   recent.replaceChildren(el('p',{class:'recent-heading'},'L’ULTIMO VIAGGIO'),latest?tripCard(latest,currentAmounts):emptyState('Pronto a partire','Inserisci il primo viaggio: lo ritroverai qui e nel resoconto mensile.','truck'),el('p',{class:'hint-row'},icon('info'),'Clienti e località vengono ricordati.'));
  };
 }
-function citySuggestions(client){const normalized=D.normalizeText(client);return unique([...state.tariffs.filter(t=>t.client===normalized).map(t=>t.city),...state.customers.filter(c=>c.name===normalized).map(c=>c.city),...state.trips.filter(t=>t.client===normalized).map(t=>t.city),...companyCustomers.filter(c=>D.normalizeText(c.name)===normalized).map(c=>D.normalizeText(c.city))]);}
-function autofillCity(client,city){if(!city.value.trim()){const normalized=D.normalizeText(client.value);const tariffCities=unique(state.tariffs.filter(t=>t.client===normalized).map(t=>t.city));if(tariffCities.length===1)city.value=tariffCities[0];else if(!tariffCities.length){const customer=state.customers.find(c=>c.name===normalized);if(customer?.city)city.value=customer.city;else{const values=citySuggestions(client.value);if(values.length===1)city.value=values[0];}}}}
+function citySuggestions(client){const normalized=D.normalizeText(client);return unique([...companyRates.filter(t=>t.client===normalized).map(t=>t.city),...state.tariffs.filter(t=>t.client===normalized).map(t=>t.city),...state.customers.filter(c=>c.name===normalized).map(c=>c.city),...state.trips.filter(t=>t.client===normalized).map(t=>t.city),...companyCustomers.filter(c=>D.normalizeText(c.name)===normalized).map(c=>D.normalizeText(c.city))]);}
+function autofillCity(client,city){if(!city.value.trim()){const normalized=D.normalizeText(client.value);const tariffCities=unique(companyRates.filter(t=>t.client===normalized).map(t=>t.city));if(tariffCities.length===1)city.value=tariffCities[0];else if(!tariffCities.length){const customer=state.customers.find(c=>c.name===normalized);if(customer?.city)city.value=customer.city;else{const values=citySuggestions(client.value);if(values.length===1)city.value=values[0];}}}}
 function editTrip(trip,{focusNote=false}={}){editingId=trip.id;editingBaseline=tripEditVersion(trip);draft={...trip,services:[...trip.services],second:Boolean(trip.secondClient||trip.secondCity),note:trip.note||'',noteOpen:focusNote||Boolean(trip.note),servicesOpen:true};navigate('insert');if(focusNote)document.querySelector('#trip-note')?.focus();}
 function repeatRoute(trip){
  const apply=()=>{
@@ -1453,7 +1466,7 @@ function accountInstallBanner(){
 function renderAccountGate(message=''){
  companyCustomers=[];
  companyCustomersError='';
- companyCustomerSearch='';
+ companyCustomerSearch='';companyCustomersRequest++;
  companyRates=[];companyRatesLoaded=false;companyRatesRequest++;
  const hasPreviousSession=accountAccess.hasSession();
  const recovery=hasPreviousSession?el('div',{class:'account-session-recovery'},
@@ -1594,11 +1607,18 @@ async function initialize(){
 // Update the complete read-only corporate catalog while drivers are looking at it.
 // The private archive still synchronizes separately in client-store.mjs.
 setInterval(()=>{
- if(tab==='tariffs'&&tariffTab==='base'&&!document.hidden&&navigator.onLine!==false&&
+ if(['insert','tariffs'].includes(tab)&&!document.hidden&&navigator.onLine!==false&&
    store.usingAccount()&&accountAccess.isVerified())void refreshCompanyRates();
 },20000);
 window.addEventListener('online',()=>{
- if(tab==='tariffs'&&store.usingAccount()&&accountAccess.isVerified())void refreshCompanyRates();
+ if(['insert','tariffs'].includes(tab)&&store.usingAccount()&&accountAccess.isVerified())void refreshCompanyRates();
+});
+setInterval(()=>{
+ if(['insert','customers'].includes(tab)&&!document.hidden&&navigator.onLine!==false&&
+   store.usingAccount()&&accountAccess.isVerified())void refreshCompanyCustomers();
+},20000);
+window.addEventListener('online',()=>{
+ if(['insert','customers'].includes(tab)&&store.usingAccount()&&accountAccess.isVerified())void refreshCompanyCustomers();
 });
 window.addEventListener('beforeunload',event=>{if(busy){event.preventDefault();event.returnValue='';}});
 navigator.serviceWorker?.addEventListener('message',event=>{
