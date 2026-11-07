@@ -184,8 +184,10 @@ export function setupReport(account){
  month.value=currentMonth();
  let requestSeq=0,rows=[],page=null,loading=false,focusOnDriver=false;
  const insights=setupInsights(account);
- const companyDirectory=setupCustomerOverview(account);
  const companyRates=setupCompanyRates(account);
+ const companyDirectory=setupCustomerOverview(account,site=>{
+  open('rates');companyRates.prefillSite(site);
+ });
  const driverSearch=el('report-driver-search');
  function selectDriver(id){
   if(driver.value===id&&page)return;
