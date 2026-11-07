@@ -21,6 +21,7 @@ on:
       - 'sw.js'
       - 'shell.html'
       - 'index.html'
+      - 'tests/qa-maps-reader-live.test.mjs'
       - 'tests/qa-account-release.test.mjs'
       - 'tests/leaked-password-protection.test.mjs'
       - '.github/workflows/qa-account-release.yml'
@@ -45,6 +46,7 @@ on:
       - 'sw.js'
       - 'shell.html'
       - 'index.html'
+      - 'tests/qa-maps-reader-live.test.mjs'
       - 'tests/qa-account-release.test.mjs'
       - 'tests/leaked-password-protection.test.mjs'
 permissions:
@@ -72,3 +74,5 @@ jobs:
           node --check recupera-password.mjs
           node --check sw.js
           node --test tests/qa-account-release.test.mjs tests/driver-session-vault.test.mjs tests/leaked-password-protection.test.mjs tests/qa-company-tariffs.test.mjs tests/customer-site-matches.test.mjs
+      - name: Verify live Maps reader CORS and authentication boundary
+        run: node --test tests/qa-maps-reader-live.test.mjs
