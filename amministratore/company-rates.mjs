@@ -146,36 +146,48 @@ export function setupCompanyRates(account){
   feedback('Apri Tariffe aziendali per caricare i dati.');
   sitesMore.hidden=true;refresh.disabled=false;submit.disabled=true;
  }
- async function load(){
-  if(!authorized()){reset();return;}
+ async function load({silent=false}={}){
+  if(!authorized()){reset();return false;}
+  // Never displace a driver/site/amount currently being typed, nor interrupt
+  // a save. The next polling tick (or manual refresh) will retry.
+  if(silent&&(busy||refresh.disabled||form.contains(document.activeElement)))return false;
   const seq=++generation;
-  refresh.disabled=true;submit.disabled=true;
-  feedback('Sincronizzazione di tariffe e clienti aziendali…');
+  if(!silent){
+   refresh.disabled=true;submit.disabled=true;
+   feedback('Sincronizzazione di tariffe e clienti aziendali…');
+  }
   const [rateResult,customerResult]=await Promise.allSettled([
    account.companyTariffs('list'),
    import('../shared-maps-client.mjs').then(module=>module.sharedMapsCustomers())
   ]);
-  if(seq!==generation||!authorized())return;
-  if(rateResult.status==='fulfilled'&&Array.isArray(rateResult.value?.tariffs)){
-   rows=rateResult.value.tariffs;ratesLoaded=true;
-  }else{
-   rows=[];ratesLoaded=false;
+  if(seq!==generation||!authorized())return false;
+  const validRates=rateResult.status==='fulfilled'&&Array.isArray(rateResult.value?.tariffs);
+  const validCustomers=customerResult.status==='fulfilled'&&Array.isArray(customerResult.value);
+  const nextRates=validRates?rateResult.value.tariffs:[];
+  const nextSites=validCustomers?customerResult.value:[];
+  const changed=JSON.stringify(rows)!==JSON.stringify(nextRates)||
+   JSON.stringify(sites)!==JSON.stringify(nextSites)||
+   ratesLoaded!==validRates||sitesLoaded!==validCustomers;
+  rows=nextRates;ratesLoaded=validRates;
+  sites=nextSites;sitesLoaded=validCustomers;
+  if(changed||!silent){
+   customerChoices();render();
   }
-  if(customerResult.status==='fulfilled'&&Array.isArray(customerResult.value)){
-   sites=customerResult.value;sitesLoaded=true;
-  }else{
-   sites=[];sitesLoaded=false;
-  }
-  customerChoices();render();
+  const clock=new Date().toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'});
   if(!ratesLoaded)feedback(
-   'Impossibile caricare il tariffario. Nessun importo può essere salvato finché la sincronizzazione non riesce.',true);
+   'Tariffario non aggiornato: dati aziendali non disponibili. Riprova quando la connessione funziona.',true);
   else if(!sitesLoaded)feedback(
-   'Tariffe aggiornate, ma elenco clienti Google Maps non disponibile. Riprova: puoi inserire manualmente cliente e località.',true);
-  else if(!rows.length)feedback(
-   'Clienti Google Maps sincronizzati ('+tariffLinkedCustomerSites(sites,rows).total+
-   ' sedi). Il listino contiene ancora 0 tariffe: scegli una sede e inserisci l’importo.');
-  else feedback('Clienti Google Maps e tariffario aziendale aggiornati. Le tariffe salvate sono comuni a tutti gli autisti.');
-  refresh.disabled=false;submit.disabled=!ratesLoaded;
+   'Tariffe aggiornate alle '+clock+', ma catalogo Google Maps non disponibile. Sincronizzazione parziale.',true);
+  else{
+   const coverage=tariffLinkedCustomerSites(sites,rows);
+   feedback('Clienti e tariffe aggiornati alle '+clock+' · '+coverage.priced+
+    ' sedi con tariffa, '+coverage.unpriced+' senza tariffa su '+coverage.total+
+    '. Gli importi già registrati non vengono modificati.');
+  }
+  if(seq===generation){
+   refresh.disabled=false;submit.disabled=!ratesLoaded;
+  }
+  return validRates&&validCustomers;
  }
  cancel.addEventListener('click',clearForm);
  search.addEventListener('input',()=>{sitesExpanded=false;render();});
