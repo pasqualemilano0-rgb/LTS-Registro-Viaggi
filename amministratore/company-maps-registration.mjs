@@ -102,7 +102,7 @@ export function setupCompanyMaps(account,{onSaved=async()=>{}}={}){
    'Esiste già una tariffa per '+selected.name+' · '+selected.city+
    '. Sostituire '+euro(rate.cents)+' € con '+euro(cents)+' € per i nuovi viaggi?'))return;
   busy=true;save.disabled=true;read.disabled=true;url.disabled=true;
-  const proposal=selected;
+  const proposal=selected,accountId=account.getAccountId();
   try{
    // Re-read the live registry before deciding whether the customer exists.
    // The server is the final authority for duplicate checks under concurrency.
@@ -114,7 +114,10 @@ export function setupCompanyMaps(account,{onSaved=async()=>{}}={}){
     })
    ).customer;
    partial=customer;
-   if(!authorized())return;
+   // Finish both requested server writes even if the admin navigates away.
+   // Never use a different account's session for the second operation.
+   if(account.getAccountId()!==accountId)
+    throw new Error('Account cambiato: verifica il cliente e completa la tariffa.');
    const live=await account.companyTariffs('list');
    if(!Array.isArray(live?.tariffs))throw new Error('Tariffario aziendale non disponibile.');
    const current=matchingRate(live.tariffs,customer);
@@ -128,8 +131,9 @@ export function setupCompanyMaps(account,{onSaved=async()=>{}}={}){
      ...(current?{id:current.id,expectedRevision:current.revision}:{})
     });
    }
-   if(!authorized())return;
-   feedback(known?'Cliente già presente: tariffa verificata e salvata.':
+   if(account.getAccountId()!==accountId)
+    throw new Error('Account cambiato: verifica lo stato del salvataggio.');
+   if(authorized())feedback(known?'Cliente già presente: tariffa verificata e salvata.':
     'Cliente Google Maps aggiunto e tariffa salvata nel listino aziendale. Disponibile agli autisti al prossimo aggiornamento online.');
    form.reset();selected=null;partial=null;rate=null;existing=null;preview.hidden=true;
    try{await onSaved(customer);}
