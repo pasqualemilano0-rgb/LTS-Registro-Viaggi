@@ -193,21 +193,23 @@
             <div>
               <p class="eyebrow">LTS · GESTIONE ECONOMICA</p>
               <h1 id="company-rates-title">Tariffe aziendali</h1>
-              <p>Definisci un importo per ogni cliente e località. Le tariffe mancanti vengono recuperate automaticamente nei registri e nei report sincronizzati.</p>
+              <p>Scegli un cliente dall’anagrafica Google Maps condivisa e assegna l’importo alla sua località. I nuovi viaggi useranno il tariffario aziendale.</p>
             </div>
             <button type="button" class="button outline" id="company-rates-refresh">Aggiorna elenco</button>
           </header>
-          <p class="company-rates-guide">Le tariffe aziendali si applicano soltanto dove manca un importo e non sostituiscono le tariffe personali già definite dagli autisti. Gli importi già salvati restano invariati. Eventuali servizi extra mancanti vanno configurati separatamente.</p>
+          <p class="company-rates-guide">I clienti Google Maps sono condivisi con gli autisti. Per ciascuna sede l’amministratore imposta la trasferta comune: un cliente registrato non ha automaticamente una tariffa. Gli importi dei viaggi già salvati restano invariati.</p>
           <section id="company-rates-editor" class="company-rates-editor" aria-labelledby="company-rates-form-title">
             <h2 id="company-rates-form-title">Nuova tariffa</h2>
-            <p class="company-rates-note">Usa esattamente il cliente e la località presenti nei viaggi. L'importo è espresso in euro.</p>
+            <p class="company-rates-note">Scegli una sede dall’elenco in basso: cliente e località si compilano da soli. Inserisci solo l’importo in euro. Puoi anche inserire una sede non ancora presente su Maps.</p>
             <form id="company-rates-form" autocomplete="off">
               <div class="company-rates-fields">
                 <label>Cliente
-                  <input id="company-rate-client" name="client" type="text" maxlength="500" placeholder="Nome cliente" required>
+                  <input id="company-rate-client" name="client" type="text" list="company-rate-client-options" maxlength="500" placeholder="Digita o scegli cliente" required>
+                  <datalist id="company-rate-client-options"></datalist>
                 </label>
                 <label>Località
-                  <input id="company-rate-city" name="city" type="text" maxlength="500" placeholder="Città o sede" required>
+                  <input id="company-rate-city" name="city" type="text" list="company-rate-city-options" maxlength="500" placeholder="Scegli la sede" required>
+                  <datalist id="company-rate-city-options"></datalist>
                 </label>
                 <label>Tariffa (€)
                   <input id="company-rate-amount" name="amount" type="text" inputmode="decimal" maxlength="14" placeholder="85,50" required>
@@ -228,6 +230,17 @@
               <input type="search" id="company-rates-search" aria-label="Cerca tariffa per cliente o località" placeholder="Cerca cliente o località…" maxlength="120">
             </div>
             <div id="company-rates-list" aria-label="Elenco delle tariffe aziendali"></div>
+            <section class="company-sites-section" aria-labelledby="company-sites-title">
+              <div class="company-sites-heading">
+                <div>
+                  <h3 id="company-sites-title">Clienti Google Maps da tariffare</h3>
+                  <p id="company-sites-count" role="status" aria-live="polite">Caricamento delle sedi condivise…</p>
+                </div>
+              </div>
+              <div id="company-sites-list" class="company-sites-list" aria-label="Sedi clienti condivise senza tariffa"></div>
+              <button type="button" id="company-sites-more" class="button outline" hidden>Mostra altre sedi</button>
+              <p class="company-sites-help">Selezionare una sede non crea una tariffa: l’importo sarà disponibile agli autisti solo dopo il salvataggio.</p>
+            </section>
           </section>
         </section>
         <section id="console-overview" class="console-overview surface" aria-labelledby="console-overview-title">
