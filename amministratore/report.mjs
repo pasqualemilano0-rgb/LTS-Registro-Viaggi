@@ -2,6 +2,7 @@
 import {setupInsights} from './report-insights.mjs?v=20261104-company-v3';
 import {setupCustomerOverview} from './customer-overview.mjs?v=20261107-dashboard-sync-v3';
 import {setupCompanyRates} from './company-rates.mjs?v=20261107-dashboard-sync-v3';
+import {setupDriverRecords} from './driver-records.mjs?v=20261107-records-admin-v1';
 const el=id=>document.getElementById(id);
 function node(tag,className='',value=''){
  const e=document.createElement(tag);
@@ -174,6 +175,7 @@ export function setupReport(account){
   ['overview','overview-tab','Panoramica aziendale','Indicatori, andamento e anomalie dei viaggi sincronizzati.'],
   ['drivers','management-tab','Gestione autisti','Account, inviti, ripristino credenziali e autorizzazioni.'],
   ['trips','report-tab','Registro viaggi','Consulta gli inserimenti e ricerca i viaggi del periodo.'],
+  ['records','records-tab','Archivi autisti','Modifica i dati sincronizzati di ogni autista.'],
   ['rates','rates-tab','Tariffe aziendali','Gestione centralizzata delle tariffe per cliente e località.'],
   ['analysis','analysis-tab','Analisi e grafici','Confronti tra autisti, clienti, località e andamento storico.'],
   ['alerts','alerts-tab','Centro anomalie','Controlla le segnalazioni generate dai viaggi sincronizzati.'],
@@ -185,6 +187,7 @@ export function setupReport(account){
  let requestSeq=0,rows=[],page=null,loading=false,focusOnDriver=false;
  const insights=setupInsights(account);
  const companyRates=setupCompanyRates(account);
+ const records=setupDriverRecords(account);
  const companyDirectory=setupCustomerOverview(account,site=>{
   open('rates');companyRates.prefillSite(site);
  });
@@ -195,8 +198,10 @@ export function setupReport(account){
  }
  function tabs(view){
   const current=views.find(v=>v[0]===view)||views[1];
-  const showReport=!['drivers','security'].includes(current[0]);
-  management.hidden=showReport;report.hidden=!showReport;
+  const showReport=!['drivers','security','records'].includes(current[0]);
+  management.hidden=showReport||current[0]==='records';
+  report.hidden=!showReport;
+  el('admin-records-panel').hidden=current[0]!=='records';
   el('dashboard').dataset.view=current[0];
   document.title='LTS · '+current[2];
   for(const item of views){
@@ -215,18 +220,18 @@ export function setupReport(account){
  }
  function reset(){
   requestSeq++;rows=[];page=null;loading=false;
-  clearData();insights.reset();companyDirectory.reset();companyRates.reset();el('report-empty').hidden=true;el('report-status').textContent='';
+  clearData();insights.reset();companyDirectory.reset();companyRates.reset();records.reset();el('report-empty').hidden=true;el('report-status').textContent='';
   el('report-error').hidden=true;el('report-next').disabled=false;
   updateDriverOptions([]);
   driverSearch.value='';
   el('report-period-title').textContent='—';
   focusOnDriver=false;tabs('drivers');
  }
- function open(view){
+ function open(view,phone=null){
   if(!account.isVerified()||account.getRole()!=='admin')return;
   if(!views.some(v=>v[0]===view))return;
   const lastView=el('dashboard').dataset.view;
-  const wasReport=!report.hidden,showReport=!['drivers','security'].includes(view);
+  const wasReport=!report.hidden,showReport=!['drivers','security','records'].includes(view);
   if(view!=='overview')companyDirectory.reset();
   if(view!=='rates')companyRates.reset();
   if(lastView==='rates')page=null;
@@ -235,7 +240,12 @@ export function setupReport(account){
    el('secret-code').value='';
    el('secret-panel').hidden=true;
   }
-  if(!showReport){
+  if(view==='records'){
+   requestSeq++;loading=false;rows=[];page=null;
+   tabs(view);
+   if(phone)records.openForPhone(phone);
+   else void records.load();
+  }else if(!showReport){
    requestSeq++;loading=false;rows=[];page=null;clearData();insights.reset();
    tabs(view);
   }else{
@@ -350,6 +360,7 @@ export function setupReport(account){
      el('dashboard').hidden||document.hidden||navigator.onLine===false)return false;
   const view=el('dashboard').dataset.view;
   if(view==='rates'){void companyRates.load({silent:true});return true;}
+  if(view==='records')return records.refreshActive();
   if(view==='overview'){
    void companyDirectory.load({silent:true});
    if(!loading)void load(false,{silent:true});
@@ -381,5 +392,5 @@ export function setupReport(account){
   month.value=currentMonth();driver.value='';driverSearch.value='';rows=[];focusOnDriver=false;void load(false);
  });
  el('report-next').addEventListener('click',()=>void load(true));
- return {reset,open,refreshActive};
+ return {reset,open,refreshActive,openRecordsForPhone(phone){open('records',phone);}};
 }
