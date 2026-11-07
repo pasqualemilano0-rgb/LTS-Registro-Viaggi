@@ -549,13 +549,13 @@ function renderRegister(main){
  main.append(el('p',{class:'subtle-footer'},'Scorri liberamente: tutti i viaggi del mese sono qui.'));
 }
 function searchBox(placeholder,onSearch){const input=el('input',{type:'search',placeholder,value:searchValue,'aria-label':placeholder,autocapitalize:'characters',on:{input:event=>{searchValue=event.target.value;onSearch();}}});return el('div',{class:'search'},icon('search'),input);}
-function customerTariffs(customer){return state.tariffs.filter(tariff=>tariff.customerId===customer.id||D.normalizeText(tariff.client)===D.normalizeText(customer.name)).sort((a,b)=>a.city.localeCompare(b.city,'it'));}
+function customerTariffs(customer){return companyRates.filter(tariff=>D.normalizeText(tariff.client)===D.normalizeText(customer.name)).sort((a,b)=>a.city.localeCompare(b.city,'it'));}
 function customerCard(customer){
  const rates=customerTariffs(customer);
  const content=el('div',{class:'customer-card-main'},el('div',{class:'customer-avatar','aria-hidden':'true'},customer.name.replace(/[^\p{L}\p{N} ]/gu,'').split(' ').filter(Boolean).slice(0,2).map(n=>n[0]).join('')),el('div',{class:'catalog-content'},el('h2',{class:'catalog-title'},customer.name),el('p',{class:'catalog-city'},customer.city||'Località da completare'),customer.address?el('p',{class:'catalog-details'},customer.address):null),el('button',{type:'button',class:'icon-button','aria-label':`Modifica cliente ${customer.name}`,on:{click:()=>customerDialog(customer)}},icon('edit')));
- const tariffs=el('div',{class:'customer-linked-rates'},el('div',{class:'customer-rates-heading'},el('span',{class:'customer-rate-count'},icon('link'),rates.length?`${rates.length} ${rates.length===1?'tariffa collegata':'tariffe collegate'}`:'Nessuna tariffa'),button('Tariffe','text',()=>customerDialog(customer,null,{focusRates:true}),'wallet',{'aria-label':`Tariffe cliente ${customer.name}`})));
+ const tariffs=el('div',{class:'customer-linked-rates'},el('div',{class:'customer-rates-heading'},el('span',{class:'customer-rate-count'},icon('link'),rates.length?`${rates.length} ${rates.length===1?'tariffa aziendale':'tariffe aziendali'}`:'Tariffa aziendale non impostata')));
  if(rates.length)tariffs.append(el('ul',{class:'customer-rate-preview'},rates.slice(0,2).map(rate=>el('li',{},el('span',{},rate.city||'Località da completare'),el('strong',{},D.formatMoney(rate.cents))))));
- else tariffs.append(el('p',{class:'customer-rates-empty'},'Aggiungi la trasferta per ogni località.'));
+ else tariffs.append(el('p',{class:'customer-rates-empty'},'Le trasferte sono uguali per tutti e vengono impostate dall’amministratore.'));
  return el('article',{class:'panel customer-card'},content,tariffs);
 }
 function renderCustomers(main){
@@ -569,7 +569,7 @@ function renderCustomers(main){
  main.append(el('section',{class:'panel customer-tools','aria-label':'Strumenti clienti'},button('Da Google Maps','secondary',mapsCustomerDialog,'pin'),el('div',{class:'csv-tools'},button('Importa CSV','text',()=>csvInput.click(),'upload'),button('Esporta CSV','text',()=>{try{downloadBlob(new Blob([exportCustomerCsv(state)],{type:'text/csv;charset=utf-8'}),`LTS-Clienti-${today()}.csv`);toast('Rubrica esportata.');}catch(error){toast(error.message,true);}},'download')),csvInput),searchBox('Cerca nei clienti personali: nome, località o partita IVA',draw),el('div',{class:'catalog-top'},count,el('button',{type:'button',class:'text-button',on:{click:()=>customerDialog()}},icon('plus'),'Nuovo cliente')),list);draw();refreshView=draw;
 }
 function renderTariffs(main){
- main.append(heading('IL VALORE DEI TUOI VIAGGI','Tariffe & extra','Le tariffe aziendali arrivano automaticamente nel registro quando sei online.'));
+ main.append(heading('IL VALORE DEI TUOI VIAGGI','Tariffe & extra','Le trasferte sono aziendali e uguali per tutti gli autisti.'));
  main.append(el('div',{class:'segment','aria-label':'Tipo di tariffa'},
   el('button',{type:'button',class:tariffTab==='base'?'selected':'','aria-pressed':tariffTab==='base',
    on:{click:()=>{tariffTab='base';searchValue='';render();}}},'Trasferte'),
@@ -579,73 +579,40 @@ function renderTariffs(main){
  const list=el('div',{class:'catalog-list'}),count=el('span',{class:'catalog-count'});
  const companyStatus=el('span',{},'Tariffario aziendale disponibile dopo la sincronizzazione.');
  const refresh=el('button',{type:'button',class:'secondary-button',on:{click:async()=>{
-   refresh.disabled=true;
-   companyStatus.textContent='Aggiornamento tariffe in corso…';
-   try{
-    await Promise.all([store.syncPending(),refreshCompanyRates({quiet:false})]);
-    companyStatus.textContent='Tariffe aggiornate dal gestionale aziendale.';
-    toast('Tariffe aziendali sincronizzate.');
-   }catch(error){
-    companyStatus.textContent=error?.message||'Aggiornamento non disponibile: i dati salvati restano conservati.';
-    toast('Non è stato possibile aggiornare le tariffe. Controlla la connessione.',true);
-   }finally{refresh.disabled=false;}
+  refresh.disabled=true;companyStatus.textContent='Aggiornamento tariffe in corso…';
+  try{
+   await Promise.all([store.syncPending(),refreshCompanyRates({quiet:false})]);
+   companyStatus.textContent='Tariffe aziendali aggiornate.';toast('Tariffe aziendali sincronizzate.');
+  }catch(error){
+   companyStatus.textContent=error?.message||'Aggiornamento non disponibile: i dati salvati restano conservati.';
+   toast('Non è stato possibile aggiornare le tariffe. Controlla la connessione.',true);
+  }finally{refresh.disabled=false;}
  }}},icon('cloud'),'Aggiorna tariffe');
- const banner=el('div',{class:'info-note tariff-company-sync','aria-label':'Sincronizzazione tariffe aziendali'},
-  icon('cloud'),companyStatus,refresh);
- main.append(banner);
+ main.append(el('div',{class:'info-note tariff-company-sync','aria-label':'Sincronizzazione tariffe aziendali'},
+  icon('cloud'),companyStatus,refresh));
  function draw(){
   const filter=D.normalizeText(searchValue);
-  const personal=state.tariffs.filter(t=>!t.id.startsWith('company:'));
-  const corporate=companyRatesLoaded
-   ?companyRates:state.tariffs.filter(t=>t.id.startsWith('company:'));
-  const all=[...corporate,...personal];
-  const tariffs=all.filter(t=>`${t.client} ${t.city}`.includes(filter))
-   .sort((a,b)=>a.client.localeCompare(b.client,'it')||
-     a.city.localeCompare(b.city,'it')||(a.id.startsWith('company:')?-1:1));
-  const companyCount=corporate.length;
-  const personalCount=personal.length;
-  count.textContent=`${all.length} tariffe · ${companyCount} aziendali · ${personalCount} personali`;
+  const tariffs=companyRates.filter(t=>`${t.client} ${t.city}`.includes(filter))
+   .sort((a,b)=>a.client.localeCompare(b.client,'it')||a.city.localeCompare(b.city,'it'));
+  count.textContent=`${companyRates.length} tariffe aziendali · sola lettura`;
   if(!companyStatus.textContent.includes('corso')&&!companyStatus.textContent.includes('aggiornate')&&
-    !companyStatus.textContent.includes('Errore')&&!companyStatus.textContent.includes('possibile'))
-   companyStatus.textContent=companyCount
-    ?`${companyCount} tariffe aziendali disponibili per tutti gli autisti. Si aggiornano in automatico con Internet attivo.`
-    :'Il tariffario aziendale sarà visualizzato qui appena saranno disponibili le tariffe.';
-  const cards=tariffs.map(tariff=>{
-   const corporate=tariff.id.startsWith('company:');
-   const detail=el('div',{class:'tariff-row'},
-    el('div',{class:'catalog-content'},el('h2',{class:'catalog-title'},tariff.client),
-     el('p',{class:'catalog-city'},tariff.city)),
-    el('strong',{class:'tariff-amount'},D.formatMoney(tariff.cents)));
-   const actions=el('div',{class:'inline-actions'});
-   if(!corporate){
-    actions.append(
-     el('button',{type:'button',class:'icon-button','aria-label':`Modifica tariffa ${tariff.client}, ${tariff.city}`,
-      on:{click:()=>tariffDialog(tariff)}},icon('edit')),
-     el('button',{type:'button',class:'icon-button danger','aria-label':`Elimina tariffa ${tariff.client}, ${tariff.city}`,
-      on:{click:()=>confirmAction('Eliminare questa tariffa?',
-       `${tariff.client} · ${tariff.city}. Gli importi dei viaggi già salvati restano invariati.`,
-       async()=>{
-        requireCurrentEditor(editorVersion(tariff),
-         state.tariffs.find(current=>current.id===tariff.id),'La tariffa');
-        await persist({...state,tariffs:state.tariffs.filter(t=>t.id!==tariff.id)});
-        render();toast('Tariffa eliminata.');
-       })}},icon('trash')));
-   }else actions.append(el('span',{class:'linked-label'},icon('lock'),'Sola lettura'));
-   return el('article',{class:'panel tariff-card'},detail,
-    el('div',{class:'tariff-footer'},
-     el('span',{class:'linked-label'},icon(corporate?'cloud':'link'),
-      corporate?'Tariffa aziendale · sincronizzata':'Tariffa personale'),
-     actions));
-  });
-  list.replaceChildren(...cards);
-  if(!tariffs.length)list.append(emptyState(filter?'Nessuna tariffa trovata':'Dai un valore a ogni viaggio',
-    filter?'Cerca un altro cliente o una località.':'Le tariffe aziendali appariranno dopo la sincronizzazione.',
-    'wallet',filter?null:button('Aggiungi tariffa personale','primary',()=>tariffDialog(),'plus')));
+     !companyStatus.textContent.includes('Errore')&&!companyStatus.textContent.includes('possibile'))
+   companyStatus.textContent=companyRatesLoaded
+    ?companyRates.length?'Gli importi sono comuni a tutti gli autisti.':'Il listino aziendale è vuoto: l’amministratore deve inserire le trasferte.'
+    :'In attesa del listino aziendale. Premi Aggiorna tariffe con Internet attivo.';
+  list.replaceChildren(...tariffs.map(rate=>el('article',{class:'panel tariff-card'},
+   el('div',{class:'tariff-row'},
+    el('div',{class:'catalog-content'},el('h2',{class:'catalog-title'},rate.client),
+     el('p',{class:'catalog-city'},rate.city)),
+    el('strong',{class:'tariff-amount'},D.formatMoney(rate.cents))),
+   el('div',{class:'tariff-footer'},el('span',{class:'linked-label'},icon('cloud'),'Tariffa aziendale · sincronizzata'),
+    el('span',{class:'linked-label'},icon('lock'),'Sola lettura')))));
+  if(!tariffs.length)list.append(emptyState(filter?'Nessuna tariffa trovata':'Tariffario aziendale non ancora compilato',
+   filter?'Cerca un altro cliente o località.':'Gli importi delle trasferte vengono inseriti dall’amministratore e sono uguali per tutti gli autisti.',
+   'wallet'));
  }
  main.append(searchBox('Cerca cliente o località',draw),
-  el('div',{class:'catalog-top'},count,
-   el('button',{type:'button',class:'text-button',on:{click:()=>tariffDialog()}},icon('plus'),'Nuova tariffa personale')),
-  list);
+  el('div',{class:'catalog-top'},count),list);
  draw();refreshView=draw;
 }
 function renderExtraRates(main){
@@ -709,40 +676,15 @@ function customerDialog(customer=null,proposal=null,{focusRates=false}={}){
  }
  const customerName=field('Nome cliente','name',seed?.name||'',{placeholder:'Ragione sociale',required:true,maxlength:500});const city=field('Località','city',seed?.city||'',{placeholder:'Città',optional:true,maxlength:500});const address=field('Indirizzo','address',seed?.address||'',{placeholder:'Via e numero civico',optional:true,maxlength:1000});const vat=field('Partita IVA','vat',seed?.vat||'',{placeholder:'Partita IVA',optional:true,maxlength:100});
  form.append(error,customerName.wrap,city.wrap,address.wrap,vat.wrap);
- const rateRows=[];let rateIndex=0;
- const rateList=el('div',{class:'customer-rate-editors'});const noRates=el('p',{class:'customer-rates-empty'},'Non hai ancora impostato tariffe per questo cliente.');
- const ratesSection=el('section',{class:'customer-rates-section','aria-label':'Tariffe del cliente'},el('div',{class:'customer-rates-title'},icon('wallet'),el('h3',{},'Tariffe del cliente')),el('p',{class:'customer-rates-note'},'Una trasferta per ogni località. Le modifiche aggiornano anche i viaggi già nel registro.'),noRates,rateList);
- function addRate(tariff=null,{focus=true}={}){
-  const index=++rateIndex;const initialCity=tariff?tariff.city:(rateRows.length?'':city.input.value);const initialAmount=moneyInput(tariff?.cents);
-  const row={tariff,index,dirty:false};const markDirty=()=>{row.dirty=true;};
-  row.city=field(`Località tariffa ${index}`,`tariff-city-${index}`,initialCity,{placeholder:'Città del viaggio',maxlength:500,onInput:markDirty});
-  row.amount=field(`Trasferta tariffa ${index} €`,`tariff-cents-${index}`,initialAmount,{placeholder:'0,00',inputmode:'decimal',maxlength:14,onInput:markDirty});
-  row.element=el('div',{class:'customer-rate-editor','data-rate-row':index},el('div',{class:'customer-rate-editor-top'},el('span',{},`Tariffa ${index}`),tariff?el('span',{class:'customer-rate-saved'},'Collegata'):button('Rimuovi','text',()=>{rateRows.splice(rateRows.indexOf(row),1);row.element.remove();noRates.hidden=Boolean(rateRows.length);},'close',{'aria-label':`Rimuovi nuova tariffa ${index}`,class:'text-button customer-rate-remove'})),el('div',{class:'customer-rate-fields'},row.city.wrap,row.amount.wrap));
-  rateRows.push(row);rateList.append(row.element);noRates.hidden=true;
-  if(focus){row.element.scrollIntoView({block:'nearest'});(row.city.input.value?row.amount.input:row.city.input).focus();}
- }
- for(const tariff of customer?customerTariffs(customer):[])addRate(tariff,{focus:false});
- ratesSection.append(button('Aggiungi tariffa','secondary',()=>addRate(),'plus',{class:'secondary-button customer-add-rate'}));form.append(ratesSection);
+ form.append(el('p',{class:'info-note'},icon('lock'),'Le trasferte sono uguali per tutti gli autisti e si modificano solo dal tariffario aziendale.'));
  const actions=el('div',{class:'dialog-actions'});
  if(customer)actions.append(button('Elimina','secondary danger',()=>{
   dialog.close();confirmAction('Eliminare questo cliente?',`${customer.name}. Saranno rimosse anche le sue tariffe. I viaggi già salvati resteranno nel registro.`,async()=>{requireCurrentEditor(expectedCustomer,state.customers.find(current=>current.id===customer.id),'Il cliente');await persist({...state,customers:state.customers.filter(c=>c.id!==customer.id),tariffs:state.tariffs.filter(t=>t.customerId!==customer.id&&t.client!==customer.name)});render();toast('Cliente eliminato.');});
  }));
  actions.append(el('button',{type:'submit',class:'primary-button','data-save':true},'Salva cliente'));form.append(actions);
  form.addEventListener('submit',async event=>{event.preventDefault();error.textContent='';try{
-  const tariffChanges=[];const places=new Set();
-  for(const row of rateRows){
-   if(!row.tariff&&!row.dirty)continue;
-   const place=D.normalizeText(row.city.input.value);const amount=row.amount.input.value.trim();
-   if(row.tariff&&!row.dirty){if(place){if(places.has(place))throw new Error(`La località ${place} è già presente: usa una sola tariffa per località.`);places.add(place);}continue;}
-   if(!row.tariff&&!place&&!amount)continue;
-   if(!place||!amount){(!place?row.city.input:row.amount.input).focus();throw new Error(`Completa località e importo della tariffa ${row.index}, oppure rimuovi la nuova tariffa.`);}
-   if(places.has(place)){row.city.input.focus();throw new Error(`La località ${place} è già presente: usa una sola tariffa per località.`);}places.add(place);
-   let cents;try{cents=D.toCents(amount);}catch(err){row.amount.input.focus();throw new Error(`Tariffa ${row.index}: ${err.message}`);}
-   if(!row.tariff||place!==row.tariff.city||cents!==row.tariff.cents)tariffChanges.push({...(row.tariff?{id:row.tariff.id}:{}),city:place,cents});
-  }
   if(customer)requireCurrentEditor(expectedCustomer,state.customers.find(current=>current.id===customer.id),'Il cliente');
-  for(const change of tariffChanges)if(change.id){const original=rateRows.find(row=>row.tariff?.id===change.id)?.tariff;requireCurrentEditor(editorVersion(original),state.tariffs.find(current=>current.id===change.id),'La tariffa del cliente');}
-  const next=D.upsertCustomerWithTariffs(state,{id:customer?.id,name:customerName.input.value,city:city.input.value,address:address.input.value,vat:vat.input.value},tariffChanges);
+  const next=D.upsertCustomer(state,{id:customer?.id,name:customerName.input.value,city:city.input.value,address:address.input.value,vat:vat.input.value});
   await persist(next);
   // Provenance check: ONLY the Google Maps flow supplies mapsUrl. Normal
   // manual creation, CSV import, tariff and trip edits NEVER publish customers.
@@ -764,17 +706,7 @@ function customerDialog(customer=null,proposal=null,{focusRates=false}={}){
   }
   dialog.close();render();toast(message,onlineError);
  }catch(err){error.textContent=err.message;error.scrollIntoView({block:'nearest'});}});body.append(form);
- if(focusRates){ratesSection.scrollIntoView({block:'start'});if(rateRows.length)rateRows[0].amount.input.focus({preventScroll:true});else ratesSection.querySelector('button').focus({preventScroll:true});}else customerName.input.focus();
-}
-function tariffDialog(tariff=null){
- if(tariff?.id?.startsWith('company:')){toast('Tariffa aziendale gestita dall’amministratore. Non può essere modificata dal registro personale.',true);return;}
- const openingTariffs=structuredClone(state.tariffs);
- const {dialog,body}=modal(tariff?'Modifica tariffa':'Nuova tariffa',{subtitle:'Scegli cliente e località: l’importo aggiorna automaticamente anche i viaggi già nel registro.'});const form=el('form',{novalidate:true});const error=el('div',{class:'form-error',role:'alert'});
- const client=field('Cliente','client',tariff?.client||'',{placeholder:'Seleziona o scrivi il cliente',list:'tariff-customers',required:true,maxlength:500});const city=field('Località','city',tariff?.city||'',{placeholder:'Città del viaggio',required:true,maxlength:500});const amount=field('Trasferta €','cents',moneyInput(tariff?.cents),{placeholder:'0,00',inputmode:'decimal',required:true,maxlength:14});
- client.input.addEventListener('change',()=>autofillCity(client.input,city.input));
- form.append(error,client.wrap,datalist('tariff-customers',[...state.customers.map(c=>c.name),...companyCustomers.map(c=>c.name)]),city.wrap,amount.wrap,el('button',{type:'submit',class:'primary-button full','data-save':true},icon('check'),'Salva tariffa'));
- form.addEventListener('submit',async event=>{event.preventDefault();error.textContent='';
-  try{const original=tariff||D.findTariff({tariffs:openingTariffs},client.input.value,city.input.value);if(original?.id?.startsWith('company:'))throw new Error('Tariffa aziendale gestita dall’amministratore: non modificabile qui.');const current=tariff?state.tariffs.find(row=>row.id===tariff.id):D.findTariff(state,client.input.value,city.input.value);requireCurrentEditor(editorVersion(original),current,'La tariffa');const next=D.upsertTariff(state,{id:tariff?.id,client:client.input.value,city:city.input.value,cents:D.toCents(amount.input.value)});await persist(next);dialog.close();render();toast('Tariffa, cliente e registro aggiornati.');}catch(err){error.textContent=err.message;}});body.append(form);client.input.focus();
+ customerName.input.focus();
 }
 function openProfile(required=false){
  const expectedProfile=editorVersion(state.profile);
