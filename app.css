@@ -658,3 +658,22 @@ h1,h2,h3{letter-spacing:-.035em}
  .directory-card .directory-card-address,
  .directory-card .directory-card-phone{grid-template-columns:54px minmax(0,1fr);gap:6px}
 }
+
+
+/* Search stays usable on Android: one focused text field, visible clear control. */
+.customer-hub .company-customer-search{position:relative;display:flex;align-items:center;gap:8px;min-width:0;overflow:visible}
+.customer-hub .company-customer-search input[type="search"]{
+ display:block;flex:1 1 auto;width:0;min-width:0;max-width:100%;
+ font-size:16px;line-height:1.35;padding:10px 0;pointer-events:auto;
+ -webkit-user-select:text;user-select:text;touch-action:auto;
+}
+.customer-hub .company-customer-search .customer-search-clear{
+ display:inline-flex;align-items:center;justify-content:center;flex:none;
+ width:40px;height:40px;min-width:40px;padding:0;border:0;border-radius:10px;
+ color:#416b7a;background:#eaf3f6;cursor:pointer;
+}
+.customer-hub .company-customer-search .customer-search-clear .icon{width:17px;height:17px}
+.customer-hub .company-customer-search .customer-search-clear[hidden]{display:none!important}
+.customer-hub .company-customer-search .customer-search-clear:focus-visible{
+ outline:3px solid #4cb6ce;outline-offset:2px;
+}
