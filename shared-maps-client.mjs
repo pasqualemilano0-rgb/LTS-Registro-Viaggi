@@ -14,17 +14,23 @@ function endpoint(){
  return url.href;
 }
 function validCustomer(c){
- if(!c||typeof c!=='object'||c.source!=='google_maps_link'||
-   !['name','city','address','mapsUrl'].every(k=>typeof c[k]==='string'&&c[k].trim()&&c[k].length<=4096))
-  throw new Error('Registro clienti aziendale non valido.');
- const url=new URL(c.mapsUrl);
- if(url.protocol!=='https:'||!['www.google.com','google.com','www.google.it','google.it',
-    'maps.google.com','maps.google.it','maps.app.goo.gl','goo.gl'].includes(url.hostname))
-  throw new Error('Link cliente non riconosciuto.');
- if(c.operationalNotes!==undefined&&(typeof c.operationalNotes!=='string'||c.operationalNotes.length>1500))
+ if(!c||typeof c!=='object'||!['google_maps_link','manual'].includes(c.source)||
+    !['name','city','address','mapsUrl'].every(k=>typeof c[k]==='string'&&c[k].length<=4096)||
+    !c.name.trim()||!c.city.trim())throw new Error('Registro clienti aziendale non valido.');
+ if(c.source==='google_maps_link'){
+  if(!c.address.trim()||!c.mapsUrl.trim())throw new Error('Sede Google Maps incompleta.');
+  const url=new URL(c.mapsUrl);
+  if(url.protocol!=='https:'||!['www.google.com','google.com','www.google.it','google.it',
+      'maps.google.com','maps.google.it','maps.app.goo.gl','goo.gl'].includes(url.hostname))
+   throw new Error('Link cliente non riconosciuto.');
+ }else if(c.mapsUrl!==''){
+  throw new Error('Un cliente manuale non può dichiarare un link Maps.');
+ }
+ if(c.operationalNotes!==undefined&&
+    (typeof c.operationalNotes!=='string'||c.operationalNotes.length>1500))
   throw new Error('Indicazioni operative cliente non valide.');
- return {name:c.name,city:c.city,address:c.address,mapsUrl:c.mapsUrl,source:c.source,
-  operationalNotes:c.operationalNotes||''};
+ return {name:c.name,city:c.city,address:c.address,mapsUrl:c.mapsUrl,
+  source:c.source,operationalNotes:c.operationalNotes||''};
 }
 async function post(payload){
  const url=endpoint();
@@ -64,4 +70,21 @@ export async function saveSharedMapsCustomer(url,customer){
  if(typeof result?.created!=='boolean')
   throw new Error('Conferma di salvataggio aziendale non valida.');
  return {customer:validCustomer(result.customer),created:result.created,updated:result.updated===true};
+}
+
+/** Administrator-only addition: no fabricated Maps URL, company-wide visibility.
+ * The backend checks live admin session, MFA, normalized name/city and duplicates.
+ */
+export async function saveSharedManualCustomer(customer){
+ if(!customer||typeof customer!=='object'||Array.isArray(customer))
+  throw new Error('Compila i dati del cliente aziendale.');
+ const name=String(customer.name||'').trim(),city=String(customer.city||'').trim();
+ const address=String(customer.address||'').trim(),notes=String(customer.notes||'').trim();
+ if(name.length<2||name.length>500||city.length<2||city.length>500||
+    address.length>1000||notes.length>1500)
+  throw new Error('Controlla nome, località, indirizzo e note del cliente.');
+ const result=await post({action:'save-manual',name,city,address,notes});
+ if(typeof result?.created!=='boolean')
+  throw new Error('Conferma di condivisione cliente non valida.');
+ return {customer:validCustomer(result.customer),created:result.created};
 }
