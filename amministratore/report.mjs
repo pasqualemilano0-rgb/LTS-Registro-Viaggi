@@ -1,7 +1,7 @@
 /** Administrator reporting UI. Aggregates are authoritative only when returned by the API. */
 import {setupInsights} from './report-insights.mjs?v=20261104-company-v3';
-import {setupCustomerOverview} from './customer-overview.mjs?v=20261106-directory-v1';
-import {setupCompanyRates} from './company-rates.mjs?v=20261106-rates-v1';
+import {setupCustomerOverview} from './customer-overview.mjs?v=20261107-client-tariff-sync-v2';
+import {setupCompanyRates} from './company-rates.mjs?v=20261107-client-tariff-sync-v2';
 const el=id=>document.getElementById(id);
 function node(tag,className='',value=''){
  const e=document.createElement(tag);
