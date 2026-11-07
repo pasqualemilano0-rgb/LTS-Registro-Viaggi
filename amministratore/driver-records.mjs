@@ -19,7 +19,7 @@ const clock=value=>{
 };
 const tabs=[
  ['trip','Viaggi'],['customer','Clienti personali'],['tariff','Tariffe personali'],
- ['extra','Servizi extra'],['history','Modifiche']
+ ['history','Modifiche']
 ];
 const categories={trip:'trips',customer:'customers',tariff:'tariffs'};
 const labels={trip:'Viaggio',customer:'Cliente personale',tariff:'Tariffa personale',extra:'Servizio extra'};
