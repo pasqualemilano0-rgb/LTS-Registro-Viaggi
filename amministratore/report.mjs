@@ -233,6 +233,8 @@ export function setupReport(account){
   if(!account.isVerified()||account.getRole()!=='admin')return;
   if(!views.some(v=>v[0]===view))return;
   const lastView=el('dashboard').dataset.view;
+  // Never navigate away from an unsaved private-customer/trip form.
+  if(lastView==='records'&&view!=='records'&&!records.canLeave())return;
   const wasReport=!report.hidden,showReport=!['drivers','security','records'].includes(view);
   if(view!=='overview')companyDirectory.reset();
   if(view!=='rates'){companyRates.reset();companyExtras.reset();}
