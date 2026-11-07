@@ -666,7 +666,7 @@ test('customer cards show only essential location, street and saved phone',()=>{
  assert.match(card,/directory-card-address/);
  assert.match(card,/directory-card-phone/);
  assert.match(card,/tel:'\+dial/);
- assert.match(card,/if\(shared\)/);
+ assert.match(card,/if\(shared&&customer[.]mapsUrl\)/);
  assert.match(card,/Usa nel viaggio/);
  assert.match(card,/Apri Maps/);
  assert.doesNotMatch(card,/directory-card-fare/);
