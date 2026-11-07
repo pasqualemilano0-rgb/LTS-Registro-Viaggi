@@ -1,0 +1,54 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {normalizedStreetKey,sameSharedSite,matchingSharedCustomer,
+ dedupedCustomerDirectory} from '../shared/customer-site-matches.mjs';
+
+const bitonto={name:'CONSERVA SPA',city:'BITONTO',address:'S.P. 231 KM 2,5 N.C. 70032 BITONTO BA',
+ mapsUrl:'https://maps.app.goo.gl/PvKBmXfYeTvjX2su7'};
+const repeated={name:'Conserva SPA',city:'Bitonto (BA)',
+ address:'SP231 KM 2, 5, 70032 BITONTO BA',
+ mapsUrl:'https://maps.app.goo.gl/SNBEcsTu7ufQNye18'};
+const pomezia={name:'CONSERVA SPA',city:'SANTA PALOMBA (POMEZIA)',
+ address:'SANTA PALOMBA POMEZIA',mapsUrl:'https://maps.app.goo.gl/VYfgABa1i6VxdHzY9'};
+
+test('Maps links with the same company, municipality and normalized address are one site',()=>{
+ assert.equal(normalizedStreetKey(bitonto.address),normalizedStreetKey(repeated.address));
+ assert.equal(sameSharedSite(bitonto,repeated),true);
+ assert.equal(sameSharedSite(bitonto,pomezia),false);
+ const rows=dedupedCustomerDirectory([bitonto,repeated,pomezia],[]);
+ assert.equal(rows.shared.length,2);
+ assert.equal(rows.shared[0].mapsUrl,bitonto.mapsUrl);
+});
+test('same company and city must NOT merge different street locations',()=>{
+ const another={...bitonto,address:'VIA ROMA 12',mapsUrl:'https://maps.app.goo.gl/newpoint'};
+ assert.equal(sameSharedSite(bitonto,another),false);
+ assert.equal(dedupedCustomerDirectory([bitonto,another],[]).shared.length,2);
+});
+test('a personal clone is hidden from the combined list, never deleted from private archives',()=>{
+ const privateCustomer={id:'private-1',name:'CONSERVA SPA',city:'BITONTO',
+  address:'SP231 KM 2, 5, 70032 BITONTO BA',phone:'+390800000000'};
+ const local=[privateCustomer];
+ const result=dedupedCustomerDirectory([bitonto,repeated,pomezia],local);
+ assert.equal(result.shared.length,2);
+ assert.equal(result.personal.length,0);
+ assert.equal(result.matchedPersonal.length,1);
+ assert.equal(result.matchedPersonal[0].personal,privateCustomer);
+ assert.equal(local.length,1);
+ assert.equal(local[0].phone,'+390800000000');
+});
+test('a city-only personal entry can match one company site, but ambiguous warehouses remain personal',()=>{
+ const unknown={id:'personal-2',name:'CONSERVA SPA',city:'BITONTO',address:''};
+ assert.equal(matchingSharedCustomer([bitonto],unknown),bitonto);
+ assert.equal(matchingSharedCustomer([bitonto,{...bitonto,address:'VIA ROMA 12'}],unknown),null);
+ assert.equal(dedupedCustomerDirectory([bitonto,{...bitonto,address:'VIA ROMA 12'}],[unknown]).personal.length,1);
+});
+test('a business with a different name at the same street is not merged',()=>{
+ assert.equal(sameSharedSite(bitonto,{...bitonto,name:'ALTRO CLIENTE'}),false);
+ const x={name:'CONSERVA SPA',city:'BITONTO',address:'VIA ROMA 3'};
+ assert.equal(matchingSharedCustomer([bitonto],x),null);
+});
+test('existing Google Maps link is recognized even with tracking query strings',()=>{
+ const a={...bitonto,address:'INDIRIZZO STRADALE DA CONFERMARE'};
+ const b={...repeated,address:'ALTRA VIA',mapsUrl:bitonto.mapsUrl+'?g_st=ac'};
+ assert.equal(sameSharedSite(a,b),true);
+});
