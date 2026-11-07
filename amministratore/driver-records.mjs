@@ -464,31 +464,44 @@ export function setupDriverRecords(account){
  }
  async function mutate({operation,category:kind,recordId,patch={},reason='',auditId=null}){
   if(busy||!authorized()||!state||revision===null)return false;
+  const owner=selectedId,token=epoch,expectedRevision=revision,write=++writeSeq;
   busy=true;refresh.disabled=true;
+  const navigation=[choose,filter,add,...tabsRoot.querySelectorAll('button')];
+  const navigationDisabled=navigation.map(node=>node.disabled);
+  navigation.forEach(node=>{node.disabled=true;});
   const controls=[...editor.querySelectorAll('button,input,textarea,select')];
   const previousDisabled=controls.map(control=>control.disabled);
   controls.forEach(control=>{control.disabled=true;});
   notice('Registrazione della modifica in corso…');
   try{
    const r=await account.adminRecords('mutate',{
-    driverId:selectedId,expectedRevision:revision,requestId:crypto.randomUUID(),
+    driverId:owner,expectedRevision,requestId:crypto.randomUUID(),
     operation,category:kind,recordId,patch,reason,...(auditId?{auditId}:{})
    });
    if(!Number.isSafeInteger(r?.revision)||!r?.state||!Array.isArray(r.audit))
     throw new Error('Salvataggio non confermato: aggiorna il registro.');
+   if(token!==epoch||owner!==selectedId||!authorized())return false;
    revision=r.revision;state=r.state;audit=r.audit;
    render();notice('Modifica salvata online (revisione '+revision+
     '). L’autista la vedrà al prossimo aggiornamento online; lo storico rimane nell’audit.');
    return true;
   }catch(error){
-   notice(error?.message||'Salvataggio non riuscito.',true);
-   controls.forEach((control,index)=>{control.disabled=previousDisabled[index];});
+   if(write===writeSeq&&token===epoch&&owner===selectedId){
+    notice(error?.message||'Salvataggio non riuscito.',true);
+    controls.forEach((control,index)=>{control.disabled=previousDisabled[index];});
+   }
    // Never replace the user's edited form after a 409 conflict.
    return false;
-  }finally{busy=false;refresh.disabled=false;}
+  }finally{
+   if(write===writeSeq){
+    busy=false;refresh.disabled=false;
+    navigation.forEach((node,index)=>{node.disabled=navigationDisabled[index];});
+   }
+  }
  }
  async function remove(item){
-  if(!authorized())return;
+  if(!authorized()||!canLeave())return;
+  if(editing)clearEditor();
   const name=summary(item)[0];
   if(!window.confirm('Eliminare '+(labels[category]||'elemento')+' · '+name+
    '? La rimozione verrà tracciata e potrà essere ripristinata. I viaggi storici non vengono cancellati quando elimini un cliente.'))return;
@@ -498,12 +511,15 @@ export function setupDriverRecords(account){
   await mutate({operation:'delete',category,recordId:item.id,reason:reason.trim()});
  }
  async function restore(entry){
-  if(!authorized()||!window.confirm('Ripristinare questo elemento dall’audit? Non verranno sovrascritti eventuali elementi con lo stesso ID.'))return;
+  if(!authorized()||!canLeave()||
+     !window.confirm('Ripristinare questo elemento dall’audit? Non verranno sovrascritti eventuali elementi con lo stesso ID.'))return;
+  if(editing)clearEditor();
   await mutate({operation:'restore',category:entry.category,
    recordId:entry.recordId,auditId:entry.id,reason:'Ripristino da storico amministrativo'});
  }
  function setCategory(next){
-  if(!tabs.some(x=>x[0]===next))return;
+  if(!tabs.some(x=>x[0]===next)||busy||next===category)return;
+  if(!canLeave())return;
   category=next;filter.value='';visibleLimit=35;
   tabsRoot.querySelectorAll('button').forEach(b=>{
    const selected=b.dataset.kind===category;
@@ -512,11 +528,14 @@ export function setupDriverRecords(account){
   render();
  }
  function openForPhone(phone='',kind='trip'){
-  // Quick navigation keeps private customers under their selected driver.
+  if(!canLeave())return false;
+  // Invalidate old list/read and release its loading state before the new fetch.
+  epoch++;loading=false;refresh.disabled=false;clearEditor();
   desiredPhone=typeof phone==='string'?phone:'';
   selectedId='';state=null;revision=null;audit=[];visibleLimit=35;
-  filter.value='';setCategory(kind==='customer'?'customer':'trip');
-  clearEditor();list.replaceChildren();metrics();void load();
+  filter.value='';category='';setCategory(kind==='customer'?'customer':'trip');
+  list.replaceChildren();metrics();void load();
+  return true;
  }
  choose.addEventListener('change',()=>void selectDriver());
  refresh.addEventListener('click',()=>void load());
@@ -529,7 +548,7 @@ export function setupDriverRecords(account){
   b.addEventListener('click',()=>setCategory(key));tabsRoot.append(b);
  }
  reset();
- return {load,reset,openForPhone,refreshActive(){
+ return {load,reset,openForPhone,canLeave,refreshActive(){
   if(busy||loading||editing||document.activeElement?.matches?.('input,select,textarea'))return false;
   void load({silent:true});return true;
  }};
