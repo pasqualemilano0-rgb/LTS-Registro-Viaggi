@@ -52,6 +52,7 @@ on:
       - 'tests/qa-report-production-http-smoke.mjs'
       - 'tests/company-report-browser.mjs'
       - 'tests/qa-pro-theme.test.mjs'
+      - 'tests/qa-driver-management-fixes.test.mjs'
       - '.github/workflows/qa-company-report-release.yml'
 permissions:
   contents: read
