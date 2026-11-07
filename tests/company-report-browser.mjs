@@ -20,6 +20,43 @@ export const manageDrivers=async(action)=>action==='list'?{drivers:[]}:{};
 export const companyTariffs=async(action)=>action==='list'?
  {tariffs:[{id:'1',client:'CLIENTE ALFA',city:'NAPOLI',cents:15000,revision:1,
   updatedAt:'2026-11-06T12:00:00Z'}]}:{saved:true};
+
+let adminArchiveRevision=3;
+let adminAudit=[];
+let adminArchive={
+ schemaVersion:1,profile:{firstName:'Mario',lastName:'Rossi'},
+ trips:[{id:'t1',date:'2026-11-04',client:'CLIENTE ALFA',city:'NAPOLI',
+  container:'ABCD1234567',secondClient:'',secondCity:'',note:'NOTA INIZIALE',
+  services:[],fareCents:15000,secondFareCents:null,sumPickupFares:false,
+  extraCents:{adr:null,reefer:null,pernotto:null,preOrario:0,sabatoPorto:null,
+   sabatoTrasferta:null,facchinaggioBilico:null,facchinaggioReefer:null},
+  createdAt:'2026-11-04T08:00:00Z',updatedAt:'2026-11-04T08:00:00Z'}],
+ customers:[{id:'c1',name:'CLIENTE ALFA',city:'NAPOLI',address:'VIA TEST 1',vat:'',phone:''}],
+ tariffs:[],extraRates:{adr:null,reefer:null,pernotto:null,preOrario:0,
+  sabatoPorto:null,sabatoTrasferta:null,facchinaggioBilico:null,facchinaggioReefer:null}
+};
+export const adminRecords=async(action,data={})=>{
+ if(action==='list')return {drivers:[{id:'11111111-1111-4111-8111-111111111111',
+  name:'Mario Rossi',phone:'+393331111111',status:'active',revision:adminArchiveRevision,
+  updatedAt:'2026-11-04T08:00:00Z',counts:{trips:1,customers:1,legacyTariffs:0}}]};
+ if(action==='read')return {archive:{revision:adminArchiveRevision,
+  state:structuredClone(adminArchive),updatedAt:new Date().toISOString()},
+  audit:structuredClone(adminAudit)};
+ if(action==='mutate'){
+  if(data.expectedRevision!==adminArchiveRevision)throw new Error('Revision conflict');
+  const rows=adminArchive.trips,idx=rows.findIndex(x=>x.id===data.recordId);
+  if(data.operation!=='update'||data.category!=='trip'||idx<0)
+   throw new Error('Mock action unavailable');
+  rows[idx]={...rows[idx],...data.patch,updatedAt:new Date().toISOString()};
+  adminArchiveRevision++;
+  adminAudit.unshift({id:'44444444-4444-4444-8444-444444444444',at:new Date().toISOString(),
+   category:'trip',action:'update',recordId:data.recordId,reason:data.reason||'',
+   beforeRevision:adminArchiveRevision-1,afterRevision:adminArchiveRevision});
+  return {revision:adminArchiveRevision,state:structuredClone(adminArchive),
+   audit:structuredClone(adminAudit)};
+ }
+ throw new Error('Mock action unavailable');
+};
 export const pendingAdminMfaInfo=()=>null;
 export const forgetPendingAdminMfa=()=>{};
 export const logout=async()=>({revoked:true});
@@ -130,7 +167,7 @@ try{
  const errors=[];page.on('pageerror',e=>errors.push(String(e)));
  const mobileMore=page.locator('#admin-nav-more');
  async function openAdminTab(id){
-  if(['alerts-tab','exports-tab','security-tab'].includes(id)&&
+  if(['records-tab','alerts-tab','exports-tab','security-tab'].includes(id)&&
      !(await mobileMore.evaluate(details=>details.open))){
    await mobileMore.locator('summary').click();
   }
@@ -316,6 +353,7 @@ try{
   ['overview-tab','overview','#console-overview'],
   ['management-tab','drivers','#invite-form'],
   ['report-tab','trips','.report-register'],
+  ['records-tab','records','#admin-records-panel'],
   ['analysis-tab','analysis','.report-graphs'],
   ['alerts-tab','alerts','.pro-alerts-panel'],
   ['exports-tab','exports','.pro-exports'],
@@ -325,7 +363,7 @@ try{
   await openAdminTab(button);
   assert.equal(await page.locator('#dashboard').getAttribute('data-view'),view,'Tab '+view+' must be functional');
   assert.equal(await page.locator('#'+button).getAttribute('aria-current'),'page');
-  if(['alerts-tab','exports-tab','security-tab'].includes(button)){
+  if(['records-tab','alerts-tab','exports-tab','security-tab'].includes(button)){
    assert.equal(await mobileMore.evaluate(details=>details.open),false,
     'More closes after choosing a secondary section');
    assert.equal(await mobileMore.locator('summary').getAttribute('aria-current'),'page',
@@ -333,6 +371,19 @@ try{
   }
   assert.equal(await page.locator(content).isVisible(),true,'Section '+view+' must show actual controls');
  }
+ // Synthetic end-to-end test of driver record editing and audit.
+ await openAdminTab('records-tab');
+ await page.waitForFunction(()=>document.querySelector('#records-trips').textContent==='1');
+ assert.equal(await page.locator('#records-customers').textContent(),'1');
+ assert.match(await page.locator('#records-list').textContent(),/NOTA INIZIALE/);
+ await page.locator('#records-list .records-card-actions button').first().click();
+ await page.locator('#records-editor textarea[name="note"]').fill('NOTA CORRETTA DA ADMIN');
+ await page.locator('#records-editor button[type="submit"]').click();
+ await page.waitForFunction(()=>document.querySelector('#records-revision').textContent==='4');
+ assert.match(await page.locator('#records-list').textContent(),/NOTA CORRETTA DA ADMIN/);
+ await page.locator('#records-tabs button[data-kind="history"]').click();
+ assert.match(await page.locator('#records-list').textContent(),/UPDATE/);
+ await openAdminTab('security-tab');
  await page.locator('#security-check').click();
  await page.waitForFunction(()=>document.querySelector('#security-result').textContent.includes('MFA confermata'));
  assert.equal(await page.locator('#report-panel').isVisible(),false,'Security view must hide reports');
@@ -350,7 +401,7 @@ try{
  assert.equal(errors.length,0,'No JavaScript errors: '+errors.join(';'));
  // Data source remains read-only, notes never render as HTML, and no horizontal page scroll on mobile.
  assert.equal(await page.locator('#report-month').inputValue(),'2026-11');
- console.log('PASS Chromium mobile 390px: eight real pages, admin MFA, charts, filters, PDF/Excel, anomaly drill-down, security, logout wipe');
+ console.log('PASS Chromium mobile 390px: nine real pages, admin MFA, charts, filters, PDF/Excel, anomaly drill-down, security, logout wipe');
  await page.close();
  // Desktop navigation: the protected dashboard must retain working tabs with its
  // new dark sidebar; never make a non-verified page visible via CSS.
