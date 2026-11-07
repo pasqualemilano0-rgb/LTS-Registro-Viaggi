@@ -12,15 +12,6 @@
       "status": "ARRIVED"
     },
     {
-      "vessel": "DIANE A",
-      "voyage": "MAS30E26",
-      "eta": "06/11/2026 00:00",
-      "closing": "05/11/2026 17:00 CLOSED",
-      "acceptance_dry": "CARGO ACCEPTED",
-      "acceptance_reef": "CARGO ACCEPTED",
-      "status": "PENDING"
-    },
-    {
       "vessel": "OOCL KOBE",
       "voyage": "643N",
       "eta": "07/11/2026 00:00",
@@ -43,6 +34,15 @@
       "voyage": "93E",
       "eta": "07/11/2026 00:00",
       "closing": "07/11/2026 12:00 CLOSED",
+      "acceptance_dry": "CARGO ACCEPTED",
+      "acceptance_reef": "CARGO ACCEPTED",
+      "status": "PENDING"
+    },
+    {
+      "vessel": "DIANE A",
+      "voyage": "MAS30E26",
+      "eta": "07/11/2026 08:00",
+      "closing": "05/11/2026 17:00 CLOSED",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
@@ -129,8 +129,8 @@
       "status": "PENDING"
     },
     {
-      "vessel": "JOANNA BORCHARD",
-      "voyage": "1194",
+      "vessel": "RACHEL BORCHARD",
+      "voyage": "1033",
       "eta": "11/11/2026 00:00",
       "closing": "10/11/2026 17:00",
       "acceptance_dry": "CARGO ACCEPTED",
@@ -138,8 +138,8 @@
       "status": "PENDING"
     },
     {
-      "vessel": "RACHEL BORCHARD",
-      "voyage": "1033",
+      "vessel": "JOANNA BORCHARD",
+      "voyage": "1194",
       "eta": "11/11/2026 00:00",
       "closing": "10/11/2026 17:00",
       "acceptance_dry": "CARGO ACCEPTED",
@@ -246,7 +246,7 @@
       "status": "PENDING"
     }
   ],
-  "acquired_at": "2026-11-07T11:15:16.710Z",
-  "data_changed_at": "2026-11-07T11:00:17.126Z",
-  "updated_at": "2026-11-07T11:15:16.710Z"
+  "acquired_at": "2026-11-07T12:15:16.844Z",
+  "data_changed_at": "2026-11-07T12:00:17.469Z",
+  "updated_at": "2026-11-07T12:15:16.844Z"
 }
