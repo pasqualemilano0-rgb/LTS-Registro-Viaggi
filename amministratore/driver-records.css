@@ -109,3 +109,8 @@
  .records-site-option{padding:11px 9px}
  .records-site-option-source{max-width:85px;font-size:9px}
 }
+
+/* Admin corrections to individual driver customers are never company-wide. */
+.records-private-note{grid-column:1/-1;margin:0;padding:12px 14px;border:1px solid #c9e1e7;
+ border-radius:11px;background:#edf7f9;color:#285b69;font-size:12px;line-height:1.55;font-weight:650}
+.records-card-actions button[aria-label^="Modifica Cliente personale"]{min-height:46px}
