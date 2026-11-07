@@ -2,7 +2,7 @@
 import {setupInsights} from './report-insights.mjs?v=20261104-company-v3';
 import {setupCustomerOverview} from './customer-overview.mjs?v=20261107-maps-review-v1';
 import {setupCompanyRates} from './company-rates.mjs?v=20261107-maps-extras-v1';
-import {setupDriverRecords} from './driver-records.mjs?v=20261107-company-extras-v4';
+import {setupDriverRecords} from './driver-records.mjs?v=20261107-driver-customer-picker-v1';
 import {setupCompanyExtras} from './company-extras.mjs?v=20261107-company-extras-v2';
 const el=id=>document.getElementById(id);
 function node(tag,className='',value=''){
