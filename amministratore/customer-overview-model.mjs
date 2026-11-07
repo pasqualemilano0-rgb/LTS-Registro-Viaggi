@@ -11,8 +11,10 @@ export function customerDirectoryStats(customers){
 }
 export function selectedCustomerSites(customers,filter='incomplete'){
   const rows=Array.isArray(customers)?customers:[];
-  const selected=rows.filter(row=>filter==='all'||
-    (filter==='complete'?hasUsableAddress(row.address):!hasUsableAddress(row.address)));
+  const selected=rows.filter(row=>
+    filter==='all'||(filter==='manual'?row.source==='manual':
+     row.source!=='manual'&&(filter==='complete'?
+      hasUsableAddress(row.address):!hasUsableAddress(row.address))));
   return selected.sort((a,b)=>
     Number(hasUsableAddress(a.address))-Number(hasUsableAddress(b.address))||
     a.name.localeCompare(b.name,'it')||a.city.localeCompare(b.city,'it'));
