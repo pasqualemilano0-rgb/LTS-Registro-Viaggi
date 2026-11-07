@@ -1,6 +1,6 @@
 import * as account from '../account-access.mjs?v=20261106-company-tariffs-v1';
 import {STATUS_LABELS,driverSummary,filterDrivers} from './model.mjs';
-import {setupReport} from './report.mjs?v=20261107-dashboard-sync-v3';
+import {setupReport} from './report.mjs?v=20261107-dashboard-sync-v4';
 import {rememberPosition,readPosition,clearPosition} from './admin-position.mjs';
 
 const byId=id=>document.getElementById(id);
