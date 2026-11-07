@@ -6,7 +6,7 @@ import runtimeConfig from '/LTS-Registro-Viaggi/runtime-config.mjs';
 import * as accountAccess from '/LTS-Registro-Viaggi/account-access.mjs';
 import {sharedMapsEnabled,sharedMapsCustomers,saveSharedMapsCustomer} from '/LTS-Registro-Viaggi/shared-maps-client.mjs';
 import {companyFareSnapshot} from '/LTS-Registro-Viaggi/shared/company-fares.mjs';
-import {mapsLinkForCompanySync,filterSharedCustomers,filterCustomerDirectory} from '/LTS-Registro-Viaggi/shared/maps-company-routing.mjs';
+import {mapsLinkForCompanySync,filterSharedCustomers} from '/LTS-Registro-Viaggi/shared/maps-company-routing.mjs';
 import {combinedTripCustomerChoices} from '/LTS-Registro-Viaggi/shared/trip-customer-choices.mjs';
 import { appendPushSettings } from '/LTS-Registro-Viaggi/push-client.mjs';
 import { parseCustomerCsv, mergeCustomerCsv, exportCustomerCsv, MAX_CUSTOMER_CSV_BYTES } from '/LTS-Registro-Viaggi/shared/customer-csv.mjs';
@@ -287,8 +287,8 @@ async function refreshCompanyCustomers(){
 /** Combined search without merging or changing the private client archive. */
 function updateCompanyCustomersPanel(panel=document.querySelector('.company-customer-list')){
  if(!panel)return;
- const found=filterCustomerDirectory(companyCustomers,companyCustomerSearch);
- const personal=filterCustomerDirectory(state.customers,companyCustomerSearch);
+ const found=filterSharedCustomers(companyCustomers,companyCustomerSearch);
+ const personal=filterSharedCustomers(state.customers,companyCustomerSearch);
  const all=[...found.map(customer=>({...customer,directorySource:'shared'})),
   ...personal.map(customer=>({...customer,directorySource:'personal'}))];
  const visible=all.filter(customer=>customerDirectoryScope==='all'||
