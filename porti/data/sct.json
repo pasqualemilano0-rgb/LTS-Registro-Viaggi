@@ -9,7 +9,7 @@
       "closing": "05/11/2026 17:00 CLOSED",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
-      "status": "PENDING"
+      "status": "ARRIVED"
     },
     {
       "vessel": "DIANE A",
@@ -246,7 +246,7 @@
       "status": "PENDING"
     }
   ],
-  "acquired_at": "2026-11-07T06:15:16.655Z",
-  "data_changed_at": "2026-11-06T23:00:17.047Z",
-  "updated_at": "2026-11-07T06:15:16.655Z"
+  "acquired_at": "2026-11-07T07:15:17.341Z",
+  "data_changed_at": "2026-11-07T07:00:17.022Z",
+  "updated_at": "2026-11-07T07:15:17.341Z"
 }
