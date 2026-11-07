@@ -609,7 +609,7 @@ test('embedded access cannot display register or admin credential inputs',()=>{
  assert.match(admin,/function denyEmbeddedAdmin\(\)/);
  assert.match(admin,/field[.]value='';field[.]disabled=true/);
  assert.match(admin,/if\(!denyEmbeddedAdmin\(\)\)authenticate\(\)/);
- assert.match(html,/20261107-driver-recovery-v1/);
+ assert.match(html,/20261107-clienti-tariffe-ux-v1/);
  assert.match(sw,/20261107-clienti-tariffe-ux-v1/);
  assert.doesNotMatch(app,/frame-ancestors.*<meta/i);
 });
