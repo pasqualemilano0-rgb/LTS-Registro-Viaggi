@@ -1008,12 +1008,12 @@ function installDialog(){
  * Login is opt-in for existing device archives. Logging into Supabase never
  * copies or reassigns their records. Users can explicitly export/import a ZIP.
  */
-function accountLoginFields({fromGate=false}={}){
+function accountLoginFields({fromGate=false,initialPhone=''}={}){
   const form=el('form',{class:`panel form-panel account-login-form${fromGate?' account-login-form-gate':''}`,novalidate:true});
   const error=el('p',{class:'form-error',role:'alert','aria-live':'assertive'});
   const prefix=fromGate?'accesso-gate':'accesso-dialogo';
   const tel=el('input',{id:prefix+'-telefono',type:'tel',name:'phone',inputmode:'tel',autocomplete:'username',
-    placeholder:'+39 3XX XXX XXXX',required:true,maxlength:40,'aria-label':'Numero di cellulare'});
+    placeholder:'+39 3XX XXX XXXX',required:true,maxlength:40,value:initialPhone,'aria-label':'Numero di cellulare'});
   const pass=el('input',{id:prefix+'-password',type:'password',name:'password',autocomplete:'current-password',
     placeholder:'Inserisci la password',required:true,maxlength:256,'aria-label':'Password'});
   const visibility=el('button',{type:'button',class:'account-password-toggle',
@@ -1038,8 +1038,10 @@ function accountLoginFields({fromGate=false}={}){
     el('p',{},'L’account deve essere attivato dall’amministratore. Non inviare la password tramite chat.'));
   const activate=button('Attiva account','text',showDriverActivation,'users',
     {class:'text-button account-help-link'});
-  const recover=el('a',{href:'/LTS-Registro-Viaggi/recupera-password.html',target:'_blank',rel:'noopener noreferrer',
-    class:'account-help-link account-recovery-link',title:'Imposta o recupera password via Gmail'},icon('lock'),'Recupera password');
+  const recover=button('Recupera password','text',()=>{
+   if(!fromGate)form.closest('dialog')?.close();
+   showDriverPasswordRecovery(tel.value);
+  },'lock',{class:'text-button account-help-link account-recovery-link'});
   form.append(error,number,password,submit,note,
     el('div',{class:'account-help-actions'},activate,recover));
   form.addEventListener('submit',async e=>{
@@ -1070,11 +1072,11 @@ function accountLoginFields({fromGate=false}={}){
   });
   return form;
 }
-function showAccountLogin(){
+function showAccountLogin(initialPhone=''){
   if(!accountAccess.isEnabled())return;
   const {body}=modal('Accesso autisti',{
     subtitle:'Apri soltanto i viaggi del tuo account. L’archivio dispositivo precedente non viene cancellato né importato automaticamente.'});
-  body.append(accountLoginFields(),el('p',{class:'field-hint'},
+  body.append(accountLoginFields({initialPhone}),el('p',{class:'field-hint'},
     'Se devi recuperare viaggi precedenti, esportali prima dall’archivio dispositivo. Dopo il login usa Importa backup e conferma.'));
 }
 
