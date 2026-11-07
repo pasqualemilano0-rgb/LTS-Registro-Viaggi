@@ -30,7 +30,8 @@ function restoreAdminPosition(saved){
 const companyView=setupReport(account);
 let adminRealtime=null;
 function startAdminRealtime(){
- if(!account.isVerified()||account.getRole()!=='admin'||dashboard.hidden)return;
+ if(!account.isVerified()||account.getRole()!=='admin'||dashboard.hidden||
+    typeof account.getRealtimeCredentials!=='function')return;
  adminRealtime?.stop();
  adminRealtime=createLtsRealtime({
   config:realtimeConfig.realtime,authenticate:account.getRealtimeCredentials,
