@@ -69,3 +69,19 @@
  #customer-overview .customer-directory-site-actions{display:grid;grid-template-columns:1fr 1fr;width:100%;gap:9px}
  #customer-overview .customer-directory-site-actions :is(a,button){width:100%;min-width:0;text-align:center}
 }
+
+
+/* Verified directory-to-fare coverage, refreshed with the selected admin view. */
+#customer-overview .customer-directory-sync-status{
+ margin:0 0 12px;padding:10px 12px;border-left:3px solid #138a9b;
+ border-radius:8px;background:#eff8fa;color:#335b6c;font-size:12px;
+ line-height:1.55;
+}
+#customer-overview .customer-directory-kpis{grid-template-columns:repeat(3,minmax(0,1fr))}
+@media(max-width:1120px){
+ #customer-overview .customer-directory-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:410px){
+ #customer-overview .customer-directory-kpi{padding:12px 10px}
+ #customer-overview .customer-directory-kpi span{font-size:11px}
+}
