@@ -379,6 +379,7 @@ export async function activateDriverInvitation({phone, code, password} = {}) {
  * user; the personal archive remains bound to the same user_id.
  * Never send passwords or tokens to the administrator or store them locally. */
 export async function recoverDriverPassword({phone,code,password}={}){
+ if(hasSession())throw new Error('Sessione precedente presente: scegli Esci e cambia account nella schermata di accesso, poi ripeti il recupero.');
  if(typeof code!=='string'||!/^[A-Za-z0-9_-]{43}$/.test(code))
    throw new Error('Inserisci il codice monouso completo ricevuto dall’amministratore.');
  return activateDriverInvitation({phone,code,password});
