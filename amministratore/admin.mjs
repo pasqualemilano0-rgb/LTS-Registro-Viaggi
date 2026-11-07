@@ -258,10 +258,15 @@ function renderRoster(){
      addAction('Rimuovi dall’elenco','remove-pending',{phone:entry.phone},
        'Rimuovere '+entry.phone+' prima dell’attivazione? Eventuali inviti saranno annullati. Il numero potrà essere reinserito.');
    if(['active','disabled','resetting'].includes(entry.status)){
+    const openCustomers=make('button','button small outline','Clienti personali');
+    openCustomers.type='button';
+    openCustomers.setAttribute('aria-label',
+     'Modifica clienti personali di '+[entry.firstName,entry.lastName].filter(Boolean).join(' '));
+    openCustomers.addEventListener('click',()=>companyView.openRecordsForPhone(entry.phone,'customer'));
     const openData=make('button','button small primary','Apri dati e viaggi');
     openData.type='button';
     openData.addEventListener('click',()=>companyView.openRecordsForPhone(entry.phone));
-    actions.prepend(openData);
+    actions.prepend(openData,openCustomers);
    }
    if(actions.childNodes.length)item.append(actions);
    roster.append(item);
