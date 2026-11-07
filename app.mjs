@@ -7,6 +7,7 @@ import * as accountAccess from '/LTS-Registro-Viaggi/account-access.mjs';
 import {sharedMapsEnabled,sharedMapsCustomers,saveSharedMapsCustomer} from '/LTS-Registro-Viaggi/shared-maps-client.mjs';
 import {companyFareSnapshot} from '/LTS-Registro-Viaggi/shared/company-fares.mjs';
 import {mapsLinkForCompanySync,filterSharedCustomers} from '/LTS-Registro-Viaggi/shared/maps-company-routing.mjs';
+import {dedupedCustomerDirectory,matchingSharedCustomer} from '/LTS-Registro-Viaggi/shared/customer-site-matches.mjs';
 import {combinedTripCustomerChoices} from '/LTS-Registro-Viaggi/shared/trip-customer-choices.mjs';
 import { appendPushSettings } from '/LTS-Registro-Viaggi/push-client.mjs';
 import { parseCustomerCsv, mergeCustomerCsv, exportCustomerCsv, MAX_CUSTOMER_CSV_BYTES } from '/LTS-Registro-Viaggi/shared/customer-csv.mjs';
@@ -287,8 +288,9 @@ async function refreshCompanyCustomers(){
 /** Combined search without merging or changing the private client archive. */
 function updateCompanyCustomersPanel(panel=document.querySelector('.company-customer-list')){
  if(!panel)return;
- const found=filterSharedCustomers(companyCustomers,companyCustomerSearch);
- const personal=filterSharedCustomers(state.customers,companyCustomerSearch);
+ const directory=dedupedCustomerDirectory(companyCustomers,state.customers);
+ const found=filterSharedCustomers(directory.shared,companyCustomerSearch);
+ const personal=filterSharedCustomers(directory.personal,companyCustomerSearch);
  const all=[...found.map(customer=>({...customer,directorySource:'shared'})),
   ...personal.map(customer=>({...customer,directorySource:'personal'}))];
  const visible=all.filter(customer=>customerDirectoryScope==='all'||
@@ -774,7 +776,10 @@ function customerDialog(customer=null,proposal=null,{focusRates=false}={}){
  }
  const customerName=field('Nome cliente','name',seed?.name||'',{placeholder:'Ragione sociale',required:true,maxlength:500});const city=field('Località','city',seed?.city||'',{placeholder:'Città',optional:true,maxlength:500});const address=field('Indirizzo','address',seed?.address||'',{placeholder:'Via e numero civico',optional:true,maxlength:1000});const vat=field('Partita IVA','vat',seed?.vat||'',{placeholder:'Partita IVA',optional:true,maxlength:100});
  const phone=field('Telefono','phone',seed?.phone||'',{placeholder:'Numero di telefono (facoltativo)',optional:true,maxlength:40,type:'tel',inputmode:'tel'});
- form.append(error,customerName.wrap,city.wrap,address.wrap,phone.wrap,vat.wrap);
+ if(proposal?.mapsUrl){
+  form.append(error,customerName.wrap,city.wrap,address.wrap);
+  form.append(el('p',{class:'field-hint'},'Le sedi con link Google Maps sono condivise. I recapiti personali non vengono pubblicati.'));
+ }else form.append(error,customerName.wrap,city.wrap,address.wrap,phone.wrap,vat.wrap);
  form.append(el('p',{class:'info-note'},icon('lock'),'Le trasferte sono uguali per tutti gli autisti e si modificano solo dal tariffario aziendale.'));
  const actions=el('div',{class:'dialog-actions'});
  if(customer)actions.append(button('Elimina','secondary danger',()=>{
@@ -783,27 +788,46 @@ function customerDialog(customer=null,proposal=null,{focusRates=false}={}){
  actions.append(el('button',{type:'submit',class:'primary-button','data-save':true},'Salva cliente'));form.append(actions);
  form.addEventListener('submit',async event=>{event.preventDefault();error.textContent='';try{
   if(customer)requireCurrentEditor(expectedCustomer,state.customers.find(current=>current.id===customer.id),'Il cliente');
-  const next=D.upsertCustomer(state,{id:customer?.id,name:customerName.input.value,city:city.input.value,address:address.input.value,vat:vat.input.value,phone:phone.input.value});
-  await persist(next);
-  // Provenance check: ONLY the Google Maps flow supplies mapsUrl. Normal
-  // manual creation, CSV import, tariff and trip edits NEVER publish customers.
-  let message='Cliente salvato nel tuo registro personale.';
-  let onlineError=false;
+  const candidate={name:customerName.input.value,city:city.input.value,address:address.input.value,
+   vat:vat.input.value,phone:phone.input.value};
+  // Maps entries go straight to the protected shared register. The backend
+  // deduplicates both a repeated Maps link and normalized company/site/street.
+  // A Maps save must not first create a second, private customer entry.
   const mapsLink=mapsLinkForCompanySync({existingCustomer:customer,proposal,enabled:sharedMapsEnabled()});
   if(mapsLink){
+   const shared=await saveSharedMapsCustomer(mapsLink,candidate);
+   await refreshCompanyCustomers();
+   dialog.close();render();
+   toast(shared.created?'Sede aggiunta all’elenco aziendale condiviso.':
+    shared.updated?'Sede aziendale già presente: indirizzo aggiornato.':
+    'Sede già presente nell’elenco condiviso: nessun duplicato creato.');
+   return;
+  }
+  // For a new manual customer, check the latest server-side shared registry
+  // before writing a personal copy. Offline never modifies the shared list.
+  if(!customer&&sharedMapsEnabled()&&store.usingAccount()&&accountAccess.isVerified()&&navigator.onLine!==false){
    try{
-    const shared=await saveSharedMapsCustomer(mapsLink,{name:customerName.input.value,city:city.input.value,address:address.input.value});
-    message=shared.created
-     ?'Cliente salvato nel tuo registro e nella lista clienti aziendale online.'
-     :'Cliente salvato nel tuo registro. Era già presente nella lista clienti online.';
-    await refreshCompanyCustomers();
-   }catch(err){
-    onlineError=true;
-    message='Cliente salvato nel tuo registro personale, ma NON nella lista online: '+
-     (err?.message||'collegamento Maps non leggibile. Riprova da Google Maps.');
+    const latest=await sharedMapsCustomers();
+    if(Array.isArray(latest)){
+     companyCustomers=latest;companyCustomersLoaded=true;companyCustomersError='';
+    }
+   }catch{
+    // Keep offline-first personal saves available. The directory will hide a
+    // matching private row once the company registry is reachable again.
+    companyCustomersError='Confronto online temporaneamente non disponibile.';
    }
   }
-  dialog.close();render();toast(message,onlineError);
+  const existingShared=matchingSharedCustomer(companyCustomers,candidate);
+  if(!customer&&existingShared){
+   error.textContent='Cliente già presente nella rubrica aziendale: '+
+    existingShared.name+' · '+existingShared.city+'. Non occorre inserirlo di nuovo.';
+   error.scrollIntoView({block:'nearest'});
+   return;
+  }
+  const next=D.upsertCustomer(state,{id:customer?.id,...candidate});
+  await persist(next);
+  dialog.close();render();
+  toast('Cliente personale salvato. La rubrica aziendale viene aggiornata solo da link Google Maps.');
  }catch(err){error.textContent=err.message;error.scrollIntoView({block:'nearest'});}});body.append(form);
  customerName.input.focus();
 }
