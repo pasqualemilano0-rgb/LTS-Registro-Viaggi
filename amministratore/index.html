@@ -301,11 +301,14 @@
             <button id="customer-overview-refresh" class="button outline" type="button">Aggiorna clienti</button>
           </div>
           <p id="customer-overview-status" role="status" aria-live="polite">Caricamento anagrafica…</p>
+          <p id="customer-overview-sync-status" class="customer-directory-sync-status" role="status" aria-live="polite">Sincronizzazione clienti e tariffe non ancora verificata.</p>
           <div class="customer-directory-kpis" aria-label="Indicatori anagrafica condivisa">
             <div class="customer-directory-kpi"><span>Sedi condivise</span><strong id="customer-overview-total">—</strong></div>
             <div class="customer-directory-kpi"><span>Indirizzi registrati</span><strong id="customer-overview-complete">—</strong></div>
             <div class="customer-directory-kpi is-attention"><span>Indirizzi da completare</span><strong id="customer-overview-missing">—</strong></div>
             <div class="customer-directory-kpi"><span>Copertura indirizzi</span><strong id="customer-overview-percent">—</strong></div>
+            <div class="customer-directory-kpi"><span>Sedi con tariffa</span><strong id="customer-overview-priced">—</strong></div>
+            <div class="customer-directory-kpi is-attention"><span>Tariffe mancanti</span><strong id="customer-overview-unpriced">—</strong></div>
           </div>
           <div class="customer-directory-coverage">
             <div class="customer-directory-coverage-head"><span>Completezza dell'anagrafica</span><span>Solo indirizzi registrati</span></div>
