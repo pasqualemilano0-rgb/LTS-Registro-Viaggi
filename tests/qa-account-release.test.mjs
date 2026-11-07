@@ -652,6 +652,12 @@ test('saving a checked Maps link never adds another personal customer before sha
  assert.match(client,/updated:result[.]updated===true/);
  assert.doesNotMatch(dialog,/saveSharedMapsCustomer\([\s\S]*?mapsLink\)/);
 });
+test('Google short-link regression diagnostics are available without credentials',()=>{
+ const script=read('tests/maps-redirect-diagnostic.mjs');
+ assert.match(script,/rC9kQ6YrYGj9gjsU9/);
+ assert.match(script,/redirect:'manual'/);
+ assert.doesNotMatch(script,/Authorization|Bearer|token/);
+});
 test('Google Maps links use the authenticated allowlisted reader, not the legacy redirect-blocking API',()=>{
  const reader=read('maps-reader-client.mjs');
  const runtime=read('runtime-config.mjs');
