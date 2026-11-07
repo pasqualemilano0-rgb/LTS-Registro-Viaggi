@@ -475,8 +475,8 @@ try{
  await page.locator('#customer-maps-apply').click();
  await page.waitForFunction(()=>document.querySelector('#customer-overview-missing').textContent==='0');
  assert.match(await page.locator('#customer-maps-refresh-status').textContent(),/1 indirizzi aggiornati/);
- assert.equal(await page.locator('#customer-overview-total').textContent(),'3',
-  'Updating a linked Maps address must not create a customer duplicate');
+ assert.equal(await page.locator('#customer-overview-total').textContent(),'4',
+  'The earlier new customer is included, but updating a linked Maps address must create no duplicate');
  await openAdminTab('security-tab');
  await page.locator('#security-check').click();
  await page.waitForFunction(()=>document.querySelector('#security-result').textContent.includes('MFA confermata'));
