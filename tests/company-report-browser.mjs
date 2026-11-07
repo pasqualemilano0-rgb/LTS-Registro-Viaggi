@@ -181,6 +181,14 @@ export const saveSharedMapsCustomer=async(mapsUrl,site)=>{
  const created={...site,mapsUrl,source:'google_maps_link',operationalNotes:''};
  rows.push(created);return {customer:structuredClone(created),created:true};
 };
+export const saveSharedManualCustomer=async site=>{
+ const known=rows.find(row=>row.name===site.name&&row.city===site.city);
+ if(known)return {customer:structuredClone(known),created:false};
+ const created={name:site.name,city:site.city,address:site.address||'',
+  mapsUrl:'',source:'manual',operationalNotes:site.notes||''};
+ rows.push(created);
+ return {customer:structuredClone(created),created:true};
+};
 `;
 const mockMapsReader=String.raw`
 export const readMapsCustomer=async(link)=>{
@@ -424,6 +432,17 @@ try{
  await page.locator('#company-rate-amount').fill('76,00');
  await page.locator('#company-rate-submit').click();
  await page.waitForFunction(()=>document.querySelector('#company-rates-count').textContent.includes('2 tariffe aziendali'));
+  // A custom customer with no fare or Maps link must be shared too.
+  await page.locator('#company-manual-name').fill('CLIENTE SOLO MANUALE');
+  await page.locator('#company-manual-city').fill('BARI');
+  await page.locator('#company-manual-notes').fill('Ingresso deposito da verificare');
+  await page.locator('#company-manual-save').click();
+  await page.waitForFunction(()=>document.querySelector('#company-manual-status').textContent.includes('Cliente manuale aggiunto'));
+  await page.locator('#company-manual-name').fill('CLIENTE SOLO MANUALE');
+  await page.locator('#company-manual-city').fill('BARI');
+  await page.locator('#company-manual-save').click();
+  await page.waitForFunction(()=>document.querySelector('#company-manual-status').textContent.includes('nessun duplicato'));
+
  // Synthetic end-to-end test of driver record editing and audit.
  await openAdminTab('records-tab');
  await page.waitForFunction(()=>document.querySelector('#records-trips').textContent==='1');
@@ -491,9 +510,13 @@ try{
  await page.locator('#customer-maps-apply').click();
  await page.waitForFunction(()=>document.querySelector('#customer-overview-missing').textContent==='0');
  assert.match(await page.locator('#customer-maps-refresh-status').textContent(),/1 indirizzi aggiornati/);
- assert.equal(await page.locator('#customer-overview-total').textContent(),'4',
+ assert.equal(await page.locator('#customer-overview-total').textContent(),'6',
   'The earlier new customer is included, but updating a linked Maps address must create no duplicate');
- await openAdminTab('security-tab');
+ await page.locator('#customer-overview-filter').selectOption('manual');
+  assert.equal(await page.locator('.customer-directory-site').count(),2);
+  assert.equal(await page.locator('.customer-directory-maps').count(),0);
+  await page.locator('#customer-overview-filter').selectOption('all');
+  await openAdminTab('security-tab');
  await page.locator('#security-check').click();
  await page.waitForFunction(()=>document.querySelector('#security-result').textContent.includes('MFA confermata'));
  assert.equal(await page.locator('#report-panel').isVisible(),false,'Security view must hide reports');
