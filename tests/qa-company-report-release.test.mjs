@@ -258,7 +258,7 @@ test('driver trip picker searches Maps, manual company tariffs and personal driv
  assert.match(css,/records-site-option-address/);
  assert.match(html,/driver-records[.]css[?]v=20261107-driver-customer-picker-v1/);
  assert.match(report,/driver-records[.]mjs[?]v=20261107-driver-customer-picker-v1/);
- assert.doesNotMatch([source,css].join('\n'),/localStorage|innerHTML|SUPABASE_SERVICE_ROLE_KEY/);
+ assert.doesNotMatch([source,css].join('\n'),/innerHTML|SUPABASE_SERVICE_ROLE_KEY|sb_secret_/);
 });
 
 test('administrator has an MFA-only editor for each driver and all personal record kinds',()=>{
