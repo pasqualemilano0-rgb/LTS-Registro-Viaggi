@@ -338,6 +338,23 @@ export async function getVerifiedAccessToken(){
  if(!current?.access_token)throw new Error('Effettua nuovamente l’accesso.');
  return current.access_token;
 }
+/** Authenticated Realtime channels receive ONLY change hints.
+ * Tokens are returned in memory to the socket transport, never to URLs or logs.
+ * Expiring tokens are rotated using the existing session checks.
+ */
+export async function getRealtimeCredentials(){
+ const previous=readStored();
+ if(!verified||!previous)throw new Error('Sessione LTS non verificata.');
+ if(previous.expires_at<Date.now()+90000){
+  await refresh();
+  await verifySession();
+ }
+ const current=readStored();
+ if(!verified||!current||!['admin','driver'].includes(current.role)||
+    !UUID.test(current.user_id||'')||!ACCESS.test(current.access_token||''))
+  throw new Error('Sessione Realtime non autorizzata.');
+ return {userId:current.user_id,role:current.role,accessToken:current.access_token};
+}
 export async function archiveRequest(method,body){
  if(!verified||!readStored())throw new Error('Effettua l’accesso per consultare il registro.');
  const payload=method==='GET'?{action:'read'}:{action:'write',...body};
