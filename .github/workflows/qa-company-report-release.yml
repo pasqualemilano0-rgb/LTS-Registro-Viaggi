@@ -68,6 +68,7 @@ jobs:
           node --check shared/admin-record-operations.mjs
           node --check server/admin-records-core.mjs
           node --check amministratore/driver-records.mjs
+          node --check amministratore/driver-customer-catalog.mjs
           node --check amministratore/company-extras.mjs
           node --check shared/company-extras.mjs
           node --check supabase/functions/lts-company-tariffs/tariff-handler.mjs
