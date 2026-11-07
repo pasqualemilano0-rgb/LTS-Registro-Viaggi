@@ -83,3 +83,42 @@
  #company-rates .company-site-price{width:100%;min-height:43px}
  #company-rates .company-sites-heading h3{font-size:16px}
 }
+
+/* Google Maps onboarding and driver extra-service tariffs */
+#company-maps-add,#company-extras{scroll-margin-top:20px}
+.company-maps-link-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:end}
+.company-maps-link-row label,.company-extras-controls label,.company-extra-reason-label,
+.company-maps-preview>label{display:grid;gap:6px;font-size:12px;font-weight:750;color:#315e6f}
+.company-maps-link-row input,.company-maps-preview input,.company-extras-controls select,
+.company-extra-reason-label input,.company-extra-row input{width:100%;min-width:0;min-height:45px;
+ border:1px solid #c5dde2;border-radius:10px;padding:10px 12px;background:#fff;color:#193f50;font-size:15px}
+.company-maps-link-row button{min-height:45px}
+.company-maps-preview{margin-top:14px;padding:15px;background:#f2fafb;border:1px solid #c9e2e6;border-radius:13px;display:grid;gap:12px}
+.company-maps-preview[hidden]{display:none!important}
+.company-maps-preview h3{margin:0;font-size:15px;color:#143f50}
+.company-maps-details{display:grid;gap:10px;margin:0}
+.company-maps-details>div{display:grid;grid-template-columns:90px minmax(0,1fr);gap:8px}
+.company-maps-details dt{font-size:11px;font-weight:750;color:#6a8590}
+.company-maps-details dd{font-size:13px;color:#204857;margin:0;overflow-wrap:anywhere}
+.company-maps-notice{font-size:12px;line-height:1.5;color:#587985;margin:0}
+#company-maps-preview>button{min-height:45px;justify-self:start}
+#company-maps-status,#company-extra-status{color:#315b6a;font-size:12px;line-height:1.5;margin:11px 0 0}
+#company-maps-status[data-error="true"],#company-extra-status[data-error="true"]{color:#a02c43;font-weight:700}
+.company-extras-controls{display:flex;align-items:end;gap:12px;flex-wrap:wrap;margin:0 0 12px}
+.company-extras-controls label{flex:1;min-width:210px}
+.company-extras-controls button{min-height:45px}
+.company-extra-reason-label{margin:16px 0}
+.company-extra-list{display:grid;gap:8px}
+.company-extra-row{display:grid;grid-template-columns:minmax(110px,1fr) minmax(110px,180px) auto;
+ align-items:center;gap:10px;padding:10px 12px;border:1px solid #d7e7e9;border-radius:10px;background:#f7fbfc}
+.company-extra-label{font-size:12px;font-weight:800;color:#315a69;overflow-wrap:anywhere}
+.company-extra-row button{min-height:42px}
+.customer-directory-heading-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+@media(max-width:700px){
+ .company-maps-link-row{grid-template-columns:1fr}
+ #company-maps-preview>button{width:100%}
+ .company-extra-row{grid-template-columns:minmax(0,1fr) minmax(105px,1fr)}
+ .company-extra-row button{grid-column:1/-1}
+ .company-extras-controls label{min-width:100%}
+ .company-extras-controls button{width:100%}
+}
