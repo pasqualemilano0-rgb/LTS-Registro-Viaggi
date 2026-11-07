@@ -1,6 +1,6 @@
 /** Admin-only read-only overview. No customer data is kept in browser storage. */
 // Load the authenticated company catalog only after the overview is opened.
-import {customerDirectoryStats,hasUsableAddress,selectedCustomerSites} from './customer-overview-model.mjs';
+import {customerDirectoryStats,hasUsableAddress,selectedCustomerSites} from './customer-overview-model.mjs?v=20261107-client-tariff-sync-v2';
 const el=id=>document.getElementById(id);
 const text=(tag,cls,value)=>{
   const n=document.createElement(tag);n.className=cls;n.textContent=value;return n;
