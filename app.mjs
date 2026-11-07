@@ -20,7 +20,10 @@ let companyRatesLoaded=false;
 let companyRatesRequest=0;
 let companyCustomersError='';
 let companyCustomersRequest=0;
-let companyCustomerSearch=''; // Independent filter for the read-only company list.
+let companyCustomerSearch=''; // Single live search for company and personal customers.
+let customerDirectoryScope='all';
+let customerDirectoryLimit=24;
+let companyCustomersLoaded=false;
 let user = null;
 let tab = 'insert';
 let tariffTab = 'base';
@@ -250,6 +253,7 @@ async function refreshCompanyCustomers(){
   const customers=await sharedMapsCustomers();
   if(owner!==accountAccess.getAccountId()||request!==companyCustomersRequest)return;
   companyCustomers=customers;
+  companyCustomersLoaded=true;
   companyCustomersError='';
   if(tab==='insert')refreshTripCustomerSuggestions?.();
   // Keep the currently edited trip, caret, keyboard and open dialogs intact.
@@ -278,48 +282,101 @@ async function refreshCompanyCustomers(){
  }
 }
 /** Update only the company list, leaving the search field, caret and keyboard intact. */
+/** Combined search without merging or changing the private client archive. */
 function updateCompanyCustomersPanel(panel=document.querySelector('.company-customer-list')){
  if(!panel)return;
  const found=filterSharedCustomers(companyCustomers,companyCustomerSearch);
- const count=panel.querySelector('.company-customer-count');
- const list=panel.querySelector('.company-customer-items');
- const empty=panel.querySelector('.company-customer-empty');
- const status=panel.querySelector('.company-customer-error');
+ const personal=filterSharedCustomers(state.customers.map(customer=>
+  ({...customer,operationalNotes:customer.vat||''})),companyCustomerSearch);
+ const all=[...found.map(customer=>({...customer,directorySource:'shared'})),
+  ...personal.map(customer=>({...customer,directorySource:'personal'}))];
+ const visible=all.filter(customer=>customerDirectoryScope==='all'||
+  customer.directorySource===customerDirectoryScope)
+  .sort((a,b)=>a.name.localeCompare(b.name,'it')||a.city.localeCompare(b.city,'it')||
+   (a.directorySource==='shared'?-1:1));
+ const count=panel.querySelector('.company-customer-count'),
+  list=panel.querySelector('.customer-directory-results'),
+  status=panel.querySelector('.company-customer-error'),
+  more=panel.querySelector('.customer-more-results');
  if(status){status.textContent=companyCustomersError;status.hidden=!companyCustomersError;}
- count.textContent=companyCustomerSearch.trim()
-  ?`${found.length} di ${companyCustomers.length} sedi trovate`
-  :`${companyCustomers.length} clienti disponibili a tutti gli autisti autorizzati`;
- list.replaceChildren(...found.map(customer=>el('li',{},
-  el('div',{},el('strong',{},customer.name),
-   el('span',{},customer.city+' · '+customer.address),
-   customer.operationalNotes?el('p',{class:'company-customer-operations'},
-    'Indicazioni operative fornite da autista (da ricontrollare): '+customer.operationalNotes):null),
-  el('a',{href:customer.mapsUrl,target:'_blank',rel:'noopener noreferrer',
-   'aria-label':`Apri su Google Maps ${customer.name}`},'Apri Maps'))));
- list.hidden=found.length===0;
- empty.hidden=found.length!==0;
- empty.textContent=companyCustomers.length===0
-  ?'Nessun cliente condiviso ancora disponibile, oppure elenco non sincronizzato.'
-  :'Nessuna sede corrisponde alla ricerca. Prova un altro nome o una località.';
+ if(count)count.textContent=visible.length
+  ?`${visible.length} ${visible.length===1?'cliente trovato':'clienti trovati'}`
+  :companyCustomerSearch.trim()?'Nessun cliente corrisponde alla ricerca.'
+   :companyCustomersLoaded||!sharedMapsEnabled()?'Nessun cliente in questa categoria.'
+   :'Aggiornamento clienti aziendali in corso…';
+ panel.querySelectorAll('[data-customer-scope]').forEach(button=>{
+  const chosen=button.dataset.customerScope===customerDirectoryScope;
+  button.classList.toggle('selected',chosen);
+  button.setAttribute('aria-pressed',String(chosen));
+  const number=button.querySelector('.customer-scope-count');
+  if(number)number.textContent=String(button.dataset.customerScope==='shared'?
+    found.length:button.dataset.customerScope==='personal'?personal.length:all.length);
+ });
+ if(list)list.replaceChildren(...visible.slice(0,customerDirectoryLimit).map(customer=>
+  customerCard(customer,{shared:customer.directorySource==='shared'})));
+ if(more){
+  more.hidden=visible.length<=customerDirectoryLimit;
+  more.textContent=`Mostra altri clienti (${visible.length-customerDirectoryLimit})`;
+ }
+}
+/** Pre-fill only client and location: never overwrite a stored journey. */
+function useCustomerInTrip(customer){
+ const client=D.normalizeText(customer.name),city=D.normalizeText(customer.city);
+ const apply=()=>{
+  draft={...draft,client,city};
+  navigate('insert');
+  toast(city?'Cliente e località inseriti nel viaggio.':'Cliente inserito: completa la località.');
+ };
+ if(draft.client&&D.normalizeText(draft.client)!==client)
+  confirmAction('Sostituire il cliente nel viaggio?',
+   'Il cliente già inserito sarà sostituito. Container, data, note e servizi resteranno invariati.',
+   apply,'Usa cliente');
+ else apply();
 }
 function companyCustomersPanel(){
- if(!sharedMapsEnabled())return null;
- const panel=el('section',{class:'panel company-customer-list','aria-label':'Registro clienti condiviso'});
- const search=el('input',{type:'search',id:'company-customer-search',
-  value:companyCustomerSearch,placeholder:'Cerca cliente, località o indirizzo',
-  'aria-label':'Cerca nella lista clienti aziendale',autocomplete:'off',
-  on:{input:event=>{
-   companyCustomerSearch=event.target.value;
-   updateCompanyCustomersPanel(panel);
-  }}});
- panel.append(el('h2',{},'Lista clienti online da Google Maps'),
-  el('p',{class:'company-customer-help'},'Elenco ottenuto dai link Maps salvati dagli autisti. Non contiene i viaggi personali né le tariffe.'),
-  el('div',{class:'company-customer-search'},icon('search'),search),
+ const panel=el('section',{class:'panel company-customer-list customer-hub','aria-label':'Elenco clienti'});
+ const input=el('input',{type:'search',id:'company-customer-search',
+  value:companyCustomerSearch,placeholder:'Nome cliente, città, indirizzo…',
+  'aria-label':'Cerca clienti per nome, città, indirizzo o partita IVA',autocomplete:'off',
+  on:{input:event=>{companyCustomerSearch=event.target.value;customerDirectoryLimit=24;
+   updateCompanyCustomersPanel(panel);}}});
+ const scope=el('div',{class:'customer-scope-tabs',role:'group','aria-label':'Tipologia di clienti'},
+  ...[['all','Tutti'],['shared','Aziendali'],['personal','Miei']].map(([key,label])=>
+   el('button',{type:'button',class:'customer-scope-button',dataset:{customerScope:key},
+    'aria-pressed':String(key===customerDirectoryScope),
+    on:{click:()=>{customerDirectoryScope=key;customerDirectoryLimit=24;
+     updateCompanyCustomersPanel(panel);}}},
+    label,el('span',{class:'customer-scope-count'},'0'))));
+ const upload=el('input',{type:'file',accept:'.csv,text/csv',class:'visually-hidden',
+  'aria-label':'Importa CSV clienti',
+  on:{change:async event=>{const file=event.target.files?.[0];event.target.value='';
+   if(file)await importCustomersCsv(file);}}});
+ const csvTools=el('details',{class:'customer-more-tools'},
+  el('summary',{},icon('file-text'),'Importa o esporta CSV'),
+  el('div',{class:'csv-tools'},button('Importa CSV','secondary',()=>upload.click(),'upload'),
+   button('Esporta CSV','secondary',()=>{
+    try{downloadBlob(new Blob([exportCustomerCsv(state)],{type:'text/csv;charset=utf-8'}),
+     `LTS-Clienti-${today()}.csv`);toast('Rubrica esportata.');}
+    catch(error){toast(error.message,true);}
+   },'download')),upload);
+ const more=el('button',{type:'button',class:'secondary-button customer-more-results',
+  on:{click:()=>{customerDirectoryLimit+=24;updateCompanyCustomersPanel(panel);}}},
+  'Mostra altri clienti');
+ panel.append(
+  el('div',{class:'customer-hub-heading'},
+   el('div',{},el('h2',{},'Trova un cliente'),
+    el('p',{class:'company-customer-help'},'Un elenco unico, con clienti aziendali e personali.')),
+   button('Aggiorna','text',()=>{void refreshCompanyCustomers();},'refresh',
+    {'aria-label':'Aggiorna clienti aziendali'})),
+  el('div',{class:'company-customer-search'},icon('search'),input),
+  scope,
+  el('div',{class:'customer-hub-actions'},
+   button('Da Google Maps','primary',mapsCustomerDialog,'pin'),
+   button('Nuovo cliente','secondary',()=>customerDialog(),'plus')),
   el('p',{class:'company-customer-count',role:'status','aria-live':'polite'}),
-  el('ul',{class:'company-customer-items'}),
-  el('p',{class:'company-customer-empty',hidden:true}),
   el('p',{class:'company-customer-error',role:'status',hidden:!companyCustomersError}),
-  button('Aggiorna elenco','secondary',()=>{void refreshCompanyCustomers();},'refresh'));
+  el('div',{class:'catalog-list customer-directory-results'}),
+  more,csvTools);
  updateCompanyCustomersPanel(panel);
  return panel;
 }
@@ -1398,7 +1455,7 @@ function accountInstallBanner(){
 function renderAccountGate(message=''){
  companyCustomers=[];
  companyCustomersError='';
- companyCustomerSearch='';companyCustomersRequest++;
+ companyCustomerSearch='';customerDirectoryScope='all';customerDirectoryLimit=24;companyCustomersLoaded=false;companyCustomersRequest++;
  companyRates=[];companyRatesLoaded=false;companyRatesRequest++;
  const hasPreviousSession=accountAccess.hasSession();
  const recovery=hasPreviousSession?el('div',{class:'account-session-recovery'},
