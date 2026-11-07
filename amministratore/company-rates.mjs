@@ -1,6 +1,7 @@
 /** Protected company tariff editor, linked to the shared Google Maps site catalog.
  * Customer records remain read-only. No driver archive or historical trip is rewritten. */
 import {tariffLinkedCustomerSites,customerSiteRateKey,hasUsableAddress} from './customer-overview-model.mjs?v=20261107-client-tariff-sync-v2';
+import {setupCompanyMaps} from './company-maps-registration.mjs?v=20261107-maps-extras-v1';
 
 const get=id=>document.getElementById(id);
 const node=(tag,cls,value)=>{const n=document.createElement(tag);if(cls)n.className=cls;n.textContent=String(value??'');return n;};
@@ -35,6 +36,7 @@ export function setupCompanyRates(account){
   cityOptions=get('company-rate-city-options');
  let rows=[],sites=[],editing=null,generation=0,busy=false;
  let ratesLoaded=false,sitesLoaded=false,sitesExpanded=false;
+ const maps=setupCompanyMaps(account,{onSaved:async()=>{await load();}});
  const authorized=()=>account.isVerified()&&account.getRole()==='admin'&&
   !get('dashboard').hidden&&get('dashboard').dataset.view==='rates';
  const feedback=(message,error=false)=>{status.textContent=message;status.dataset.error=String(error);};
@@ -139,6 +141,7 @@ export function setupCompanyRates(account){
   renderRates(term);renderSites();
  }
  function reset(){
+  maps.reset();
   generation++;rows=[];sites=[];ratesLoaded=false;sitesLoaded=false;sitesExpanded=false;
   busy=false;search.value='';list.replaceChildren();sitesList.replaceChildren();
   clearForm();customerChoices();
@@ -224,5 +227,5 @@ export function setupCompanyRates(account){
   finally{busy=false;submit.disabled=!ratesLoaded;if(authorized())refresh.disabled=false;}
  });
  reset();
- return {load,reset,prefillSite};
+ return {load,reset,prefillSite,focusMaps(){maps.focus();}};
 }
