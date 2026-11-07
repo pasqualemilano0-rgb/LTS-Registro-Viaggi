@@ -78,5 +78,5 @@ jobs:
           node --test tests/qa-account-release.test.mjs tests/driver-session-vault.test.mjs tests/leaked-password-protection.test.mjs tests/qa-company-tariffs.test.mjs tests/customer-site-matches.test.mjs
       - name: Verify live Maps reader CORS and authentication boundary
         run: node --test tests/qa-maps-reader-live.test.mjs
-      - name: Diagnose Google Maps short-link redirect targets
+      - name: Verify canonical Google Maps place from shortlink fixture
         run: node tests/maps-redirect-diagnostic.mjs
