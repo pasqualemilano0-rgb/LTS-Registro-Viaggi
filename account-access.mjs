@@ -37,7 +37,7 @@ function url(which){
  if(result.protocol!=='https:'||
      result.hostname!=='otrqynkscpbeyuvdlgpg.supabase.co'||
      result.username||result.password||result.search||result.hash||
-     !['/functions/v1/lts-phone-auth','/functions/v1/lts-account-state','/functions/v1/lts-driver-onboarding','/functions/v1/lts-company-report','/functions/v1/lts-company-tariffs'].includes(result.pathname))
+     !['/functions/v1/lts-phone-auth','/functions/v1/lts-account-state','/functions/v1/lts-driver-onboarding','/functions/v1/lts-company-report','/functions/v1/lts-company-tariffs','/functions/v1/lts-admin-records'].includes(result.pathname))
    throw new Error('Servizio account non configurato in modo sicuro.');
  return result.href;
 }
@@ -445,4 +445,20 @@ export async function driverCompanyTariffs(){
    typeof row?.id!=='string'))
   throw new Error('Tariffario aziendale incompleto. Riprova.');
  return result.tariffs;
+}
+
+/** Administrator-only per-driver personal records. On the server:
+ * active Auth JWT, live session, MFA, role and revision are rechecked.
+ * This path does not grant driver accounts any cross-account access. */
+export async function adminRecords(action,data={}){
+ if(!isVerified()||getRole()!=='admin')
+  throw new Error('Accesso amministratore con Authenticator richiesto.');
+ if(!['list','read','mutate'].includes(action))
+  throw new Error('Operazione amministrativa non consentita.');
+ if(data===null||typeof data!=='object'||Array.isArray(data))
+  throw new Error('Dati richiesta non validi.');
+ return withSessionRetry(
+  ()=>api('adminRecordsEndpoint',{action,...data},readStored()?.access_token),
+  async()=>{await verifySession();if(getRole()!=='admin')
+   throw new Error('Permesso amministratore non confermato.');});
 }
