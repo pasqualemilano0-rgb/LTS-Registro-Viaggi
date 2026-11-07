@@ -389,39 +389,22 @@ function updateTripFields(trip, fields, updatedAt) {
 }
 
 /**
- * Refresh an existing archive against today's catalogue without discarding prices
- * imported for routes or services that have no configured rate in this archive.
- * The Android legacy second-pickup summation flag is deliberately preserved.
+ * Synchronize archive extras without repricing saved transfers.
+ * Company transfer fares are fetched by the driver from the authenticated
+ * shared catalog and captured at trip creation; private legacy price entries
+ * remain in archives for historical recovery, never as active company rates.
  */
 export function reconcileTripTariffs(state) {
-  const normalized = validateState(state);
-  const now = new Date().toISOString();
-  // Personal tariffs retain their historical reprice behavior. Company tariffs
-  // are defaults: they can fill missing amounts, but must never overwrite a
-  // non-null fare already recorded by an individual driver.
-  const personal = new Map(normalized.tariffs
-    .filter(rate => !/^company:[0-9a-f-]{36}$/iu.test(rate.id))
-    .map(rate => [JSON.stringify([rate.client, rate.city]), rate.cents]));
-  const company = new Map(normalized.tariffs
-    .filter(rate => /^company:[0-9a-f-]{36}$/iu.test(rate.id))
-    .map(rate => [JSON.stringify([rate.client, rate.city]), rate.cents]));
-  const trips = normalized.trips.map(trip => {
-    const firstKey = JSON.stringify([trip.client, trip.city]);
-    const secondKey = JSON.stringify([trip.secondClient, trip.secondCity]);
-    const first = personal.get(firstKey) ?? (trip.fareCents ?? company.get(firstKey));
-    const second = trip.secondCity
-      ? (personal.get(secondKey) ?? (trip.secondFareCents ?? company.get(secondKey))) : undefined;
-    const extraCents = { ...trip.extraCents };
-    for (const service of trip.services) {
-      if (normalized.extraRates[service] !== null) extraCents[service] = normalized.extraRates[service];
-    }
-    return updateTripFields(trip, {
-      fareCents: first ?? trip.fareCents,
-      secondFareCents: second ?? trip.secondFareCents,
-      extraCents,
-    }, now);
-  });
-  return { ...normalized, trips };
+ const normalized=validateState(state);
+ const now=new Date().toISOString();
+ const trips=normalized.trips.map(trip=>{
+  const extraCents={...trip.extraCents};
+  for(const service of trip.services){
+   if(normalized.extraRates[service]!==null)extraCents[service]=normalized.extraRates[service];
+  }
+  return updateTripFields(trip,{extraCents},now);
+ });
+ return {...normalized,trips};
 }
 
 /** Changed extra rates update selected snapshots across all months; daily allocation is derived. */
