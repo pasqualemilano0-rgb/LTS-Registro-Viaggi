@@ -533,6 +533,7 @@ try{
  await page.locator('[data-open-private-customers]').click();
  await page.waitForFunction(()=>document.querySelector('#dashboard').dataset.view==='records');
  assert.equal(await page.locator('#records-tabs button[data-kind="customer"]').getAttribute('aria-pressed'),'true');
+ await page.waitForFunction(()=>document.querySelector('#records-list').textContent.includes('CLIENTE AUTISTA CORRETTO'));
  assert.match(await page.locator('#records-list').textContent(),/CLIENTE AUTISTA CORRETTO/);
  // One shared company extra price: no individual driver selector.
  await openAdminTab('rates-tab');
