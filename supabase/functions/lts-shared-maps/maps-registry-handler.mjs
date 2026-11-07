@@ -92,17 +92,33 @@ export async function handleSharedMapsCustomers(req,{getClients}={}){
   const {userId,role}=await authorize(req,clients);
   const db=clients.admin;
   if(input.action==='list'){
-   const [maps,manual]=await Promise.all([
+   const [maps,manual,fares]=await Promise.all([
     db.from('lts_shared_maps_customers')
      .select('name,city,address,maps_url,notes').order('name').limit(501),
     db.from('lts_shared_customers_manual')
-     .select('name,city,address,notes').order('name').limit(501)
+     .select('name,city,address,notes').order('name').limit(501),
+    db.from('lts_company_tariffs')
+     .select('client,city').order('client').limit(501)
    ]);
-   if(maps.error||manual.error||!Array.isArray(maps.data)||
-      !Array.isArray(manual.data)||maps.data.length+manual.data.length>500)
+   if(maps.error||manual.error||fares.error||!Array.isArray(maps.data)||
+      !Array.isArray(manual.data)||!Array.isArray(fares.data)||
+      maps.data.length+manual.data.length+fares.data.length>1500)
     throw {status:503};
-   const customers=[...maps.data.map(projection),...manual.data.map(manualProjection)]
-    .sort((a,b)=>a.name.localeCompare(b.name,'it')||a.city.localeCompare(b.city,'it'));
+   const customers=[...maps.data.map(projection),...manual.data.map(manualProjection)];
+   // Existing dashboard-created company fares are also shared customer choices.
+   // They have no Maps link, and are not copied to the personal driver archive.
+   const key=row=>[row.name,row.city].map(value=>String(value||'')
+    .normalize('NFD').replace(/\p{M}/gu,'').toLocaleUpperCase('it-IT')
+    .replace(/[^\p{L}\p{N}]+/gu,'')).join('|');
+   const keys=new Set(customers.map(key));
+   for(const fare of fares.data){
+    const fallback=manualProjection({name:fare.client,city:fare.city,address:'',notes:''});
+    const id=key(fallback);
+    if(keys.has(id))continue;
+    customers.push(fallback);keys.add(id);
+   }
+   if(customers.length>500)throw {status:503};
+   customers.sort((a,b)=>a.name.localeCompare(b.name,'it')||a.city.localeCompare(b.city,'it'));
    return json({customers},200,origin);
   }
   if(input.action==='save-manual'){
