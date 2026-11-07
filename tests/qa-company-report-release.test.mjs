@@ -194,7 +194,7 @@ test('dashboard automatically refreshes the active verified section without losi
  for(const id of ['customer-overview-priced','customer-overview-unpriced','customer-overview-sync-status'])
   assert.match(html,new RegExp('id="'+id+'"'));
  assert.match(admin,/setInterval\(\(\)=>\{/);
- assert.match(admin,/45000\)/);
+ assert.match(admin,/10000\)/);
  assert.match(admin,/if\(dashboard[.]dataset[.]view==='drivers'\)/);
  assert.match(admin,/else companyView[.]refreshActive\(\)/);
  assert.match(admin,/restoreAdminPosition\(saved\)/);
