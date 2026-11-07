@@ -259,7 +259,10 @@ channel?.addEventListener('message', event => {
 });
 window.addEventListener('storage', event => { if (event.key === CHANGE_KEY) refreshSoon(); });
 window.addEventListener('online', refreshSoon);
+window.addEventListener('focus', refreshSoon);
+window.addEventListener('pageshow', refreshSoon);
 document.addEventListener('visibilitychange', () => { if (!document.hidden) refreshSoon(); });
-setInterval(refreshSoon, 20000);
+// Near-live while a verified account is open and online; background tabs do not poll.
+setInterval(refreshSoon, 6000);
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('/LTS-Registro-Viaggi/effeerre/sw.js', { scope: "/LTS-Registro-Viaggi/effeerre/" }).catch(() => {});
 if (navigator.storage?.persist) navigator.storage.persist().catch(() => {});
