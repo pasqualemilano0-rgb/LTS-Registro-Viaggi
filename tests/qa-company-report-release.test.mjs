@@ -14,7 +14,7 @@ test('dashboard accessibile solo dal pannello admin, CSP e versioni coerenti',()
    'pro-city','pro-container','pro-compare-driver','pro-alerts','pro-alert-count',
    'pro-export-pdf','pro-export-xlsx','pro-records'])
    assert.match(html,new RegExp('id="'+id+'"'));
- assert.match(html,/admin\.mjs\?v=20261107-driver-private-customers-v1/);
+ assert.match(html,/admin\.mjs\?v=20261107-driver-management-fixes-v1/);
  assert.match(html,/admin\.css\?v=20261104-company-v3/);
  assert.match(js,/account-access\.mjs\?v=20261107-realtime-v1/);
  assert.match(js,/setupReport\(account\)/);
@@ -281,7 +281,7 @@ test('driver trip picker searches Maps, manual company tariffs and personal driv
  assert.match(css,/records-site-results\[hidden\]/);
  assert.match(css,/records-site-option-address/);
  assert.match(html,/driver-records[.]css[?]v=20261107-driver-private-customers-v1/);
- assert.match(report,/driver-records[.]mjs[?]v=20261107-driver-private-customers-v1/);
+ assert.match(report,/driver-records[.]mjs[?]v=20261107-driver-management-fixes-v1/);
  assert.doesNotMatch([source,css].join('\n'),/innerHTML|SUPABASE_SERVICE_ROLE_KEY|sb_secret_/);
 });
 
