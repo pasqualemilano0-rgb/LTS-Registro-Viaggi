@@ -54,18 +54,23 @@ test('only verified administrators edit central tariffs',()=>{
  assert.doesNotMatch(editor,/innerHTML|localStorage|sessionStorage|service_role|sb_secret_/);
  assert.match(css,/#dashboard\[data-view="rates"\]/);
 });
-test('drivers can only read and refresh the company tariff catalog',()=>{
+test('drivers browse grouped company tariffs without being able to edit them',()=>{
  const app=read('app.mjs'),store=read('client-store.mjs');
- assert.match(app,/Tariffa aziendale · sincronizzata/);
- assert.match(app,/Sola lettura/);
- assert.match(app,/Aggiorna tariffe/);
+ assert.match(app,/company-route-catalog/);
+ assert.match(app,/company-route-heading/);
+ assert.match(app,/company-route-list/);
+ assert.match(app,/filterSharedCustomers\(companyRates[.]map\(rate=>/);
+ assert.match(app,/Un solo tariffario aziendale/);
+ assert.match(app,/Il listino è vuoto: l’amministratore deve inserire le trasferte/);
  assert.match(app,/await store[.]syncPending\(\)/);
  assert.match(app,/\['insert','tariffs','customers'\][.]includes\(next\)/);
  assert.doesNotMatch(app,/Nuova tariffa personale|Aggiungi tariffa personale|function tariffDialog\(/);
  assert.match(store,/setInterval\(refreshSoon, 20000\)/);
  assert.match(store,/window[.]addEventListener\('online', refreshSoon\)/);
  assert.match(store,/document[.]addEventListener\('visibilitychange'/);
- assert.match(read('app.css'),/tariff-company-sync/);
+ const css=read('app.css');
+ assert.match(css,/tariff-company-sync/);
+ assert.match(css,/company-route-card/);
 });
 test('driver trip creation and preview use the central company catalog on first and second pickup',()=>{
  const app=read('app.mjs'),access=read('account-access.mjs');
