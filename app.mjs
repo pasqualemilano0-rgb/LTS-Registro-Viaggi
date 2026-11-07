@@ -354,7 +354,7 @@ function companyCustomersPanel(){
   on:{change:async event=>{const file=event.target.files?.[0];event.target.value='';
    if(file)await importCustomersCsv(file);}}});
  const csvTools=el('details',{class:'customer-more-tools'},
-  el('summary',{},icon('file-text'),'Importa o esporta CSV'),
+  el('summary',{},icon('upload'),'Importa o esporta CSV'),
   el('div',{class:'csv-tools'},button('Importa CSV','secondary',()=>upload.click(),'upload'),
    button('Esporta CSV','secondary',()=>{
     try{downloadBlob(new Blob([exportCustomerCsv(state)],{type:'text/csv;charset=utf-8'}),
