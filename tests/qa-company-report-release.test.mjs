@@ -14,7 +14,7 @@ test('dashboard accessibile solo dal pannello admin, CSP e versioni coerenti',()
    'pro-city','pro-container','pro-compare-driver','pro-alerts','pro-alert-count',
    'pro-export-pdf','pro-export-xlsx','pro-records'])
    assert.match(html,new RegExp('id="'+id+'"'));
- assert.match(html,/admin\.mjs\?v=20261107-realtime-v1/);
+ assert.match(html,/admin\.mjs\?v=20261107-manual-shared-v1/);
  assert.match(html,/admin\.css\?v=20261104-company-v3/);
  assert.match(js,/account-access\.mjs\?v=20261107-realtime-v1/);
  assert.match(js,/setupReport\(account\)/);
@@ -26,7 +26,7 @@ test('dashboard accessibile solo dal pannello admin, CSP e versioni coerenti',()
  assert.match(report,/function driverProfile\(/);
  assert.match(report,/function driverDirectory\(/);
  assert.match(report,/function renderAmountChart\(/);
- assert.match(js,/report\.mjs\?v=20261107-driver-customer-picker-v1/);
+ assert.match(js,/report\.mjs\?v=20261107-manual-shared-v1/);
  assert.match(report,/setupInsights\(account\)/);
  const advanced=read('amministratore/report-insights.mjs');
  const exportsModule=read('amministratore/report-export.mjs');
@@ -78,7 +78,7 @@ test('anagrafica dashboard: dati verificati dalla sessione, soli campi pubblici,
    'customer-overview-filter','customer-overview-list','customer-overview-refresh',
    'customer-overview-more'])
    assert.match(html,new RegExp('id="'+id+'"'));
- assert.match(html,/customer-overview\.css\?v=20261107-maps-review-v1/);
+ assert.match(html,/customer-overview\.css\?v=20261107-manual-shared-v1/);
  assert.match(report,/companyDirectory\.reset\(\)/);
  assert.match(report,/companyDirectory\.load\(\)/);
  assert.match(ui,/sharedMapsCustomers\(\)/);
