@@ -53,5 +53,11 @@ export function dedupedCustomerDirectory(shared,personal){
   if(matched)matchedPersonal.push({personal:person,shared:matched});
   else uniquePersonal.push(person);
  }
- return {shared:uniqueShared,personal:uniquePersonal,matchedPersonal};
+ // A private phone stays local to this driver's in-memory view; it is NEVER
+ // uploaded into the company registry and never changes the personal archive.
+ const shownShared=uniqueShared.map(site=>{
+  const local=matchedPersonal.find(row=>row.shared===site)?.personal;
+  return local?.phone&&!site.phone?{...site,phone:local.phone}:site;
+ });
+ return {shared:shownShared,personal:uniquePersonal,matchedPersonal};
 }
