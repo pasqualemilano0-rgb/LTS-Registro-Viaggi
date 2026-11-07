@@ -85,3 +85,45 @@
  #customer-overview .customer-directory-kpi{padding:12px 10px}
  #customer-overview .customer-directory-kpi span{font-size:11px}
 }
+
+/* Admin review of already-linked Google Maps addresses */
+#customer-overview .customer-maps-review{border:1px solid #c7e3e4;border-radius:14px;
+ padding:17px;margin:14px 0 20px;background:#f5fbfb;scroll-margin-top:18px}
+#customer-overview .customer-maps-review-head{display:flex;gap:14px;align-items:start;
+ justify-content:space-between;flex-wrap:wrap}
+#customer-overview .customer-maps-review-head>div{flex:1;min-width:230px}
+#customer-overview .customer-maps-review-head h3{margin:0 0 6px;color:#19495a;font-size:17px}
+#customer-overview .customer-maps-review-head p,.customer-maps-review-note{font-size:12px;line-height:1.55;
+ color:#5b7885;margin:0}
+#customer-overview #customer-maps-scan{min-height:43px}
+#customer-maps-refresh-status{font-size:12px;line-height:1.55;color:#355c6b;margin:13px 0}
+#customer-maps-refresh-status[data-error="true"]{color:#a42d43;font-weight:750}
+#customer-maps-preview[hidden]{display:none}
+#customer-overview .customer-maps-select-label{display:flex;align-items:center;gap:9px;
+ font-size:12px;font-weight:700;color:#315d69;cursor:pointer;margin:10px 0}
+#customer-maps-select-all{width:17px;height:17px;accent-color:#067a84;flex:none}
+#customer-overview .customer-maps-results{display:grid;gap:8px;max-height:450px;
+ overflow-y:auto;overscroll-behavior:contain;padding:4px 3px;margin:10px 0 14px}
+#customer-overview .customer-maps-result{display:flex;gap:12px;justify-content:space-between;
+ align-items:center;min-width:0;border:1px solid #d8e8e9;border-radius:9px;
+ background:#fff;padding:11px 12px}
+#customer-overview .customer-maps-result-main{display:grid;gap:5px;min-width:0;flex:1;
+ overflow-wrap:anywhere}
+#customer-overview .customer-maps-result-main strong{font-size:12px;color:#173d50}
+#customer-overview .customer-maps-result-main span{font-size:11px;color:#607d86}
+#customer-overview .customer-maps-result-main .customer-maps-result-detail{color:#315767;
+ line-height:1.5}
+#customer-overview .customer-maps-choice{display:flex;align-items:center;gap:6px;
+ font-size:12px;font-weight:750;color:#087078;white-space:nowrap;cursor:pointer}
+#customer-overview .customer-maps-choice input{width:17px;height:17px;accent-color:#067a84}
+#customer-overview .customer-maps-result-state{font-size:11px;color:#836c46;
+ white-space:nowrap}
+#customer-overview #customer-maps-apply{min-height:44px;margin:0 0 10px}
+#customer-overview button:disabled{cursor:not-allowed;opacity:.65}
+@media(max-width:650px){
+ #customer-overview .customer-maps-review{padding:14px 12px}
+ #customer-overview .customer-maps-review-head>div{min-width:100%}
+ #customer-overview #customer-maps-scan,#customer-overview #customer-maps-apply{width:100%}
+ #customer-overview .customer-maps-result{flex-wrap:wrap;align-items:start}
+ #customer-overview .customer-maps-choice{width:100%}
+}
