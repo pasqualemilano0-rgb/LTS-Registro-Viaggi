@@ -13,9 +13,9 @@
   <link rel="stylesheet" href="./pro-theme.css?v=20261104-console-v5">
   <link rel="stylesheet" href="./dashboard-v6.css?v=20261104-mobile-v7">
   <link rel="stylesheet" href="./customer-overview.css?v=20261107-dashboard-sync-v3">
-  <link rel="stylesheet" href="./company-rates.css?v=20261107-maps-extras-v1">
+  <link rel="stylesheet" href="./company-rates.css?v=20261107-company-extras-v2">
   <link rel="stylesheet" href="./driver-records.css?v=20261107-records-admin-v3">
-  <script type="module" src="./admin.mjs?v=20261107-maps-extras-v1"></script>
+  <script type="module" src="./admin.mjs?v=20261107-company-extras-v2"></script>
   <script type="module" src="./dashboard-mobile-nav.mjs?v=20261107-records-admin-v2"></script>
 </head>
 <body>
@@ -307,20 +307,14 @@
             </section>
           </section>
           <section id="company-extras" class="company-rates-editor" aria-labelledby="company-extras-title">
-            <h2 id="company-extras-title">Servizi extra per autista</h2>
-            <p class="company-rates-note">Configura gli importi dei servizi extra già previsti da LTS (ADR, REEFER, pernottamento, facchinaggio e altri). Le tariffe sono personali: scegli prima l’autista.</p>
+            <h2 id="company-extras-title">Tariffe servizi extra aziendali</h2>
+            <p class="company-rates-note">Un solo tariffario extra per tutti gli autisti, esattamente come le trasferte. Modifica ADR, REEFER, pernottamento, facchinaggio, sabato porto, sabato trasferta e pre-orario da questa schermata.</p>
             <div class="company-extras-controls">
-              <label for="company-extra-driver">Autista
-                <select id="company-extra-driver" aria-label="Seleziona autista per servizi extra"></select>
-              </label>
               <button type="button" class="button outline" id="company-extra-refresh">Aggiorna extra</button>
             </div>
-            <p id="company-extra-status" role="status" aria-live="polite">Seleziona un autista per configurare i servizi extra.</p>
-            <label class="company-extra-reason-label" for="company-extra-reason">Motivo della modifica (facoltativo)
-              <input type="text" id="company-extra-reason" maxlength="500" placeholder="Es. aggiornamento compenso concordato">
-            </label>
-            <div id="company-extra-list" class="company-extra-list" aria-label="Importi dei servizi extra per autista"></div>
-            <p class="company-rates-note">Attenzione: modificare una tariffa extra può aggiornare anche gli importi extra di viaggi precedenti alla successiva sincronizzazione. Ogni salvataggio richiede conferma ed è tracciato.</p>
+            <p id="company-extra-status" role="status" aria-live="polite">Caricamento tariffario extra aziendale…</p>
+            <div id="company-extra-list" class="company-extra-list" aria-label="Importi dei servizi extra aziendali"></div>
+            <p class="company-rates-note">Le nuove tariffe sono condivise al prossimo aggiornamento online. Gli importi dei viaggi già salvati rimangono invariati.</p>
           </section>
         </section>
         <section id="console-overview" class="console-overview surface" aria-labelledby="console-overview-title">
