@@ -14,7 +14,7 @@ test('dashboard accessibile solo dal pannello admin, CSP e versioni coerenti',()
    'pro-city','pro-container','pro-compare-driver','pro-alerts','pro-alert-count',
    'pro-export-pdf','pro-export-xlsx','pro-records'])
    assert.match(html,new RegExp('id="'+id+'"'));
- assert.match(html,/admin\.mjs\?v=20261107-maps-extras-v1/);
+ assert.match(html,/admin\.mjs\?v=20261107-company-extras-v2/);
  assert.match(html,/admin\.css\?v=20261104-company-v3/);
  assert.match(js,/account-access\.mjs\?v=20261107-records-admin-v2/);
  assert.match(js,/setupReport\(account\)/);
@@ -26,7 +26,7 @@ test('dashboard accessibile solo dal pannello admin, CSP e versioni coerenti',()
  assert.match(report,/function driverProfile\(/);
  assert.match(report,/function driverDirectory\(/);
  assert.match(report,/function renderAmountChart\(/);
- assert.match(js,/report\.mjs\?v=20261107-maps-extras-v1/);
+ assert.match(js,/report\.mjs\?v=20261107-company-extras-v2/);
  assert.match(report,/setupInsights\(account\)/);
  const advanced=read('amministratore/report-insights.mjs');
  const exportsModule=read('amministratore/report-export.mjs');
@@ -127,7 +127,7 @@ test('admin can register Google Maps sites with a company tariff and edit audite
  const css=read('amministratore/company-rates.css');
  for(const id of ['company-maps-url','company-maps-read','company-maps-preview',
   'company-maps-save','company-maps-status','company-maps-amount',
-  'company-extra-driver','company-extra-list','company-extra-status','company-extra-reason'])
+  'company-extra-list','company-extra-status'])
   assert.match(page,new RegExp('id="'+id+'"'));
  assert.match(page,/data-open-maps/);
  assert.match(report,/setupCompanyExtras\(account\)/);
@@ -139,12 +139,14 @@ test('admin can register Google Maps sites with a company tariff and edit audite
  assert.match(maps,/account[.]companyTariffs\('save'/);
  assert.match(maps,/expectedRevision:current[.]revision/);
  assert.match(maps,/matchingSite\(sites,proposal\)/);
- assert.match(extras,/account[.]adminRecords\('read'/);
- assert.match(extras,/account[.]adminRecords\('mutate'/);
- assert.match(extras,/expectedRevision:revision/);
- assert.match(extras,/category:'extra'/);
+ assert.match(extras,/account[.]companyTariffs\('list'/);
+ assert.match(extras,/account[.]companyTariffs\('extra-save'/);
+ assert.match(extras,/expectedRevision:shown[.]revision/);
+ assert.doesNotMatch(extras,/account[.]adminRecords\('mutate'/);
  assert.match(extras,/window[.]confirm\(/);
  assert.match(css,/company-extra-row/);
+ assert.doesNotMatch(page,/id="company-extra-driver"/);
+ assert.match(page,/Tariffe servizi extra aziendali/);
  assert.doesNotMatch([maps,extras].join('\n'),/localStorage|innerHTML|SUPABASE_SERVICE_ROLE_KEY/);
 });
 
