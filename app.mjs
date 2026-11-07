@@ -1736,6 +1736,40 @@ setInterval(()=>{
 window.addEventListener('online',()=>{
  if(['insert','customers'].includes(tab)&&store.usingAccount()&&accountAccess.isVerified())void refreshCompanyCustomers();
 });
+// Pick up new installed-PWA code without overwriting unsaved journeys.
+// A fresh service worker controls future requests but existing tabs retain old JS
+// until a safe reload. Never force it during a trip edit or pending sync.
+const hadAppWorkerAtStartup=Boolean(navigator.serviceWorker?.controller);
+let appWorkerChangePending=false,lastAppWorkerCheck=0;
+function safeAppUpdateReload(){
+ if(!appWorkerChangePending||document.hidden||busy||tab==='insert'||editingId||
+    store.getSyncInfo?.().pending||store.getSyncInfo?.().conflict||
+    document.querySelector('dialog[open]')||
+    document.activeElement?.matches?.('input,textarea,select,[contenteditable="true"]'))return false;
+ appWorkerChangePending=false;
+ location.reload();
+ return true;
+}
+navigator.serviceWorker?.addEventListener('controllerchange',()=>{
+ if(!hadAppWorkerAtStartup)return; // First-time service-worker claim is not an update.
+ appWorkerChangePending=true;
+ if(!safeAppUpdateReload())
+  toast('Aggiornamento disponibile: dopo aver salvato, torna al registro e riapri LTS.');
+});
+async function checkInstalledAppVersion(){
+ if(document.hidden||navigator.onLine===false||!navigator.serviceWorker)return;
+ if(appWorkerChangePending&&safeAppUpdateReload())return;
+ if(Date.now()-lastAppWorkerCheck<60000)return;
+ lastAppWorkerCheck=Date.now();
+ try{const registration=await navigator.serviceWorker.ready;await registration.update();}
+ catch{ /* Offline data and editing remain available even if update checking fails. */ }
+}
+window.addEventListener('focus',()=>void checkInstalledAppVersion());
+window.addEventListener('pageshow',()=>void checkInstalledAppVersion());
+document.addEventListener('visibilitychange',()=>{
+ if(!document.hidden)void checkInstalledAppVersion();
+});
+setInterval(()=>void checkInstalledAppVersion(),120000);
 window.addEventListener('beforeunload',event=>{if(busy){event.preventDefault();event.returnValue='';}});
 navigator.serviceWorker?.addEventListener('message',event=>{
  const data=event.data;
