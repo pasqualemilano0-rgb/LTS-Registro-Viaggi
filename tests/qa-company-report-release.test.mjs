@@ -118,6 +118,36 @@ test('panoramica clienti apre la tariffa della sede Google Maps senza duplicare 
  assert.doesNotMatch(editor,/saveSharedMapsCustomer|state[.]customers|localStorage|innerHTML/);
 });
 
+test('admin can register Google Maps sites with a company tariff and edit audited per-driver extras',()=>{
+ const page=read('amministratore/index.html');
+ const report=read('amministratore/report.mjs');
+ const rates=read('amministratore/company-rates.mjs');
+ const maps=read('amministratore/company-maps-registration.mjs');
+ const extras=read('amministratore/company-extras.mjs');
+ const css=read('amministratore/company-rates.css');
+ for(const id of ['company-maps-url','company-maps-read','company-maps-preview',
+  'company-maps-save','company-maps-status','company-maps-amount',
+  'company-extra-driver','company-extra-list','company-extra-status','company-extra-reason'])
+  assert.match(page,new RegExp('id="'+id+'"'));
+ assert.match(page,/data-open-maps/);
+ assert.match(report,/setupCompanyExtras\(account\)/);
+ assert.match(report,/companyRates[.]focusMaps\(\)/);
+ assert.match(rates,/setupCompanyMaps\(account/);
+ assert.match(maps,/readMapsCustomer\(link\)/);
+ assert.match(maps,/sharedMapsCustomers\(\)/);
+ assert.match(maps,/saveSharedMapsCustomer\(proposal[.]mapsUrl/);
+ assert.match(maps,/account[.]companyTariffs\('save'/);
+ assert.match(maps,/expectedRevision:current[.]revision/);
+ assert.match(maps,/matchingSite\(sites,proposal\)/);
+ assert.match(extras,/account[.]adminRecords\('read'/);
+ assert.match(extras,/account[.]adminRecords\('mutate'/);
+ assert.match(extras,/expectedRevision:revision/);
+ assert.match(extras,/category:'extra'/);
+ assert.match(extras,/window[.]confirm\(/);
+ assert.match(css,/company-extra-row/);
+ assert.doesNotMatch([maps,extras].join('\n'),/localStorage|innerHTML|SUPABASE_SERVICE_ROLE_KEY/);
+});
+
 test('dashboard automatically refreshes the active verified section without losing unsaved edits',()=>{
  const admin=read('amministratore/admin.mjs');
  const report=read('amministratore/report.mjs');
