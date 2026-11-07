@@ -1,7 +1,7 @@
 /** Audited driver records console. Never stores someone else's archive in localStorage.
  * All actions need a verified admin session/MFA and a server-side revision CAS.
  */
-import {SERVICES,formatMoney,toCents} from '/LTS-Registro-Viaggi/shared/domain.mjs';
+import {SERVICES,formatMoney,toCents} from '../shared/domain.mjs';
 const $=id=>document.getElementById(id);
 const make=(tag,className='',txt='')=>{
  const e=document.createElement(tag);
