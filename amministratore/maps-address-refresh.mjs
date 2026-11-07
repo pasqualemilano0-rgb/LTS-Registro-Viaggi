@@ -45,8 +45,9 @@ export function setupMapsAddressRefresh(account,{onChanged=async()=>{}}={}){
     make('span','',row.site.city));
    const line=make('span','customer-maps-result-detail',
     row.saved?'Indirizzo aggiornato: '+row.review.address:
-    row.review?.eligible?'Proposta: '+row.review.address:
-     row.reason||row.review?.reason||'Lettura in corso…');
+    row.reason||(
+     row.review?.eligible?'Proposta: '+row.review.address:
+      row.review?.reason||'Lettura in corso…'));
    meta.append(line);
    if(row.review?.eligible&&!row.saved){
     const choice=make('label','customer-maps-choice');
