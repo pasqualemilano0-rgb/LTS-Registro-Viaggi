@@ -1631,7 +1631,7 @@ let resumingVerification=false;
 document.addEventListener('visibilitychange',async()=>{
  if(document.hidden||resumingVerification||!store.usingAccount()||!accountAccess.hasSession())return;
  resumingVerification=true;
- try{await accountAccess.verifySession();void refreshCompanyCustomers();if(tab==='tariffs')void refreshCompanyRates();}
+ try{await accountAccess.verifySession();void refreshCompanyCustomers();if(['insert','tariffs','customers'].includes(tab))void refreshCompanyRates();}
  catch{
    store.lockRevokedAccount();
    renderAccountGate('Impossibile verificare la sessione. Riprova con Internet attivo.');
@@ -1725,14 +1725,14 @@ async function initialize(){
 setInterval(()=>{
  if(['insert','tariffs','customers'].includes(tab)&&!document.hidden&&navigator.onLine!==false&&
    store.usingAccount()&&accountAccess.isVerified())void refreshCompanyRates();
-},20000);
+},8000);
 window.addEventListener('online',()=>{
  if(['insert','tariffs','customers'].includes(tab)&&store.usingAccount()&&accountAccess.isVerified())void refreshCompanyRates();
 });
 setInterval(()=>{
  if(['insert','customers'].includes(tab)&&!document.hidden&&navigator.onLine!==false&&
    store.usingAccount()&&accountAccess.isVerified())void refreshCompanyCustomers();
-},20000);
+},8000);
 window.addEventListener('online',()=>{
  if(['insert','customers'].includes(tab)&&store.usingAccount()&&accountAccess.isVerified())void refreshCompanyCustomers();
 });
