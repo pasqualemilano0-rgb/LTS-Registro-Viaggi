@@ -5,7 +5,7 @@ const el=id=>document.getElementById(id);
 const text=(tag,cls,value)=>{
   const n=document.createElement(tag);n.className=cls;n.textContent=value;return n;
 };
-export function setupCustomerOverview(account){
+export function setupCustomerOverview(account,onSetRate=null){
   const panel=el('customer-overview'),status=el('customer-overview-status');
   const filter=el('customer-overview-filter'),list=el('customer-overview-list');
   const more=el('customer-overview-more'),refresh=el('customer-overview-refresh');
@@ -57,7 +57,19 @@ export function setupCustomerOverview(account){
       link.className='customer-directory-maps';link.textContent='Apri Maps';
       link.href=row.mapsUrl;link.target='_blank';link.rel='noopener noreferrer';
       link.setAttribute('aria-label','Apri Google Maps per '+row.name+', '+row.city);
-      card.append(body,chip,link);list.append(card);
+      const actions=document.createElement('div');actions.className='customer-directory-site-actions';
+      actions.append(link);
+      if(typeof onSetRate==='function'){
+        const setRate=document.createElement('button');
+        setRate.className='button outline customer-directory-set-rate';
+        setRate.type='button';setRate.textContent='Imposta tariffa';
+        setRate.setAttribute('aria-label','Imposta tariffa per '+row.name+', '+row.city);
+        setRate.addEventListener('click',()=>{
+          if(active())onSetRate(row);
+        });
+        actions.append(setRate);
+      }
+      card.append(body,chip,actions);list.append(card);
     }
     more.hidden=shown.length<=8;
     more.textContent=expanded?'Mostra meno':'Mostra tutte le '+shown.length+' sedi';
