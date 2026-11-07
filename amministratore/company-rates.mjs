@@ -83,7 +83,7 @@ export function setupCompanyRates(account){
   const visible=rows.filter(rate=>clean(rate.client+' '+rate.city).includes(term));
   count.textContent=rows.length+' tariffe aziendali · '+visible.length+' visualizzate';
   list.replaceChildren();
-  if(!ratesLoaded)list.append(node('p','company-rates-empty','Tariffario non disponibile. Riprova a sincronizzare.'));
+  if(!ratesLoaded)list.append(node('p','company-rates-empty','Aggiornamento non riuscito: eventuali prezzi qui sotto sono gli ultimi disponibili, non confermati. Salvataggio disabilitato.'));
   else if(!visible.length)list.append(node('p','company-rates-empty',
     rows.length?'Nessuna tariffa corrisponde alla ricerca.':
     'Non ci sono ancora importi aziendali. Seleziona una sede Google Maps qui sotto per iniziare.'));
@@ -163,8 +163,10 @@ export function setupCompanyRates(account){
   if(seq!==generation||!authorized())return false;
   const validRates=rateResult.status==='fulfilled'&&Array.isArray(rateResult.value?.tariffs);
   const validCustomers=customerResult.status==='fulfilled'&&Array.isArray(customerResult.value);
-  const nextRates=validRates?rateResult.value.tariffs:[];
-  const nextSites=validCustomers?customerResult.value:[];
+  // A failed online check is not proof that the company has zero rates.
+  // Keep the previous verified snapshot for reference, but disable writes.
+  const nextRates=validRates?rateResult.value.tariffs:rows;
+  const nextSites=validCustomers?customerResult.value:sites;
   const changed=JSON.stringify(rows)!==JSON.stringify(nextRates)||
    JSON.stringify(sites)!==JSON.stringify(nextSites)||
    ratesLoaded!==validRates||sitesLoaded!==validCustomers;
