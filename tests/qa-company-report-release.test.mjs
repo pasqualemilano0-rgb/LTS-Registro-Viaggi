@@ -14,9 +14,9 @@ test('dashboard accessibile solo dal pannello admin, CSP e versioni coerenti',()
    'pro-city','pro-container','pro-compare-driver','pro-alerts','pro-alert-count',
    'pro-export-pdf','pro-export-xlsx','pro-records'])
    assert.match(html,new RegExp('id="'+id+'"'));
- assert.match(html,/admin\.mjs\?v=20261107-dashboard-sync-v4/);
+ assert.match(html,/admin\.mjs\?v=20261107-records-admin-v2/);
  assert.match(html,/admin\.css\?v=20261104-company-v3/);
- assert.match(js,/account-access\.mjs\?v=20261106-company-tariffs-v1/);
+ assert.match(js,/account-access\.mjs\?v=20261107-records-admin-v2/);
  assert.match(js,/setupReport\(account\)/);
  assert.match(js,/companyView\.reset\(\)/);
  assert.match(html,/default-src 'none'/);
@@ -26,7 +26,7 @@ test('dashboard accessibile solo dal pannello admin, CSP e versioni coerenti',()
  assert.match(report,/function driverProfile\(/);
  assert.match(report,/function driverDirectory\(/);
  assert.match(report,/function renderAmountChart\(/);
- assert.match(js,/report\.mjs\?v=20261107-dashboard-sync-v4/);
+ assert.match(js,/report\.mjs\?v=20261107-records-admin-v2/);
  assert.match(report,/setupInsights\(account\)/);
  const advanced=read('amministratore/report-insights.mjs');
  const exportsModule=read('amministratore/report-export.mjs');
