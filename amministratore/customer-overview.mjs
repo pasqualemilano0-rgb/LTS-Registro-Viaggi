@@ -3,6 +3,7 @@
  */
 import {customerDirectoryStats,hasUsableAddress,selectedCustomerSites,tariffLinkedCustomerSites}
  from './customer-overview-model.mjs?v=20261107-client-tariff-sync-v2';
+import {setupMapsAddressRefresh} from './maps-address-refresh.mjs?v=20261107-maps-review-v1';
 
 const el=id=>document.getElementById(id);
 const text=(tag,cls,value)=>{
@@ -14,6 +15,7 @@ export function setupCustomerOverview(account,onSetRate=null){
  const filter=el('customer-overview-filter'),list=el('customer-overview-list');
  const more=el('customer-overview-more'),refresh=el('customer-overview-refresh');
  let generation=0,records=null,tariffRows=null,expanded=false;
+ const mapsRefresh=setupMapsAddressRefresh(account,{onChanged:async()=>{await load();}});
  const active=()=>account.isVerified()&&account.getRole()==='admin'&&
   !el('dashboard').hidden&&!el('report-panel').hidden&&
   el('dashboard').dataset.view==='overview';
@@ -24,6 +26,7 @@ export function setupCustomerOverview(account,onSetRate=null){
   el('customer-overview-progress').setAttribute('aria-valuenow','0');
  }
  function reset(){
+  mapsRefresh.reset();
   generation++;records=null;tariffRows=null;expanded=false;
   filter.value='incomplete';list.replaceChildren();clearMetrics();
   el('customer-overview-caption').textContent='La presenza di un indirizzo non ne certifica la validità su Google Maps.';
