@@ -14,7 +14,7 @@ test('dashboard accessibile solo dal pannello admin, CSP e versioni coerenti',()
    'pro-city','pro-container','pro-compare-driver','pro-alerts','pro-alert-count',
    'pro-export-pdf','pro-export-xlsx','pro-records'])
    assert.match(html,new RegExp('id="'+id+'"'));
- assert.match(html,/admin\.mjs\?v=20261107-maps-review-v1/);
+ assert.match(html,/admin\.mjs\?v=20261107-driver-customer-picker-v1/);
  assert.match(html,/admin\.css\?v=20261104-company-v3/);
  assert.match(js,/account-access\.mjs\?v=20261107-records-admin-v2/);
  assert.match(js,/setupReport\(account\)/);
@@ -26,7 +26,7 @@ test('dashboard accessibile solo dal pannello admin, CSP e versioni coerenti',()
  assert.match(report,/function driverProfile\(/);
  assert.match(report,/function driverDirectory\(/);
  assert.match(report,/function renderAmountChart\(/);
- assert.match(js,/report\.mjs\?v=20261107-maps-review-v1/);
+ assert.match(js,/report\.mjs\?v=20261107-driver-customer-picker-v1/);
  assert.match(report,/setupInsights\(account\)/);
  const advanced=read('amministratore/report-insights.mjs');
  const exportsModule=read('amministratore/report-export.mjs');
@@ -217,6 +217,48 @@ test('dashboard automatically refreshes the active verified section without losi
  assert.match(rates,/const nextRates=validRates\?rateResult[.]value[.]tariffs:rows/);
  assert.match(rates,/Ultimo|ultimi disponibili/i);
  assert.doesNotMatch([admin,report,rates,directory].join('\n'),/SUPABASE_SERVICE_ROLE_KEY|sb_secret_/);
+});
+
+test('driver trip picker searches Maps, manual company tariffs and personal driver customers',async()=>{
+ const {buildDriverCustomerCatalog}=await import('../amministratore/driver-customer-catalog.mjs');
+ const sites=buildDriverCustomerCatalog({
+  sharedSites:[
+   {name:'ACETIFICIO',city:'NOLA',address:'VIA A',mapsUrl:'https://maps.app.goo.gl/a'},
+   {name:'ACETIFICIO',city:'NOLA',address:'VIA B',mapsUrl:'https://maps.app.goo.gl/b'}
+  ],
+  companyRates:[
+   {client:'ACETIFICIO',city:'NOLA',cents:5000},
+   {client:'CLIENTE MANUALE',city:'AVELLINO',cents:7500}
+  ],
+  personalCustomers:[
+   {name:'CLIENTE MANUALE',city:'AVELLINO',address:'VIA PROPRIA'},
+   {name:'CLIENTE PERSONALE',city:'CASERTA',address:'VIA TEST'}
+  ]
+ });
+ assert.equal(sites.length,4);
+ assert.equal(sites.filter(s=>s.source==='maps').length,2,
+  'Two distinct Maps depots in the same city remain distinct');
+ assert.equal(sites.filter(s=>s.source==='company').length,1);
+ assert.equal(sites.filter(s=>s.source==='personal').length,1);
+ assert.equal(sites.find(s=>s.name==='CLIENTE MANUALE').city,'AVELLINO');
+ assert.equal(sites.find(s=>s.name==='CLIENTE PERSONALE').address,'VIA TEST');
+ const source=read('amministratore/driver-records.mjs');
+ const css=read('amministratore/driver-records.css');
+ const html=read('amministratore/index.html');
+ const report=read('amministratore/report.mjs');
+ assert.match(source,/buildDriverCustomerCatalog\(/);
+ assert.match(source,/companyRates:tariffs,personalCustomers/);
+ assert.match(source,/input[.]type='search'/);
+ assert.match(source,/role','combobox'/);
+ assert.match(source,/role','listbox'/);
+ assert.match(source,/records-site-option/);
+ assert.match(source,/companyFareSnapshot\(rates,ratesAvailable,site[.]name,site[.]city\)/);
+ assert.doesNotMatch(source,/document[.]createElement\('select'\)/);
+ assert.match(css,/records-site-results\[hidden\]/);
+ assert.match(css,/records-site-option-address/);
+ assert.match(html,/driver-records[.]css[?]v=20261107-driver-customer-picker-v1/);
+ assert.match(report,/driver-records[.]mjs[?]v=20261107-driver-customer-picker-v1/);
+ assert.doesNotMatch([source,css].join('\n'),/localStorage|innerHTML|SUPABASE_SERVICE_ROLE_KEY/);
 });
 
 test('administrator has an MFA-only editor for each driver and all personal record kinds',()=>{
