@@ -114,8 +114,8 @@ export function setupCustomerOverview(account,onSetRate=null){
    records=next;tariffRows=rates;
    if(changed||!silent)render();
    const clock=new Date().toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'});
-   status.textContent='Clienti aziendali aggiornati alle '+clock+
-    '. Google Maps è il riferimento della sede, non una certificazione del punto di carico.';
+   status.textContent='Elenco clienti Supabase sincronizzato alle '+clock+
+    '. Questo controllo NON rilegge Google Maps: per gli indirizzi segnaposto usa Verifica i link già associati.';
    const linked=validTariffs?tariffLinkedCustomerSites(records,tariffRows):null;
    syncStatus.textContent=linked?
     'Clienti e tariffe aggiornati alle '+clock+' · '+linked.priced+' sedi con tariffa, '+
