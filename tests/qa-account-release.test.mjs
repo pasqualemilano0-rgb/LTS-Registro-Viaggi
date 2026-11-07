@@ -652,6 +652,23 @@ test('saving a checked Maps link never adds another personal customer before sha
  assert.match(client,/updated:result[.]updated===true/);
  assert.doesNotMatch(dialog,/saveSharedMapsCustomer\([\s\S]*?mapsLink\)/);
 });
+test('Google Maps links use the authenticated allowlisted reader, not the legacy redirect-blocking API',()=>{
+ const reader=read('maps-reader-client.mjs');
+ const runtime=read('runtime-config.mjs');
+ assert.match(runtime,/"mapsReaderEndpoint": "https:\/\/otrqynkscpbeyuvdlgpg[.]supabase[.]co\/functions\/v1\/lts-maps-reader"/);
+ assert.match(reader,/account[.]getVerifiedAccessToken\(\)/);
+ assert.match(reader,/checkedGoogleMapsUrl\(link\)/);
+ assert.match(reader,/redirect:'error'/);
+ assert.match(reader,/credentials:'omit'/);
+ assert.match(reader,/source[.]href/);
+ const dialog=app.slice(app.indexOf('function mapsCustomerDialog('),
+  app.indexOf('async function importCustomersCsv(',app.indexOf('function mapsCustomerDialog(')));
+ assert.match(dialog,/await readMapsCustomer\(link,\{signal:controller[.]signal\}\)/);
+ assert.match(dialog,/customerDialog\(null,proposal\)/);
+ assert.doesNotMatch(dialog,/\/api\/maps-client/);
+ assert.match(dialog,/Il cliente inserito senza verifica del link rimane personale/);
+ assert.match(sw,/maps-reader-client[.]mjs/);
+});
 test('dashboard Maps action reuses secure client import and keeps unsaved trip draft',()=>{
  const insert=app.slice(app.indexOf('function renderInsert('),app.indexOf('function citySuggestions('));
  assert.match(insert,/if\(!editingId\)form[.]append\(el\('section',\{class:'dashboard-maps-shortcut'/);
