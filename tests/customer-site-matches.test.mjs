@@ -40,7 +40,7 @@ test('a city-only personal entry can match one company site, but ambiguous wareh
  const unknown={id:'personal-2',name:'CONSERVA SPA',city:'BITONTO',address:''};
  assert.equal(matchingSharedCustomer([bitonto],unknown),bitonto);
  assert.equal(matchingSharedCustomer([bitonto,{...bitonto,address:'VIA ROMA 12'}],unknown),null);
- assert.equal(dedupedCustomerDirectory([bitonto,{...bitonto,address:'VIA ROMA 12'}],[unknown]).personal.length,1);
+ assert.equal(dedupedCustomerDirectory([bitonto,{...bitonto,address:'VIA ROMA 12',mapsUrl:'https://maps.app.goo.gl/another-warehouse'}],[unknown]).personal.length,1);
 });
 test('a business with a different name at the same street is not merged',()=>{
  assert.equal(sameSharedSite(bitonto,{...bitonto,name:'ALTRO CLIENTE'}),false);
