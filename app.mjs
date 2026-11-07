@@ -7,6 +7,7 @@ import * as accountAccess from '/LTS-Registro-Viaggi/account-access.mjs';
 import {sharedMapsEnabled,sharedMapsCustomers,saveSharedMapsCustomer} from '/LTS-Registro-Viaggi/shared-maps-client.mjs';
 import {readMapsCustomer} from '/LTS-Registro-Viaggi/maps-reader-client.mjs';
 import {companyFareSnapshot} from '/LTS-Registro-Viaggi/shared/company-fares.mjs';
+import {companyExtraSnapshot} from '/LTS-Registro-Viaggi/shared/company-extras.mjs';
 import {mapsLinkForCompanySync,filterSharedCustomers} from '/LTS-Registro-Viaggi/shared/maps-company-routing.mjs';
 import {dedupedCustomerDirectory,matchingSharedCustomer} from '/LTS-Registro-Viaggi/shared/customer-site-matches.mjs';
 import {combinedTripCustomerChoices} from '/LTS-Registro-Viaggi/shared/trip-customer-choices.mjs';
@@ -19,6 +20,8 @@ let state = D.emptyState();
 let companyCustomers=[]; // In-memory shared list, never part of personal archive/backup.
 let companyRates=[]; // Complete corporate catalog, even if a personal rate overrides a route.
 let companyRatesLoaded=false;
+let companyExtraRates=[]; // One shared extra list across ALL drivers.
+let companyExtrasLoaded=false;
 let companyRatesRequest=0;
 let companyCustomersError='';
 let companyCustomersRequest=0;
@@ -232,12 +235,15 @@ async function refreshCompanyRates({quiet=true}={}){
  if(!store.usingAccount()||!accountAccess.isVerified())return false;
  const owner=accountAccess.getAccountId(),request=++companyRatesRequest;
  try{
-  const rates=await accountAccess.driverCompanyTariffs();
+  const catalog=await accountAccess.driverCompanyCatalog();
   if(owner!==accountAccess.getAccountId()||request!==companyRatesRequest)return false;
-  const updated=rates.map(item=>({id:'company:'+item.id,customerId:null,
+  const updated=catalog.tariffs.map(item=>({id:'company:'+item.id,customerId:null,
    client:D.normalizeText(item.client),city:D.normalizeText(item.city),cents:item.cents}));
-  const changed=!companyRatesLoaded||JSON.stringify(updated)!==JSON.stringify(companyRates);
+  const changed=!companyRatesLoaded||!companyExtrasLoaded||
+   JSON.stringify(updated)!==JSON.stringify(companyRates)||
+   JSON.stringify(catalog.extraRates)!==JSON.stringify(companyExtraRates);
   companyRates=updated;companyRatesLoaded=true;
+  companyExtraRates=catalog.extraRates;companyExtrasLoaded=true;
   if(changed&&(tab==='tariffs'&&tariffTab==='base'||tab==='customers')&&refreshView)refreshView();
   if(changed&&tab==='insert')refreshTripFareEstimate?.();
   return true;
@@ -508,7 +514,10 @@ function renderInsert(main){
   const sameFirst=existing&&D.normalizeText(existing.client)===D.normalizeText(draft.client)&&D.normalizeText(existing.city)===D.normalizeText(draft.city);
   const sameSecond=existing&&D.normalizeText(existing.secondClient)===D.normalizeText(draft.secondClient)&&D.normalizeText(existing.secondCity)===D.normalizeText(draft.secondCity);
   const extraCents=D.emptyExtraRates();
-  for(const service of draft.services){const retained=existing?.services?.includes(service)?existing.extraCents?.[service]??null:null;extraCents[service]=state.extraRates[service]??retained;}
+  for(const service of draft.services)
+   extraCents[service]=companyExtraSnapshot(companyExtraRates,companyExtrasLoaded,service,{
+    unchanged:Boolean(existing?.services?.includes(service)),
+    previous:existing?.extraCents?.[service]});
   // Build a read-only candidate even while required fields are incomplete.
   // Replace the edited trip so its own daily allowance is not counted twice.
   const candidate={...draft,id:estimateId,createdAt:existing?.createdAt||estimateCreatedAt,
@@ -540,6 +549,12 @@ function renderInsert(main){
    const sameSecond=Boolean(existing&&D.normalizeText(existing.secondClient)===trip.secondClient&&D.normalizeText(existing.secondCity)===trip.secondCity);
    trip.fareCents=companyFareSnapshot(companyRates,companyRatesLoaded,trip.client,trip.city,{unchanged:sameFirst,previous:existing?.fareCents});
    trip.secondFareCents=trip.secondCity?companyFareSnapshot(companyRates,companyRatesLoaded,trip.secondClient,trip.secondCity,{unchanged:sameSecond,previous:existing?.secondFareCents}):null;
+   // Override legacy private defaults: company extras are identical for all drivers.
+   // Previously saved service amounts are snapshots and are never repriced here.
+   for(const service of trip.services)
+    trip.extraCents[service]=companyExtraSnapshot(companyExtraRates,companyExtrasLoaded,service,{
+     unchanged:Boolean(existing?.services?.includes(service)),
+     previous:existing?.extraCents?.[service]});
    let next={...state,trips:existing?state.trips.map(t=>t.id===existing.id?trip:t):[...state.trips,trip]};
    const clients=[{name:trip.client,city:trip.city},...(trip.secondClient?[{name:trip.secondClient,city:trip.secondCity}]:[])];
    for(const customer of clients)if(!next.customers.some(c=>c.name===customer.name))next=D.upsertCustomer(next,customer);
@@ -722,13 +737,28 @@ function renderTariffs(main){
  draw();refreshView=draw;
 }
 function renderExtraRates(main){
- main.append(el('div',{class:'info-note'},icon('info'),'SABATO TRASFERTA si applica una sola volta nella stessa giornata, anche se selezionato su più viaggi. Gli altri extra si applicano a ogni viaggio, una sola volta anche con due prese. Le modifiche aggiornano anche i viaggi già nel registro.'));
- const form=el('form',{class:'panel form-panel extras-panel',novalidate:true});const error=el('div',{class:'form-error',role:'alert'});form.append(error);
- const inputs={};const dirty=new Set();const dirtyBaseline=new Map();const rates=el('div',{class:'rates-list'});
- for(const service of D.SERVICES){const input=el('input',{id:`rate-${service.key}`,name:service.key,inputmode:'decimal',placeholder:'—',value:moneyInput(state.extraRates[service.key]),'aria-label':`Importo ${service.label}`,maxlength:14,on:{input:()=>{if(!dirty.has(service.key))dirtyBaseline.set(service.key,state.extraRates[service.key]);dirty.add(service.key);}}});inputs[service.key]=input;rates.append(el('div',{class:'rate-row'},el('label',{for:input.id},service.label),el('div',{class:'rate-input'},input,el('span',{},'€'))));}
- form.append(rates,el('div',{style:'height:20px'}),el('button',{type:'submit',class:'primary-button full','data-save':true},icon('check'),'Salva tariffe extra'));
- form.addEventListener('submit',async event=>{event.preventDefault();error.textContent='';try{const extraRates={...state.extraRates};for(const key of dirty){requireCurrentEditor(editorVersion(dirtyBaseline.get(key)),state.extraRates[key],`L’importo ${D.SERVICES.find(service=>service.key===key)?.label||'extra'}`);const input=inputs[key];extraRates[key]=input.value.trim()?D.toCents(input.value):null;}await persist(D.upsertExtraRates(state,extraRates));dirty.clear();dirtyBaseline.clear();for(const [key,input]of Object.entries(inputs))input.value=moneyInput(state.extraRates[key]);toast('Tariffe extra e registro aggiornati.');}catch(err){error.textContent=err.message;}});main.append(form);
- refreshView=()=>{for(const [key,input]of Object.entries(inputs))if(!dirty.has(key))input.value=moneyInput(state.extraRates[key]);};
+ main.append(el('div',{class:'info-note'},icon('lock'),
+  'Servizi extra aziendali: un importo unico per tutti gli autisti, impostato dall’amministratore. I viaggi già salvati conservano gli importi storici.'));
+ const list=el('div',{class:'panel form-panel extras-panel rates-list'});
+ const status=el('p',{class:'field-hint'});
+ const update=el('button',{type:'button',class:'secondary-button',on:{click:async()=>{
+  update.disabled=true;status.textContent='Aggiornamento degli extra aziendali…';
+  try{await refreshCompanyRates({quiet:false});show();}
+  catch(error){status.textContent=error.message||'Aggiornamento non disponibile.';}
+  finally{update.disabled=false;}
+ }}},icon('refresh'),'Aggiorna servizi extra');
+ function show(){
+  list.replaceChildren(...D.SERVICES.map(service=>{
+   const price=companyExtraSnapshot(companyExtraRates,companyExtrasLoaded,service.key);
+   return el('div',{class:'rate-row'},el('span',{},service.label),
+    el('strong',{},price===null?'Da configurare':D.formatMoney(price)));
+  }));
+  status.textContent=companyExtrasLoaded
+   ?'Listino aziendale sincronizzato: gli importi sono uguali per tutti gli autisti.'
+   :'Listino non ancora disponibile. Collegati a Internet e premi Aggiorna.';
+ }
+ main.append(list,status,update);
+ show();refreshView=show;
 }
 function modal(title,{required=false,subtitle=null}={}){
  const dialog=el('dialog',{class:'dialog','aria-label':title});const body=el('div',{class:'dialog-inner'});const header=el('div',{class:'dialog-header'},el('h2',{},title));
@@ -1549,7 +1579,8 @@ function renderAccountGate(message=''){
  companyCustomers=[];
  companyCustomersError='';
  companyCustomerSearch='';customerDirectoryScope='all';customerDirectoryLimit=24;companyCustomersLoaded=false;companyCustomersRequest++;
- companyRates=[];companyRatesLoaded=false;companyRatesRequest++;
+ companyRates=[];companyRatesLoaded=false;
+ companyExtraRates=[];companyExtrasLoaded=false;companyRatesRequest++;
  const hasPreviousSession=accountAccess.hasSession();
  const recovery=hasPreviousSession?el('div',{class:'account-session-recovery'},
    el('p',{},'Questo dispositivo conserva una sessione precedente. Per rientrare nello stesso account, inserisci nuovamente la password. Per usare un altro account, esci prima.'),
