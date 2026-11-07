@@ -282,8 +282,8 @@
       "category": "PREVISTE",
       "voyage_id": "202600384",
       "carrier": "LINEA I.MESSINA",
-      "acceptance_flag": "0",
-      "acceptance_icon": "",
+      "acceptance_flag": "1",
+      "acceptance_icon": "ACCETTA_CARICO",
       "stop_cargo": "",
       "external_depot": "",
       "opening": "2026-11-07 06:30",
@@ -649,5 +649,5 @@
       "source_conflict": false
     }
   ],
-  "acquired_at": "2026-11-07T04:15:16.952Z"
+  "acquired_at": "2026-11-07T05:15:16.821Z"
 }
