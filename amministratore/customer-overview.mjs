@@ -2,7 +2,7 @@
  * A successful fetch is the only source of "updated" status. Never mutate records.
  */
 import {customerDirectoryStats,hasUsableAddress,selectedCustomerSites,tariffLinkedCustomerSites}
- from './customer-overview-model.mjs?v=20261107-client-tariff-sync-v2';
+ from './customer-overview-model.mjs?v=20261107-manual-shared-v1';
 import {setupMapsAddressRefresh} from './maps-address-refresh.mjs?v=20261107-maps-review-v1';
 
 const el=id=>document.getElementById(id);
@@ -37,9 +37,11 @@ export function setupCustomerOverview(account,onSetRate=null){
  }
  function render(){
   if(!records)return;
-  const metrics=customerDirectoryStats(records);
+  const mapSites=records.filter(site=>site.source!=='manual');
+  const metrics=customerDirectoryStats(mapSites);
+  const manualCount=records.length-mapSites.length;
   const linked=tariffRows?tariffLinkedCustomerSites(records,tariffRows):null;
-  el('customer-overview-total').textContent=String(metrics.total);
+  el('customer-overview-total').textContent=String(records.length);
   el('customer-overview-complete').textContent=String(metrics.complete);
   el('customer-overview-missing').textContent=String(metrics.incomplete);
   el('customer-overview-percent').textContent=metrics.coverage+'%';
@@ -48,8 +50,8 @@ export function setupCustomerOverview(account,onSetRate=null){
   el('customer-overview-progress').style.width=metrics.coverage+'%';
   el('customer-overview-progress').setAttribute('aria-valuenow',String(metrics.coverage));
   el('customer-overview-caption').textContent=
-   metrics.complete+' sedi con indirizzo registrato su '+metrics.total+
-   '. Per la verifica del punto di carico consulta la scheda Maps.';
+   metrics.complete+' sedi Maps con indirizzo su '+metrics.total+
+   ' · '+manualCount+' clienti manuali (indirizzo facoltativo).';
   const shown=selectedCustomerSites(records,filter.value);
   const pricedSites=new Set(linked?.sites.filter(site=>site.hasRate).map(site=>site.name+'\u0000'+site.city)||[]);
   list.replaceChildren();
@@ -63,16 +65,20 @@ export function setupCustomerOverview(account,onSetRate=null){
    body.append(text('strong','customer-directory-site-name',row.name),
     text('span','customer-directory-city',row.city));
    const valid=hasUsableAddress(row.address);
+   const isManual=row.source==='manual';
    body.append(text('span','customer-directory-address',
-    valid?row.address:'Indirizzo stradale da completare'));
-   const chip=text('span',valid?'customer-directory-chip is-present':'customer-directory-chip is-missing',
-    valid?'Indirizzo registrato':'Da completare');
-   const link=document.createElement('a');
-   link.className='customer-directory-maps';link.textContent='Apri Maps';
-   link.href=row.mapsUrl;link.target='_blank';link.rel='noopener noreferrer';
-   link.setAttribute('aria-label','Apri Google Maps per '+row.name+', '+row.city);
+    valid?row.address:isManual?'Indirizzo facoltativo':'Indirizzo stradale da completare'));
+   const chip=text('span',isManual?'customer-directory-chip is-present':
+    valid?'customer-directory-chip is-present':'customer-directory-chip is-missing',
+    isManual?'Cliente manuale':valid?'Indirizzo registrato':'Da completare');
    const actions=document.createElement('div');actions.className='customer-directory-site-actions';
-   actions.append(link);
+   if(row.mapsUrl){
+    const link=document.createElement('a');
+    link.className='customer-directory-maps';link.textContent='Apri Maps';
+    link.href=row.mapsUrl;link.target='_blank';link.rel='noopener noreferrer';
+    link.setAttribute('aria-label','Apri Google Maps per '+row.name+', '+row.city);
+    actions.append(link);
+   }
    if(typeof onSetRate==='function'){
     const setRate=document.createElement('button');
     setRate.className='button outline customer-directory-set-rate';
@@ -89,7 +95,8 @@ export function setupCustomerOverview(account,onSetRate=null){
   more.textContent=expanded?'Mostra meno':'Mostra tutte le '+shown.length+' sedi';
   el('customer-overview-matching').textContent=
    shown.length+' sedi'+(filter.value==='incomplete'?' con indirizzo incompleto':
-    filter.value==='complete'?' con indirizzo registrato':' nell’archivio condiviso');
+    filter.value==='complete'?' con indirizzo registrato':
+    filter.value==='manual'?' inseriti manualmente':' nell’archivio condiviso');
  }
  async function load({silent=false}={}){
   if(!active()){reset();return false;}
