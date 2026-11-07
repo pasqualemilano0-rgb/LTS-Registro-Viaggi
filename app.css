@@ -598,3 +598,63 @@ h1,h2,h3{letter-spacing:-.035em}
  .company-route-heading{padding:13px}
  .company-route-list{padding:3px 13px}
 }
+
+
+/* Essential customer information: compact mobile address book. */
+.customer-hub .customer-scope-tabs{
+ display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;
+}
+.customer-hub .customer-scope-button{
+ display:inline-flex;align-items:center;justify-content:center;gap:6px;
+ width:100%;min-width:0;min-height:42px;padding:9px 6px;
+ border:1px solid #d8e5e9;border-radius:10px;background:#fff;color:#4d6976;
+ font-size:11px;font-weight:750;
+}
+.customer-hub .customer-scope-button.selected{
+ border-color:#82bfcc;background:#e5f5f9;color:#006d85;
+}
+.customer-hub .customer-scope-count{display:inline-block;font-size:10px;font-weight:800}
+.customer-hub .customer-hub-actions{
+ display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:9px;
+}
+.customer-hub .customer-hub-actions button{width:100%;min-width:0;max-width:none;min-height:44px;font-size:11px}
+.customer-hub .customer-directory-results{display:grid;gap:10px}
+.customer-hub .directory-card{
+ padding:14px;border:1px solid #dbe8ec;background:#fff;
+ box-shadow:0 2px 8px #12465a0a;
+}
+.directory-card .directory-card-title{margin-bottom:10px;align-items:start}
+.directory-card .directory-card-title h3{font-size:14px;line-height:1.32}
+.directory-card .directory-card-city,
+.directory-card .directory-card-address,
+.directory-card .directory-card-phone{
+ display:grid;grid-template-columns:61px minmax(0,1fr);
+ align-items:start;column-gap:9px;margin:0;
+ padding:5px 0;font-size:11px;line-height:1.48;color:#294d5d;
+}
+.directory-card .directory-card-city{font-weight:600}
+.directory-card .directory-field-label{font-size:10px;font-weight:700;color:#7b909a}
+.directory-card .directory-address-text{
+ display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;
+ overflow:hidden;overflow-wrap:anywhere;line-height:1.52;
+}
+.directory-card .directory-card-phone a{
+ display:inline-flex;align-items:center;gap:6px;color:#00718a;
+ text-decoration:none;font-size:12px;font-weight:750;
+}
+.directory-card .directory-card-phone .icon{width:15px;height:15px;flex:none}
+.directory-card .directory-card-phone a:focus-visible{outline:2px solid #38adca;outline-offset:3px}
+.directory-card .directory-card-actions{display:grid;grid-template-columns:1.3fr 1fr;gap:9px;margin-top:11px}
+.directory-card .directory-card-actions :is(button,a){
+ display:flex;align-items:center;justify-content:center;min-height:43px;
+ white-space:normal;min-width:0;padding:9px 7px;font-size:11px;
+}
+@media(min-width:760px){
+ .customer-hub .customer-directory-results{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:380px){
+ .customer-hub .customer-hub-actions button{font-size:10px}
+ .directory-card .directory-card-city,
+ .directory-card .directory-card-address,
+ .directory-card .directory-card-phone{grid-template-columns:54px minmax(0,1fr);gap:6px}
+}
