@@ -8,6 +8,8 @@ on:
       - 'tests/admin-record-operations.test.mjs'
       - 'tests/qa-admin-records-live.test.mjs'
       - 'amministratore/**'
+      - 'realtime-client.mjs'
+      - 'supabase/migrations/**'
       - 'shared/company-extras.mjs'
       - 'supabase/functions/lts-company-tariffs/**'
       - 'pro-theme.css'
@@ -32,6 +34,8 @@ on:
       - 'tests/admin-record-operations.test.mjs'
       - 'tests/qa-admin-records-live.test.mjs'
       - 'amministratore/**'
+      - 'realtime-client.mjs'
+      - 'supabase/migrations/**'
       - 'shared/company-extras.mjs'
       - 'supabase/functions/lts-company-tariffs/**'
       - 'pro-theme.css'
@@ -64,6 +68,7 @@ jobs:
           node --check amministratore/report-insights.mjs
           node --check amministratore/report-export.mjs
           node --check amministratore/admin.mjs
+          node --check realtime-client.mjs
           node --check account-access.mjs
           node --check shared/admin-record-operations.mjs
           node --check server/admin-records-core.mjs
@@ -75,7 +80,7 @@ jobs:
           node --check tests/company-report-browser.mjs
           node --check tests/qa-report-production-http-smoke.mjs
           node --test tests/admin-record-operations.test.mjs
-          node --test tests/qa-company-report-release.test.mjs tests/qa-pro-theme.test.mjs tests/qa-account-release.test.mjs tests/driver-session-vault.test.mjs tests/leaked-password-protection.test.mjs tests/report-export.test.mjs
+          node --test tests/qa-realtime.test.mjs tests/qa-company-report-release.test.mjs tests/qa-pro-theme.test.mjs tests/qa-account-release.test.mjs tests/driver-session-vault.test.mjs tests/leaked-password-protection.test.mjs tests/report-export.test.mjs
   production-endpoint-smoke:
     runs-on: ubuntu-24.04
     timeout-minutes: 5
