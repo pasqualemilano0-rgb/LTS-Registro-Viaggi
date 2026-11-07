@@ -250,7 +250,9 @@ export function setupDriverRecords(account){
     }
    }else{
     const edit=make('button','button outline small','Modifica');
-    edit.type='button';edit.addEventListener('click',()=>openEditor(item));
+    edit.type='button';
+    edit.setAttribute('aria-label','Modifica '+(labels[category]||'inserimento')+' '+summary(item)[0]);
+    edit.addEventListener('click',()=>openEditor(item));
     actions.append(edit);
     if(category!=='extra'){
      const remove=make('button','button outline small records-danger','Elimina');
@@ -330,6 +332,12 @@ export function setupDriverRecords(account){
   form.append(note);
   const values=item||{};
   let serviceBoxes=[],pickers=[];
+  if(kind==='customer'){
+   const owner=drivers.find(driver=>driver.id===selectedId);
+   form.append(make('p','records-private-note',
+    'Cliente personale di '+(owner?.name||'questo autista')+
+    '. Le correzioni saranno sincronizzate soltanto con il suo archivio. Il cliente non verrà aggiunto alla lista aziendale condivisa.'));
+  }
   if(kind==='trip'){
    field(form,'Data','date',values.date||new Date().toISOString().slice(0,10),{kind:'date',required:true});
    const client=field(form,'Cliente','client',values.client||'',{required:true,maxLength:500});
@@ -480,8 +488,11 @@ export function setupDriverRecords(account){
   });
   render();
  }
- function openForPhone(phone){
-  desiredPhone=phone;selectedId='';state=null;revision=null;audit=[];
+ function openForPhone(phone='',kind='trip'){
+  // Quick navigation keeps private customers under their selected driver.
+  desiredPhone=typeof phone==='string'?phone:'';
+  selectedId='';state=null;revision=null;audit=[];visibleLimit=35;
+  filter.value='';setCategory(kind==='customer'?'customer':'trip');
   clearEditor();list.replaceChildren();metrics();void load();
  }
  choose.addEventListener('change',()=>void selectDriver());
