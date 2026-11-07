@@ -33,6 +33,7 @@ test('a personal clone is hidden from the combined list, never deleted from priv
  assert.equal(result.personal.length,0);
  assert.equal(result.matchedPersonal.length,1);
  assert.equal(result.matchedPersonal[0].personal,privateCustomer);
+ assert.equal(result.shared.find(x=>x.city==='BITONTO').phone,'+390800000000');
  assert.equal(local.length,1);
  assert.equal(local[0].phone,'+390800000000');
 });
