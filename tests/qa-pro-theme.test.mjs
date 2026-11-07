@@ -10,7 +10,7 @@ test('driver entrypoints load the original LTS theme and preserve account routes
   const source=read(p);
   assert.match(source,/app[.]css[?]v=20261107-driver-recovery-v1/);
   assert.doesNotMatch(source,/href="[^"]*pro-theme[.]css/);
-  assert.match(source,/app[.]mjs[?]v=20261107-driver-recovery-v1/);
+  assert.match(source,/app[.]mjs[?]v=20261107-company-shared-v1/);
   assert.match(source,/photo-splash[.]css[?]v=20261106-scania-photo-hd-v2/);
   assert.match(source,/assets\/lts-full-photo-hd[.]webp/);
  }
@@ -27,7 +27,7 @@ test('driver entrypoints load the original LTS theme and preserve account routes
 
 test('new PWA worker precaches the original stylesheet, not the unused override',()=>{
  const sw=read('sw.js');
- assert.match(sw,/const CACHE = PREFIX \+ '20261107-driver-recovery-v21'/);
+ assert.match(sw,/const CACHE = PREFIX \+ '20261107-company-shared-v1'/);
  assert.match(sw,/"\/LTS-Registro-Viaggi\/app[.]css"/);
  assert.doesNotMatch(sw,/"\/LTS-Registro-Viaggi\/pro-theme[.]css"/);
  assert.doesNotMatch(sw,/service_role|sb_secret_/i);
