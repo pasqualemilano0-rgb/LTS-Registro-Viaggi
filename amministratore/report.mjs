@@ -3,6 +3,7 @@ import {setupInsights} from './report-insights.mjs?v=20261104-company-v3';
 import {setupCustomerOverview} from './customer-overview.mjs?v=20261107-dashboard-sync-v3';
 import {setupCompanyRates} from './company-rates.mjs?v=20261107-dashboard-sync-v3';
 import {setupDriverRecords} from './driver-records.mjs?v=20261107-records-admin-v3';
+import {setupCompanyExtras} from './company-extras.mjs?v=20261107-maps-extras-v1';
 const el=id=>document.getElementById(id);
 function node(tag,className='',value=''){
  const e=document.createElement(tag);
@@ -187,6 +188,7 @@ export function setupReport(account){
  let requestSeq=0,rows=[],page=null,loading=false,focusOnDriver=false;
  const insights=setupInsights(account);
  const companyRates=setupCompanyRates(account);
+ const companyExtras=setupCompanyExtras(account);
  const records=setupDriverRecords(account);
  const companyDirectory=setupCustomerOverview(account,site=>{
   open('rates');companyRates.prefillSite(site);
@@ -220,7 +222,7 @@ export function setupReport(account){
  }
  function reset(){
   requestSeq++;rows=[];page=null;loading=false;
-  clearData();insights.reset();companyDirectory.reset();companyRates.reset();records.reset();el('report-empty').hidden=true;el('report-status').textContent='';
+  clearData();insights.reset();companyDirectory.reset();companyRates.reset();companyExtras.reset();records.reset();el('report-empty').hidden=true;el('report-status').textContent='';
   el('report-error').hidden=true;el('report-next').disabled=false;
   updateDriverOptions([]);
   driverSearch.value='';
@@ -233,7 +235,7 @@ export function setupReport(account){
   const lastView=el('dashboard').dataset.view;
   const wasReport=!report.hidden,showReport=!['drivers','security','records'].includes(view);
   if(view!=='overview')companyDirectory.reset();
-  if(view!=='rates')companyRates.reset();
+  if(view!=='rates'){companyRates.reset();companyExtras.reset();}
   if(view!=='records')records.reset();
   if(lastView==='rates')page=null;
   // Never retain a one-time invite or password-reset code on another page.
@@ -253,7 +255,7 @@ export function setupReport(account){
    tabs(view);
    if(view==='rates'){
     requestSeq++;loading=false;rows=[];page=null;
-    void companyRates.load();
+    void companyRates.load();void companyExtras.load();
    }else{
     if(view==='overview')void companyDirectory.load();
     if(!wasReport||(!page&&!loading)){rows=[];void load(false);}
@@ -378,6 +380,11 @@ export function setupReport(account){
  for(const [view,id] of views)el(id).addEventListener('click',()=>open(view));
  for(const button of document.querySelectorAll('[data-open-section]')){
   button.addEventListener('click',()=>open(button.dataset.openSection));
+ }
+ for(const button of document.querySelectorAll('[data-open-maps]')){
+  button.addEventListener('click',()=>{
+   open('rates');companyRates.focusMaps();
+  });
  }
  el('report-refresh').addEventListener('click',()=>{
   rows=[];void load(false);
