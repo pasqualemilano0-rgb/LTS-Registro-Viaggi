@@ -544,8 +544,9 @@ test('Maps operational hints remain available but stay hidden from compact clien
 test('clients have one live company and personal search with clear source filters',()=>{
  const catalog=app.slice(app.indexOf('function updateCompanyCustomersPanel('),
   app.indexOf('function renderInsert('));
- assert.match(catalog,/filterSharedCustomers\(companyCustomers,companyCustomerSearch\)/);
- assert.match(catalog,/filterSharedCustomers\(state[.]customers,companyCustomerSearch\)/);
+ assert.match(catalog,/dedupedCustomerDirectory\(companyCustomers,state[.]customers\)/);
+ assert.match(catalog,/filterSharedCustomers\(directory[.]shared,companyCustomerSearch\)/);
+ assert.match(catalog,/filterSharedCustomers\(directory[.]personal,companyCustomerSearch\)/);
  assert.match(catalog,/type:'search',id:'company-customer-search'/);
  assert.match(catalog,/Cerca clienti per nome, città, indirizzo o telefono/);
  assert.match(catalog,/customerDirectoryScope/);
@@ -636,6 +637,20 @@ test('optional personal phone survives state validation, and CSV keeps legacy im
  const legacy=parseCustomerCsv('CLIENTE;PARTITA IVA;CITTÀ;INDIRIZZO\nCLIENTE PROVA;;NAPOLI;VIA PORTO 1\n');
  assert.equal(legacy[0].phone,'');
  assert.equal(mergeCustomerCsv(saved,legacy).state.customers[0].phone,'+39 081 1234567');
+});
+test('saving a checked Maps link never adds another personal customer before shared deduplication',()=>{
+ const dialog=app.slice(app.indexOf('function customerDialog('),app.indexOf('function openProfile('));
+ const sharedSave=dialog.indexOf('await saveSharedMapsCustomer(mapsLink,candidate)');
+ const personalSave=dialog.indexOf('D.upsertCustomer(state,{id:customer?.id,...candidate})');
+ assert.ok(sharedSave>=0&&personalSave>sharedSave);
+ assert.match(dialog,/if\(mapsLink\)\{/);
+ assert.match(dialog,/dialog[.]close\(\);render\(\);[\s\S]*?return;/);
+ assert.match(dialog,/matchingSharedCustomer\(companyCustomers,candidate\)/);
+ assert.match(dialog,/await sharedMapsCustomers\(\)/);
+ assert.match(dialog,/Non occorre inserirlo di nuovo/);
+ const client=read('shared-maps-client.mjs');
+ assert.match(client,/updated:result[.]updated===true/);
+ assert.doesNotMatch(dialog,/saveSharedMapsCustomer\([\s\S]*?mapsLink\)/);
 });
 test('dashboard Maps action reuses secure client import and keeps unsaved trip draft',()=>{
  const insert=app.slice(app.indexOf('function renderInsert('),app.indexOf('function citySuggestions('));
