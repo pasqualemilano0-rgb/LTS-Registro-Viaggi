@@ -513,7 +513,7 @@ test('login gate shows visible account recovery before password fields without l
 test('online catalog sync never reconstructs a currently edited trip',()=>{
  const fn=app.slice(app.indexOf('async function refreshCompanyCustomers(){'),
     app.indexOf('function companyCustomersPanel(){'));
- assert.match(fn,/if\(tab==='customers'\)updateCompanyCustomersPanel\(\)/);
+ assert.match(fn,/if\(changed&&tab==='customers'\)updateCompanyCustomersPanel\(\)/);
  assert.match(fn,/document[.]getElementById\('trip-customers'\)/);
  assert.match(fn,/form[.]querySelector\('#trip-cities'\)/);
  assert.match(fn,/form[.]querySelector\('#second-cities'\)/);
