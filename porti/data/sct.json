@@ -51,7 +51,7 @@
       "vessel": "VENTO DI GRECALE",
       "voyage": "637",
       "eta": "08/11/2026 00:00",
-      "closing": "07/11/2026 10:00",
+      "closing": "07/11/2026 10:00 CLOSED",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
@@ -60,7 +60,7 @@
       "vessel": "VENTO DI MAESTRALE",
       "voyage": "534",
       "eta": "08/11/2026 00:00",
-      "closing": "07/11/2026 10:00",
+      "closing": "07/11/2026 10:00 CLOSED",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
@@ -69,7 +69,7 @@
       "vessel": "ULYSSE",
       "voyage": "081126E",
       "eta": "08/11/2026 00:00",
-      "closing": "07/11/2026 10:00",
+      "closing": "07/11/2026 10:00 CLOSED",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
@@ -78,7 +78,7 @@
       "vessel": "X-PRESS ANTLIA",
       "voyage": "020W",
       "eta": "09/11/2026 00:00",
-      "closing": "07/11/2026 10:00",
+      "closing": "07/11/2026 10:00 CLOSED",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
@@ -87,7 +87,7 @@
       "vessel": "LIDER TRABZON",
       "voyage": "1126",
       "eta": "09/11/2026 00:00",
-      "closing": "07/11/2026 10:00",
+      "closing": "07/11/2026 10:00 CLOSED",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
@@ -96,7 +96,7 @@
       "vessel": "BELITAKI",
       "voyage": "MPS0F0W19",
       "eta": "09/11/2026 08:00",
-      "closing": "07/11/2026 10:00",
+      "closing": "07/11/2026 10:00 CLOSED",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
@@ -246,7 +246,7 @@
       "status": "PENDING"
     }
   ],
-  "acquired_at": "2026-11-07T08:15:16.563Z",
-  "data_changed_at": "2026-11-07T07:00:17.022Z",
-  "updated_at": "2026-11-07T08:15:16.563Z"
+  "acquired_at": "2026-11-07T09:15:16.788Z",
+  "data_changed_at": "2026-11-07T09:00:16.711Z",
+  "updated_at": "2026-11-07T09:15:16.788Z"
 }
