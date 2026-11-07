@@ -22,11 +22,20 @@ export async function readMapsCustomer(link,{signal}={}){
   throw new Error('Accedi a LTS per importare un cliente da Google Maps.');
  const owner=account.getAccountId();
  const token=await account.getVerifiedAccessToken();
- const response=await fetch(endpoint(),{method:'POST',mode:'cors',credentials:'omit',
-  redirect:'error',cache:'no-store',signal,
-  headers:{Accept:'application/json','Content-Type':'application/json',
-   Authorization:'Bearer '+token},
-  body:JSON.stringify({url:source.href})});
+ let response;
+ try{
+  response=await fetch(endpoint(),{method:'POST',mode:'cors',credentials:'omit',
+   redirect:'error',cache:'no-store',signal,
+   headers:{Accept:'application/json','Content-Type':'application/json',
+    Authorization:'Bearer '+token},
+   body:JSON.stringify({url:source.href})});
+ }catch(error){
+  if(error?.name==='AbortError')throw error;
+  // Browser TypeError "Failed to fetch" includes failed CORS preflights.
+  // Do not pretend that a Google Maps link was parsed or authenticated.
+  throw new Error('Collegamento al lettore Google Maps non riuscito. '+
+   'La tua sessione LTS è conservata: verifica la connessione e riprova.');
+ }
  if(!(response.headers.get('content-type')||'').includes('application/json'))
   throw new Error('Risposta Google Maps non valida: riprova.');
  const result=await response.json();
