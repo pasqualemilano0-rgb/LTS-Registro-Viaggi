@@ -99,3 +99,21 @@ test('anagrafica dashboard: dati verificati dalla sessione, soli campi pubblici,
  assert.equal(model.selectedCustomerSites(samples,'incomplete').length,2);
  assert.equal(model.selectedCustomerSites(samples,'complete')[0].name,'A');
 });
+
+test('panoramica clienti apre la tariffa della sede Google Maps senza duplicare archivi',()=>{
+ const overview=read('amministratore/customer-overview.mjs');
+ const editor=read('amministratore/company-rates.mjs');
+ const report=read('amministratore/report.mjs');
+ const html=read('amministratore/index.html');
+ assert.match(overview,/setupCustomerOverview\(account,onSetRate=null\)/);
+ assert.match(overview,/if\(active\(\)\)onSetRate\(row\)/);
+ assert.match(report,/open\('rates'\);companyRates[.]prefillSite\(site\)/);
+ assert.match(editor,/tariffLinkedCustomerSites\(sites,rows,search[.]value\)/);
+ assert.match(editor,/await account[.]companyTariffs\('save',payload\)/);
+ assert.match(editor,/sharedMapsCustomers\(\)/);
+ assert.match(editor,/ratesLoaded/);
+ assert.match(html,/Clienti Google Maps da tariffare/);
+ assert.match(html,/id="company-sites-list"/);
+ assert.match(html,/id="company-rate-client-options"/);
+ assert.doesNotMatch(editor,/saveSharedMapsCustomer|state[.]customers|localStorage|innerHTML/);
+});
