@@ -184,7 +184,7 @@ export function setupCompanyRates(account){
    const coverage=tariffLinkedCustomerSites(sites,rows);
    feedback('Clienti e tariffe aggiornati alle '+clock+' · '+coverage.priced+
     ' sedi con tariffa, '+coverage.unpriced+' senza tariffa su '+coverage.total+
-    '. Gli importi già registrati non vengono modificati.');
+    '. Gli importi storici restano invariati.');
   }
   if(seq===generation){
    refresh.disabled=false;submit.disabled=!ratesLoaded;
