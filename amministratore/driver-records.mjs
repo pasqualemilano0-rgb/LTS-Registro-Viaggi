@@ -343,7 +343,8 @@ export function setupDriverRecords(account){
   render();
  }
  function openForPhone(phone){
-  desiredPhone=phone;selectedId='';void load();
+  desiredPhone=phone;selectedId='';state=null;revision=null;audit=[];
+  clearEditor();list.replaceChildren();metrics();void load();
  }
  choose.addEventListener('change',()=>void selectDriver());
  refresh.addEventListener('click',()=>void load());
