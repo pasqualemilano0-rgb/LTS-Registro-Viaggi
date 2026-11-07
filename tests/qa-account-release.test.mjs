@@ -544,8 +544,8 @@ test('Maps operational hints remain available but stay hidden from compact clien
 test('clients have one live company and personal search with clear source filters',()=>{
  const catalog=app.slice(app.indexOf('function updateCompanyCustomersPanel('),
   app.indexOf('function renderInsert('));
- assert.match(catalog,/filterCustomerDirectory\(companyCustomers,companyCustomerSearch\)/);
- assert.match(catalog,/filterCustomerDirectory\(state[.]customers,companyCustomerSearch\)/);
+ assert.match(catalog,/filterSharedCustomers\(companyCustomers,companyCustomerSearch\)/);
+ assert.match(catalog,/filterSharedCustomers\(state[.]customers,companyCustomerSearch\)/);
  assert.match(catalog,/type:'search',id:'company-customer-search'/);
  assert.match(catalog,/Cerca clienti per nome, città, indirizzo o telefono/);
  assert.match(catalog,/customerDirectoryScope/);
