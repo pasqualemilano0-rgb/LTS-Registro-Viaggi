@@ -512,6 +512,7 @@ try{
  await page.locator('#roster .driver-actions button').filter({hasText:'Clienti personali'}).first().click();
  await page.waitForFunction(()=>document.querySelector('#dashboard').dataset.view==='records');
  assert.equal(await page.locator('#records-tabs button[data-kind="customer"]').getAttribute('aria-pressed'),'true');
+ await page.waitForFunction(()=>document.querySelector('#records-list').textContent.includes('CLIENTE AUTISTA'));
  assert.match(await page.locator('#records-list').textContent(),/CLIENTE AUTISTA/);
  await page.locator('#records-list .records-card')
   .filter({hasText:'CLIENTE AUTISTA'}).locator('button[aria-label^="Modifica"]').click();
@@ -523,6 +524,7 @@ try{
  await page.locator('#records-editor input[name="reason"]').fill('Correzione anagrafica cliente personale');
  await page.locator('#records-editor button[type="submit"]').click();
  await page.waitForFunction(()=>document.querySelector('#records-revision').textContent==='5');
+ await page.waitForFunction(()=>document.querySelector('#records-list').textContent.includes('CLIENTE AUTISTA CORRETTO'));
  assert.match(await page.locator('#records-list').textContent(),/CLIENTE AUTISTA CORRETTO/);
  assert.match(await page.locator('#records-list').textContent(),/VIA PERSONALE 99/);
  assert.equal(await page.locator('#records-customers').textContent(),'2');
