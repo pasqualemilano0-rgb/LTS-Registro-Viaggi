@@ -536,15 +536,25 @@ test('curated Maps operational hints show only as read-only site information',()
  assert.doesNotMatch(app,/customer[.]note.*company-customer-operations/);
 });
 
-test('shared Google Maps customers have an independent search for company and location',()=>{
+test('clients have one live company and personal search with clear source filters',()=>{
  const catalog=app.slice(app.indexOf('function updateCompanyCustomersPanel('),
-   app.indexOf('function renderInsert('));
+  app.indexOf('function renderInsert('));
  assert.match(catalog,/filterSharedCustomers\(companyCustomers,companyCustomerSearch\)/);
+ assert.match(catalog,/state[.]customers[.]map\(customer=>/);
  assert.match(catalog,/type:'search',id:'company-customer-search'/);
- assert.match(catalog,/Cerca nella lista clienti aziendale/);
- assert.match(catalog,/Nessuna sede corrisponde alla ricerca/);
+ assert.match(catalog,/Cerca clienti per nome, città, indirizzo o partita IVA/);
+ assert.match(catalog,/customerDirectoryScope/);
+ assert.match(catalog,/customer-directory-results/);
+ assert.match(catalog,/customerDirectoryLimit\+=24/);
  assert.match(catalog,/updateCompanyCustomersPanel\(panel\)/);
- assert.match(app,/Cerca nei clienti personali: nome, località o partita IVA/);
+ assert.match(catalog,/Nessun cliente corrisponde alla ricerca/);
+ assert.match(app,/function useCustomerInTrip\(customer\)/);
+ assert.match(app,/function customerCard\(customer,\{shared=false\}/);
+ assert.match(app,/Usa nel viaggio/);
+ assert.match(app,/Apri Maps/);
+ assert.match(app,/Nuovo cliente/);
+ assert.doesNotMatch(app,/Cerca nei clienti personali: nome, località o partita IVA/);
+ assert.match(read('app.css'),/customer-scope-button[.]selected/);
  assert.match(read('app.css'),/company-customer-search:focus-within/);
 });
 
