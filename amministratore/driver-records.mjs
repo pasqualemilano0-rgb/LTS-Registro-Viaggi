@@ -297,6 +297,8 @@ export function setupDriverRecords(account){
    const results=await account.adminRecords('list');
    if(token!==epoch||!authorized())return false;
    if(!Array.isArray(results?.drivers))throw new Error('Elenco autisti non valido.');
+   // Ignore a list refresh started before the user opened an editor.
+   if(silent&&editing)return false;
    drivers=results.drivers;
    if(desiredPhone){
     const requested=desiredPhone;
@@ -326,6 +328,8 @@ export function setupDriverRecords(account){
   const id=selectedId;
   const result=await account.adminRecords('read',{driverId:id});
   if(token!==epoch||selectedId!==id||!authorized())return;
+  // Ignore a stale background read while a user is editing an archive.
+  if(silent&&editing)return;
   const record=result?.archive;
   if(record!==null&&record!==undefined&&!Array.isArray(record?.state?.trips))
    throw new Error('Archivio non valido: aggiornamento interrotto.');
