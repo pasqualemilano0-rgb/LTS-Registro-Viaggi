@@ -10,6 +10,7 @@ export default Object.freeze({
     "onboardingEndpoint": "https://otrqynkscpbeyuvdlgpg.supabase.co/functions/v1/lts-driver-onboarding",
     "reportEndpoint": "https://otrqynkscpbeyuvdlgpg.supabase.co/functions/v1/lts-company-report",
     "tariffsEndpoint": "https://otrqynkscpbeyuvdlgpg.supabase.co/functions/v1/lts-company-tariffs",
-    "sharedMapsEndpoint": "https://otrqynkscpbeyuvdlgpg.supabase.co/functions/v1/lts-shared-maps"
+    "sharedMapsEndpoint": "https://otrqynkscpbeyuvdlgpg.supabase.co/functions/v1/lts-shared-maps",
+    "mapsReaderEndpoint": "https://otrqynkscpbeyuvdlgpg.supabase.co/functions/v1/lts-maps-reader"
   }
 });
