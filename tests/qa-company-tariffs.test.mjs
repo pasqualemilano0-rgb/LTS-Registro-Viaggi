@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {emptyState,createTrip,reconcileTripTariffs} from '../shared/domain.mjs';
 import {companyFareSnapshot} from '../shared/company-fares.mjs';
+import {companyExtraSnapshot} from '../shared/company-extras.mjs';
 import {tariffLinkedCustomerSites,customerSiteRateKey} from '../amministratore/customer-overview-model.mjs';
 const read=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
 const company=[{id:'company:123e4567-e89b-42d3-a456-426614174000',customerId:null,
@@ -37,6 +38,22 @@ test('private legacy tariffs cannot reprice historical or newly saved company fa
    oldTrip('unpriced','2026-11-02',null)]};
  const result=reconcileTripTariffs(state);
  assert.deepEqual(result.trips.map(t=>t.fareCents),[5200,8550,null]);
+});
+test('new extra charges use the same company catalog regardless of driver and old amounts stay frozen',()=>{
+ const extra=[{serviceKey:'adr',cents:1250,revision:2},
+  {serviceKey:'reefer',cents:null,revision:1}];
+ assert.equal(companyExtraSnapshot(extra,true,'adr'),1250);
+ assert.equal(companyExtraSnapshot(extra,true,'reefer'),null);
+ assert.equal(companyExtraSnapshot(extra,false,'adr'),null);
+ assert.equal(companyExtraSnapshot(extra,true,'adr',{unchanged:true,previous:400}),400);
+ assert.equal(companyExtraSnapshot([{serviceKey:'adr',cents:2000}],true,'adr',
+  {unchanged:true,previous:1250}),1250);
+ const legacy={...emptyState(),extraRates:{...emptyState().extraRates,adr:9999}};
+ const old={...oldTrip('history','2026-11-01',8550),services:['adr'],
+  extraCents:{...emptyState().extraRates,adr:1250}};
+ const reconciled=reconcileTripTariffs({...legacy,trips:[old]});
+ assert.equal(reconciled.trips[0].extraCents.adr,1250);
+ assert.equal(reconciled.extraRates.adr,9999,'legacy setting remains untouched but is no longer active');
 });
 test('only verified administrators edit central tariffs',()=>{
  const html=read('amministratore/index.html'),admin=read('amministratore/report.mjs');
