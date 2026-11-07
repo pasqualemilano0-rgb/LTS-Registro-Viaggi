@@ -1080,6 +1080,70 @@ function showAccountLogin(initialPhone=''){
     'Se devi recuperare viaggi precedenti, esportali prima dall’archivio dispositivo. Dopo il login usa Importa backup e conferma.'));
 }
 
+/** Recovery for drivers uses the existing admin-issued one-time reset code.
+ * The original account UID and all personal trips remain unchanged. */
+function showDriverPasswordRecovery(initialPhone=''){
+ const {dialog,body}=modal('Recupera password autista',{
+  subtitle:'Chiedi all’amministratore LTS un codice di ripristino, poi inseriscilo per scegliere una nuova password.'});
+ const form=el('form',{class:'panel form-panel account-driver-recovery-form',novalidate:true});
+ const error=el('p',{class:'form-error',role:'alert','aria-live':'assertive'});
+ const phone=el('input',{id:'recover-phone',type:'tel',inputmode:'tel',autocomplete:'username',
+  placeholder:'3XXXXXXXXX',value:initialPhone,maxlength:40,required:true});
+ const code=el('input',{id:'recover-code',type:'text',autocomplete:'off',autocapitalize:'none',
+  spellcheck:false,maxlength:43,required:true,placeholder:'Codice privato di 43 caratteri'});
+ const pass=el('input',{id:'recover-password',type:'password',autocomplete:'new-password',
+  minlength:12,maxlength:128,required:true,placeholder:'Nuova password'});
+ const confirm=el('input',{id:'recover-confirm',type:'password',autocomplete:'new-password',
+  minlength:12,maxlength:128,required:true,placeholder:'Ripeti nuova password'});
+ const field=(label,input)=>el('div',{class:'field account-recovery-field'},
+  el('label',{class:'field-label',for:input.id},label),input);
+ const submit=el('button',{type:'submit',class:'primary-button full'},icon('lock'),'Reimposta password');
+ const help=el('div',{class:'info-note account-driver-recovery-help'},icon('info'),
+  el('span',{},'L’amministratore usa Autisti → Ripristina password. Il codice è monouso e dura 24 ore; non arriva automaticamente via SMS.'));
+ form.append(error,field('Numero di cellulare',phone),field('Codice di ripristino',code),
+  field('Nuova password (almeno 12 caratteri)',pass),field('Conferma password',confirm),submit,help);
+ form.addEventListener('submit',async event=>{
+  event.preventDefault();if(submit.disabled)return;
+  error.textContent='';
+  const number=phone.value.trim(),secret=code.value.trim(),newPass=pass.value;
+  if(!(/^3\d{9}$/.test(number)||/^\+[1-9]\d{7,14}$/.test(number))){
+   error.textContent='Inserisci il numero di cellulare, con +39 se necessario.';phone.focus();return;
+  }
+  if(!/^[A-Za-z0-9_-]{43}$/.test(secret)){
+   error.textContent='Copia interamente il codice di ripristino di 43 caratteri.';code.focus();return;
+  }
+  if(newPass.length<12||newPass.length>128||newPass.trim()!==newPass||
+    /[\u0000-\u001f\u007f]/.test(newPass)||!/[A-Za-z]/.test(newPass)||!/\d/.test(newPass)){
+   error.textContent='Scegli 12–128 caratteri, con lettere e numeri, senza spazi iniziali o finali.';pass.focus();return;
+  }
+  if(newPass!==confirm.value){
+   error.textContent='Le password non coincidono.';confirm.focus();return;
+  }
+  submit.disabled=true;
+  try{
+   const result=await accountAccess.recoverDriverPassword({phone:number,code:secret,password:newPass});
+   if(result?.ok!==true)throw new Error('Ripristino non confermato. Richiedi assistenza.');
+   const signInPhone=/^3\d{9}$/.test(number)?'+39'+number:number;
+   form.replaceChildren(
+    el('section',{class:'account-driver-recovery-success',role:'status','aria-live':'polite'},
+     el('span',{class:'account-driver-recovery-check','aria-hidden':'true'},icon('check')),
+     el('h3',{},'Password aggiornata'),
+     el('p',{},'Ora puoi accedere con la nuova password. Il tuo account e i viaggi già registrati restano conservati.')),
+    button('Torna all’accesso','primary',()=>{
+      dialog.close();
+      const gate=root.querySelector('#accesso-gate-telefono');
+      if(gate){gate.value=signInPhone;gate.focus({preventScroll:true});}
+      else showAccountLogin(signInPhone);
+    },'log-in',{class:'primary-button full'}));
+  }catch(err){
+   error.textContent=err?.message||'Ripristino non riuscito. Controlla il codice o chiedine uno nuovo.';
+  }finally{
+   pass.value='';confirm.value='';submit.disabled=false;
+  }
+ });
+ body.append(form);phone.focus({preventScroll:true});
+}
+
 /** Success is announced only after the onboarding endpoint confirms redemption. */
 function showActivationOpening(){
  const overlay=el('div',{class:'activation-feedback-layer',role:'status','aria-live':'polite'},
