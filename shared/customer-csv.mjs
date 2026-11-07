@@ -2,7 +2,8 @@ import { normalizeText, validateState } from './domain.mjs';
 
 export const MAX_CUSTOMER_CSV_BYTES = 2 * 1024 * 1024;
 export const MAX_CUSTOMER_CSV_ROWS = 10000;
-const HEADER = ['CLIENTE', 'PARTITA IVA', 'CITTÀ', 'INDIRIZZO'];
+const LEGACY_HEADER = ['CLIENTE', 'PARTITA IVA', 'CITTÀ', 'INDIRIZZO'];
+const HEADER = [...LEGACY_HEADER, 'TELEFONO'];
 
 /** Quoted cells, embedded newlines and both common Italian CSV separators. */
 function parseRows(source, separator) {
@@ -17,7 +18,7 @@ function parseRows(source, separator) {
       } else cell += char;
     } else if (char === separator || char === '\n' || char === '\r' || char === undefined) {
       row.push(cell); cell = ''; closed = false;
-      if (row.length > 4) throw new Error(`CSV: troppe colonne alla riga ${rows.length + 1}.`);
+      if (row.length > 5) throw new Error(`CSV: troppe colonne alla riga ${rows.length + 1}.`);
       if (char !== separator) {
         if (row.some(value => value.trim())) rows.push(row);
         row = [];
@@ -43,16 +44,16 @@ export function parseCustomerCsv(source) {
   for (const delimiter of [';', ',']) {
     try {
       const candidate = parseRows(text, delimiter);
-      if (candidate[0]?.length === 4 && candidate[0].map(normalizeText).every((value, index) => value === HEADER[index] || (index === 2 && value === 'CITTA'))) { rows = candidate; break; }
+      if ([4,5].includes(candidate[0]?.length) && candidate[0].map(normalizeText).every((value, index) => value === HEADER[index] || (index === 2 && value === 'CITTA'))) { rows = candidate; break; }
     } catch (error) { if (delimiter === ',') throw error; }
   }
-  if (!rows) throw new Error('Intestazione CSV richiesta: CLIENTE;PARTITA IVA;CITTÀ;INDIRIZZO.');
+  if (!rows) throw new Error('Intestazione CSV richiesta: CLIENTE;PARTITA IVA;CITTÀ;INDIRIZZO[;TELEFONO].');
   if (rows.length < 2) throw new Error('Il CSV non contiene clienti.');
   return rows.slice(1).map((row, index) => {
-    if (row.length !== 4) throw new Error(`CSV: servono 4 colonne alla riga ${index + 2}.`);
-    const [name, vat, city, address] = row.map(normalizeText);
-    if (!name || name.length > 500 || vat.length > 100 || city.length > 500 || address.length > 1000 || row.some(value => /[\u0000-\u0008\u000b\u000c\u000e-\u001f]/u.test(value))) throw new Error(`CSV: dati cliente non validi alla riga ${index + 2}.`);
-    return { name, vat, city, address };
+    if (row.length !== rows[0].length) throw new Error(`CSV: numero colonne non valido alla riga ${index + 2}.`);
+    const [name, vat, city, address, phone=''] = row.map(normalizeText);
+    if (!name || name.length > 500 || vat.length > 100 || city.length > 500 || address.length > 1000 || phone.length > 40 || row.some(value => /[\u0000-\u0008\u000b\u000c\u000e-\u001f]/u.test(value))) throw new Error(`CSV: dati cliente non validi alla riga ${index + 2}.`);
+    return { name, vat, city, address, phone };
   });
 }
 
@@ -64,17 +65,17 @@ export function mergeCustomerCsv(state, rows) {
   const seen = new Set();
   for (const row of rows) {
     const existing = byName.get(row.name);
-    const next = existing ? { ...existing } : { id: crypto.randomUUID(), name: row.name, vat: '', city: '', address: '' };
-    for (const key of ['vat', 'city', 'address']) if (row[key]) next[key] = row[key];
+    const next = existing ? { ...existing } : { id: crypto.randomUUID(), name: row.name, vat: '', city: '', address: '', phone: '' };
+    for (const key of ['vat', 'city', 'address', 'phone']) if (row[key]) next[key] = row[key];
     byName.set(row.name, next); seen.add(row.name);
   }
   let added = 0, updated = 0;
-  for (const name of seen) { const previous = original.get(name); if (!previous) added++; else if (['vat', 'city', 'address'].some(key => previous[key] !== byName.get(name)[key])) updated++; }
+  for (const name of seen) { const previous = original.get(name); if (!previous) added++; else if (['vat', 'city', 'address', 'phone'].some(key => previous[key] !== byName.get(name)[key])) updated++; }
   return { state: validateState({ ...state, customers: [...byName.values()] }), added, updated, count: seen.size };
 }
 
 export function exportCustomerCsv(state) {
   const quote = value => `"${String(value ?? '').replace(/"/gu, '""')}"`;
   const rows = [...state.customers].sort((a, b) => a.name.localeCompare(b.name, 'it'));
-  return '\uFEFF' + [HEADER, ...rows.map(customer => [customer.name, customer.vat, customer.city, customer.address])].map(row => row.map(quote).join(';')).join('\r\n') + '\r\n';
+  return '\uFEFF' + [HEADER, ...rows.map(customer => [customer.name, customer.vat, customer.city, customer.address, customer.phone])].map(row => row.map(quote).join(';')).join('\r\n') + '\r\n';
 }
