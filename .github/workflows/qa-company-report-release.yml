@@ -31,6 +31,8 @@ on:
       - 'runtime-config.mjs'
       - 'tests/qa-company-report-release.test.mjs'
       - 'tests/qa-report-production-http-smoke.mjs'
+      - 'tests/company-report-browser.mjs'
+      - 'tests/qa-pro-theme.test.mjs'
       - '.github/workflows/qa-company-report-release.yml'
 permissions:
   contents: read
