@@ -122,3 +122,23 @@
  .company-extras-controls label{min-width:100%}
  .company-extras-controls button{width:100%}
 }
+
+/* Shared manual customers: an address and a tariff are optional. */
+#company-manual-add{scroll-margin-top:20px}
+#company-manual-form{display:grid;gap:14px}
+#company-manual-add .company-manual-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}
+#company-manual-add .company-manual-fields label{min-width:0;display:grid;gap:7px;font-size:12px;font-weight:750;color:#315e6f}
+#company-manual-add .company-manual-fields input,
+#company-manual-add .company-manual-fields textarea{min-width:0;width:100%;min-height:45px;font-size:16px;
+ background:#f8fcfd;border:1px solid #cee1e7;border-radius:11px;padding:11px 12px;
+ font-family:inherit;line-height:1.5;resize:vertical}
+#company-manual-add .company-manual-fields input:focus-visible,
+#company-manual-add .company-manual-fields textarea:focus-visible{outline:3px solid #9ce1e6;outline-offset:1px;border-color:#168d9c}
+#company-manual-add .company-manual-notes-label{grid-column:1/-1}
+#company-manual-save{justify-self:start;min-height:46px}
+#company-manual-status{color:#315b6a;font-size:12px;line-height:1.55;margin:0}
+#company-manual-status[data-error="true"]{color:#a02c43;font-weight:700}
+@media(max-width:650px){
+ #company-manual-add .company-manual-fields{grid-template-columns:1fr}
+ #company-manual-save{width:100%}
+}
