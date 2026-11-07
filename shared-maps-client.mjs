@@ -63,5 +63,5 @@ export async function saveSharedMapsCustomer(url,customer){
   city:customer.city,address:customer.address});
  if(typeof result?.created!=='boolean')
   throw new Error('Conferma di salvataggio aziendale non valida.');
- return {customer:validCustomer(result.customer),created:result.created};
+ return {customer:validCustomer(result.customer),created:result.created,updated:result.updated===true};
 }
