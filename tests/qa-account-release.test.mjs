@@ -530,14 +530,15 @@ test('drivers use Maps customer suggestions but cannot set individual transfer f
  assert.match(app,/mapsLinkForCompanySync/);
 });
 
-test('curated Maps operational hints show only as read-only site information',()=>{
+test('Maps operational hints remain available but stay hidden from compact client cards',()=>{
  const client=read('shared-maps-client.mjs');
  assert.match(client,/operationalNotes:c[.]operationalNotes\|\|''/);
- assert.match(app,/class:'company-customer-operations'/);
- assert.match(app,/Indicazioni operative fornite da autista/);
- assert.doesNotMatch(app,/customer[.]note.*company-customer-operations/);
+ const card=app.slice(app.indexOf('function customerCard('),app.indexOf('function renderCustomers('));
+ assert.doesNotMatch(card,/company-customer-operations|operationalNotes/);
+ assert.doesNotMatch(card,/Indicazioni operative fornite da autista/);
+ assert.match(app,/class:'directory-card-address'/);
+ assert.match(app,/class:'directory-card-city'/);
 });
-
 test('clients have one live company and personal search with clear source filters',()=>{
  const catalog=app.slice(app.indexOf('function updateCompanyCustomersPanel('),
   app.indexOf('function renderInsert('));
