@@ -83,7 +83,7 @@ test('drivers browse grouped company tariffs without being able to edit them',()
  assert.match(app,/await store[.]syncPending\(\)/);
  assert.match(app,/\['insert','tariffs','customers'\][.]includes\(next\)/);
  assert.doesNotMatch(app,/Nuova tariffa personale|Aggiungi tariffa personale|function tariffDialog\(/);
- assert.match(store,/setInterval\(refreshSoon, 20000\)/);
+ assert.match(store,/setInterval\(refreshSoon, 6000\)/);
  assert.match(store,/window[.]addEventListener\('online', refreshSoon\)/);
  assert.match(store,/document[.]addEventListener\('visibilitychange'/);
  const css=read('app.css');
@@ -102,7 +102,7 @@ test('driver trip creation and preview use the central company catalog on first 
  assert.match(access,/export async function driverCompanyTariffs\(/);
  assert.match(access,/action:'list'/);
  assert.match(app,/companyRatesRequest\+\+/);
- assert.match(app,/tab==='tariffs'&&tariffTab==='base'/);
+ assert.match(app,/if\(changed&&\(tab==='tariffs'\|\|tab==='customers'\)&&refreshView\)refreshView\(\)/);
 });
 
 test('company Maps sites connect to an exact centrally-priced client and location without merging sites',()=>{
