@@ -26,7 +26,7 @@ test('dashboard accessibile solo dal pannello admin, CSP e versioni coerenti',()
  assert.match(report,/function driverProfile\(/);
  assert.match(report,/function driverDirectory\(/);
  assert.match(report,/function renderAmountChart\(/);
- assert.match(js,/report\.mjs\?v=20261107-driver-private-customers-v1/);
+ assert.match(js,/report\.mjs\?v=20261107-driver-management-fixes-v1/);
  assert.match(report,/setupInsights\(account\)/);
  const advanced=read('amministratore/report-insights.mjs');
  const exportsModule=read('amministratore/report-export.mjs');
@@ -310,7 +310,7 @@ test('administrator has an MFA-only editor for each driver and all personal reco
  assert.match(editor,/account[.]adminRecords\('list'\)/);
  assert.match(editor,/account[.]adminRecords\('read'/);
  assert.match(editor,/account[.]adminRecords\('mutate'/);
- assert.match(editor,/expectedRevision:revision/);
+ assert.match(editor,/driverId:owner,expectedRevision/);
  assert.match(editor,/requestId:crypto[.]randomUUID\(\)/);
  assert.match(editor,/operation:'delete'/);
  assert.match(editor,/operation:'restore'/);
