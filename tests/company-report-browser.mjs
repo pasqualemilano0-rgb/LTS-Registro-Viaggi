@@ -364,7 +364,7 @@ try{
   'Professional left sidebar must be beside the admin content');
  assert.equal(await nav.evaluate(e=>getComputedStyle(e).position),'sticky');
  assert.equal(await desktop.locator('.admin-nav-brand').isVisible(),true);
- assert.equal(await nav.locator('button').count(),8);
+ assert.equal(await nav.locator('button').count(),9);
  assert.equal(await desktop.locator('#dashboard').getAttribute('data-view'),'overview');
  await desktop.locator('#report-tab').click();
  await desktop.waitForFunction(()=>document.querySelector('#report-count').textContent==='2');
