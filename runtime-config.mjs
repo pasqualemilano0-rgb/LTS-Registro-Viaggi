@@ -11,6 +11,7 @@ export default Object.freeze({
     "reportEndpoint": "https://otrqynkscpbeyuvdlgpg.supabase.co/functions/v1/lts-company-report",
     "tariffsEndpoint": "https://otrqynkscpbeyuvdlgpg.supabase.co/functions/v1/lts-company-tariffs",
     "sharedMapsEndpoint": "https://otrqynkscpbeyuvdlgpg.supabase.co/functions/v1/lts-shared-maps",
-    "mapsReaderEndpoint": "https://otrqynkscpbeyuvdlgpg.supabase.co/functions/v1/lts-maps-reader"
+    "mapsReaderEndpoint": "https://otrqynkscpbeyuvdlgpg.supabase.co/functions/v1/lts-maps-reader",
+    "adminRecordsEndpoint": "https://otrqynkscpbeyuvdlgpg.supabase.co/functions/v1/lts-admin-records"
   }
 });
