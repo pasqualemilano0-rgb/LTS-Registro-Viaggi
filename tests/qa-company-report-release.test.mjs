@@ -219,6 +219,30 @@ test('dashboard automatically refreshes the active verified section without losi
  assert.doesNotMatch([admin,report,rates,directory].join('\n'),/SUPABASE_SERVICE_ROLE_KEY|sb_secret_/);
 });
 
+test('manual company customer onboarding joins the shared catalog and keeps fare optional',()=>{
+ const html=read('amministratore/index.html');
+ const rates=read('amministratore/company-rates.mjs');
+ const manual=read('amministratore/company-manual-registration.mjs');
+ const backend=read('supabase/functions/lts-shared-maps/maps-registry-handler.mjs');
+ const report=read('amministratore/report.mjs');
+ for(const id of ['company-manual-form','company-manual-name','company-manual-city',
+  'company-manual-address','company-manual-notes','company-manual-amount',
+  'company-manual-save','company-manual-status'])
+  assert.match(html,new RegExp('id="'+id+'"'));
+ assert.match(html,/data-open-manual/);
+ assert.match(html,/value="manual"/);
+ assert.match(rates,/setupCompanyManual\(account/);
+ assert.match(rates,/saveSharedManualCustomer\(\{name:payload[.]client,city:payload[.]city\}\)/);
+ assert.match(report,/companyRates[.]focusManual\(\)/);
+ assert.match(manual,/saveSharedManualCustomer\(customer\)/);
+ assert.match(manual,/matchingRate\(response[.]tariffs,customer\)/);
+ assert.match(backend,/input[.]action==='save-manual'/);
+ assert.match(backend,/role!=='admin'/);
+ assert.match(backend,/lts_shared_customers_manual/);
+ assert.match(backend,/lts_company_tariffs/);
+ assert.doesNotMatch(manual,/innerHTML|localStorage|adminRecords\('mutate'/);
+});
+
 test('driver trip picker searches Maps, manual company tariffs and personal driver customers',async()=>{
  const {buildDriverCustomerCatalog}=await import('../amministratore/driver-customer-catalog.mjs');
  const sites=buildDriverCustomerCatalog({
