@@ -321,7 +321,7 @@ export function validateState(input) {
     profile: { firstName: textField(profile.firstName, 'Nome', false, 200), lastName: textField(profile.lastName, 'Cognome', false, 200) },
     customers: list(input.customers, 'Clienti').map(customer => {
       object(customer, 'Cliente');
-      return { id: id(customer.id), name: textField(customer.name, 'Nome cliente', true), city: textField(customer.city, 'Località'), address: textField(customer.address, 'Indirizzo', false, 1000), vat: textField(customer.vat, 'Partita IVA', false, 100) };
+      return { id: id(customer.id), name: textField(customer.name, 'Nome cliente', true), city: textField(customer.city, 'Località'), address: textField(customer.address, 'Indirizzo', false, 1000), vat: textField(customer.vat, 'Partita IVA', false, 100), phone: textField(customer.phone, 'Telefono', false, 40) };
     }),
     tariffs: list(input.tariffs, 'Tariffe').map(tariff => {
       object(tariff, 'Tariffa');
@@ -428,6 +428,7 @@ export function upsertCustomer(state, input) {
   const customer = {
     id: id(input.id ?? newId()), name: textField(input.name, 'Nome cliente', true),
     city: textField(input.city, 'Località'), address: textField(input.address, 'Indirizzo', false, 1000), vat: textField(input.vat, 'Partita IVA', false, 100),
+    phone: textField(input.phone ?? state.customers.find(item => item.id === String(input.id ?? ''))?.phone, 'Telefono', false, 40),
   };
   if (state.customers.some(item => item.id !== customer.id && normalizeText(item.name) === customer.name)) throw new Error('Questo cliente è già presente.');
   const existing = state.customers.find(item => item.id === customer.id);
