@@ -17,6 +17,9 @@ export const getAccountId=()=> 'account:33333333-3333-4333-8333-333333333333';
 export const verifySession=async()=>({mfa_enrolled:true,mfa_verified:true});
 export const listAdminMfaFactors=async()=>[{label:'Principale',id:'a'}];
 export const manageDrivers=async(action)=>action==='list'?{drivers:[]}:{};
+export const companyTariffs=async(action)=>action==='list'?
+ {tariffs:[{id:'1',client:'CLIENTE ALFA',city:'NAPOLI',cents:15000,revision:1,
+  updatedAt:'2026-11-06T12:00:00Z'}]}:{saved:true};
 export const pendingAdminMfaInfo=()=>null;
 export const forgetPendingAdminMfa=()=>{};
 export const logout=async()=>({revoked:true});
@@ -97,10 +100,21 @@ export const companyInsights=async({month,driverId=null,compareDriverId=null,fro
  };
 };
 `;
+const mockSharedMaps=String.raw`
+export const sharedMapsCustomers=async()=>[
+ {name:'CLIENTE ALFA',city:'NAPOLI',address:'VIA TEST 1, NAPOLI',
+  mapsUrl:'https://maps.app.goo.gl/exampleA',source:'google_maps_link',operationalNotes:''},
+ {name:'CLIENTE BETA',city:'SALERNO',address:'VIA TEST 2, SALERNO',
+  mapsUrl:'https://maps.app.goo.gl/exampleB',source:'google_maps_link',operationalNotes:''},
+ {name:'CLIENTE GAMMA',city:'ROMA',address:'INDIRIZZO STRADALE DA CONFERMARE',
+  mapsUrl:'https://maps.app.goo.gl/exampleC',source:'google_maps_link',operationalNotes:''}
+];
+`;
 const root=resolve(dir),mime={'.html':'text/html','.css':'text/css','.mjs':'text/javascript','.png':'image/png'};
 const server=createServer(async(req,res)=>{
  const path=new URL(req.url,'http://localhost').pathname;
  if(path==='/account-access.mjs'){res.writeHead(200,{'Content-Type':'text/javascript','Cache-Control':'no-store'}).end(mockAccount);return;}
+ if(path==='/shared-maps-client.mjs'){res.writeHead(200,{'Content-Type':'text/javascript','Cache-Control':'no-store'}).end(mockSharedMaps);return;}
  const file=path==='/amministratore/'?'amministratore/index.html':path.slice(1);
  const target=resolve(root,file);
  if(target!==root&&!target.startsWith(root+sep)){res.writeHead(403).end();return;}
@@ -126,6 +140,18 @@ try{
  await page.locator('#dashboard').waitFor({state:'visible'});
  assert.equal(await page.locator('#dashboard').getAttribute('data-view'),'overview','Protected overview should open after verified admin MFA');
  assert.equal(await page.locator('#console-overview').isVisible(),true);
+ await page.waitForFunction(()=>document.querySelector('#customer-overview-priced').textContent==='1');
+ assert.equal(await page.locator('#customer-overview-total').textContent(),'3');
+ assert.equal(await page.locator('#customer-overview-unpriced').textContent(),'2');
+ assert.match(await page.locator('#customer-overview-sync-status').textContent(),/1 sedi con tariffa, 2 senza tariffa/);
+ // An unpriced shared depot pre-fills precisely its name and city.
+ await page.locator('#customer-overview-list .customer-directory-set-rate').first().click();
+ await page.waitForFunction(()=>document.querySelector('#dashboard').dataset.view==='rates');
+ assert.equal(await page.locator('#company-rate-client').inputValue(),'CLIENTE GAMMA');
+ assert.equal(await page.locator('#company-rate-city').inputValue(),'ROMA');
+ await page.waitForFunction(()=>document.querySelector('#company-sites-count').textContent.includes('2 ancora da tariffare'));
+ await page.locator('#overview-tab').click();
+ await page.waitForFunction(()=>document.querySelector('#customer-overview-priced').textContent==='1');
  assert.equal(await page.locator('#report-panel').isVisible(),true);
  assert.equal(await page.locator('#management-panel').isVisible(),false);
  const navigation=page.locator('#dashboard>.admin-switch');
