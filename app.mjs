@@ -232,11 +232,12 @@ async function refreshCompanyRates({quiet=true}={}){
  try{
   const rates=await accountAccess.driverCompanyTariffs();
   if(owner!==accountAccess.getAccountId()||request!==companyRatesRequest)return false;
-  companyRates=rates.map(item=>({id:'company:'+item.id,customerId:null,
+  const updated=rates.map(item=>({id:'company:'+item.id,customerId:null,
    client:D.normalizeText(item.client),city:D.normalizeText(item.city),cents:item.cents}));
-  companyRatesLoaded=true;
-  if((tab==='tariffs'&&tariffTab==='base'||tab==='customers')&&refreshView)refreshView();
-  if(tab==='insert')refreshTripFareEstimate?.();
+  const changed=!companyRatesLoaded||JSON.stringify(updated)!==JSON.stringify(companyRates);
+  companyRates=updated;companyRatesLoaded=true;
+  if(changed&&(tab==='tariffs'&&tariffTab==='base'||tab==='customers')&&refreshView)refreshView();
+  if(changed&&tab==='insert')refreshTripFareEstimate?.();
   return true;
  }catch(error){
   // An offline/cache failure must never erase a previously verified catalog
@@ -252,15 +253,16 @@ async function refreshCompanyCustomers(){
  try{
   const customers=await sharedMapsCustomers();
   if(owner!==accountAccess.getAccountId()||request!==companyCustomersRequest)return;
+  const changed=!companyCustomersLoaded||JSON.stringify(companyCustomers)!==JSON.stringify(customers)||Boolean(companyCustomersError);
   companyCustomers=customers;
   companyCustomersLoaded=true;
   companyCustomersError='';
-  if(tab==='insert')refreshTripCustomerSuggestions?.();
+  if(changed&&tab==='insert')refreshTripCustomerSuggestions?.();
   // Keep the currently edited trip, caret, keyboard and open dialogs intact.
   // A background catalog sync must only refresh suggestions/list contents,
   // never reconstruct the entire screen with render().
-  if(tab==='customers')updateCompanyCustomersPanel();
-  if(tab==='insert'){
+  if(changed&&tab==='customers')updateCompanyCustomersPanel();
+  if(changed&&tab==='insert'){
    const list=document.getElementById('trip-customers');
    const form=list?.closest('form');
    if(form){
@@ -659,7 +661,8 @@ function renderTariffs(main){
   refresh.disabled=true;companyStatus.textContent='Aggiornamento tariffe in corso…';
   try{
    await Promise.all([store.syncPending(),refreshCompanyRates({quiet:false})]);
-   companyStatus.textContent='Trasferte aziendali aggiornate.';toast('Tariffe aziendali sincronizzate.');
+   companyStatus.textContent=companyRates.length?'Trasferte aziendali aggiornate.':'Nessuna trasferta aziendale ancora configurata.';
+   toast(companyRates.length?'Tariffe aziendali sincronizzate.':'Il listino aziendale è ancora vuoto.');
   }catch(error){
    companyStatus.textContent=error?.message||'Aggiornamento non disponibile: i dati salvati restano conservati.';
    toast('Non è stato possibile aggiornare le tariffe. Controlla la connessione.',true);
