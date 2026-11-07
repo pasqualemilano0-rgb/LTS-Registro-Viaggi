@@ -389,22 +389,12 @@ function updateTripFields(trip, fields, updatedAt) {
 }
 
 /**
- * Synchronize archive extras without repricing saved transfers.
- * Company transfer fares are fetched by the driver from the authenticated
- * shared catalog and captured at trip creation; private legacy price entries
- * remain in archives for historical recovery, never as active company rates.
+ * Company base fares and extras are recorded as per-journey snapshots.
+ * A legacy personal rate must NEVER silently reprice an older trip on sync,
+ * merging accounts, reopening the app or changing the company price list.
  */
 export function reconcileTripTariffs(state) {
- const normalized=validateState(state);
- const now=new Date().toISOString();
- const trips=normalized.trips.map(trip=>{
-  const extraCents={...trip.extraCents};
-  for(const service of trip.services){
-   if(normalized.extraRates[service]!==null)extraCents[service]=normalized.extraRates[service];
-  }
-  return updateTripFields(trip,{extraCents},now);
- });
- return {...normalized,trips};
+ return validateState(state);
 }
 
 /** Changed extra rates update selected snapshots across all months; daily allocation is derived. */
