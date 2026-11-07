@@ -69,7 +69,7 @@ test('installed PWA refreshes current data and update assets without dropping un
   assert.match(source,/document[.]querySelector\('dialog\[open\]'\)/);
  }
  for(const source of [worker,otherWorker]){
-  assert.match(source,/const CACHE = PREFIX \+ '20261107-realtime-v1'/);
+  assert.match(source,/const CACHE = PREFIX \+ '20261107-(?:realtime|live-sync)-v1'/);
   assert.match(source,/NETWORK_FIRST_CODE/);
   assert.match(source,/app[.]mjs'/);
   assert.match(source,/app[.]css'/);
@@ -398,6 +398,7 @@ test('the main register CSP is restrictive, loads before scripts, and preserves 
    'style-src-elem':["'self'"],'style-src-attr':["'unsafe-inline'"],
    'img-src':["'self'","data:","blob:"],
    'connect-src':["'self'","https://otrqynkscpbeyuvdlgpg.supabase.co",
+      "wss://otrqynkscpbeyuvdlgpg.supabase.co",
      "https://lts-registro-viaggi-iphone.steadyzebra1.chatgpt.site"],
    'frame-src':["'self'"],'worker-src':["'self'"],
    'manifest-src':["'self'"],'form-action':["'self'"]
