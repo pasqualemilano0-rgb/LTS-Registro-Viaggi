@@ -5,6 +5,7 @@ import * as store from '/LTS-Registro-Viaggi/client-store.mjs';
 import runtimeConfig from '/LTS-Registro-Viaggi/runtime-config.mjs';
 import * as accountAccess from '/LTS-Registro-Viaggi/account-access.mjs';
 import {sharedMapsEnabled,sharedMapsCustomers,saveSharedMapsCustomer} from '/LTS-Registro-Viaggi/shared-maps-client.mjs';
+import {readMapsCustomer} from '/LTS-Registro-Viaggi/maps-reader-client.mjs';
 import {companyFareSnapshot} from '/LTS-Registro-Viaggi/shared/company-fares.mjs';
 import {mapsLinkForCompanySync,filterSharedCustomers} from '/LTS-Registro-Viaggi/shared/maps-company-routing.mjs';
 import {dedupedCustomerDirectory,matchingSharedCustomer} from '/LTS-Registro-Viaggi/shared/customer-site-matches.mjs';
@@ -744,21 +745,42 @@ function confirmAction(title,message,callback,confirmLabel='Elimina'){
 /** One field: the Maps URL. Successful registration also remembers it locally
  * for offline lookup. Missing address/city/name never triggers a manual form. */
 function mapsCustomerDialog(){
- const {dialog,body}=modal('Cliente da Google Maps',{subtitle:'Incolla il link condiviso da Google Maps. Potrai controllare e correggere i dati prima di salvarli.'});
- const form=el('form',{novalidate:true});const input=el('input',{type:'url',name:'mapsUrl',placeholder:'https://maps.app.goo.gl/…',autocapitalize:'none',spellcheck:'false',autocomplete:'off',maxlength:4096,'aria-label':'Link Google Maps'});const error=el('div',{class:'form-error',role:'alert'});const submit=el('button',{type:'submit',class:'primary-button full'},icon('pin'),'Leggi link');
- form.append(el('label',{class:'field'},el('span',{},'Link Google Maps'),input),error,submit,button('Compila manualmente','text',()=>{dialog.close();customerDialog(null,{name:'',city:'',address:'',warnings:[]});},null,{class:'text-button full'}));
+ const {dialog,body}=modal('Cliente da Google Maps',{subtitle:
+  'Incolla il link condiviso dalla scheda di un luogo su Google Maps. Potrai verificare e completare i dati prima del salvataggio.'});
+ const form=el('form',{novalidate:true});
+ const input=el('input',{type:'url',name:'mapsUrl',
+  placeholder:'https://maps.app.goo.gl/…',autocapitalize:'none',spellcheck:'false',
+  autocomplete:'off',maxlength:4096,'aria-label':'Link Google Maps'});
+ const error=el('div',{class:'form-error',role:'alert'});
+ const submit=el('button',{type:'submit',class:'primary-button full'},icon('pin'),'Leggi link');
+ const help=el('p',{class:'field-hint',hidden:true});
+ const manual=button('Compila manualmente','text',()=>{
+  dialog.close();customerDialog(null,{name:'',city:'',address:'',
+   warnings:['Il cliente inserito senza verifica del link rimane personale.']});
+ },null,{class:'text-button full'});
+ form.append(el('label',{class:'field'},el('span',{},'Link Google Maps'),input),
+  error,help,submit,manual);
  form.addEventListener('submit',async event=>{
-  event.preventDefault();error.textContent='';const link=input.value.trim();if(!link){error.textContent='Incolla un link Google Maps.';input.focus();return;}
-  submit.disabled=true;submit.textContent='Lettura in corso…';const controller=new AbortController();const timeout=setTimeout(()=>controller.abort(),12000);
+  event.preventDefault();error.textContent='';help.hidden=true;
+  const link=input.value.trim();
+  if(!link){error.textContent='Incolla un link Google Maps.';input.focus();return;}
+  submit.disabled=true;submit.textContent='Lettura in corso…';
+  const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),16000);
   try{
-   const endpoint=new URL('/api/maps-client',new URL(runtimeConfig.apiUrl,location.href));
-   const response=await fetch(endpoint.href,{method:'POST',credentials:'omit',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:link}),signal:controller.signal});
-   const result=await response.json();if(!response.ok)throw new Error(result.error||'Impossibile leggere il link. Puoi compilare i dati manualmente.');
-   if(typeof result.name!=='string'||typeof result.city!=='string'||typeof result.address!=='string')throw new Error('Dati Maps incompleti. Compila il cliente manualmente.');
-   if(dialog.open){dialog.close();customerDialog(null,{...result,mapsUrl:link});}
-  }catch(err){if(dialog.open)error.textContent=err.name==='AbortError'?'La lettura ha impiegato troppo tempo. Il link è conservato: riprova o compila manualmente.':err.message||'Connessione non disponibile. Il link è conservato: riprova o compila manualmente.';}
-  finally{clearTimeout(timeout);submit.disabled=false;submit.replaceChildren(icon('pin'),'Leggi link');}
- });body.append(form);input.focus();
+   const proposal=await readMapsCustomer(link,{signal:controller.signal});
+   if(!dialog.open)return;
+   dialog.close();customerDialog(null,proposal);
+  }catch(err){
+   if(!dialog.open)return;
+   error.textContent=err.name==='AbortError'
+    ?'Google Maps non ha risposto in tempo. Il link resta qui: riprova.'
+    :err.message||'Google Maps non disponibile. Riprova.';
+   help.hidden=false;
+   help.textContent='Se il link non si risolve, apri il luogo su Google Maps → Condividi → Copia link. '+
+    'In alternativa puoi aggiungere il cliente manualmente alla tua rubrica personale.';
+  }finally{clearTimeout(timeout);submit.disabled=false;submit.replaceChildren(icon('pin'),'Leggi link');}
+ });
+ body.append(form);input.focus();
 }
 async function importCustomersCsv(file){
  try{
