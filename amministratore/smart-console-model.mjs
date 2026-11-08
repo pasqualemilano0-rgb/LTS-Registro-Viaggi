@@ -60,3 +60,23 @@ export function smartConsoleAlerts({drivers=[],report=null,customerStats=null}={
    label:unpriced===1?'1 sede senza tariffa':'Sedi senza tariffa: '+unpriced});
  return alerts;
 }
+
+/** Non-AI, zero-network command shortcuts from natural Italian phrases.
+ * Results are only UI suggestions, never mutations or privileged actions.
+ */
+export function smartCommandIntent(value=''){
+ const q=normalize(value);
+ if(!q)return null;
+ const rules=[
+  [/^(INVITA|AGGIUNGI|NUOVO|CREA)( UN)? AUTISTA\b/u,'invite','Invita un nuovo autista'],
+  [/^(RIPRISTINA|REINSERISCI|RECUPERA) (UN )?AUTISTA\b/u,'restore','Reinserisci un autista'],
+  [/^(AGGIUNGI|NUOVO|CREA)( UN)? CLIENTE\b/u,'manual','Aggiungi cliente manuale'],
+  [/^(ESPORTA|SCARICA|GENERA) (UN )?(REPORT|PDF|EXCEL)\b/u,'exports','Apri esportazioni'],
+  [/^(MOSTRA |CERCA )?(LE )?(ANOMALIE|SEGNALAZIONI)\b/u,'alerts','Controlla le anomalie'],
+  [/^(MOSTRA |CERCA )?(LE )?TARIFFE\b/u,'rates','Apri tariffe aziendali'],
+  [/^(MOSTRA |CERCA )?(I )?VIAGGI\b/u,'trips','Apri registro viaggi']
+ ];
+ for(const [regex,action,label] of rules)
+  if(regex.test(q))return {action,label};
+ return null;
+}
