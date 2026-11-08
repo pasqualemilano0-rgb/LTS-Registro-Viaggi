@@ -38,6 +38,7 @@ const smartConsole=setupSmartConsole({
  openView:view=>companyView.open(view),
  openRecords:(phone,kind)=>companyView.openRecordsForPhone(phone,kind),
  openCustomer:site=>companyView.openRateForSite(site),
+ prepareRateInline:site=>companyView.prepareRateInline(site),
  openManualCustomer:()=>companyView.openManualCustomer(),
  clearPrivateCode:()=>hideCode()
 });
