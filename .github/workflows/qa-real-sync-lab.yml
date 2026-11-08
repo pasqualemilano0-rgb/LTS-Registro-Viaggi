@@ -1,0 +1,36 @@
+name: LTS RC3 — test server reale isolato (nessun deploy)
+on:
+  push:
+    branches: [qa/lts-rc3-real-sync-lab]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  real-sync-client:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Test static contracts and QA build
+        run: |
+          node --check qa-sync.mjs
+          node --check tests/qa-real-sync-browser.mjs
+          node --test tests/qa-real-sync-contract.test.mjs
+          node scripts/build-qa-site.mjs
+          test -s qa-dist/qa-sync.html
+          test -s qa-dist/qa-sync.mjs
+          test -s qa-dist/qa-sync.css
+      - name: Install isolated Chromium
+        run: |
+          mkdir -p "$RUNNER_TEMP/lts-playwright"
+          npm install --prefix "$RUNNER_TEMP/lts-playwright" --no-save --no-package-lock playwright@1.56.1
+          "$RUNNER_TEMP/lts-playwright/node_modules/.bin/playwright" install --with-deps chromium
+      - name: Two-session browser test: atomic revision and offline draft
+        run: LTS_BROWSER_PLAYWRIGHT="$RUNNER_TEMP/lts-playwright" node tests/qa-real-sync-browser.mjs
