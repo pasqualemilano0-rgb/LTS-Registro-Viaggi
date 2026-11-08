@@ -8,7 +8,8 @@ import {createRequire} from 'node:module';
 
 const dir=fileURLToPath(new URL('../',import.meta.url));
 const runner=process.env.LTS_BROWSER_PLAYWRIGHT||'/tmp/lts-browser-test';
-const {chromium}=createRequire(import.meta.url)(runner+'/node_modules/playwright');
+const {chromium,webkit}=createRequire(import.meta.url)(runner+'/node_modules/playwright');
+const engine=process.env.LTS_BROWSER_ENGINE==='webkit'?'webkit':'chromium';
 const mockAccount=String.raw`
 export const hasSession=()=>true;
 export const isVerified=()=>true;
@@ -240,7 +241,7 @@ await new Promise(r=>server.listen(0,'127.0.0.1',r));
 const origin='http://127.0.0.1:'+server.address().port;
 let browser;
 try{
- browser=await chromium.launch({headless:true,args:['--no-sandbox']});
+ browser=await (engine==='webkit'?webkit:chromium).launch(engine==='webkit'?{headless:true}:{headless:true,args:['--no-sandbox']});
  const page=await browser.newPage({viewport:{width:390,height:844},deviceScaleFactor:2,isMobile:true,hasTouch:true});
  const errors=[];page.on('pageerror',e=>errors.push(String(e)));
  const mobileMore=page.locator('#admin-nav-more');
@@ -641,7 +642,7 @@ try{
  assert.equal(errors.length,0,'No JavaScript errors: '+errors.join(';'));
  // Data source remains read-only, notes never render as HTML, and no horizontal page scroll on mobile.
  assert.equal(await page.locator('#report-month').inputValue(),'2026-11');
- console.log('PASS Chromium mobile 390px: nine real pages, admin MFA, charts, filters, PDF/Excel, anomaly drill-down, security, logout wipe');
+ console.log('PASS '+engine+' mobile 390px: nine real pages, admin MFA, charts, filters, PDF/Excel, anomaly drill-down, security, logout wipe');
  await page.close();
  // Desktop navigation: the protected dashboard must retain working tabs with its
  // new dark sidebar; never make a non-verified page visible via CSS.
