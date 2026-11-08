@@ -172,7 +172,8 @@ export function setupDriverRecords(account){
   desiredPhone='',visibleLimit=35,catalogRequest=0,activePickerDisposers=[],
   editorBaseline='',writeSeq=0,quickFilter='all',sharedSites=null,
   sharedLoading=false,sharedSeq=0,sharedCheckedAt='',sharedError=false,
-  cachedSources=new Map(),cachedTripSummary=null,cachedAmountContext=null;
+  cachedSources=new Map(),cachedTripSummary=null,cachedAmountContext=null,
+  cachedCustomerMetrics=null,cachedCustomerShared=null;
  const authorized=()=>account.isVerified()&&account.getRole()==='admin'&&
   !$('dashboard').hidden&&$('dashboard').dataset.view==='records';
  const notice=(message,problem=false)=>{
@@ -216,7 +217,7 @@ export function setupDriverRecords(account){
    item.append(make('small','',explain));quality.append(item);
   };
   if(category==='customer'){
-   const m=state?archiveCustomerMetrics(state.customers,sharedSites):null;
+   const m=state?customerMetrics():null;
    metric('Indirizzo mancante',m?.missing,'Anagrafiche da completare');
    metric('Possibili duplicati',m?.possible,'Da verificare, mai eliminati da soli');
    metric('Già nel condiviso',m?.shared,'Corrispondenza di nome, città e via');
@@ -260,7 +261,18 @@ export function setupDriverRecords(account){
    }
   }
  }
- function invalidateDerived(){cachedSources.clear();cachedTripSummary=null;cachedAmountContext=null;}
+ function invalidateDerived(){
+  cachedSources.clear();cachedTripSummary=null;cachedAmountContext=null;
+  cachedCustomerMetrics=null;cachedCustomerShared=null;
+ }
+ function customerMetrics(){
+  if(!state)return null;
+  if(!cachedCustomerMetrics||cachedCustomerShared!==sharedSites){
+   cachedCustomerMetrics=archiveCustomerMetrics(state.customers,sharedSites);
+   cachedCustomerShared=sharedSites;
+  }
+  return cachedCustomerMetrics;
+ }
  function metrics(){
   const counts=state?
    [state.trips.length,state.customers.length,state.tariffs.length]:null;
