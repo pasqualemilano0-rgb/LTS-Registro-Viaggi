@@ -32,5 +32,5 @@ jobs:
           mkdir -p "$RUNNER_TEMP/lts-playwright"
           npm install --prefix "$RUNNER_TEMP/lts-playwright" --no-save --no-package-lock playwright@1.56.1
           "$RUNNER_TEMP/lts-playwright/node_modules/.bin/playwright" install --with-deps chromium
-      - name: Two-session browser test: atomic revision and offline draft
+      - name: Two-session browser test for atomic revision and offline draft
         run: LTS_BROWSER_PLAYWRIGHT="$RUNNER_TEMP/lts-playwright" node tests/qa-real-sync-browser.mjs
