@@ -50,6 +50,26 @@ try{
  await page.waitForFunction(()=>document.querySelector('#dashboard')?.dataset.view==='records',null,{timeout:15000});
  // Synthetic personal archive is loaded only from the local test adapter.
  await page.waitForFunction(()=>document.querySelector('#records-tabs')?.childElementCount>=3);
+ await page.locator('#records-tabs button[data-kind="customer"]').click();
+ await page.waitForFunction(()=>document.querySelector('#records-customers')?.textContent==='2');
+ const duplicate=page.locator('#records-list .records-card').filter({hasText:'CLIENTE ALFA'});
+ await duplicate.locator('button.records-card-certify').click();
+ await page.locator('#records-editor input[type=url]').fill('https://maps.app.goo.gl/exampleA');
+ await page.locator('#records-editor .records-certify-read').click();
+ await page.waitForFunction(()=>document.querySelector('.records-certify-preview')?.hidden===false);
+ await page.locator('.records-certify-choice input[type=checkbox]').check();
+ await page.locator('.records-certify-submit').click();
+ await page.waitForFunction(()=>document.querySelector('#records-customers')?.textContent==='1');
+ await page.locator('#records-tabs button[data-kind="history"]').click();
+ const deletion=page.locator('#records-list .records-card').filter({hasText:'DELETE'}).first();
+ assert.equal(await deletion.getByRole('button',{name:'Ripristina'}).count(),1);
+ page.once('dialog',dialog=>dialog.accept());
+ await deletion.getByRole('button',{name:'Ripristina'}).click();
+ await page.waitForFunction(()=>document.querySelector('#records-customers')?.textContent==='2');
+ const completed=page.locator('#records-list .records-card').filter({hasText:'DELETE'}).first();
+ assert.match(await completed.textContent(),/Già ripristinato/);
+ assert.equal(await completed.getByRole('button',{name:'Ripristina'}).count(),0,
+  'A deletion already restored must never keep a functional Restore button');
  assert.equal(external.length,0,'QA admin attempted a production API request');
  await page.goto(origin+prefix+'index.html',{waitUntil:'domcontentloaded'});
  const initial=await page.evaluate(async()=>{
