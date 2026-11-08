@@ -26,6 +26,17 @@ jobs:
           node --check maps-reader-client.mjs
           node --check tests/qa-private-preview-browser.mjs
           node --test tests/qa-private-contract.test.mjs
+      - name: Verify static QA build contains client pages and excludes server sources
+        run: |
+          node --check scripts/build-qa-site.mjs
+          node scripts/build-qa-site.mjs
+          test -s qa-dist/index.html
+          test -s qa-dist/amministratore/index.html
+          test -s qa-dist/shared/domain.mjs
+          test -s qa-dist/assets/lts-logo.png
+          test ! -e qa-dist/server
+          test ! -e qa-dist/supabase
+          test ! -e qa-dist/tests
       - name: Install isolated Chromium for local synthetic app
         run: |
           mkdir -p "$RUNNER_TEMP/lts-playwright"
