@@ -416,6 +416,15 @@ export function setupReport(account){
   peek(){return page?{summary:page.summary,month:page.month,reportedAt:page.reportedAt,
    incompleteArchives:page.incompleteArchives,trips:rows}:null;},
   peekCustomers(){return companyDirectory.peek();},
+  async prepareRateInline(site){
+   if(!account.isVerified()||account.getRole()!=='admin'||el('dashboard').hidden)return false;
+   const editor=el('company-rates-editor');
+   if(!editor?.closest('#smart-embed-body')||el('smart-overlay')?.hidden)return false;
+   const ready=await companyRates.load();
+   if(!ready||!editor.closest('#smart-embed-body')||el('smart-overlay')?.hidden)return false;
+   if(site)companyRates.prefillSite(site);
+   return true;
+  },
   openRateForSite(site){if(!site||!account.isVerified()||account.getRole()!=='admin')return;
    open('rates');if(el('dashboard').dataset.view==='rates')companyRates.prefillSite(site);},
   openManualCustomer(){if(!account.isVerified()||account.getRole()!=='admin')return;
