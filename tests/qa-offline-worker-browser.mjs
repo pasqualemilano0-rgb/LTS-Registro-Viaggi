@@ -6,7 +6,7 @@ import {fileURLToPath} from 'node:url';
 import {resolve,sep,extname} from 'node:path';
 import {createRequire} from 'node:module';
 
-const root=fileURLToPath(new URL('../',import.meta.url));
+const root=resolve(fileURLToPath(new URL('../',import.meta.url)));
 const prefix='/LTS-Registro-Viaggi/';
 const runner=process.env.LTS_BROWSER_PLAYWRIGHT||'/tmp/lts-browser-test';
 const {chromium}=createRequire(import.meta.url)(runner+'/node_modules/playwright');
