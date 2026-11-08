@@ -134,3 +134,24 @@ jobs:
 
       - name: Verify live protected driver records API
         run: node --test tests/qa-admin-records-live.test.mjs
+
+
+  webkit-safari:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install isolated Safari WebKit
+        run: |
+          mkdir -p "$RUNNER_TEMP/lts-playwright"
+          npm install --prefix "$RUNNER_TEMP/lts-playwright" --no-save --no-package-lock playwright@1.56.1
+          "$RUNNER_TEMP/lts-playwright/node_modules/.bin/playwright" install --with-deps webkit
+      - name: Safari WebKit mobile admin, certifies Maps and restores archived customer
+        run: LTS_BROWSER_PLAYWRIGHT="$RUNNER_TEMP/lts-playwright" LTS_BROWSER_ENGINE=webkit node tests/company-report-browser.mjs
+      - name: Safari WebKit offline IndexedDB and outbox consistency
+        run: LTS_BROWSER_PLAYWRIGHT="$RUNNER_TEMP/lts-playwright" LTS_BROWSER_ENGINE=webkit node tests/qa-offline-store-browser.mjs
