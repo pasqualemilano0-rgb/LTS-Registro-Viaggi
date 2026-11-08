@@ -46,6 +46,7 @@ export const companyTariffs=async(action,data={})=>{
 
 let adminArchiveRevision=3;
 let adminAudit=[];
+const removedPersonalRecords=new Map();
 let adminArchive={
  schemaVersion:1,profile:{firstName:'Mario',lastName:'Rossi'},
  trips:[{id:'t1',date:'2026-11-04',client:'CLIENTE ALFA',city:'NAPOLI',
@@ -75,7 +76,15 @@ export const adminRecords=async(action,data={})=>{
    if(!data.reason||String(data.reason).trim().length<8)throw new Error('Audit reason required');
    const toDelete=adminArchive.customers.findIndex(c=>c.id===data.recordId);
    if(toDelete<0)throw new Error('Personal customer missing');
+   removedPersonalRecords.set(data.recordId,structuredClone(adminArchive.customers[toDelete]));
    adminArchive.customers.splice(toDelete,1);
+  }else if(data.operation==='restore'){
+   if(data.category!=='customer'||!data.auditId||
+      !removedPersonalRecords.has(data.recordId)||
+      adminArchive.customers.some(c=>c.id===data.recordId))
+    throw new Error('Restore not authorized or original already exists');
+   adminArchive.customers.push(removedPersonalRecords.get(data.recordId));
+   removedPersonalRecords.delete(data.recordId);
   }else if(data.operation==='update'&&data.category==='trip'&&idx>=0)
     rows[idx]={...rows[idx],...data.patch,updatedAt:new Date().toISOString()};
    else if(data.operation==='update'&&data.category==='customer'){
@@ -566,6 +575,17 @@ try{
  assert.match(await page.locator('#records-list').textContent(),/CLIENTE AUTISTA CORRETTO/);
  await page.locator('#records-tabs button[data-kind="history"]').click();
  assert.match(await page.locator('#records-list').textContent(),/DELETE/);
+ // Restore the exact deleted private row without touching the historical trip.
+ page.once('dialog',dialog=>dialog.accept());
+ await page.locator('#records-list .records-card').filter({hasText:'DELETE'})
+  .first().locator('button').filter({hasText:'Ripristina'}).click();
+ await page.waitForFunction(()=>document.querySelector('#records-revision').textContent==='7');
+ assert.equal(await page.locator('#records-customers').textContent(),'2');
+ assert.equal(await page.locator('#records-trips').textContent(),'1');
+ assert.match(await page.locator('#records-list').textContent(),/RESTORE/);
+ await page.locator('#records-tabs button[data-kind="customer"]').click();
+ assert.match(await page.locator('#records-list').textContent(),/CLIENTE ALFA/);
+ assert.match(await page.locator('#records-list').textContent(),/CLIENTE AUTISTA CORRETTO/);
  // One shared company extra price: no individual driver selector.
  await openAdminTab('rates-tab');
  await page.waitForFunction(()=>document.querySelectorAll('.company-extra-row').length===8);
