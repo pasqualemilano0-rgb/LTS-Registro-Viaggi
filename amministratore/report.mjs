@@ -316,7 +316,8 @@ export function setupReport(account){
    el('report-total').textContent=currency(summary.knownTotalCents);
    el('report-missing').textContent=String(summary.missingTariffCount);
    const warnings=[];
-   if(summary.missingTariffCount)warnings.push('Importi parziali: '+summary.missingTariffCount+' viaggi con tariffe mancanti.');
+   if(summary.missingTariffCount)warnings.push('Importi parziali: '+summary.missingTariffCount+
+    (summary.missingTariffCount===1?' viaggio con tariffa mancante.':' viaggi con tariffe mancanti.'));
    if(result.incompleteArchives)warnings.push(result.incompleteArchives+' archivi non leggibili, esclusi dai totali: report incompleto.');
    el('report-warning').textContent=warnings.join(' ');
    renderDayChart(result.chart);
