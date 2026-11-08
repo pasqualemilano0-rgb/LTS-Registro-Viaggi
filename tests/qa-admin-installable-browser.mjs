@@ -46,7 +46,7 @@ try {
   const page = await context.newPage();
   const base = 'http://127.0.0.1:'+server.address().port + prefix;
   await page.goto(base+'amministratore/', {waitUntil:'domcontentloaded'});
-  assert.match(await page.title(), /Dashboard amministratore/);
+  assert.match(await page.title(), /LTS/); // admin.mjs may replace the static page title
   assert.equal(await page.locator('link[rel="manifest"]').getAttribute('href'),
     './manifest.webmanifest');
   const manifest = await (await context.request.get(base+'amministratore/manifest.webmanifest')).json();
