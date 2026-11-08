@@ -417,7 +417,9 @@ export function setupReport(account){
    incompleteArchives:page.incompleteArchives,trips:rows}:null;},
   peekCustomers(){return companyDirectory.peek();},
   openRateForSite(site){if(!site||!account.isVerified()||account.getRole()!=='admin')return;
-   open('rates');companyRates.prefillSite(site);},
+   open('rates');if(el('dashboard').dataset.view==='rates')companyRates.prefillSite(site);},
+  openManualCustomer(){if(!account.isVerified()||account.getRole()!=='admin')return;
+   open('rates');if(el('dashboard').dataset.view==='rates')companyRates.focusManual();},
   openRecordsForPhone(phone,kind='trip'){open('records',phone,kind);},
   openPrivateCustomers(){open('records',null,'customer');}};
 }
