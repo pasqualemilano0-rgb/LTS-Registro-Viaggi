@@ -5,10 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#006f89">
   <meta name="referrer" content="no-referrer">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src https://otrqynkscpbeyuvdlgpg.supabase.co wss://otrqynkscpbeyuvdlgpg.supabase.co; base-uri 'none'; form-action 'self'; object-src 'none'">
-  <title>LTS · Gestione autisti</title>
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src https://otrqynkscpbeyuvdlgpg.supabase.co wss://otrqynkscpbeyuvdlgpg.supabase.co; worker-src 'self'; manifest-src 'self'; base-uri 'none'; form-action 'self'; object-src 'none'">
+  <title>LTS · Dashboard amministratore</title>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="LTS Admin">
   <meta name="description" content="Pannello riservato all'amministratore per gestire gli autisti LTS.">
   <link rel="icon" type="image/png" href="../assets/icon-192.png">
+  <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
+  <link rel="manifest" href="./manifest.webmanifest">
   <link rel="stylesheet" href="./admin.css?v=20261104-company-v3">
   <link rel="stylesheet" href="./pro-theme.css?v=20261104-console-v5">
   <link rel="stylesheet" href="./dashboard-v6.css?v=20261104-mobile-v7">
@@ -17,6 +22,7 @@
   <link rel="stylesheet" href="./driver-records.css?v=20261107-driver-private-customers-v1">
   <link rel="stylesheet" href="../visual-theme.css?v=20261108-rc3-v1">
   <script type="module" src="./admin.mjs?v=20261108-rc3-v1"></script>
+  <script type="module" src="./install-pwa.mjs?v=20261108-admin-pwa-v1"></script>
   <script type="module" src="./dashboard-mobile-nav.mjs?v=20261107-records-admin-v2"></script>
 </head>
 <body>
@@ -27,6 +33,7 @@
     </a>
     <div class="top-actions">
       <span class="secure-label"><span aria-hidden="true">●</span> Area riservata</span>
+      <button id="install-admin" class="button outline small" type="button" hidden>Installa app</button>
       <button id="logout" class="button outline small" type="button" hidden>Esci</button>
     </div>
   </header>

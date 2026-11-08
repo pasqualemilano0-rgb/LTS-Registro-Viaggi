@@ -1,0 +1,26 @@
+{
+  "id": "/LTS-Registro-Viaggi/amministratore/",
+  "name": "LTS Dashboard Amministratore",
+  "short_name": "LTS Admin",
+  "description": "Dashboard amministratore LTS: autisti, clienti, viaggi e report aziendali.",
+  "lang": "it",
+  "start_url": "/LTS-Registro-Viaggi/amministratore/",
+  "scope": "/LTS-Registro-Viaggi/amministratore/",
+  "display": "standalone",
+  "background_color": "#f3f7f9",
+  "theme_color": "#006f89",
+  "icons": [
+    {
+      "src": "/LTS-Registro-Viaggi/assets/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/LTS-Registro-Viaggi/assets/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
