@@ -67,3 +67,33 @@ test('Export rejects invalid or oversized sensitive records',()=>{
  assert.throws(()=>makeXlsx({...sample,records:[{amountCents:-1}]}),/valido/);
  assert.throws(()=>makePdf({...sample,records:Array.from({length:2501},()=>sample.records[0])}),/2.500/);
 });
+
+
+test('large synthetic PDF and Excel exports retain every journey and correct pagination',()=>{
+ const count=1800;
+ const records=Array.from({length:count},(_,i)=>({
+  date:'2026-11-08',driverName:'Autista QA',container:'TEST'+String(i).padStart(7,'0'),
+  client:'CLIENTE DEMO',city:'NAPOLI',amountCents:1200+(i%5)*100,
+  missingTariff:false
+ }));
+ const totalCents=records.reduce((sum,item)=>sum+item.amountCents,0);
+ const data={...sample,records,
+  summary:{...sample.summary,trips:count,totalCents,missingTariffCount:0}};
+ const xlsx=makeXlsx(data),entries=zipNames(xlsx);
+ const sheet=entries.find(x=>x.name==='xl/worksheets/sheet2.xml')?.body;
+ assert.ok(sheet,'Sheet Viaggi missing from large export');
+ assert.equal([...sheet.matchAll(/<row r="/g)].length,count+1);
+ assert.match(sheet,new RegExp('autoFilter ref="A1:G'+(count+1)+'"'));
+ assert.ok(xlsx.byteLength>100000,'Expected a real multi-page XLSX');
+ const pdf=new TextDecoder().decode(makePdf(data));
+ const pages=[...pdf.matchAll(/\/Type \/Page \/Parent/g)].length;
+ assert.ok(pages>30,'Long report must be paginated, not truncated');
+ const journeyDates=[...pdf.matchAll(/\(2026-11-08\)/g)].length;
+ assert.equal(journeyDates,count,'PDF lost some records');
+ const objects=[...pdf.matchAll(/\d+ 0 obj\n/g)].length;
+ const listed=Number(/xref\n0 (\d+)/.exec(pdf)?.[1]);
+ assert.equal(objects+1,listed,'PDF cross-reference count mismatch');
+ const offset=Number(/startxref\n(\d+)\n/.exec(pdf)?.[1]);
+ assert.equal(pdf.slice(offset,offset+4),'xref','PDF table offset wrong');
+ console.log('PASS long exports: '+count+' trips, '+pages+' PDF pages, '+xlsx.byteLength+' XLSX bytes');
+});
