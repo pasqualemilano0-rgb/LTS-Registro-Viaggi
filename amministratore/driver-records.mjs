@@ -243,18 +243,20 @@ export function setupDriverRecords(account){
   sharedLoading=true;sharedError=false;worklistUI();
   try{
    const results=await sharedMapsCustomers();
-   if(token!==sharedSeq||instance!==epoch||owner!==selectedId||!authorized())return;
+   if(token!==sharedSeq||instance!==epoch||owner!==selectedId||category!=='customer'||!authorized())return;
    sharedSites=results;
    sharedCheckedAt=new Date().toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'});
    sharedError=false;
   }catch(error){
-   if(token!==sharedSeq||instance!==epoch||owner!==selectedId||!authorized())return;
+   if(token!==sharedSeq||instance!==epoch||owner!==selectedId||category!=='customer'||!authorized())return;
    sharedError=true;
    if(!sharedSites)notice('Archivio personale disponibile. Elenco condiviso non verificato: '+
     (error?.message||'Controlla la connessione.'),true);
   }finally{
-   if(token===sharedSeq&&instance===epoch&&owner===selectedId&&authorized()){
-    sharedLoading=false;render({keepEditor:true});
+   if(token===sharedSeq&&instance===epoch&&owner===selectedId&&category==='customer'&&authorized()){
+    sharedLoading=false;
+    if(list.querySelector('.records-delete-confirm'))worklistUI();
+    else render({keepEditor:true});
    }
   }
  }
@@ -780,6 +782,7 @@ export function setupDriverRecords(account){
  function setCategory(next){
   if(!tabs.some(x=>x[0]===next)||busy||next===category)return;
   if(!canLeave())return;
+  if(category==='customer'&&next!=='customer'){sharedSeq++;sharedLoading=false;}
   category=next;filter.value='';quickFilter='all';visibleLimit=35;
   tabsRoot.querySelectorAll('button').forEach(b=>{
    const selected=b.dataset.kind===category;
