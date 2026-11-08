@@ -96,3 +96,28 @@ test('two trips on the same date do not double count Saturday allowance',()=>{
  const metrics=tripWorklistSummary(trips);
  assert.equal(metrics.incomplete,0);
 });
+
+test('large company directory remains responsive without quadratic comparisons',()=>{
+ const count=12000;
+ const shared=Array.from({length:count},(_,i)=>({
+  name:'DEPOSITO '+i,city:'NAPOLI',address:'VIA DEL PORTO '+i,
+  mapsUrl:'https://maps.example.test/place/'+i
+ }));
+ const customers=shared.map((site,i)=>({
+  id:'client-'+i,name:site.name,city:site.city,address:site.address
+ }));
+ const start=performance.now();
+ const totals=archiveCustomerMetrics(customers,shared);
+ assert.equal(totals.total,count);
+ assert.equal(totals.shared,count);
+ assert.equal(totals.possible,0);
+ assert.equal(totals.review,0);
+ // Reuse the same shared snapshot on each search/filter pass.
+ const matches=customers.filter(row=>customerMatchesQuickFilter(row,'shared',shared));
+ assert.equal(matches.length,count);
+ const elapsed=performance.now()-start;
+ console.log('Customer archive worklist '+count+'x'+count+
+  ': '+Math.round(elapsed)+' ms');
+ assert.ok(elapsed<5000,
+  'Large read-only customer worklists should not freeze phones: '+Math.round(elapsed)+' ms');
+});
