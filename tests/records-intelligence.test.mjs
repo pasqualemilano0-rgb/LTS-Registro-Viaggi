@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {RECORD_FILTERS,assessPersonalCustomer,archiveCustomerMetrics,
- customerMatchesQuickFilter,tripWorklistSummary,archiveMatchesSearch}
+ customerMatchesQuickFilter,tripWorklistSummary,archiveMatchesSearch,archivedRestoreStatus}
  from '../amministratore/records-intelligence.mjs';
 
 const personal={id:'c1',name:'ALFA LOGISTICA SRL',city:'NAPOLI',
@@ -120,4 +120,29 @@ test('large company directory remains responsive without quadratic comparisons',
   ': '+Math.round(elapsed)+' ms');
  assert.ok(elapsed<5000,
   'Large read-only customer worklists should not freeze phones: '+Math.round(elapsed)+' ms');
+});
+
+
+test('audit restoration: deletion becomes non-actionable immediately after restore',()=>{
+ const removed={id:'c1',action:'delete',category:'customer',recordId:'c1',afterRevision:4};
+ const restored={id:'r1',action:'restore',category:'customer',recordId:'c1',afterRevision:5};
+ const before={customers:[],trips:[],tariffs:[]};
+ const after={...before,customers:[{id:'c1',name:'CLIENTE ALFA'}]};
+ assert.deepEqual(archivedRestoreStatus(removed,[removed],before),
+  {eligible:true,label:'Ripristina'});
+ assert.deepEqual(archivedRestoreStatus(removed,[restored,removed],after),
+  {eligible:false,label:'Già ripristinato'});
+ assert.equal(archivedRestoreStatus(removed,[removed],after).eligible,false,
+  'Never restore over an existing customer, even if audit is stale');
+});
+
+test('audit restoration: old deletes cannot be replayed after re-deletion',()=>{
+ const first={id:'d1',action:'delete',category:'trip',recordId:'t1',afterRevision:3};
+ const restore={id:'r1',action:'restore',category:'trip',recordId:'t1',afterRevision:4};
+ const latest={id:'d2',action:'delete',category:'trip',recordId:'t1',afterRevision:5};
+ const state={customers:[],trips:[],tariffs:[]};
+ assert.equal(archivedRestoreStatus(first,[latest,restore,first],state).eligible,false);
+ assert.equal(archivedRestoreStatus(latest,[latest,restore,first],state).eligible,true);
+ assert.equal(archivedRestoreStatus({action:'delete',category:'other',recordId:'x'},[],state).eligible,false);
+ assert.equal(archivedRestoreStatus({action:'delete',category:'tariff',recordId:'r1',afterRevision:9},[],null).eligible,false);
 });
