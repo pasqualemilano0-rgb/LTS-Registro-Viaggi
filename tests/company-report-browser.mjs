@@ -584,6 +584,10 @@ try{
  assert.equal(await page.locator('#records-customers').textContent(),'2');
  assert.equal(await page.locator('#records-trips').textContent(),'1');
  assert.match(await page.locator('#records-list').textContent(),/RESTORE/);
+ const restoredDeletion=page.locator('#records-list .records-card').filter({hasText:'DELETE'}).first();
+ assert.match(await restoredDeletion.textContent(),/Già ripristinato/);
+ assert.equal(await restoredDeletion.locator('button').filter({hasText:'Ripristina'}).count(),0,
+  'An audit deletion must not offer Restore after a completed restoration');
  await page.locator('#records-tabs button[data-kind="customer"]').click();
  assert.match(await page.locator('#records-list').textContent(),/CLIENTE ALFA/);
  assert.match(await page.locator('#records-list').textContent(),/CLIENTE AUTISTA CORRETTO/);
