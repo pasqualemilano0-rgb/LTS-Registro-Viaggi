@@ -17,6 +17,7 @@ on:
       - 'shared/customer-site-matches.mjs'
       - 'shared-maps-client.mjs'
       - 'tests/customer-site-matches.test.mjs'
+      - 'tests/personal-customer-certification.test.mjs'
       - 'tests/admin-record-operations.test.mjs'
       - 'shared/domain.mjs'
       - 'tests/qa-company-tariffs.test.mjs'
@@ -25,6 +26,7 @@ on:
       - 'tests/admin-record-operations.test.mjs'
       - 'tests/qa-admin-records-live.test.mjs'
       - 'amministratore/**'
+      - 'visual-theme.css'
       - 'app.css'
       - 'runtime-config.mjs'
       - 'realtime-client.mjs'
@@ -55,6 +57,7 @@ on:
       - 'shared/customer-site-matches.mjs'
       - 'shared-maps-client.mjs'
       - 'tests/customer-site-matches.test.mjs'
+      - 'tests/personal-customer-certification.test.mjs'
       - 'shared/domain.mjs'
       - 'tests/qa-company-tariffs.test.mjs'
       - 'server/admin-records-core.mjs'
@@ -62,6 +65,7 @@ on:
       - 'tests/admin-record-operations.test.mjs'
       - 'tests/qa-admin-records-live.test.mjs'
       - 'amministratore/**'
+      - 'visual-theme.css'
       - 'app.css'
       - 'runtime-config.mjs'
       - 'realtime-client.mjs'
@@ -103,10 +107,12 @@ jobs:
           node --check shared/admin-record-operations.mjs
           node --check server/admin-records-core.mjs
           node --check amministratore/driver-records.mjs
+          node --check amministratore/personal-customer-certification.mjs
+          node --check amministratore/personal-customer-maps-ui.mjs
           node --check driver-session-vault.mjs
           node --check recupera-password.mjs
           node --check sw.js
-          node --test tests/qa-driver-management-fixes.test.mjs tests/qa-manual-customers.test.mjs tests/qa-realtime.test.mjs tests/qa-account-release.test.mjs tests/driver-session-vault.test.mjs tests/leaked-password-protection.test.mjs tests/qa-company-tariffs.test.mjs tests/customer-site-matches.test.mjs
+          node --test tests/qa-driver-management-fixes.test.mjs tests/qa-manual-customers.test.mjs tests/qa-realtime.test.mjs tests/qa-account-release.test.mjs tests/driver-session-vault.test.mjs tests/leaked-password-protection.test.mjs tests/qa-company-tariffs.test.mjs tests/customer-site-matches.test.mjs tests/personal-customer-certification.test.mjs
       - name: Verify live protected driver records API
         run: node --test tests/qa-admin-records-live.test.mjs
       - name: Verify live Maps reader CORS and authentication boundary
