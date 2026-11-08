@@ -9,7 +9,8 @@ import {emptyState,validateState} from '../shared/domain.mjs';
 
 const root=resolve(fileURLToPath(new URL('../',import.meta.url)));
 const runner=process.env.LTS_BROWSER_PLAYWRIGHT||'/tmp/lts-browser-test';
-const {chromium}=createRequire(import.meta.url)(runner+'/node_modules/playwright');
+const {chromium,webkit}=createRequire(import.meta.url)(runner+'/node_modules/playwright');
+const engine=process.env.LTS_BROWSER_ENGINE==='webkit'?'webkit':'chromium';
 const prefix='/LTS-Registro-Viaggi/';
 const owner='account:aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 let revision=1,remoteState=emptyState(),requests=0;
@@ -74,7 +75,7 @@ const server=createServer(async(req,res)=>{
 await new Promise(ok=>server.listen(0,'127.0.0.1',ok));
 let browser;
 try{
- browser=await chromium.launch({headless:true,args:['--no-sandbox']});
+ browser=await (engine==='webkit'?webkit:chromium).launch(engine==='webkit'?{headless:true}:{headless:true,args:['--no-sandbox']});
  const context=await browser.newContext({serviceWorkers:'block'});
  const page=await context.newPage();
  const url='http://127.0.0.1:'+server.address().port+prefix+'qa-store.html';
@@ -144,7 +145,7 @@ try{
  assert.equal(remoteState.trips[0].note,'MODIFICA SUCCESSIVA OFFLINE');
  assert.equal(remoteState.customers.length,1);
  assert.equal(requests,2,'Immutable first outbox and second offline edit must both sync');
- console.log('PASS IndexedDB offline: two edits persist, network resumes, immutable outbox syncs exactly twice');
+ console.log('PASS '+engine+' IndexedDB offline: two edits persist, network resumes, immutable outbox syncs exactly twice');
  await context.close();
 }finally{
  if(browser)await browser.close();
