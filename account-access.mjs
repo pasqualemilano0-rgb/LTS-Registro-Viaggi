@@ -241,3 +241,17 @@ export const companyInsights=async({month,driverId=null,compareDriverId=null,fro
  };
 };
 
+
+/* Compatibility-only QA methods. All operations remain synthetic and local. */
+export const accountGateRequired=()=>true;
+export const rememberPendingAdminMfa=()=>{};
+export const pendingAdminMfa=()=>null;
+export const chooseDeviceArchive=()=>{throw Error('Demo privata: usa solo l’archivio sintetico.');};
+export const restoreDriverSession=async()=>verifySession();
+export const getVerifiedAccessToken=async()=> 'QA_FAKE_TOKEN_NEVER_SENT';
+export const activateDriverInvitation=async()=>{throw Error('Le attivazioni reali sono disattivate nella QA.');};
+export const recoverDriverPassword=async()=>{throw Error('Il recupero credenziali è disattivato nella QA.');};
+export const driverCompanyTariffs=async()=>structuredClone(mockRates);
+export const driverCompanyCatalog=async()=>({
+ tariffs:structuredClone(mockRates),extraRates:structuredClone(mockExtras)
+});
