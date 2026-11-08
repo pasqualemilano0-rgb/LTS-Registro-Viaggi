@@ -41,6 +41,7 @@ export function setupSmartConsole({
   overlay.hidden=true;openState=false;mode='home';
   home.hidden=false;embedded.hidden=true;back.hidden=true;
   document.body.classList.remove('smart-is-open');
+  byId('dashboard').inert=false;
   trigger.setAttribute('aria-expanded','false');
   if(clearSearch){search.value='';results.replaceChildren();}
   if(focus&&authorized())(lastFocus?.isConnected?lastFocus:trigger).focus();
@@ -175,6 +176,7 @@ export function setupSmartConsole({
   lastFocus=document.activeElement;
   openState=true;overlay.hidden=false;
   document.body.classList.add('smart-is-open');
+  byId('dashboard').inert=true;
   trigger.setAttribute('aria-expanded','true');
   home.hidden=false;embedded.hidden=true;back.hidden=true;
   mode='home';heading.textContent='Trova e agisci';
@@ -197,6 +199,7 @@ export function setupSmartConsole({
  home.querySelectorAll('[data-smart-action]').forEach(button=>
   button.addEventListener('click',()=>action(button.dataset.smartAction)));
  search.addEventListener('input',renderSearch);
+ window.addEventListener('lts-admin-data-refreshed',()=>{if(isVisible()&&mode==='home')render();});
  document.addEventListener('keydown',event=>{
   if(!event.defaultPrevented&&(event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==='k'){
    if(!authorized())return;
