@@ -25,6 +25,7 @@ on:
       - 'tests/qa-report-production-http-smoke.mjs'
       - 'tests/company-report-browser.mjs'
       - 'tests/qa-offline-worker-browser.mjs'
+      - 'tests/qa-offline-store-browser.mjs'
       - 'tests/report-export.test.mjs'
       - 'tests/qa-account-release.test.mjs'
       - 'tests/qa-release-versions.test.mjs'
@@ -56,6 +57,7 @@ on:
       - 'tests/qa-report-production-http-smoke.mjs'
       - 'tests/company-report-browser.mjs'
       - 'tests/qa-offline-worker-browser.mjs'
+      - 'tests/qa-offline-store-browser.mjs'
       - 'tests/qa-pro-theme.test.mjs'
       - 'tests/qa-driver-management-fixes.test.mjs'
       - '.github/workflows/qa-company-report-release.yml'
@@ -126,6 +128,9 @@ jobs:
 
       - name: PWA offline Chromium cache and private API regression
         run: LTS_BROWSER_PLAYWRIGHT="$RUNNER_TEMP/lts-playwright" node tests/qa-offline-worker-browser.mjs
+
+      - name: IndexedDB offline edits and outbox replay in Chromium
+        run: LTS_BROWSER_PLAYWRIGHT="$RUNNER_TEMP/lts-playwright" node tests/qa-offline-store-browser.mjs
 
       - name: Verify live protected driver records API
         run: node --test tests/qa-admin-records-live.test.mjs
