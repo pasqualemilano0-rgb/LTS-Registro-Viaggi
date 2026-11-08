@@ -319,7 +319,7 @@ export function setupDriverRecords(account){
     actions.append(edit);
     if(category!=='extra'){
      const remove=make('button','button outline small records-danger','Elimina');
-     remove.type='button';remove.addEventListener('click',()=>void remove(item));
+     remove.type='button';remove.addEventListener('click',()=>openDeleteConfirmation(item,card,actions));
      actions.append(remove);
     }
    }
@@ -561,16 +561,86 @@ export function setupDriverRecords(account){
    }
   }
  }
- async function remove(item){
-  if(!authorized()||!canLeave())return;
+
+ // Inline confirmation avoids browser prompt/confirm dialogs, which may be
+ // suppressed by mobile browsers and installed PWAs. No write occurs until
+ // the administrator explicitly submits a valid reason.
+ function openDeleteConfirmation(item,card,actions){
+  if(!authorized()){
+   notice('Sessione amministratore non verificata: accedi di nuovo prima di eliminare.',true);
+   const info=make('p','records-delete-error','Accesso non autorizzato. Verifica la sessione amministratore.');
+   card.querySelector('.records-delete-error')?.remove();
+   card.insertBefore(info,actions);return;
+  }
+  if(busy||!canLeave()){
+   const info=make('p','records-delete-error','Operazione non disponibile mentre è in corso un salvataggio o ci sono modifiche non confermate.');
+   card.querySelector('.records-delete-error')?.remove();
+   card.insertBefore(info,actions);return;
+  }
+  if(!state||revision===null){
+   const info=make('p','records-delete-error','Archivio non disponibile. Premi Aggiorna archivio e riprova.');
+   card.querySelector('.records-delete-error')?.remove();
+   card.insertBefore(info,actions);return;
+  }
+  // Only one deletion panel can be open at a time.
+  for(const pending of list.querySelectorAll('.records-delete-confirm')){
+   const parent=pending.parentElement;
+   pending.remove();
+   parent?.querySelector('.records-card-actions')?.removeAttribute('hidden');
+  }
+  for(const info of list.querySelectorAll('.records-delete-error'))info.remove();
+  const kind=category,owner=selectedId,recordId=item.id;
   const name=summary(item)[0];
-  if(!window.confirm('Eliminare '+(labels[category]||'elemento')+' · '+name+
-   '? La rimozione verrà tracciata e potrà essere ripristinata. I viaggi storici non vengono cancellati quando elimini un cliente.'))return;
-  const reason=window.prompt('Motivo della rimozione (almeno 8 caratteri):','');
-  if(reason===null)return;
-  if(reason.trim().length<8){notice('Inserisci almeno 8 caratteri per motivare la rimozione.',true);return;}
-  if(editing)clearEditor();
-  await mutate({operation:'delete',category,recordId:item.id,reason:reason.trim()});
+  const form=make('form','records-delete-confirm');
+  form.noValidate=true;
+  form.setAttribute('aria-label','Conferma eliminazione '+(labels[kind]||'elemento'));
+  form.append(make('h4','records-delete-title','Conferma eliminazione'));
+  form.append(make('p','records-delete-explainer','Stai eliminando '+(labels[kind]||'elemento')+
+   ' · '+name+'. La rimozione sarà registrata nello storico e potrà essere ripristinata. I viaggi già registrati non vengono cancellati eliminando un cliente.'));
+  const label=make('label','records-delete-label');
+  label.append(make('span','','Motivo della rimozione (almeno 8 caratteri)'));
+  const reason=make('textarea','records-delete-reason');
+  reason.name='reason';reason.rows=2;reason.maxLength=500;reason.minLength=8;
+  reason.required=true;reason.placeholder='Es. Cliente duplicato o inserimento errato';
+  label.append(reason);form.append(label);
+  const error=make('p','records-delete-error');
+  error.setAttribute('role','alert');error.hidden=true;
+  form.append(error);
+  const buttons=make('div','records-delete-actions');
+  const cancel=make('button','button outline','Annulla');cancel.type='button';
+  const confirm=make('button','button records-delete-submit','Conferma eliminazione');
+  confirm.type='submit';
+  buttons.append(cancel,confirm);form.append(buttons);
+  const close=()=>{
+   if(busy)return;
+   form.remove();actions.hidden=false;
+  };
+  cancel.addEventListener('click',close);
+  form.addEventListener('submit',async event=>{
+   event.preventDefault();
+   if(busy)return;
+   const text=reason.value.trim();
+   if(text.length<8){
+    error.textContent='Scrivi una motivazione di almeno 8 caratteri.';
+    error.hidden=false;reason.focus();return;
+   }
+   if(owner!==selectedId||kind!==category||!authorized()){
+    error.textContent='Il contesto dell’archivio è cambiato. Riapri il cliente e riprova.';
+    error.hidden=false;return;
+   }
+   confirm.disabled=true;cancel.disabled=true;reason.disabled=true;
+   error.hidden=true;
+   const success=await mutate({operation:'delete',category:kind,recordId,reason:text});
+   if(!success&&form.isConnected){
+    reason.disabled=false;confirm.disabled=false;cancel.disabled=false;
+    error.textContent=status.textContent||'Eliminazione non riuscita. Verifica la connessione e riprova.';
+    error.hidden=false;
+   }
+  });
+  card.insertBefore(form,actions);
+  actions.hidden=true;
+  reason.focus({preventScroll:true});
+  form.scrollIntoView({block:'nearest',behavior:'smooth'});
  }
  async function restore(entry){
   if(!authorized()||!canLeave()||
