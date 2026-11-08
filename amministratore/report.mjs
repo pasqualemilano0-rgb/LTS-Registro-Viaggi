@@ -305,6 +305,7 @@ export function setupReport(account){
    }
    rows=append?[...rows,...result.trips]:result.trips;
    page=result;
+   window.dispatchEvent(new Event('lts-admin-data-refreshed'));
    el('report-error').hidden=true;
    updateDriverOptions(result.drivers);
    const summary=result.summary;
@@ -412,6 +413,11 @@ export function setupReport(account){
  });
  el('report-next').addEventListener('click',()=>void load(true));
  return {reset,open,refreshActive,
+  peek(){return page?{summary:page.summary,month:page.month,reportedAt:page.reportedAt,
+   incompleteArchives:page.incompleteArchives,trips:rows}:null;},
+  peekCustomers(){return companyDirectory.peek();},
+  openRateForSite(site){if(!site||!account.isVerified()||account.getRole()!=='admin')return;
+   open('rates');companyRates.prefillSite(site);},
   openRecordsForPhone(phone,kind='trip'){open('records',phone,kind);},
   openPrivateCustomers(){open('records',null,'customer');}};
 }
