@@ -14,7 +14,7 @@ test('dashboard accessibile solo dal pannello admin, CSP e versioni coerenti',()
    'pro-city','pro-container','pro-compare-driver','pro-alerts','pro-alert-count',
    'pro-export-pdf','pro-export-xlsx','pro-records'])
    assert.match(html,new RegExp('id="'+id+'"'));
- assert.match(html,/admin\.mjs\?v=20261108-inline-delete-v1/);
+ assert.match(html,/admin\.mjs\?v=20261108-customer-certify-v1/);
  assert.match(html,/admin\.css\?v=20261104-company-v3/);
  assert.match(js,/account-access\.mjs\?v=20261107-realtime-v1/);
  assert.match(js,/setupReport\(account\)/);
@@ -26,7 +26,7 @@ test('dashboard accessibile solo dal pannello admin, CSP e versioni coerenti',()
  assert.match(report,/function driverProfile\(/);
  assert.match(report,/function driverDirectory\(/);
  assert.match(report,/function renderAmountChart\(/);
- assert.match(js,/report\.mjs\?v=20261108-inline-delete-v1/);
+ assert.match(js,/report\.mjs\?v=20261108-customer-certify-v1/);
  assert.match(report,/setupInsights\(account\)/);
  const advanced=read('amministratore/report-insights.mjs');
  const exportsModule=read('amministratore/report-export.mjs');
@@ -281,7 +281,7 @@ test('driver trip picker searches Maps, manual company tariffs and personal driv
  assert.match(css,/records-site-results\[hidden\]/);
  assert.match(css,/records-site-option-address/);
  assert.match(html,/driver-records[.]css[?]v=20261107-driver-private-customers-v1/);
- assert.match(report,/driver-records[.]mjs[?]v=20261108-inline-delete-v1/);
+ assert.match(report,/driver-records[.]mjs[?]v=20261108-customer-certify-v1/);
  assert.doesNotMatch([source,css].join('\n'),/innerHTML|SUPABASE_SERVICE_ROLE_KEY|sb_secret_/);
 });
 
@@ -350,4 +350,24 @@ test('server verifies MFA, owns archive CAS and logs every privileged edit atomi
  assert.match(pure,/createdAt:existing[?][.]createdAt/);
  assert.match(pure,/restoreRecord/);
  assert.match(read('tests/qa-admin-records-live.test.mjs'),/Unauthenticated admin request must be rejected/);
+});
+
+test('personal customer Maps certification is explicit, deduplicated and auditable',()=>{
+ const editor=read('amministratore/driver-records.mjs');
+ const view=read('amministratore/personal-customer-maps-ui.mjs');
+ const matching=read('amministratore/personal-customer-certification.mjs');
+ const theme=read('visual-theme.css');
+ assert.match(editor,/if\(kind==='customer'&&item\)/);
+ assert.match(editor,/attachPersonalCustomerCertification/);
+ assert.match(editor,/removePersonal:reason=>mutate\(\{operation:'delete',category:'customer'/);
+ assert.match(view,/readMapsCustomer\(url,\{signal:abort[.]signal\}\)/);
+ assert.match(view,/await sharedMapsCustomers\(\)/);
+ assert.match(view,/reviewPersonalCustomerCertification/);
+ assert.match(view,/await saveSharedMapsCustomer\(proposal[.]mapsUrl/);
+ assert.match(view,/const done=await removePersonal\(/);
+ assert.match(view,/checked[.]checked/);
+ assert.match(view,/I viaggi non sono stati modificati/);
+ assert.match(matching,/normalizedStreetKey/);
+ assert.match(theme,/records-certify-panel/);
+ assert.doesNotMatch(view,/localStorage|innerHTML|window[.]prompt/);
 });
