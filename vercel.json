@@ -6,6 +6,26 @@
       "destination": "/index.html"
     },
     {
+      "source": "/LTS-Registro-Viaggi/",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/LTS-Registro-Viaggi/amministratore",
+      "destination": "/amministratore/index.html"
+    },
+    {
+      "source": "/LTS-Registro-Viaggi/amministratore/",
+      "destination": "/amministratore/index.html"
+    },
+    {
+      "source": "/LTS-Registro-Viaggi/porti",
+      "destination": "/porti/index.html"
+    },
+    {
+      "source": "/LTS-Registro-Viaggi/porti/",
+      "destination": "/porti/index.html"
+    },
+    {
       "source": "/LTS-Registro-Viaggi/:path*",
       "destination": "/:path*"
     }
@@ -35,5 +55,7 @@
         }
       ]
     }
-  ]
+  ],
+  "buildCommand": "node scripts/build-qa-site.mjs",
+  "outputDirectory": "qa-dist"
 }
