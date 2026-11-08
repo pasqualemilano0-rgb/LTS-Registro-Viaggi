@@ -11,7 +11,7 @@ const safeCount=value=>Number.isSafeInteger(value)&&value>=0?value:null;
 
 export function setupSmartConsole({
  authorized,getDrivers,getReport,getCustomers,openView,openRecords,openCustomer,openManualCustomer,
- clearPrivateCode
+ prepareRateInline,clearPrivateCode
 }){
  const trigger=byId('smart-command-open'),overlay=byId('smart-overlay'),
   panel=byId('smart-panel'),closeButton=byId('smart-close'),
@@ -75,6 +75,32 @@ export function setupSmartConsole({
   const first=target.querySelector('input');
   first?.focus();
  }
+ function showRateTask(site=null){
+  if(!allowed())return;
+  const section=byId('company-rates-editor');
+  if(!section)return;
+  const selected=String(byId('company-rate-client')?.value||'').trim();
+  const place=String(byId('company-rate-city')?.value||'').trim();
+  const amount=String(byId('company-rate-amount')?.value||'').trim();
+  if(site?.name&&amount&&
+    (selected.toLocaleUpperCase('it-IT')!==String(site.name).trim().toLocaleUpperCase('it-IT')||
+     place.toLocaleUpperCase('it-IT')!==String(site.city).trim().toLocaleUpperCase('it-IT'))&&
+     !window.confirm('C’è una tariffa non salvata. Sostituire la bozza con la nuova sede?'))return;
+  restoreEmbedded();
+  home.hidden=true;embedded.hidden=false;detail.hidden=true;back.hidden=false;
+  mode='rate';heading.textContent=site?.name?'Tariffa della sede':'Gestisci tariffa';
+  moveExisting(section);
+  const editorStatus=byId('company-rates-status');
+  editorStatus.textContent='Verifica online dei dati aziendali…';
+  back.focus();
+  void prepareRateInline(site).then(ok=>{
+   if(!isVisible()||mode!=='rate')return;
+   if(!ok)editorStatus.textContent='Impossibile verificare l’elenco completo. Riprovare online prima di salvare.';
+  }).catch(()=>{
+   if(isVisible()&&mode==='rate')
+    editorStatus.textContent='Servizio non disponibile. Nessuna modifica è stata salvata.';
+  });
+ }
  function showDetail(spec,item){
   if(!allowed()||!spec||!item?.row)return;
   const record=item.row;
@@ -99,9 +125,7 @@ export function setupSmartConsole({
    appendAction(detailActions,'Gestisci accesso',()=>goTo('drivers'));
   }else if(spec.kind==='customers'){
    field('Località',record.city);field('Indirizzo',record.address);
-   appendAction(detailActions,'Modifica tariffa della sede',()=>{
-    close({focus:false});openCustomer(record);
-   });
+   appendAction(detailActions,'Modifica tariffa della sede',()=>showRateTask(record));
   }else if(spec.kind==='trips'){
    field('Data',record.date);field('Autista',record.driverName);
    field('Cliente',record.client);field('Località',record.city);
@@ -235,6 +259,7 @@ export function setupSmartConsole({
  function action(action){
   if(!allowed())return;
   if(action==='invite'||action==='restore')showTask(action);
+  else if(action==='inline-rate')showRateTask();
   else if(action==='drivers'||action==='trips'||action==='rates'||
           action==='alerts'||action==='exports'||action==='analysis'||
           action==='records'||action==='security')goTo(action);
