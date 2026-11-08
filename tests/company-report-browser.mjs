@@ -54,7 +54,7 @@ let adminArchive={
   extraCents:{adr:null,reefer:null,pernotto:null,preOrario:0,sabatoPorto:null,
    sabatoTrasferta:null,facchinaggioBilico:null,facchinaggioReefer:null},
   createdAt:'2026-11-04T08:00:00Z',updatedAt:'2026-11-04T08:00:00Z'}],
- customers:[{id:'c1',name:'CLIENTE ALFA',city:'NAPOLI',address:'VIA TEST 1',vat:'',phone:''},
+ customers:[{id:'c1',name:'CLIENTE ALFA',city:'NAPOLI',address:'VIA TEST 1, NAPOLI',vat:'',phone:''},
   {id:'c2',name:'CLIENTE AUTISTA',city:'CASERTA',address:'VIA PERSONALE 7',vat:'',phone:''}],
  tariffs:[],extraRates:{adr:null,reefer:null,pernotto:null,preOrario:0,
   sabatoPorto:null,sabatoTrasferta:null,facchinaggioBilico:null,facchinaggioReefer:null}
@@ -70,20 +70,25 @@ export const adminRecords=async(action,data={})=>{
   await new Promise(resolve=>setTimeout(resolve,90));
   if(data.expectedRevision!==adminArchiveRevision)throw new Error('Revision conflict');
   const rows=adminArchive.trips,idx=rows.findIndex(x=>x.id===data.recordId);
-  if(data.operation!=='update')throw new Error('Mock action unavailable');
-   if(data.category==='trip'&&idx>=0)
+  if(data.operation==='delete'){
+   if(data.category!=='customer')throw new Error('Mock delete supports customers only');
+   if(!data.reason||String(data.reason).trim().length<8)throw new Error('Audit reason required');
+   const toDelete=adminArchive.customers.findIndex(c=>c.id===data.recordId);
+   if(toDelete<0)throw new Error('Personal customer missing');
+   adminArchive.customers.splice(toDelete,1);
+  }else if(data.operation==='update'&&data.category==='trip'&&idx>=0)
     rows[idx]={...rows[idx],...data.patch,updatedAt:new Date().toISOString()};
-   else if(data.category==='customer'){
+   else if(data.operation==='update'&&data.category==='customer'){
     const customerIndex=adminArchive.customers.findIndex(c=>c.id===data.recordId);
     if(customerIndex<0)throw new Error('Personal customer missing');
     adminArchive.customers[customerIndex]={
      ...adminArchive.customers[customerIndex],...data.patch,updatedAt:new Date().toISOString()
     };
-   }else if(data.category==='extra')adminArchive.extraRates[data.recordId]=data.patch.cents;
+   }else if(data.operation==='update'&&data.category==='extra')adminArchive.extraRates[data.recordId]=data.patch.cents;
    else throw new Error('Mock action unavailable');
   adminArchiveRevision++;
   adminAudit.unshift({id:'44444444-4444-4444-8444-444444444444',at:new Date().toISOString(),
-   category:data.category,action:'update',recordId:data.recordId,reason:data.reason||'',
+   category:data.category,action:data.operation,recordId:data.recordId,reason:data.reason||'',
    beforeRevision:adminArchiveRevision-1,afterRevision:adminArchiveRevision});
   return {revision:adminArchiveRevision,state:structuredClone(adminArchive),
    audit:structuredClone(adminAudit)};
@@ -535,6 +540,32 @@ try{
  assert.equal(await page.locator('#records-tabs button[data-kind="customer"]').getAttribute('aria-pressed'),'true');
  await page.waitForFunction(()=>document.querySelector('#records-list').textContent.includes('CLIENTE AUTISTA CORRETTO'));
  assert.match(await page.locator('#records-list').textContent(),/CLIENTE AUTISTA CORRETTO/);
+ // The mobile delete control must open an in-card audited confirmation.
+ await page.waitForFunction(()=>document.querySelector('#records-shared-status').textContent.includes('verificato'));
+ const personalCard=page.locator('#records-list .records-card').filter({hasText:'CLIENTE AUTISTA CORRETTO'});
+ await personalCard.locator('button.records-danger').click();
+ assert.equal(await personalCard.locator('.records-delete-confirm').isVisible(),true);
+ await personalCard.locator('.records-delete-actions button').filter({hasText:'Annulla'}).click();
+ assert.equal(await personalCard.locator('.records-delete-confirm').count(),0);
+ assert.equal(await page.locator('#records-customers').textContent(),'2',
+  'Cancelling deletion must leave all personal records unchanged');
+ // A matching Google Maps destination must be verified before removing only the personal duplicate.
+ const duplicate=page.locator('#records-list .records-card').filter({hasText:'CLIENTE ALFA'});
+ await duplicate.locator('button.records-card-certify').click();
+ await page.locator('#records-editor .records-certify-label input[type=url]').fill('https://maps.app.goo.gl/exampleA');
+ await page.locator('#records-editor .records-certify-read').click();
+ await page.waitForFunction(()=>document.querySelector('.records-certify-preview')?.hidden===false);
+ assert.match(await page.locator('.records-certify-result').textContent(),/già nella lista condivisa/i);
+ assert.equal(await page.locator('#records-customers').textContent(),'2',
+  'Maps verification alone must never delete a customer');
+ await page.locator('.records-certify-choice input[type=checkbox]').check();
+ await page.locator('.records-certify-submit').click();
+ await page.waitForFunction(()=>document.querySelector('#records-customers').textContent==='1');
+ assert.equal(await page.locator('#records-list').textContent().then(x=>x.includes('CLIENTE ALFA')),false,
+  'Only the reviewed personal duplicate should disappear');
+ assert.match(await page.locator('#records-list').textContent(),/CLIENTE AUTISTA CORRETTO/);
+ await page.locator('#records-tabs button[data-kind="history"]').click();
+ assert.match(await page.locator('#records-list').textContent(),/DELETE/);
  // One shared company extra price: no individual driver selector.
  await openAdminTab('rates-tab');
  await page.waitForFunction(()=>document.querySelectorAll('.company-extra-row').length===8);
