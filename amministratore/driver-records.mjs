@@ -8,7 +8,7 @@ import {buildDriverCustomerCatalog} from './driver-customer-catalog.mjs?v=202611
 import {attachPersonalCustomerCertification} from './personal-customer-maps-ui.mjs?v=20261108-certify-v1';
 import {RECORD_FILTERS,assessPersonalCustomer,archiveCustomerMetrics,
  customerMatchesQuickFilter,tripWorklistSummary,archiveMatchesSearch}
- from './records-intelligence.mjs?v=20261108-worklist-v1';
+ from './records-intelligence.mjs?v=20261108-rc3-v1';
 const $=id=>document.getElementById(id);
 const make=(tag,className='',txt='')=>{
  const e=document.createElement(tag);
