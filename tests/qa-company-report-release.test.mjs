@@ -14,7 +14,7 @@ test('dashboard accessibile solo dal pannello admin, CSP e versioni coerenti',()
    'pro-city','pro-container','pro-compare-driver','pro-alerts','pro-alert-count',
    'pro-export-pdf','pro-export-xlsx','pro-records'])
    assert.match(html,new RegExp('id="'+id+'"'));
- assert.match(html,/admin\.mjs\?v=20261107-driver-management-fixes-v1/);
+ assert.match(html,/admin\.mjs\?v=20261108-inline-delete-v1/);
  assert.match(html,/admin\.css\?v=20261104-company-v3/);
  assert.match(js,/account-access\.mjs\?v=20261107-realtime-v1/);
  assert.match(js,/setupReport\(account\)/);
@@ -26,7 +26,7 @@ test('dashboard accessibile solo dal pannello admin, CSP e versioni coerenti',()
  assert.match(report,/function driverProfile\(/);
  assert.match(report,/function driverDirectory\(/);
  assert.match(report,/function renderAmountChart\(/);
- assert.match(js,/report\.mjs\?v=20261107-driver-management-fixes-v1/);
+ assert.match(js,/report\.mjs\?v=20261108-inline-delete-v1/);
  assert.match(report,/setupInsights\(account\)/);
  const advanced=read('amministratore/report-insights.mjs');
  const exportsModule=read('amministratore/report-export.mjs');
@@ -281,7 +281,7 @@ test('driver trip picker searches Maps, manual company tariffs and personal driv
  assert.match(css,/records-site-results\[hidden\]/);
  assert.match(css,/records-site-option-address/);
  assert.match(html,/driver-records[.]css[?]v=20261107-driver-private-customers-v1/);
- assert.match(report,/driver-records[.]mjs[?]v=20261107-driver-management-fixes-v1/);
+ assert.match(report,/driver-records[.]mjs[?]v=20261108-inline-delete-v1/);
  assert.doesNotMatch([source,css].join('\n'),/innerHTML|SUPABASE_SERVICE_ROLE_KEY|sb_secret_/);
 });
 
@@ -316,7 +316,10 @@ test('administrator has an MFA-only editor for each driver and all personal reco
  assert.match(editor,/operation:'restore'/);
  assert.match(editor,/auditId:entry[.]id/);
  assert.match(editor,/window[.]confirm\(/);
- assert.match(editor,/window[.]prompt\(/);
+ assert.match(editor,/openDeleteConfirmation\(item,card,actions\)/);
+ assert.match(editor,/records-delete-confirm/);
+ assert.match(editor,/text[.]length<8/);
+ assert.doesNotMatch(editor,/window[.]prompt\(/);
  assert.match(editor,/formatMoney/);
  assert.match(editor,/extraCents/);
  assert.match(editor,/Tariffa personale/);
