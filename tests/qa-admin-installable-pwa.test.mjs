@@ -48,7 +48,7 @@ test('admin worker never precaches private content or personal records', () => {
   assert.match(precache[1], /manifest\.webmanifest/);
   assert.doesNotMatch(precache[1], /admin\.mjs|index\.html|account|driver|trip|report|token|session/i);
   assert.match(sw, /request\.mode === 'navigate'/);
-  assert.match(sw, /event\.respondWith\(fetch\(request\)\.catch/);
+  assert.match(sw, /event\.respondWith\(fetch\(request, \{ cache: 'no-store' \}\)\.catch/);
   assert.match(sw, /url\.origin !== self\.location\.origin/);
   assert.match(sw, /ADMIN_CACHE_PREFIX/);
   assert.doesNotMatch(sw, /\.\.\/sw\.js|push-worker|caches\.match\(request/);
