@@ -17,11 +17,12 @@
   <link rel="stylesheet" href="./admin.css?v=20261104-company-v3">
   <link rel="stylesheet" href="./pro-theme.css?v=20261104-console-v5">
   <link rel="stylesheet" href="./dashboard-v6.css?v=20261104-mobile-v7">
+  <link rel="stylesheet" href="./smart-console.css?v=20261108-smart-v1">
   <link rel="stylesheet" href="./customer-overview.css?v=20261107-manual-shared-v1">
   <link rel="stylesheet" href="./company-rates.css?v=20261107-manual-shared-v1">
   <link rel="stylesheet" href="./driver-records.css?v=20261107-driver-private-customers-v1">
   <link rel="stylesheet" href="../visual-theme.css?v=20261108-rc3-v1">
-  <script type="module" src="./admin.mjs?v=20261108-rc3-v1"></script>
+  <script type="module" src="./admin.mjs?v=20261108-smart-v1"></script>
   <script type="module" src="./install-pwa.mjs?v=20261108-admin-pwa-v1"></script>
   <script type="module" src="./dashboard-mobile-nav.mjs?v=20261107-records-admin-v2"></script>
 </head>
@@ -33,6 +34,7 @@
     </a>
     <div class="top-actions">
       <span class="secure-label"><span aria-hidden="true">●</span> Area riservata</span>
+      <button id="smart-command-open" class="button outline small" type="button" aria-haspopup="dialog" aria-controls="smart-panel" aria-expanded="false" hidden>⌕ Cerca · Azioni</button>
       <button id="install-admin" class="button outline small" type="button" hidden>Installa app</button>
       <button id="logout" class="button outline small" type="button" hidden>Esci</button>
     </div>
@@ -366,6 +368,7 @@
             <p>Controlla l'andamento del mese, individua le registrazioni da verificare e apri le aree operative. I risultati provengono solo dagli archivi sincronizzati.</p>
           </div>
           <div class="console-shortcuts" aria-label="Accesso rapido alle sezioni">
+            <button type="button" data-smart-open>Centro comandi intelligente <span aria-hidden="true">✦</span></button>
             <button type="button" data-open-section="drivers">Gestisci autisti <span aria-hidden="true">›</span></button>
             <button type="button" data-open-section="trips">Consulta viaggi <span aria-hidden="true">›</span></button>
             <button type="button" data-open-section="records">Modifica inserimenti autisti <span aria-hidden="true">›</span></button>
@@ -618,5 +621,40 @@
       </section>
     </div>
   </main>
+  <div id="smart-overlay" class="smart-overlay" hidden>
+    <button id="smart-scrim" class="smart-scrim" type="button" tabindex="-1" aria-label="Chiudi centro comandi"></button>
+    <section id="smart-panel" class="smart-panel" role="dialog" aria-modal="true" aria-labelledby="smart-heading">
+      <div class="smart-head">
+        <div><p class="eyebrow">LTS · CENTRO COMANDI</p><h2 id="smart-heading">Trova e agisci</h2></div>
+        <div class="smart-head-buttons">
+          <button type="button" id="smart-back" hidden>Indietro</button>
+          <button type="button" id="smart-close" aria-label="Chiudi centro comandi">Chiudi</button>
+        </div>
+      </div>
+      <p class="smart-intro">Cerca e lavora senza perdere la schermata corrente. Le azioni riservate richiedono sempre l'accesso amministratore.</p>
+      <div id="smart-home">
+        <label class="smart-search-label" for="smart-search">Ricerca rapida in autisti, clienti e viaggi
+          <input id="smart-search" type="search" placeholder="Nome, telefono, cliente, container…" autocomplete="off" maxlength="120" aria-controls="smart-results">
+        </label>
+        <div class="smart-quick-actions" aria-label="Azioni amministratore senza cambio pagina">
+          <button type="button" class="smart-action primary" data-smart-action="invite">＋ Invita autista</button>
+          <button type="button" class="smart-action" data-smart-action="restore">↺ Reinserisci autista</button>
+          <button type="button" class="smart-action" data-smart-action="records">▤ Archivi e modifiche</button>
+          <button type="button" class="smart-action" data-smart-action="customers">◉ Clienti aziendali</button>
+          <button type="button" class="smart-action" data-smart-action="trips">▤ Registro viaggi</button>
+          <button type="button" class="smart-action" data-smart-action="rates">€ Tariffe e servizi</button>
+          <button type="button" class="smart-action" data-smart-action="alerts">⚑ Anomalie da verificare</button>
+          <button type="button" class="smart-action" data-smart-action="exports">↓ Report PDF / Excel</button>
+        </div>
+        <div id="smart-context" aria-label="Riepilogo operativo dai dati caricati" aria-live="polite"></div>
+        <div id="smart-results" class="smart-results" aria-live="polite"></div>
+      </div>
+      <div id="smart-embedded" hidden>
+        <p class="smart-security-note">Il modulo è quello originale dell'app: la tua schermata resta al suo posto. Nessuna operazione avviene senza la tua conferma.</p>
+        <div id="smart-embed-body"></div>
+        <p id="smart-secret-hint" class="smart-security-note" hidden>Copia il codice monouso prima di chiudere. Non verrà conservato.</p>
+      </div>
+    </section>
+  </div>
 </body>
 </html>
