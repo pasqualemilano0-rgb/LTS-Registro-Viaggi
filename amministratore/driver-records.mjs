@@ -5,6 +5,7 @@ import {SERVICES,formatMoney,toCents,buildTripAmountContext,tripAmounts,saturday
 import {sharedMapsCustomers} from '../shared-maps-client.mjs';
 import {companyFareSnapshot} from '../shared/company-fares.mjs';
 import {buildDriverCustomerCatalog} from './driver-customer-catalog.mjs?v=20261107-driver-customer-picker-v1';
+import {attachPersonalCustomerCertification} from './personal-customer-maps-ui.mjs?v=20261108-certify-v1';
 const $=id=>document.getElementById(id);
 const make=(tag,className='',txt='')=>{
  const e=document.createElement(tag);
@@ -502,6 +503,21 @@ export function setupDriverRecords(account){
     recordId:item?.id||crypto.randomUUID(),patch,reason:input('reason').value});
   });
   editor.append(form);editorBaseline=formSnapshot(form);
+  if(kind==='customer'&&item){
+   const customerOwner=selectedId,accountOwner=account.getAccountId(),openEpoch=epoch;
+   const certification=attachPersonalCustomerCertification({
+    form,customer:item,
+    isActive:()=>authorized()&&!busy&&!loading&&
+     account.getAccountId()===accountOwner&&selectedId===customerOwner&&
+     epoch===openEpoch&&category==='customer'&&editor.contains(form),
+    isUnchanged:()=>formSnapshot(form)===editorBaseline,
+    currentCustomers:()=>Array.isArray(state?.customers)?state.customers:[],
+    removePersonal:reason=>mutate({operation:'delete',category:'customer',
+     recordId:item.id,reason}),
+    notice
+   });
+   activePickerDisposers.push(certification.dispose);
+  }
   editor.scrollIntoView({block:'start',behavior:'smooth'});
   if(kind==='trip'){
    const personalCustomers=Array.isArray(state?.customers)?state.customers:[];
