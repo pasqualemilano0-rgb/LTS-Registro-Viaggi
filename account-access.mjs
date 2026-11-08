@@ -1,10 +1,58 @@
+
+/* QA driver archive: this simulates remote storage in the current browser only.
+   No real server, no real credentials, no cross-device synchronization.
+   Do not reuse in a production release. */
+import {emptyState,validateState} from '/LTS-Registro-Viaggi/shared/domain.mjs';
+export const isEnabled=()=>true;
+export const getRealtimeCredentials=()=>null;
+export const login=async()=>({mfa_enrolled:true,mfa_verified:true});
+export const enrollBackupAdminTotp=async()=>({});
+export const enrollAdminTotp=async()=>({});
+export const verifyAdminTotp=async()=>({mfa_verified:true});
+const QA_DRIVER_OWNER='account:aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+const QA_DRIVER_KEY='lts-private-demo-driver-state-v1';
+function driverSnapshot(){
+ try{
+  const snapshot=JSON.parse(localStorage.getItem(QA_DRIVER_KEY)||'null');
+  if(snapshot&&Number.isInteger(snapshot.revision)&&snapshot.revision>=0)
+   return {...snapshot,state:validateState(snapshot.state)};
+ }catch{}
+ return {revision:1,state:emptyState(),updatedAt:new Date().toISOString()};
+}
+function qaOfflineError(){
+ const error=new Error('QA: dispositivo offline. La copia rimane sul telefono.');
+ error.offline=true;return error;
+}
+export async function archiveRequest(method,body){
+ if(navigator.onLine===false)throw qaOfflineError();
+ const stored=driverSnapshot();
+ const response=record=>({user:{id:QA_DRIVER_OWNER,linked:true},
+  linked:true,revision:record.revision,state:structuredClone(record.state),
+  updatedAt:record.updatedAt});
+ if(method==='GET')return response(stored);
+ if(method!=='POST')throw Error('Metodo non disponibile in QA.');
+ if(body?.expectedUserId!==QA_DRIVER_OWNER){
+  const error=new Error('QA: archivio differente.');error.status=403;throw error;
+ }
+ if(body?.baseRevision!==stored.revision){
+  const error=new Error('QA: conflitto di revisione.');
+  error.status=409;throw error;
+ }
+ if(typeof body?.requestId!=='string'||body.requestId.length<8)
+  throw Error('QA: identificativo richiesta mancante.');
+ const next={revision:stored.revision+1,
+  state:validateState(body.state),updatedAt:new Date().toISOString()};
+ localStorage.setItem(QA_DRIVER_KEY,JSON.stringify(next));
+ return response(next);
+}
+
 /* QA PRIVATA — dati completamente sintetici; NON caricare su main. */
 
 export const hasSession=()=>true;
 export const isVerified=()=>true;
 export const getRole=()=> 'admin';
 export const getAccountId=()=> 'account:33333333-3333-4333-8333-333333333333';
-export const verifySession=async()=>({mfa_enrolled:true,mfa_verified:true});
+export const verifySession=async()=>({mfa_enrolled:true,mfa_verified:true,user_id:'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'});
 export const listAdminMfaFactors=async()=>[{label:'Principale',id:'a'}];
 export const manageDrivers=async(action)=>action==='list'?{drivers:[
  {id:'11111111-1111-4111-8111-111111111111',
