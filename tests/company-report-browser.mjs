@@ -8,7 +8,8 @@ import {createRequire} from 'node:module';
 
 const dir=fileURLToPath(new URL('../',import.meta.url));
 const runner=process.env.LTS_BROWSER_PLAYWRIGHT||'/tmp/lts-browser-test';
-const {chromium}=createRequire(import.meta.url)(runner+'/node_modules/playwright');
+const {chromium,webkit}=createRequire(import.meta.url)(runner+'/node_modules/playwright');
+const engine=process.env.LTS_BROWSER_ENGINE==='webkit'?'webkit':'chromium';
 const mockAccount=String.raw`
 export const hasSession=()=>true;
 export const isVerified=()=>true;
@@ -46,6 +47,7 @@ export const companyTariffs=async(action,data={})=>{
 
 let adminArchiveRevision=3;
 let adminAudit=[];
+const removedPersonalRecords=new Map();
 let adminArchive={
  schemaVersion:1,profile:{firstName:'Mario',lastName:'Rossi'},
  trips:[{id:'t1',date:'2026-11-04',client:'CLIENTE ALFA',city:'NAPOLI',
@@ -54,7 +56,7 @@ let adminArchive={
   extraCents:{adr:null,reefer:null,pernotto:null,preOrario:0,sabatoPorto:null,
    sabatoTrasferta:null,facchinaggioBilico:null,facchinaggioReefer:null},
   createdAt:'2026-11-04T08:00:00Z',updatedAt:'2026-11-04T08:00:00Z'}],
- customers:[{id:'c1',name:'CLIENTE ALFA',city:'NAPOLI',address:'VIA TEST 1',vat:'',phone:''},
+ customers:[{id:'c1',name:'CLIENTE ALFA',city:'NAPOLI',address:'VIA TEST 1, NAPOLI',vat:'',phone:''},
   {id:'c2',name:'CLIENTE AUTISTA',city:'CASERTA',address:'VIA PERSONALE 7',vat:'',phone:''}],
  tariffs:[],extraRates:{adr:null,reefer:null,pernotto:null,preOrario:0,
   sabatoPorto:null,sabatoTrasferta:null,facchinaggioBilico:null,facchinaggioReefer:null}
@@ -70,20 +72,33 @@ export const adminRecords=async(action,data={})=>{
   await new Promise(resolve=>setTimeout(resolve,90));
   if(data.expectedRevision!==adminArchiveRevision)throw new Error('Revision conflict');
   const rows=adminArchive.trips,idx=rows.findIndex(x=>x.id===data.recordId);
-  if(data.operation!=='update')throw new Error('Mock action unavailable');
-   if(data.category==='trip'&&idx>=0)
+  if(data.operation==='delete'){
+   if(data.category!=='customer')throw new Error('Mock delete supports customers only');
+   if(!data.reason||String(data.reason).trim().length<8)throw new Error('Audit reason required');
+   const toDelete=adminArchive.customers.findIndex(c=>c.id===data.recordId);
+   if(toDelete<0)throw new Error('Personal customer missing');
+   removedPersonalRecords.set(data.recordId,structuredClone(adminArchive.customers[toDelete]));
+   adminArchive.customers.splice(toDelete,1);
+  }else if(data.operation==='restore'){
+   if(data.category!=='customer'||!data.auditId||
+      !removedPersonalRecords.has(data.recordId)||
+      adminArchive.customers.some(c=>c.id===data.recordId))
+    throw new Error('Restore not authorized or original already exists');
+   adminArchive.customers.push(removedPersonalRecords.get(data.recordId));
+   removedPersonalRecords.delete(data.recordId);
+  }else if(data.operation==='update'&&data.category==='trip'&&idx>=0)
     rows[idx]={...rows[idx],...data.patch,updatedAt:new Date().toISOString()};
-   else if(data.category==='customer'){
+   else if(data.operation==='update'&&data.category==='customer'){
     const customerIndex=adminArchive.customers.findIndex(c=>c.id===data.recordId);
     if(customerIndex<0)throw new Error('Personal customer missing');
     adminArchive.customers[customerIndex]={
      ...adminArchive.customers[customerIndex],...data.patch,updatedAt:new Date().toISOString()
     };
-   }else if(data.category==='extra')adminArchive.extraRates[data.recordId]=data.patch.cents;
+   }else if(data.operation==='update'&&data.category==='extra')adminArchive.extraRates[data.recordId]=data.patch.cents;
    else throw new Error('Mock action unavailable');
   adminArchiveRevision++;
   adminAudit.unshift({id:'44444444-4444-4444-8444-444444444444',at:new Date().toISOString(),
-   category:data.category,action:'update',recordId:data.recordId,reason:data.reason||'',
+   category:data.category,action:data.operation,recordId:data.recordId,reason:data.reason||'',
    beforeRevision:adminArchiveRevision-1,afterRevision:adminArchiveRevision});
   return {revision:adminArchiveRevision,state:structuredClone(adminArchive),
    audit:structuredClone(adminAudit)};
@@ -226,7 +241,7 @@ await new Promise(r=>server.listen(0,'127.0.0.1',r));
 const origin='http://127.0.0.1:'+server.address().port;
 let browser;
 try{
- browser=await chromium.launch({headless:true,args:['--no-sandbox']});
+ browser=await (engine==='webkit'?webkit:chromium).launch(engine==='webkit'?{headless:true}:{headless:true,args:['--no-sandbox']});
  const page=await browser.newPage({viewport:{width:390,height:844},deviceScaleFactor:2,isMobile:true,hasTouch:true});
  const errors=[];page.on('pageerror',e=>errors.push(String(e)));
  const mobileMore=page.locator('#admin-nav-more');
@@ -535,6 +550,47 @@ try{
  assert.equal(await page.locator('#records-tabs button[data-kind="customer"]').getAttribute('aria-pressed'),'true');
  await page.waitForFunction(()=>document.querySelector('#records-list').textContent.includes('CLIENTE AUTISTA CORRETTO'));
  assert.match(await page.locator('#records-list').textContent(),/CLIENTE AUTISTA CORRETTO/);
+ // The mobile delete control must open an in-card audited confirmation.
+ await page.waitForFunction(()=>document.querySelector('#records-shared-status').textContent.includes('verificato'));
+ const personalCard=page.locator('#records-list .records-card').filter({hasText:'CLIENTE AUTISTA CORRETTO'});
+ await personalCard.locator('button.records-danger').click();
+ assert.equal(await personalCard.locator('.records-delete-confirm').isVisible(),true);
+ await personalCard.locator('.records-delete-actions button').filter({hasText:'Annulla'}).click();
+ assert.equal(await personalCard.locator('.records-delete-confirm').count(),0);
+ assert.equal(await page.locator('#records-customers').textContent(),'2',
+  'Cancelling deletion must leave all personal records unchanged');
+ // A matching Google Maps destination must be verified before removing only the personal duplicate.
+ const duplicate=page.locator('#records-list .records-card').filter({hasText:'CLIENTE ALFA'});
+ await duplicate.locator('button.records-card-certify').click();
+ await page.locator('#records-editor .records-certify-label input[type=url]').fill('https://maps.app.goo.gl/exampleA');
+ await page.locator('#records-editor .records-certify-read').click();
+ await page.waitForFunction(()=>document.querySelector('.records-certify-preview')?.hidden===false);
+ assert.match(await page.locator('.records-certify-result').textContent(),/già nella lista condivisa/i);
+ assert.equal(await page.locator('#records-customers').textContent(),'2',
+  'Maps verification alone must never delete a customer');
+ await page.locator('.records-certify-choice input[type=checkbox]').check();
+ await page.locator('.records-certify-submit').click();
+ await page.waitForFunction(()=>document.querySelector('#records-customers').textContent==='1');
+ assert.equal(await page.locator('#records-list').textContent().then(x=>x.includes('CLIENTE ALFA')),false,
+  'Only the reviewed personal duplicate should disappear');
+ assert.match(await page.locator('#records-list').textContent(),/CLIENTE AUTISTA CORRETTO/);
+ await page.locator('#records-tabs button[data-kind="history"]').click();
+ assert.match(await page.locator('#records-list').textContent(),/DELETE/);
+ // Restore the exact deleted private row without touching the historical trip.
+ page.once('dialog',dialog=>dialog.accept());
+ await page.locator('#records-list .records-card').filter({hasText:'DELETE'})
+  .first().locator('button').filter({hasText:'Ripristina'}).click();
+ await page.waitForFunction(()=>document.querySelector('#records-revision').textContent==='7');
+ assert.equal(await page.locator('#records-customers').textContent(),'2');
+ assert.equal(await page.locator('#records-trips').textContent(),'1');
+ assert.match(await page.locator('#records-list').textContent(),/RESTORE/);
+ const restoredDeletion=page.locator('#records-list .records-card').filter({hasText:'DELETE'}).first();
+ assert.match(await restoredDeletion.textContent(),/Già ripristinato/);
+ assert.equal(await restoredDeletion.locator('button').filter({hasText:'Ripristina'}).count(),0,
+  'An audit deletion must not offer Restore after a completed restoration');
+ await page.locator('#records-tabs button[data-kind="customer"]').click();
+ assert.match(await page.locator('#records-list').textContent(),/CLIENTE ALFA/);
+ assert.match(await page.locator('#records-list').textContent(),/CLIENTE AUTISTA CORRETTO/);
  // One shared company extra price: no individual driver selector.
  await openAdminTab('rates-tab');
  await page.waitForFunction(()=>document.querySelectorAll('.company-extra-row').length===8);
@@ -590,7 +646,7 @@ try{
  assert.equal(errors.length,0,'No JavaScript errors: '+errors.join(';'));
  // Data source remains read-only, notes never render as HTML, and no horizontal page scroll on mobile.
  assert.equal(await page.locator('#report-month').inputValue(),'2026-11');
- console.log('PASS Chromium mobile 390px: nine real pages, admin MFA, charts, filters, PDF/Excel, anomaly drill-down, security, logout wipe');
+ console.log('PASS '+engine+' mobile 390px: nine real pages, admin MFA, charts, filters, PDF/Excel, anomaly drill-down, security, logout wipe');
  await page.close();
  // Desktop navigation: the protected dashboard must retain working tabs with its
  // new dark sidebar; never make a non-verified page visible via CSS.

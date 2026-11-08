@@ -2,7 +2,7 @@
 import {setupInsights} from './report-insights.mjs?v=20261104-company-v3';
 import {setupCustomerOverview} from './customer-overview.mjs?v=20261107-manual-shared-v1';
 import {setupCompanyRates} from './company-rates.mjs?v=20261107-manual-shared-v1';
-import {setupDriverRecords} from './driver-records.mjs?v=20261108-worklist-v1';
+import {setupDriverRecords} from './driver-records.mjs?v=20261108-rc3-v1';
 import {setupCompanyExtras} from './company-extras.mjs?v=20261107-company-extras-v2';
 const el=id=>document.getElementById(id);
 function node(tag,className='',value=''){
@@ -316,7 +316,8 @@ export function setupReport(account){
    el('report-total').textContent=currency(summary.knownTotalCents);
    el('report-missing').textContent=String(summary.missingTariffCount);
    const warnings=[];
-   if(summary.missingTariffCount)warnings.push('Importi parziali: '+summary.missingTariffCount+' viaggi con tariffe mancanti.');
+   if(summary.missingTariffCount)warnings.push('Importi parziali: '+summary.missingTariffCount+
+    (summary.missingTariffCount===1?' viaggio con tariffa mancante.':' viaggi con tariffe mancanti.'));
    if(result.incompleteArchives)warnings.push(result.incompleteArchives+' archivi non leggibili, esclusi dai totali: report incompleto.');
    el('report-warning').textContent=warnings.join(' ');
    renderDayChart(result.chart);

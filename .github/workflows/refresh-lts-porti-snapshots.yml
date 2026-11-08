@@ -48,46 +48,35 @@ jobs:
           python -m unittest discover -s tests -p 'test_refresh_porti_from_worker.py' -v
           python -m unittest discover -s tests -p 'test_public_snapshot_freshness.py' -v
 
-  publish:
+
+  prepare-snapshot-candidate:
+    # Never publish directly from a scheduled run. Production release is separate.
     if: github.event_name != 'pull_request'
     needs: test
     runs-on: ubuntu-latest
     timeout-minutes: 8
     permissions:
-      contents: write
+      contents: read
     steps:
       - uses: actions/checkout@v4
         with:
-          persist-credentials: true
+          persist-credentials: false
           ref: main
-          fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Fast-forward before collecting new public snapshots
-        run: git pull --ff-only origin main
-      - name: Read current Cloudflare monitoring and publish only 3 vetted JSON files
+      - name: Prepare candidate snapshots from Cloudflare, without committing
         run: |
           python scripts/refresh_porti_from_worker.py
           git diff --check -- porti/data/conateco.json porti/data/tfg_schedule.json porti/data/sct.json
-      - name: Publish only changed official public vessel schedules
-        run: |
-          set -eu
-          git add -- porti/data/conateco.json porti/data/tfg_schedule.json porti/data/sct.json
-          if git diff --cached --quiet; then
-            echo "Nessuno snapshot più recente da pubblicare"
-            exit 0
-          fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git diff --cached --name-only | while IFS= read -r path; do
-            case "$path" in
-              porti/data/conateco.json|porti/data/tfg_schedule.json|porti/data/sct.json) ;;
-              *) echo "FILE NON CONSENTITO: $path"; exit 1 ;;
-            esac
-          done
-          git commit -m "LTS Porti: aggiorna programmi navi verificati dal monitor Cloudflare"
-          git push origin HEAD:main
-      - name: Fail closed if any of the 3 published LTS snapshots is stale
-        run: |
-          python scripts/check_public_snapshot_freshness.py
+      - name: Fail closed if a candidate snapshot is stale
+        run: python scripts/check_public_snapshot_freshness.py
+      - name: Save unpublished snapshots for QA
+        uses: actions/upload-artifact@v4
+        with:
+          name: lts-porti-snapshot-unpublished
+          path: |
+            porti/data/conateco.json
+            porti/data/tfg_schedule.json
+            porti/data/sct.json
+          retention-days: 7

@@ -24,8 +24,13 @@ on:
       - 'tests/qa-company-report-release.test.mjs'
       - 'tests/qa-report-production-http-smoke.mjs'
       - 'tests/company-report-browser.mjs'
+      - 'tests/qa-offline-worker-browser.mjs'
+      - 'tests/qa-offline-store-browser.mjs'
       - 'tests/report-export.test.mjs'
       - 'tests/qa-account-release.test.mjs'
+      - 'tests/qa-release-versions.test.mjs'
+      - 'tests/qa-regression-contract.test.mjs'
+      - 'tests/qa-no-auto-publish.test.mjs'
       - 'tests/qa-driver-management-fixes.test.mjs'
       - '.github/workflows/qa-company-report-release.yml'
   push:
@@ -51,6 +56,8 @@ on:
       - 'tests/qa-company-report-release.test.mjs'
       - 'tests/qa-report-production-http-smoke.mjs'
       - 'tests/company-report-browser.mjs'
+      - 'tests/qa-offline-worker-browser.mjs'
+      - 'tests/qa-offline-store-browser.mjs'
       - 'tests/qa-pro-theme.test.mjs'
       - 'tests/qa-driver-management-fixes.test.mjs'
       - '.github/workflows/qa-company-report-release.yml'
@@ -87,7 +94,7 @@ jobs:
           node --check tests/company-report-browser.mjs
           node --check tests/qa-report-production-http-smoke.mjs
           node --test tests/admin-record-operations.test.mjs
-          node --test tests/qa-driver-management-fixes.test.mjs tests/qa-manual-customers.test.mjs tests/qa-realtime.test.mjs tests/qa-company-report-release.test.mjs tests/qa-pro-theme.test.mjs tests/qa-account-release.test.mjs tests/driver-session-vault.test.mjs tests/leaked-password-protection.test.mjs tests/report-export.test.mjs
+          node --test tests/qa-driver-management-fixes.test.mjs tests/qa-manual-customers.test.mjs tests/qa-realtime.test.mjs tests/qa-company-report-release.test.mjs tests/qa-pro-theme.test.mjs tests/qa-account-release.test.mjs tests/driver-session-vault.test.mjs tests/leaked-password-protection.test.mjs tests/report-export.test.mjs tests/qa-release-versions.test.mjs tests/qa-regression-contract.test.mjs tests/qa-no-auto-publish.test.mjs
   production-endpoint-smoke:
     runs-on: ubuntu-24.04
     timeout-minutes: 5
@@ -119,5 +126,32 @@ jobs:
       - name: Mobile dashboard flow with synthetic mock records
         run: LTS_BROWSER_PLAYWRIGHT="$RUNNER_TEMP/lts-playwright" node tests/company-report-browser.mjs
 
+      - name: PWA offline Chromium cache and private API regression
+        run: LTS_BROWSER_PLAYWRIGHT="$RUNNER_TEMP/lts-playwright" node tests/qa-offline-worker-browser.mjs
+
+      - name: IndexedDB offline edits and outbox replay in Chromium
+        run: LTS_BROWSER_PLAYWRIGHT="$RUNNER_TEMP/lts-playwright" node tests/qa-offline-store-browser.mjs
+
       - name: Verify live protected driver records API
         run: node --test tests/qa-admin-records-live.test.mjs
+
+
+  webkit-safari:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install isolated Safari WebKit
+        run: |
+          mkdir -p "$RUNNER_TEMP/lts-playwright"
+          npm install --prefix "$RUNNER_TEMP/lts-playwright" --no-save --no-package-lock playwright@1.56.1
+          "$RUNNER_TEMP/lts-playwright/node_modules/.bin/playwright" install --with-deps webkit
+      - name: Safari WebKit mobile admin, certifies Maps and restores archived customer
+        run: LTS_BROWSER_PLAYWRIGHT="$RUNNER_TEMP/lts-playwright" LTS_BROWSER_ENGINE=webkit node tests/company-report-browser.mjs
+      - name: Safari WebKit offline IndexedDB and outbox consistency
+        run: LTS_BROWSER_PLAYWRIGHT="$RUNNER_TEMP/lts-playwright" LTS_BROWSER_ENGINE=webkit node tests/qa-offline-store-browser.mjs

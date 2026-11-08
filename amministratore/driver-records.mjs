@@ -7,8 +7,8 @@ import {companyFareSnapshot} from '../shared/company-fares.mjs';
 import {buildDriverCustomerCatalog} from './driver-customer-catalog.mjs?v=20261107-driver-customer-picker-v1';
 import {attachPersonalCustomerCertification} from './personal-customer-maps-ui.mjs?v=20261108-certify-v1';
 import {RECORD_FILTERS,assessPersonalCustomer,archiveCustomerMetrics,
- customerMatchesQuickFilter,tripWorklistSummary,archiveMatchesSearch}
- from './records-intelligence.mjs?v=20261108-worklist-v1';
+ customerMatchesQuickFilter,tripWorklistSummary,archiveMatchesSearch,archivedRestoreStatus}
+ from './records-intelligence.mjs?v=20261108-rc3-v1';
 const $=id=>document.getElementById(id);
 const make=(tag,className='',txt='')=>{
  const e=document.createElement(tag);
@@ -172,7 +172,8 @@ export function setupDriverRecords(account){
   desiredPhone='',visibleLimit=35,catalogRequest=0,activePickerDisposers=[],
   editorBaseline='',writeSeq=0,quickFilter='all',sharedSites=null,
   sharedLoading=false,sharedSeq=0,sharedCheckedAt='',sharedError=false,
-  cachedSources=new Map(),cachedTripSummary=null,cachedAmountContext=null;
+  cachedSources=new Map(),cachedTripSummary=null,cachedAmountContext=null,
+  cachedCustomerMetrics=null,cachedCustomerShared=null;
  const authorized=()=>account.isVerified()&&account.getRole()==='admin'&&
   !$('dashboard').hidden&&$('dashboard').dataset.view==='records';
  const notice=(message,problem=false)=>{
@@ -216,7 +217,7 @@ export function setupDriverRecords(account){
    item.append(make('small','',explain));quality.append(item);
   };
   if(category==='customer'){
-   const m=state?archiveCustomerMetrics(state.customers,sharedSites):null;
+   const m=state?customerMetrics():null;
    metric('Indirizzo mancante',m?.missing,'Anagrafiche da completare');
    metric('Possibili duplicati',m?.possible,'Da verificare, mai eliminati da soli');
    metric('Già nel condiviso',m?.shared,'Corrispondenza di nome, città e via');
@@ -260,7 +261,18 @@ export function setupDriverRecords(account){
    }
   }
  }
- function invalidateDerived(){cachedSources.clear();cachedTripSummary=null;cachedAmountContext=null;}
+ function invalidateDerived(){
+  cachedSources.clear();cachedTripSummary=null;cachedAmountContext=null;
+  cachedCustomerMetrics=null;cachedCustomerShared=null;
+ }
+ function customerMetrics(){
+  if(!state)return null;
+  if(!cachedCustomerMetrics||cachedCustomerShared!==sharedSites){
+   cachedCustomerMetrics=archiveCustomerMetrics(state.customers,sharedSites);
+   cachedCustomerShared=sharedSites;
+  }
+  return cachedCustomerMetrics;
+ }
  function metrics(){
   const counts=state?
    [state.trips.length,state.customers.length,state.tariffs.length]:null;
@@ -406,9 +418,16 @@ export function setupDriverRecords(account){
    const actions=make('div','records-card-actions');
    if(category==='history'){
     if(item.action==='delete'){
-     const btn=make('button','button outline small','Ripristina');
-     btn.type='button';btn.addEventListener('click',()=>void restore(item));
-     actions.append(btn);
+     const availability=archivedRestoreStatus(item,audit,state);
+     if(availability.eligible){
+      const btn=make('button','button outline small','Ripristina');
+      btn.type='button';btn.addEventListener('click',()=>void restore(item));
+      actions.append(btn);
+     }else{
+      const info=make('span','records-restore-status',availability.label);
+      info.setAttribute('role','status');
+      actions.append(info);
+     }
     }
    }else{
     const edit=make('button','button outline small','Modifica');
@@ -773,8 +792,13 @@ export function setupDriverRecords(account){
   form.scrollIntoView({block:'nearest',behavior:'smooth'});
  }
  async function restore(entry){
-  if(!authorized()||!canLeave()||
-     !window.confirm('Ripristinare questo elemento dall’audit? Non verranno sovrascritti eventuali elementi con lo stesso ID.'))return;
+  if(!authorized()||!canLeave())return;
+  const availability=archivedRestoreStatus(entry,audit,state);
+  if(!availability.eligible){
+   notice(availability.label+'. Aggiorna lo storico prima di riprovare.',true);
+   render({keepEditor:true});return;
+  }
+  if(!window.confirm('Ripristinare questo elemento dall’audit? Non verranno sovrascritti eventuali elementi con lo stesso ID.'))return;
   if(editing)clearEditor();
   await mutate({operation:'restore',category:entry.category,
    recordId:entry.recordId,auditId:entry.id,reason:'Ripristino da storico amministrativo'});
