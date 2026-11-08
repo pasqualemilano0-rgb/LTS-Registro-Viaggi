@@ -1,0 +1,293 @@
+/* LTS Registro Viaggi · tema unificato approvato · 2026-11-08
+   Un solo livello di presentazione per registro autista e console amministratore.
+   Nessuna modifica a permessi, importi, persistenza o navigazione. */
+:root {
+  --lts-ink: #183f4d;
+  --lts-muted: #637f8b;
+  --lts-teal: #086d7e;
+  --lts-teal-dark: #075766;
+  --lts-line: #d5e3e8;
+  --lts-mint: #e0f3f1;
+  --lts-page: #f0f5f8;
+  --lts-red: #a13c4e;
+  --lts-card-shadow: 0 8px 26px rgba(18, 61, 81, .055);
+  --ink: var(--lts-ink);
+  --muted: var(--lts-muted);
+  --teal: var(--lts-teal);
+  --teal-dark: var(--lts-teal-dark);
+  --line: var(--lts-line);
+  --border: var(--lts-line);
+}
+html, body {
+  background: var(--lts-page);
+  color: var(--lts-ink);
+}
+body {
+  background: linear-gradient(180deg, #f6fafb 0, #f0f5f8 350px, #f1f5f9 100%);
+}
+:where(button, a, input, select, textarea, summary):focus-visible {
+  outline: 3px solid #24a7b6;
+  outline-offset: 3px;
+}
+:where(input:not([type=checkbox]):not([type=radio]), select, textarea) {
+  background: #fff;
+  border-color: #ccdee5;
+  border-radius: 12px;
+  color: var(--lts-ink);
+}
+:where(input, select, textarea):focus {
+  border-color: #399cab;
+}
+:where(.panel, .surface, .stat, .login-wrap, .customer-card, .tariff-card) {
+  background: #fff;
+  border: 1px solid var(--lts-line);
+  border-radius: 22px;
+  box-shadow: var(--lts-card-shadow);
+}
+:where(.primary-button, .button.primary) {
+  background: var(--lts-teal);
+  border-radius: 13px;
+  color: white;
+}
+:where(.secondary-button, .button.outline) {
+  border: 1px solid #cbdfe5;
+  border-radius: 13px;
+  background: #fff;
+  color: var(--lts-teal-dark);
+}
+:where(.danger-button, .records-danger) {
+  color: var(--lts-red);
+  border-color: #e3bdc5;
+  background: #fff8f9;
+}
+:where(.head-badge, .pill, .mini-chip, .date-badge, .status-active) {
+  background: #e8f5f6;
+  color: var(--lts-teal-dark);
+}
+
+/* Registro personale: card leggibili con importi già salvati, niente valori fittizi. */
+.trip-card {
+  padding: clamp(16px, 3vw, 22px);
+  border: 1px solid var(--lts-line);
+  border-radius: 23px;
+  background: #fff;
+  box-shadow: var(--lts-card-shadow);
+}
+.trip-card .trip-meta { margin-bottom: 13px; }
+.trip-card .trip-container { color: var(--lts-ink); }
+.trip-card .trip-money { color: var(--lts-teal); font-weight: 800; }
+.trip-card .trip-client { color: #3c6170; }
+.trip-card .trip-location { color: #637f8b; }
+.trip-card .trip-services { margin-top: 12px; }
+.trip-card .mini-chip {
+  border: 1px solid #d3e7e9;
+  padding: 6px 9px;
+  border-radius: 8px;
+  font-size: 11px;
+  line-height: 1.4;
+}
+.trip-amount-lines {
+  display: grid;
+  gap: 8px;
+  padding: 13px 0 0;
+  margin-top: 12px;
+  border-top: 1px solid #e4ecef;
+}
+.trip-amount-line {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: start;
+  gap: 4px 14px;
+  color: #4e6f7e;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.trip-amount-line strong { color: var(--lts-ink); font-weight: 750; }
+.trip-amount-line span:last-child { text-align: right; overflow-wrap: anywhere; }
+.trip-total-band {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: linear-gradient(90deg, #e6f5f4, #d7efed);
+  border-radius: 11px;
+  padding: 12px 14px;
+  margin-top: 13px;
+  color: #07596a;
+  font-weight: 800;
+}
+.trip-total-band strong { color: #075364; font-size: 19px; white-space: nowrap; }
+.trip-total-band .trip-total-label { font-weight: 800; }
+.trip-total-warning { margin-top: 7px; font-size: 11px; color: #925f20; line-height: 1.45; }
+.trip-card .trip-card-footer {
+  gap: 12px;
+  margin-top: 13px;
+  border-top: 0;
+  padding-top: 0;
+}
+.trip-card .trip-breakdown { color: #728996; }
+.trip-card .inline-actions { gap: 8px; }
+.trip-card .icon-button {
+  width: 44px;
+  height: 44px;
+  border: 1px solid #cfdee4;
+  border-radius: 12px;
+  color: var(--lts-teal);
+  background: white;
+}
+.trip-card .icon-button.danger {
+  color: var(--lts-red);
+  border-color: #e5c4cb;
+  background: #fff9fa;
+}
+.trip-card .icon-button:focus-visible { outline-offset: 2px; }
+
+/* Navigazione e componenti del registro personale */
+.bottom-nav { background: rgba(250, 253, 254, .97); border-color: var(--lts-line); }
+.bottom-nav .nav-item { border-radius: 15px; }
+.bottom-nav .nav-item.active { background: #e3f3f4; color: var(--lts-teal-dark); }
+.customer-card, .tariff-card, .form-panel { border-radius: 22px; }
+.overview { border-radius: 22px; }
+.segment button.selected { color: var(--lts-teal-dark); }
+
+/* Console aziendale: stessi materiali visivi, senza alterare il layout. */
+#dashboard .surface,
+#dashboard .stat,
+#dashboard .records-hero,
+#dashboard .records-controls,
+#dashboard .records-count,
+#dashboard .customer-directory-kpi,
+#dashboard .driver-row,
+#dashboard .report-kpi {
+  background: #fff;
+  border: 1px solid var(--lts-line);
+  border-radius: 20px;
+  box-shadow: var(--lts-card-shadow);
+}
+#dashboard .admin-switch {
+  border: 1px solid var(--lts-line);
+  border-radius: 22px;
+  background: #edf5f8;
+}
+#dashboard .admin-switch-button.selected,
+#dashboard .records-tab.selected {
+  border-color: #b9dbe2;
+  color: var(--lts-teal-dark);
+  background: #fff;
+}
+#dashboard .button.primary { background: var(--lts-teal); }
+#dashboard .button.outline { border-color: #c8dee4; color: var(--lts-teal-dark); }
+#dashboard .report-kpi strong,
+#dashboard .stat strong { color: var(--lts-ink); }
+#dashboard .records-hero h1,
+#dashboard .records-card-title { color: var(--lts-ink); }
+
+/* Archivi autisti: i dettagli del viaggio sono visibili direttamente nella card. */
+#admin-records-panel .records-list { gap: 14px; }
+#admin-records-panel .records-card {
+  background: #fff;
+  border: 1px solid var(--lts-line);
+  border-radius: 24px;
+  padding: clamp(16px, 3vw, 23px);
+  box-shadow: var(--lts-card-shadow);
+  gap: 13px;
+}
+#admin-records-panel .records-trip-card .records-card-title {
+  font-size: 20px;
+  letter-spacing: -.035em;
+  line-height: 1.25;
+  margin-bottom: 9px;
+}
+#admin-records-panel .records-trip-route {
+  font-size: 13px;
+  line-height: 1.5;
+  color: #4d6d7b;
+  margin: 0 0 12px;
+  overflow-wrap: anywhere;
+}
+#admin-records-panel .records-trip-details {
+  display: grid;
+  gap: 8px;
+  border-top: 1px solid #e1e9ed;
+  padding-top: 12px;
+}
+#admin-records-panel .records-trip-detail {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: baseline;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #4f7080;
+  overflow-wrap: anywhere;
+}
+#admin-records-panel .records-trip-detail strong {
+  color: var(--lts-ink);
+  font-weight: 800;
+  min-width: 70px;
+}
+#admin-records-panel .records-trip-detail span {
+  flex: 1;
+  text-align: right;
+}
+#admin-records-panel .records-trip-services {
+  margin-top: 4px;
+  display: grid;
+  gap: 6px;
+}
+#admin-records-panel .records-trip-service {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 5px 10px;
+  border-radius: 9px;
+  background: #f1f7f8;
+  padding: 8px 10px;
+  font-size: 11px;
+  line-height: 1.45;
+  color: #356675;
+}
+#admin-records-panel .records-trip-service span:last-child { font-weight: 700; }
+#admin-records-panel .records-trip-note { font-size: 11px; line-height: 1.55; color: #607c89; margin-top: 6px; }
+#admin-records-panel .records-trip-total {
+  background: linear-gradient(90deg, #e6f5f4, #d8efed);
+  color: #075766;
+  border-radius: 11px;
+  padding: 12px 13px;
+  margin-top: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  font-weight: 850;
+  font-size: 15px;
+}
+#admin-records-panel .records-trip-total strong { font-size: 19px; white-space: nowrap; }
+#admin-records-panel .records-trip-warning { font-size: 11px; line-height: 1.5; color: #916220; margin-top: 8px; }
+#admin-records-panel .records-card-actions { gap: 10px; }
+#admin-records-panel .records-card-actions button {
+  flex: 1;
+  min-height: 47px;
+  border-radius: 14px;
+  font-size: 13px;
+  font-weight: 800;
+  padding: 10px 12px;
+}
+#admin-records-panel .records-card-actions .records-danger {
+  background: #fff9fa !important;
+  border-color: #e1bbc4 !important;
+  color: var(--lts-red) !important;
+}
+@media (max-width: 700px) {
+  #admin-records-panel .records-list { grid-template-columns: minmax(0, 1fr); }
+  #admin-records-panel .records-card { padding: 17px 15px; }
+  #admin-records-panel .records-trip-detail { font-size: 12px; }
+  #admin-records-panel .records-trip-service { font-size: 11px; }
+  .trip-card { padding: 17px 15px; }
+  .trip-amount-line { font-size: 12px; }
+  .trip-total-band strong { font-size: 18px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  :where(.trip-card, .records-card, .button, .nav-item) { transition: none !important; }
+}
