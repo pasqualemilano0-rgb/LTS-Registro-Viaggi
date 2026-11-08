@@ -1,90 +1,32 @@
-/** LTS private shared customer list. Only a Maps link is sent for creation. */
-import runtime from '/LTS-Registro-Viaggi/runtime-config.mjs';
-import * as account from '/LTS-Registro-Viaggi/account-access.mjs';
-const HOST='otrqynkscpbeyuvdlgpg.supabase.co';
-const PATH='/functions/v1/lts-shared-maps';
-export function sharedMapsEnabled(){return typeof runtime.accountAuth?.sharedMapsEndpoint==='string'&&
- runtime.accountAuth.sharedMapsEndpoint.length>0;}
-function endpoint(){
- if(!sharedMapsEnabled())throw new Error('Archivio clienti aziendali non ancora disponibile.');
- const url=new URL(runtime.accountAuth.sharedMapsEndpoint);
- if(url.protocol!=='https:'||url.hostname!==HOST||url.pathname!==PATH||
-    url.username||url.password||url.search||url.hash||url.port)
-  throw new Error('Servizio aziendale configurato in modo non sicuro.');
- return url.href;
-}
-function validCustomer(c){
- if(!c||typeof c!=='object'||!['google_maps_link','manual'].includes(c.source)||
-    !['name','city','address','mapsUrl'].every(k=>typeof c[k]==='string'&&c[k].length<=4096)||
-    !c.name.trim()||!c.city.trim())throw new Error('Registro clienti aziendale non valido.');
- if(c.source==='google_maps_link'){
-  if(!c.address.trim()||!c.mapsUrl.trim())throw new Error('Sede Google Maps incompleta.');
-  const url=new URL(c.mapsUrl);
-  if(url.protocol!=='https:'||!['www.google.com','google.com','www.google.it','google.it',
-      'maps.google.com','maps.google.it','maps.app.goo.gl','goo.gl'].includes(url.hostname))
-   throw new Error('Link cliente non riconosciuto.');
- }else if(c.mapsUrl!==''){
-  throw new Error('Un cliente manuale non può dichiarare un link Maps.');
- }
- if(c.operationalNotes!==undefined&&
-    (typeof c.operationalNotes!=='string'||c.operationalNotes.length>1500))
-  throw new Error('Indicazioni operative cliente non valide.');
- return {name:c.name,city:c.city,address:c.address,mapsUrl:c.mapsUrl,
-  source:c.source,operationalNotes:c.operationalNotes||''};
-}
-async function post(payload){
- const url=endpoint();
- const bearer=await account.getVerifiedAccessToken();
- const owner=account.getAccountId();
- const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),14000);
- try{
-  const response=await fetch(url,{method:'POST',mode:'cors',credentials:'omit',
-   redirect:'error',cache:'no-store',signal:controller.signal,
-   headers:{Accept:'application/json','Content-Type':'application/json',
-    Authorization:'Bearer '+bearer},body:JSON.stringify(payload)});
-  if(!(response.headers.get('content-type')||'').includes('application/json'))
-   throw new Error('Risposta del registro aziendale non valida.');
-  const result=await response.json();
-  if(owner!==account.getAccountId())throw new Error('Account cambiato durante la richiesta.');
-  if(!response.ok){
-   const err=new Error(typeof result?.error==='string'?result.error:'Registro aziendale non disponibile.');
-   err.status=response.status;throw err;
-  }
-  return result;
- }finally{clearTimeout(timeout);}
-}
-export async function sharedMapsCustomers(){
- const result=await post({action:'list'});
- if(!Array.isArray(result?.customers)||result.customers.length>500)
-  throw new Error('Risposta del registro clienti condiviso non valida.');
- return result.customers.map(validCustomer);
-}
-export async function saveSharedMapsCustomer(url,customer){
- if(typeof url!=='string'||url.trim().length<20||url.length>4096)
-  throw new Error('Incolla un link Google Maps valido.');
- if(!customer||!['name','city','address'].every(key=>
-  typeof customer[key]==='string'&&customer[key].trim()&&customer[key].length<=1000))
-  throw new Error('Controlla nome, città e indirizzo per condividere il cliente.');
- const result=await post({action:'save-link',url,name:customer.name,
-  city:customer.city,address:customer.address});
- if(typeof result?.created!=='boolean')
-  throw new Error('Conferma di salvataggio aziendale non valida.');
- return {customer:validCustomer(result.customer),created:result.created,updated:result.updated===true};
-}
+/* QA PRIVATA — solo sedi sintetiche. */
 
-/** Administrator-only addition: no fabricated Maps URL, company-wide visibility.
- * The backend checks live admin session, MFA, normalized name/city and duplicates.
- */
-export async function saveSharedManualCustomer(customer){
- if(!customer||typeof customer!=='object'||Array.isArray(customer))
-  throw new Error('Compila i dati del cliente aziendale.');
- const name=String(customer.name||'').trim(),city=String(customer.city||'').trim();
- const address=String(customer.address||'').trim(),notes=String(customer.notes||'').trim();
- if(name.length<2||name.length>500||city.length<2||city.length>500||
-    address.length>1000||notes.length>1500)
-  throw new Error('Controlla nome, località, indirizzo e note del cliente.');
- const result=await post({action:'save-manual',name,city,address,notes});
- if(typeof result?.created!=='boolean')
-  throw new Error('Conferma di condivisione cliente non valida.');
- return {customer:validCustomer(result.customer),created:result.created};
-}
+let rows=[
+ {name:'CLIENTE ALFA',city:'NAPOLI',address:'VIA TEST 1, NAPOLI',
+  mapsUrl:'https://maps.app.goo.gl/exampleA',source:'google_maps_link',operationalNotes:''},
+ {name:'CLIENTE BETA',city:'SALERNO',address:'VIA TEST 2, SALERNO',
+  mapsUrl:'https://maps.app.goo.gl/exampleB',source:'google_maps_link',operationalNotes:''},
+ {name:'CLIENTE GAMMA',city:'ROMA',address:'INDIRIZZO STRADALE DA CONFERMARE',
+  mapsUrl:'https://maps.app.goo.gl/exampleC',source:'google_maps_link',operationalNotes:''}
+];
+export const sharedMapsCustomers=async()=>structuredClone(rows);
+export const saveSharedMapsCustomer=async(mapsUrl,site)=>{
+ const known=rows.find(row=>row.mapsUrl===mapsUrl);
+ if(known){
+  if(known.address.includes('DA CONFERMARE')&&known.name===site.name&&known.city===site.city){
+   known.address=site.address;
+   return {customer:structuredClone(known),created:false,updated:true};
+  }
+  return {customer:structuredClone(known),created:false};
+ }
+ const created={...site,mapsUrl,source:'google_maps_link',operationalNotes:''};
+ rows.push(created);return {customer:structuredClone(created),created:true};
+};
+export const saveSharedManualCustomer=async site=>{
+ const known=rows.find(row=>row.name===site.name&&row.city===site.city);
+ if(known)return {customer:structuredClone(known),created:false};
+ const created={name:site.name,city:site.city,address:site.address||'',
+  mapsUrl:'',source:'manual',operationalNotes:site.notes||''};
+ rows.push(created);
+ return {customer:structuredClone(created),created:true};
+};
+
