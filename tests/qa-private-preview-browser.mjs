@@ -71,6 +71,28 @@ try{
  assert.equal(await completed.getByRole('button',{name:'Ripristina'}).count(),0,
   'A deletion already restored must never keep a functional Restore button');
  assert.equal(external.length,0,'QA admin attempted a production API request');
+ const consistency=await page.evaluate(async()=>{
+  const account=await import('/LTS-Registro-Viaggi/account-access.mjs');
+  const domain=await import('/LTS-Registro-Viaggi/shared/domain.mjs');
+  const archive=await account.adminRecords('read');
+  const report=await account.companyReport({month:'2026-11',offset:0,limit:40});
+  const analytics=await account.companyInsights({month:'2026-11'});
+  const trips=archive.archive.state.trips;
+  const context=domain.buildTripAmountContext(trips);
+  const total=trips.reduce((sum,trip)=>sum+domain.tripAmounts(trip,context).totalCents,0);
+  return {archiveCount:trips.length,reportCount:report.summary.trips,
+   analyticsCount:analytics.currentMonth.trips,
+   total,reportTotal:report.summary.knownTotalCents,
+   insightsTotal:analytics.currentMonth.totalCents};
+ });
+ assert.equal(consistency.archiveCount,1);
+ assert.equal(consistency.reportCount,consistency.archiveCount,
+  'QA overview cannot invent trips absent from the archived driver records');
+ assert.equal(consistency.analyticsCount,consistency.archiveCount,
+  'QA analytics must count the exact archived trips');
+ assert.equal(consistency.reportTotal,consistency.total,
+  'QA report cannot invent income not present in the stored driver trips');
+ assert.equal(consistency.insightsTotal,consistency.total);
  await page.goto(origin+prefix+'index.html',{waitUntil:'domcontentloaded'});
  const initial=await page.evaluate(async()=>{
   const store=await import('/LTS-Registro-Viaggi/client-store.mjs');
