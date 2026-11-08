@@ -960,6 +960,13 @@ test('Smart Console V2 keeps context inside its authorized drawer and never writ
  assert.match(ui,/function showDetail\(spec,item\)/);
  assert.match(ui,/home[.]hidden=true;embedded[.]hidden=true;detail[.]hidden=false/);
  assert.match(ui,/smart-result-buttons/);
+ assert.match(ui,/function showRateTask\(site=null\)/);
+ assert.match(ui,/prepareRateInline\(site\)/);
+ assert.match(html,/data-smart-action="inline-rate"/);
+ const tariffs=read('amministratore/company-rates.mjs');
+ assert.match(tariffs,/get\('smart-embed-body'\)[?][.]contains\(get\('company-rates-editor'\)\)/);
+ const report=read('amministratore/report.mjs');
+ assert.match(report,/async prepareRateInline\(site\)/);
  assert.match(ui,/if\(mode==='home'\)close\(\);else resetTask\(\)/);
  assert.match(ui,/mode==='detail'\)resetTask\(\)/);
  assert.doesNotMatch(ui,/\b(?:localStorage|sessionStorage|indexedDB|innerHTML|fetch)\b/);
