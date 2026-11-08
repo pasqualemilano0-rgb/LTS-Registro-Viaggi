@@ -14,7 +14,7 @@ test('dashboard accessibile solo dal pannello admin, CSP e versioni coerenti',()
    'pro-city','pro-container','pro-compare-driver','pro-alerts','pro-alert-count',
    'pro-export-pdf','pro-export-xlsx','pro-records'])
    assert.match(html,new RegExp('id="'+id+'"'));
- assert.match(html,/admin\.mjs\?v=20261108-smart-v1/);
+ assert.match(html,/admin\.mjs\?v=20261108-smart-v2/);
  assert.match(html,/admin\.css\?v=20261104-company-v3/);
  assert.match(js,/account-access\.mjs\?v=20261107-realtime-v1/);
  assert.match(js,/setupReport\(account\)/);
@@ -26,7 +26,7 @@ test('dashboard accessibile solo dal pannello admin, CSP e versioni coerenti',()
  assert.match(report,/function driverProfile\(/);
  assert.match(report,/function driverDirectory\(/);
  assert.match(report,/function renderAmountChart\(/);
- assert.match(js,/report\.mjs\?v=20261108-smart-v1/);
+ assert.match(js,/report\.mjs\?v=20261108-smart-v2/);
  assert.match(report,/setupInsights\(account\)/);
  const advanced=read('amministratore/report-insights.mjs');
  const exportsModule=read('amministratore/report-export.mjs');
@@ -111,7 +111,7 @@ test('linked Google Maps refresh distinguishes Supabase polling from reviewed pl
   'customer-maps-results','customer-maps-preview','customer-maps-apply',
   'customer-maps-refresh-status'])
   assert.match(html,new RegExp('id="'+id+'"'));
- assert.match(report,/customer-overview[.]mjs[?]v=20261108-smart-v1/);
+ assert.match(report,/customer-overview[.]mjs[?]v=20261108-smart-v2/);
  assert.match(overview,/setupMapsAddressRefresh\(account/);
  assert.match(overview,/Questo controllo NON rilegge Google Maps/);
  assert.match(module,/readMapsCustomer\(site[.]mapsUrl/);
