@@ -2,7 +2,7 @@
 /* QA driver archive: this simulates remote storage in the current browser only.
    No real server, no real credentials, no cross-device synchronization.
    Do not reuse in a production release. */
-import {emptyState,validateState} from '/LTS-Registro-Viaggi/shared/domain.mjs';
+import {emptyState,validateState,buildTripAmountContext,tripAmounts} from '/LTS-Registro-Viaggi/shared/domain.mjs';
 export const isEnabled=()=>true;
 export const getRealtimeCredentials=()=>null;
 export const login=async()=>({mfa_enrolled:true,mfa_verified:true});
@@ -165,82 +165,94 @@ export const pendingAdminMfaInfo=()=>null;
 export const forgetPendingAdminMfa=()=>{};
 export const logout=async()=>({revoked:true});
 export const signOut=()=>{};
+
+/* QA dashboard and administrator archives MUST read the same synthetic trips.
+   This is intentionally browser-local and cannot access production. */
+function qaCompanyRows(){
+ const driverId='11111111-1111-4111-8111-111111111111';
+ const context=buildTripAmountContext(adminArchive.trips);
+ return adminArchive.trips.map(trip=>{
+  const amount=tripAmounts(trip,context);
+  return {id:String(trip.id),driverId,driverName:'Mario Rossi',
+   date:trip.date,container:trip.container,client:trip.client,city:trip.city,
+   secondClient:trip.secondClient||'',secondCity:trip.secondCity||'',
+   services:[...(trip.services||[])],note:trip.note||'',
+   totalCents:amount.totalCents,amountCents:amount.totalCents,
+   missingTariff:amount.missingTariff,
+   updatedAt:trip.updatedAt||trip.createdAt||new Date().toISOString()};
+ }).sort((a,b)=>b.date.localeCompare(a.date));
+}
+function qaSum(trips){
+ return {trips:trips.length,drivers:new Set(trips.map(r=>r.driverId)).size,
+  days:new Set(trips.map(r=>r.date)).size,
+  totalCents:trips.reduce((sum,r)=>sum+r.totalCents,0),
+  missingTariffCount:trips.filter(r=>r.missingTariff).length};
+}
 export const companyReport=async({month,offset=0,limit=40,driverId=null})=>{
+ const all=qaCompanyRows().filter(r=>r.date.startsWith(month+'-'));
+ const selected=driverId?all.filter(r=>r.driverId===driverId):all;
+ const sum=qaSum(selected);
  const drivers=[
- {id:'11111111-1111-4111-8111-111111111111',name:'Mario Rossi',trips:2,days:2,totalCents:25000,missingTariffCount:1,active:true},
- {id:'22222222-2222-4222-8222-222222222222',name:'Lucia Bianchi',trips:0,days:0,totalCents:0,missingTariffCount:0,active:false}
+  {id:'11111111-1111-4111-8111-111111111111',name:'Mario Rossi',
+   trips:all.length,days:new Set(all.map(r=>r.date)).size,
+   totalCents:qaSum(all).totalCents,missingTariffCount:qaSum(all).missingTariffCount,active:true},
+  {id:'22222222-2222-4222-8222-222222222222',name:'Lucia Bianchi',
+   trips:0,days:0,totalCents:0,missingTariffCount:0,active:false}
  ];
- const trips=month==='2026-11'?[
- {id:'1',driverId:drivers[0].id,driverName:drivers[0].name,date:'2026-11-04',
-  container:'ABCD1234567',client:'CLIENTE ALFA',city:'NAPOLI',secondClient:'',secondCity:'',
-  services:['reefer'],note:'<img src=x onerror=alert(1)>',totalCents:15000,
-  missingTariff:false,updatedAt:'2026-11-04T08:00:00Z'},
- {id:'2',driverId:drivers[0].id,driverName:drivers[0].name,date:'2026-11-03',
-  container:'WXYZ1234567',client:'CLIENTE BETA',city:'SALERNO',secondClient:'ALTRO',secondCity:'NAPOLI',
-  services:[],note:'',totalCents:10000,missingTariff:true,updatedAt:'2026-11-03T07:00:00Z'}
- ]:[];
- const selected=driverId?trips.filter(t=>t.driverId===driverId):trips;
- const missing=selected.filter(t=>t.missingTariff).length;
  return {month,reportedAt:new Date().toISOString(),incompleteArchives:0,
-  partial:missing>0,source:'Dati di prova sintetici - nessun archivio reale',
-  summary:{drivers:new Set(selected.map(t=>t.driverId)).size,trips:selected.length,
-   knownTotalCents:selected.reduce((s,t)=>s+t.totalCents,0),missingTariffCount:missing},
-  drivers,chart:[...new Set(selected.map(t=>t.date))].sort().map(date=>({
-   date,count:selected.filter(t=>t.date===date).length,
-   totalCents:selected.filter(t=>t.date===date).reduce((s,t)=>s+t.totalCents,0)})),
+  partial:sum.missingTariffCount>0,source:'QA: dati fittizi dello stesso archivio personale',
+  summary:{drivers:sum.drivers,trips:sum.trips,
+   knownTotalCents:sum.totalCents,missingTariffCount:sum.missingTariffCount},
+  drivers,chart:[...new Set(selected.map(x=>x.date))].sort().map(date=>({
+   date,count:selected.filter(x=>x.date===date).length,
+   totalCents:selected.filter(x=>x.date===date).reduce((n,x)=>n+x.totalCents,0)})),
   trips:selected.slice(offset,offset+limit),pagination:{offset,limit,total:selected.length}};
 };
-/* Synthetic V3 analytics – no production data or credentials. */
 export const companyInsights=async({month,driverId=null,compareDriverId=null,fromDate=null,toDate=null,
  client='',city='',container=''})=>{
- const all=[
- {id:'1',driverId:'11111111-1111-4111-8111-111111111111',driverName:'Mario Rossi',date:'2026-11-04',
-  container:'ABCD1234567',client:'CLIENTE ALFA',city:'NAPOLI',amountCents:15000,missingTariff:false},
- {id:'2',driverId:'11111111-1111-4111-8111-111111111111',driverName:'Mario Rossi',date:'2026-11-03',
-  container:'WXYZ1234567',client:'CLIENTE BETA',city:'SALERNO',amountCents:10000,missingTariff:true},
- {id:'3',driverId:'11111111-1111-4111-8111-111111111111',driverName:'Mario Rossi',date:'2026-10-08',
-  container:'TEST1234567',client:'CLIENTE ALFA',city:'NAPOLI',amountCents:5000,missingTariff:false}
- ];
- const previous=month==='2026-11'?'2026-10':'2026-09';
- const current=all.filter(x=>x.date.startsWith(month+'-')&&(!driverId||x.driverId===driverId));
- const prev=all.filter(x=>x.date.startsWith(previous+'-')&&(!driverId||x.driverId===driverId));
- const base=all.filter(x=>(!driverId||x.driverId===driverId)&&x.date>=(fromDate||month+'-01')&&
-  x.date<=(toDate||month+'-30'));
- const records=base.filter(x=>(!client||x.client.toLowerCase().includes(client.toLowerCase()))&&
-  (!city||x.city.toLowerCase().includes(city.toLowerCase()))&&
-  (!container||x.container.toLowerCase().includes(container.toLowerCase())));
- const sum=trips=>({trips:trips.length,drivers:new Set(trips.map(x=>x.driverId)).size,
-  days:new Set(trips.map(x=>x.date)).size,totalCents:trips.reduce((n,x)=>n+x.amountCents,0),
-  missingTariffCount:trips.filter(x=>x.missingTariff).length});
+ const all=qaCompanyRows();
+ const byDriver=rows=>driverId?rows.filter(x=>x.driverId===driverId):rows;
+ const current=byDriver(all.filter(x=>x.date.startsWith(month+'-')));
+ const [year,monthNumber]=month.split('-').map(Number);
+ const prevMonth=new Date(Date.UTC(year,monthNumber-2,1)).toISOString().slice(0,7);
+ const previous=byDriver(all.filter(x=>x.date.startsWith(prevMonth+'-')));
+ const start=fromDate||month+'-01',end=toDate||month+'-31';
+ const base=byDriver(all.filter(x=>x.date>=start&&x.date<=end));
+ const matches=(value,term)=>!term||String(value||'').toLocaleLowerCase('it-IT')
+  .includes(String(term).toLocaleLowerCase('it-IT'));
+ const records=base.filter(x=>matches(x.client,client)&&matches(x.city,city)&&
+  matches(x.container,container));
  const months=Array.from({length:12},(_,i)=>{
-  const [y,m]=month.split('-').map(Number),d=new Date(Date.UTC(y,m-1-(11-i),1));
-  const key=d.toISOString().slice(0,7),items=all.filter(x=>x.date.startsWith(key+'-')&&(!driverId||x.driverId===driverId));
-  return {month:key,...sum(items)};
+  const date=new Date(Date.UTC(year,monthNumber-1-(11-i),1));
+  const key=date.toISOString().slice(0,7);
+  const items=byDriver(all.filter(x=>x.date.startsWith(key+'-')));
+  return {month:key,...qaSum(items)};
  });
- const rank=(field)=>[...new Set(records.map(x=>x[field]))].map(name=>{
-  const items=records.filter(t=>t[field]===name);
-  return {name,count:items.length,totalCents:sum(items).totalCents};
+ const rank=field=>[...new Set(records.map(x=>x[field]))].map(name=>{
+  const items=records.filter(x=>x[field]===name);
+  return {name,count:items.length,totalCents:qaSum(items).totalCents};
  });
- return {
-  month,reportedAt:new Date().toISOString(),
-  range:{fromDate:fromDate||month+'-01',toDate:toDate||month+'-30'},
+ return {month,reportedAt:new Date().toISOString(),
+  range:{fromDate:start,toDate:end},
   selection:{driverId,compareDriverId,client,city,container},
-  summary:{...sum(records),activeDrivers:1},
-  currentMonth:sum(current),previousMonth:{month:previous,...sum(prev)},
+  summary:{...qaSum(records),activeDrivers:qaSum(records).drivers},
+  currentMonth:qaSum(current),previousMonth:{month:prevMonth,...qaSum(previous)},
   monthly:months,compareMonthly:compareDriverId?months.map(x=>({...x,trips:0,totalCents:0})):[],
-  drivers:[driverId,compareDriverId].filter(Boolean).map(id=>({id,
-   name:id.startsWith('111')?'Mario Rossi':'Lucia Bianchi',
-   ...sum(all.filter(x=>x.driverId===id&&x.date.startsWith(month+'-')))})),
+  drivers:[driverId,compareDriverId].filter(Boolean).map(id=>{
+   const rows=all.filter(x=>x.driverId===id&&x.date.startsWith(month+'-'));
+   return {id,name:id.startsWith('111')?'Mario Rossi':'Lucia Bianchi',...qaSum(rows)};
+  }),
   clients:rank('client'),routes:rank('city'),
-  options:{clients:['CLIENTE ALFA','CLIENTE BETA'],cities:['NAPOLI','SALERNO']},
-  daily:[...new Set(records.map(x=>x.date))].map(date=>({date,trips:records.filter(x=>x.date===date).length})),
-  alerts:records.filter(x=>x.missingTariff).map(x=>({type:'tariff',severity:'warning',
-   driverId:x.driverId,driverName:x.driverName,date:x.date,detail:'Tariffa incompleta '+x.container})),
+  options:{clients:[...new Set(all.map(x=>x.client))],cities:[...new Set(all.map(x=>x.city))]},
+  daily:[...new Set(records.map(x=>x.date))].map(date=>({
+   date,trips:records.filter(x=>x.date===date).length})),
+  alerts:records.filter(x=>x.missingTariff).map(x=>({type:'tariff',
+   severity:'warning',driverId:x.driverId,driverName:x.driverName,
+   date:x.date,detail:'Tariffa incompleta '+x.container})),
   alertTotal:records.filter(x=>x.missingTariff).length,incompleteArchives:0,
   partial:records.some(x=>x.missingTariff),records
  };
 };
-
 
 /* Compatibility-only QA methods. All operations remain synthetic and local. */
 export const accountGateRequired=()=>true;
