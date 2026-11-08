@@ -171,7 +171,8 @@ export function setupDriverRecords(account){
   category='trip',busy=false,loading=false,editing=false,epoch=0,
   desiredPhone='',visibleLimit=35,catalogRequest=0,activePickerDisposers=[],
   editorBaseline='',writeSeq=0,quickFilter='all',sharedSites=null,
-  sharedLoading=false,sharedSeq=0,sharedCheckedAt='',sharedError=false;
+  sharedLoading=false,sharedSeq=0,sharedCheckedAt='',sharedError=false,
+  cachedSources=new Map(),cachedTripSummary=null,cachedAmountContext=null;
  const authorized=()=>account.isVerified()&&account.getRole()==='admin'&&
   !$('dashboard').hidden&&$('dashboard').dataset.view==='records';
  const notice=(message,problem=false)=>{
@@ -228,7 +229,7 @@ export function setupDriverRecords(account){
       '. Le corrispondenze non eliminano automaticamente i clienti.':
     'Elenco condiviso non verificato. I filtri sui duplicati saranno disponibili dopo il controllo.';
   }else{
-   const m=trips||(state?tripWorklistSummary(state.trips):null);
+   const m=trips||(state?(cachedTripSummary??=tripWorklistSummary(state.trips)):null);
    metric('Viaggi registrati',m?.total,'Archivio selezionato');
    metric('Importi incompleti',m?.incomplete,'Tariffe o extra da completare');
    worklistPrimary.textContent=m?m.incomplete+' da completare':'—';
@@ -257,6 +258,7 @@ export function setupDriverRecords(account){
    }
   }
  }
+ function invalidateDerived(){cachedSources.clear();cachedTripSummary=null;cachedAmountContext=null;}
  function metrics(){
   const counts=state?
    [state.trips.length,state.customers.length,state.tariffs.length]:null;
@@ -266,6 +268,7 @@ export function setupDriverRecords(account){
  }
  function reset(){
   epoch++;writeSeq++;drivers=[];selectedId='';revision=null;state=null;audit=[];
+  invalidateDerived();
   category='trip';busy=false;loading=false;desiredPhone='';visibleLimit=35;
   sharedSeq++;sharedSites=null;sharedCheckedAt='';sharedLoading=false;sharedError=false;quickFilter='all';
   choose.replaceChildren();list.replaceChildren();clearEditor();filter.value='';
@@ -289,12 +292,17 @@ export function setupDriverRecords(account){
  }
  function source(){
   if(!state)return [];
-  if(category==='extra')return SERVICES.map(x=>({id:x.key,name:x.label,cents:state.extraRates[x.key]}));
-  if(category==='history')return audit;
-  const raw=state[categories[category]]||[];
-  if(category==='trip')return [...raw].sort((a,b)=>b.date.localeCompare(a.date)||
-   String(b.createdAt).localeCompare(String(a.createdAt)));
-  return [...raw].sort((a,b)=>(a.name||a.client||'').localeCompare(b.name||b.client||'','it'));
+  if(cachedSources.has(category))return cachedSources.get(category);
+  let data;
+  if(category==='extra')data=SERVICES.map(x=>({id:x.key,name:x.label,cents:state.extraRates[x.key]}));
+  else if(category==='history')data=audit;
+  else{
+   const raw=state[categories[category]]||[];
+   data=category==='trip'?[...raw].sort((a,b)=>b.date.localeCompare(a.date)||
+    String(b.createdAt).localeCompare(String(a.createdAt))):
+    [...raw].sort((a,b)=>(a.name||a.client||'').localeCompare(b.name||b.client||'','it'));
+  }
+  cachedSources.set(category,data);return data;
  }
  function matches(item,term){return archiveMatchesSearch(item,category,term);}
  function summary(item){
@@ -355,7 +363,7 @@ export function setupDriverRecords(account){
  }
  function render({keepEditor=false}={}){
   metrics();if(!keepEditor)clearEditor();
-  const tripSummary=category==='trip'&&state?tripWorklistSummary(state.trips):null;
+  const tripSummary=category==='trip'&&state?(cachedTripSummary??=tripWorklistSummary(state.trips)):null;
   worklistUI(tripSummary);
   const values=source(),term=filter.value.trim();
   const matched=values.filter(item=>matches(item,term)&&(
@@ -370,7 +378,7 @@ export function setupDriverRecords(account){
    return;
   }
   if(!matched.length){list.append(make('p','records-empty','Nessun elemento corrisponde alla ricerca.'));return;}
-  const amountContext=category==='trip'?buildTripAmountContext(state.trips):null;
+  const amountContext=category==='trip'?(cachedAmountContext??=buildTripAmountContext(state.trips)):null;
   for(const item of matched.slice(0,visibleLimit)){
    const card=make('article',category==='trip'?'records-card records-trip-card':'records-card');
    const body=category==='trip'?tripCardBody(item,amountContext):make('div','records-card-text');
@@ -476,6 +484,7 @@ export function setupDriverRecords(account){
    throw new Error('Archivio non valido: aggiornamento interrotto.');
   const changed=!silent||revision!==record?.revision||JSON.stringify(audit)!==JSON.stringify(result.audit);
   state=record?.state||null;revision=record?.revision??null;audit=result.audit||[];
+  invalidateDerived();
   if(changed)render();
   if(category==='customer')void refreshShared();
   const driver=drivers.find(x=>x.id===id);
@@ -489,7 +498,7 @@ export function setupDriverRecords(account){
   // Invalidate an older driver read/list, including its loading state.
   const target=choose.value,token=++epoch;
   loading=false;refresh.disabled=false;
-  selectedId=target;revision=null;state=null;audit=[];filter.value='';
+  selectedId=target;revision=null;state=null;audit=[];invalidateDerived();filter.value='';
   sharedSeq++;sharedSites=null;sharedCheckedAt='';sharedError=false;sharedLoading=false;quickFilter='all';
   visibleLimit=35;clearEditor();render();
   loading=true;refresh.disabled=true;
@@ -660,7 +669,7 @@ export function setupDriverRecords(account){
    if(!Number.isSafeInteger(r?.revision)||!r?.state||!Array.isArray(r.audit))
     throw new Error('Salvataggio non confermato: aggiorna il registro.');
    if(token!==epoch||owner!==selectedId||!authorized())return false;
-   revision=r.revision;state=r.state;audit=r.audit;
+   revision=r.revision;state=r.state;audit=r.audit;invalidateDerived();
    render();
    if(kind==='customer'&&category==='customer')void refreshShared();
    notice('Modifica salvata online (revisione '+revision+
@@ -785,7 +794,7 @@ export function setupDriverRecords(account){
   epoch++;loading=false;refresh.disabled=false;clearEditor();
   choose.replaceChildren(); // Old roster options must never point at the wrong driver.
   desiredPhone=typeof phone==='string'?phone:'';
-  selectedId='';state=null;revision=null;audit=[];visibleLimit=35;
+  selectedId='';state=null;revision=null;audit=[];invalidateDerived();visibleLimit=35;
   sharedSeq++;sharedSites=null;sharedCheckedAt='';sharedError=false;sharedLoading=false;quickFilter='all';
   filter.value='';category='';setCategory(kind==='customer'?'customer':'trip');
   list.replaceChildren();metrics();void load();
