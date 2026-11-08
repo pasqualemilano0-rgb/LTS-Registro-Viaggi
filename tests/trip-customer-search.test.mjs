@@ -29,7 +29,7 @@ test('typing a longer term can match the beginning of any name word, but never a
  assert.deepEqual(filterTripCustomerChoices(rows,'MIL').map(c=>c.name),[
   'ACETIFICIO ANDREA MILANO SRL','ACETIFICIO ANDREA MILANO SRL']);
  assert.deepEqual(filterTripCustomerChoices(rows,'FER').map(c=>c.name),[
-  'FERRAMENTA FELICE','ALFA FERRARI SRL']);
+  'FERRAMENTA FELICE','ACTION FERENTINO - CENTRO LOGISTICO','ALFA FERRARI SRL']);
  assert.deepEqual(filterTripCustomerChoices(rows,'AR').map(c=>c.name),[]);
  assert.deepEqual(filterTripCustomerChoices(rows,'ANDREA MI').map(c=>c.name),[
   'ACETIFICIO ANDREA MILANO SRL','ACETIFICIO ANDREA MILANO SRL']);
