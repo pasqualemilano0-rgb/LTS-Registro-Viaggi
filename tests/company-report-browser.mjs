@@ -258,6 +258,38 @@ try{
  assert.equal(await page.locator('#console-overview').isVisible(),true);
  await page.waitForFunction(()=>document.querySelector('#customer-overview-priced').textContent==='1');
  assert.equal(await page.locator('#customer-overview-total').textContent(),'3');
+
+ // Smart Console: search across authorized data without changing active view.
+ await page.waitForFunction(()=>document.querySelector('#report-count').textContent==='2');
+ await page.locator('#smart-command-open').click();
+ await page.locator('#smart-panel').waitFor({state:'visible'});
+ assert.equal(await page.locator('#dashboard').getAttribute('data-view'),'overview');
+ assert.equal(await page.locator('#dashboard').evaluate(node=>node.inert),true);
+ await page.locator('#smart-search').fill('ROSSI');
+ assert.match(await page.locator('#smart-results').textContent(),/Mario Rossi/i);
+ await page.locator('#smart-search').fill('CLIENTE');
+ assert.match(await page.locator('#smart-results').textContent(),/CLIENTE/i);
+ await page.locator('#smart-search').fill('ABCD');
+ assert.match(await page.locator('#smart-results').textContent(),/ABCD1234567/i);
+ // Inline original authenticated forms, with no duplicate event listeners.
+ await page.locator('[data-smart-action="invite"]').click();
+ assert.equal(await page.locator('#smart-embed-body #invite-form').count(),1);
+ assert.equal(await page.locator('#dashboard').getAttribute('data-view'),'overview');
+ await page.locator('#invite-first').fill('TEST');
+ await page.locator('#invite-phone').fill('3338887777');
+ await page.locator('#smart-back').click();
+ assert.equal(await page.locator('#smart-embed-body #invite-form').count(),0);
+ assert.equal(await page.locator('#management-panel #invite-form').count(),1);
+ assert.equal(await page.locator('#invite-first').inputValue(),'TEST');
+ await page.locator('[data-smart-action="restore"]').click();
+ assert.equal(await page.locator('#smart-embed-body #restore-form').count(),1);
+ await page.locator('#smart-close').click();
+ assert.equal(await page.locator('#smart-overlay').isVisible(),false);
+ assert.equal(await page.locator('#dashboard').evaluate(node=>node.inert),false);
+ assert.equal(await page.locator('#dashboard').getAttribute('data-view'),'overview');
+ assert.equal(await page.locator('#management-panel #restore-form').count(),1);
+ await page.locator('#invite-form').evaluate(form=>form.reset());
+
  assert.equal(await page.locator('#customer-overview-unpriced').textContent(),'2');
  assert.match(await page.locator('#customer-overview-sync-status').textContent(),/1 sedi con tariffa, 2 senza tariffa/);
  // An unpriced shared depot pre-fills precisely its name and city.
