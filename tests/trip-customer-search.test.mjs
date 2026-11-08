@@ -42,7 +42,7 @@ test('name-first ranking, city-preserving duplicates and result cap',()=>{
  assert.deepEqual(filterTripCustomerChoices(rows,''),[]);
  assert.deepEqual(filterTripCustomerChoices(null,'F'),[]);
  const ranked=filterTripCustomerChoices([...rows,{name:'FERRO NORD',city:'TORINO'}],'FER');
- assert.equal(ranked[0].name,'FERRO NORD');
+ assert.deepEqual(ranked.map(c=>c.name),['FERRAMENTA FELICE','FERRO NORD','ACTION FERENTINO - CENTRO LOGISTICO','ALFA FERRARI SRL']);
 });
 test('input suggestions call dedicated matcher; customer directory still uses full-field search',()=>{
  const app=readFileSync(new URL('../app.mjs',import.meta.url),'utf8');
