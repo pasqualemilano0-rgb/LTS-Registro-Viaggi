@@ -43,7 +43,7 @@ self.addEventListener('fetch', event => {
   // Use the network for every real admin page, module and authenticated request.
   // Only a generic, account-free offline notice is available without internet.
   if (request.mode === 'navigate') {
-    event.respondWith(fetch(request).catch(async () =>
+    event.respondWith(fetch(request, { cache: 'no-store' }).catch(async () =>
       (await caches.match(OFFLINE_PATH)) || Response.error()
     ));
     return;
