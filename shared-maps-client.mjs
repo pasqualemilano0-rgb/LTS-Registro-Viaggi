@@ -1,3 +1,4 @@
+export const sharedMapsEnabled=()=>true;
 /* QA PRIVATA — solo sedi sintetiche. */
 
 let rows=[
