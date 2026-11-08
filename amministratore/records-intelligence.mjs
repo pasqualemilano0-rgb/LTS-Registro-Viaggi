@@ -114,3 +114,29 @@ export function archiveMatchesSearch(item,category,term){
  const haystack=normalized(fields.join(' '));
  return query.every(piece=>haystack.includes(piece));
 }
+
+
+/** Read-only hint: an audit DELETE may be restored only while it is the
+ * latest delete/restore event for this record and the record is still absent.
+ * Server authorization and revision checks remain authoritative.
+ */
+export function archivedRestoreStatus(entry,audit=[],state=null){
+ const collections={trip:'trips',customer:'customers',tariff:'tariffs'};
+ const table=collections[entry?.category];
+ if(entry?.action!=='delete'||!table||!entry.recordId||
+    !Number.isSafeInteger(entry.afterRevision)||
+    !Array.isArray(audit)||!Array.isArray(state?.[table]))
+  return {eligible:false,label:'Ripristino non disponibile'};
+ const updated=audit.filter(row=>row.category===entry.category&&
+  String(row.recordId)===String(entry.recordId)&&
+  Number.isSafeInteger(row.afterRevision)&&
+  row.afterRevision>entry.afterRevision&&
+  ['delete','restore'].includes(row.action));
+ if(updated.some(row=>row.action==='restore'))
+  return {eligible:false,label:'Già ripristinato'};
+ if(updated.length)
+  return {eligible:false,label:'Voce superata'};
+ if(state[table].some(row=>String(row.id)===String(entry.recordId)))
+  return {eligible:false,label:'Elemento già presente'};
+ return {eligible:true,label:'Ripristina'};
+}
