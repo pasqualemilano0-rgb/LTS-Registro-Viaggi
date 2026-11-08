@@ -18,7 +18,9 @@ export function setupSmartConsole({
   back=byId('smart-back'),search=byId('smart-search'),
   results=byId('smart-results'),summary=byId('smart-context'),
   home=byId('smart-home'),embedded=byId('smart-embedded'),
-  embedBody=byId('smart-embed-body'),heading=byId('smart-heading');
+  embedBody=byId('smart-embed-body'),heading=byId('smart-heading'),
+  detail=byId('smart-detail'),detailBody=byId('smart-detail-body'),
+  detailActions=byId('smart-detail-actions'),detailSource=byId('smart-detail-source');
  let moved=[],lastFocus=null,mode='home',openState=false;
  const allowed=()=>Boolean(authorized())&&navigator.onLine!==false;
  const isVisible=()=>openState&&!overlay.hidden;
@@ -39,7 +41,8 @@ export function setupSmartConsole({
  function close({focus=true,clearSearch=true}={}){
   if(moved.length)restoreEmbedded();
   overlay.hidden=true;openState=false;mode='home';
-  home.hidden=false;embedded.hidden=true;back.hidden=true;
+  home.hidden=false;embedded.hidden=true;detail.hidden=true;back.hidden=true;
+  detailBody.replaceChildren();detailActions.replaceChildren();
   document.body.classList.remove('smart-is-open');
   byId('dashboard').inert=false;
   trigger.setAttribute('aria-expanded','false');
@@ -72,8 +75,48 @@ export function setupSmartConsole({
   const first=target.querySelector('input');
   first?.focus();
  }
+ function showDetail(spec,item){
+  if(!allowed()||!spec||!item?.row)return;
+  const record=item.row;
+  detailBody.replaceChildren();detailActions.replaceChildren();
+  const details=el('dl','smart-detail-fields');
+  function field(label,value){
+   if(value===undefined||value===null||!String(value).trim())return;
+   const cell=el('div','smart-detail-field');
+   cell.append(el('dt','',label),el('dd','',String(value)));
+   details.append(cell);
+  }
+  if(spec.kind==='drivers'){
+   field('Telefono',record.phone);field('Stato accesso',record.status);
+   if(record.phone){
+    appendAction(detailActions,'Viaggi dell’autista',()=>{
+     close({focus:false});openRecords(record.phone,'trip');
+    });
+    appendAction(detailActions,'Clienti personali',()=>{
+     close({focus:false});openRecords(record.phone,'customer');
+    });
+   }
+   appendAction(detailActions,'Gestisci accesso',()=>goTo('drivers'));
+  }else if(spec.kind==='customers'){
+   field('Località',record.city);field('Indirizzo',record.address);
+   appendAction(detailActions,'Modifica tariffa della sede',()=>{
+    close({focus:false});openCustomer(record);
+   });
+  }else if(spec.kind==='trips'){
+   field('Data',record.date);field('Autista',record.driverName);
+   field('Cliente',record.client);field('Località',record.city);
+   field('Container',record.container);
+   appendAction(detailActions,'Apri registro del periodo',()=>goTo('trips'));
+  }
+  detailBody.append(el('h3','smart-detail-title',item.label),details);
+  detailSource.textContent='Anteprima dei soli dati aziendali già caricati e sincronizzati. Le modifiche richiedono la procedura originale con verifica e conferma.';
+  home.hidden=true;embedded.hidden=true;detail.hidden=false;back.hidden=false;
+  mode='detail';heading.textContent='Scheda rapida';
+  back.focus();
+ }
  function resetTask(){
   if(moved.length)restoreEmbedded();
+  detail.hidden=true;detailBody.replaceChildren();detailActions.replaceChildren();
   home.hidden=false;embedded.hidden=true;back.hidden=true;
   mode='home';heading.textContent='Trova e agisci';
   search.focus();
@@ -162,7 +205,12 @@ export function setupSmartConsole({
     const body=el('div','smart-result-description');
     body.append(el('strong','',item.label),el('small','',spec.caption(item)));
     row.append(body);
-    appendAction(row,spec.button,()=>spec.open(item));
+    const buttons=el('div','smart-result-buttons');
+    const preview=appendAction(buttons,'Dettagli',()=>showDetail(spec,item));
+    preview.setAttribute('aria-label','Mostra dettagli di '+item.label);
+    const direct=appendAction(buttons,spec.button,()=>spec.open(item));
+    direct.setAttribute('aria-label',spec.button+' · '+item.label);
+    row.append(buttons);
     group.append(row);
    }
    results.append(group);
@@ -180,7 +228,7 @@ export function setupSmartConsole({
   document.body.classList.add('smart-is-open');
   byId('dashboard').inert=true;
   trigger.setAttribute('aria-expanded','true');
-  home.hidden=false;embedded.hidden=true;back.hidden=true;
+  home.hidden=false;embedded.hidden=true;detail.hidden=true;back.hidden=true;
   mode='home';heading.textContent='Trova e agisci';
   render();search.focus();
  }
@@ -204,14 +252,24 @@ export function setupSmartConsole({
  home.querySelectorAll('[data-smart-action]').forEach(button=>
   button.addEventListener('click',()=>action(button.dataset.smartAction)));
  search.addEventListener('input',renderSearch);
- window.addEventListener('lts-admin-data-refreshed',()=>{if(isVisible()&&mode==='home')render();});
+ search.addEventListener('keydown',event=>{
+  if(event.key!=='Enter'||event.isComposing||!search.value.trim())return;
+  const first=results.querySelector('.smart-result-buttons .smart-action');
+  if(!first)return;
+  event.preventDefault();first.click();
+ });
+ window.addEventListener('lts-admin-data-refreshed',()=>{
+  if(!isVisible())return;
+  if(mode==='home')render();
+  else if(mode==='detail')resetTask(); // Do not show a stale preview after data refresh.
+ });
  document.addEventListener('keydown',event=>{
   if(!event.defaultPrevented&&(event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==='k'){
    if(!authorized())return;
    event.preventDefault();if(isVisible())close();else open();return;
   }
   if(!isVisible())return;
-  if(event.key==='Escape'){event.preventDefault();close();return;}
+  if(event.key==='Escape'){event.preventDefault();if(mode==='home')close();else resetTask();return;}
   if(event.key!=='Tab')return;
   const focusable=[...panel.querySelectorAll('button:not([disabled]):not([hidden]),input:not([disabled]):not([hidden]),select:not([disabled]):not([hidden]),textarea:not([disabled]):not([hidden]),a[href]')]
    .filter(node=>node.getClientRects().length>0);
