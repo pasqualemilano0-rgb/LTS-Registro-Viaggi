@@ -477,6 +477,7 @@ export function setupDriverRecords(account){
   const changed=!silent||revision!==record?.revision||JSON.stringify(audit)!==JSON.stringify(result.audit);
   state=record?.state||null;revision=record?.revision??null;audit=result.audit||[];
   if(changed)render();
+  if(category==='customer')void refreshShared();
   const driver=drivers.find(x=>x.id===id);
   notice((driver?.name||'Autista')+' · '+(record?
     'archivio sincronizzato, revisione '+revision+
@@ -489,6 +490,7 @@ export function setupDriverRecords(account){
   const target=choose.value,token=++epoch;
   loading=false;refresh.disabled=false;
   selectedId=target;revision=null;state=null;audit=[];filter.value='';
+  sharedSeq++;sharedSites=null;sharedCheckedAt='';sharedError=false;sharedLoading=false;quickFilter='all';
   visibleLimit=35;clearEditor();render();
   loading=true;refresh.disabled=true;
   notice('Caricamento dell’archivio selezionato…');
@@ -496,7 +498,7 @@ export function setupDriverRecords(account){
   catch(error){if(token===epoch)notice(error.message,true);}
   finally{if(token===epoch){loading=false;refresh.disabled=false;}}
  }
- function openEditor(item=null){
+ function openEditor(item=null,{focusCertification=false}={}){
   if(!authorized()||busy||!state||!canLeave())return;
   clearEditor();
   const kind=category;
@@ -633,7 +635,11 @@ export function setupDriverRecords(account){
     pickers.forEach(p=>p.catalog(combined,[],{mapsAvailable:false,tariffsAvailable:false}));
    });
   }
-  form.querySelector('input:not([type=checkbox])')?.focus({preventScroll:true});
+  if(focusCertification&&kind==='customer'&&item){
+   const section=editor.querySelector('.records-certify-panel');
+   section?.scrollIntoView({block:'center',behavior:'smooth'});
+   section?.querySelector('input[type=url]')?.focus({preventScroll:true});
+  }else form.querySelector('input:not([type=checkbox])')?.focus({preventScroll:true});
  }
  async function mutate({operation,category:kind,recordId,patch={},reason='',auditId=null}){
   if(busy||!authorized()||!state||revision===null)return false;
@@ -655,7 +661,9 @@ export function setupDriverRecords(account){
     throw new Error('Salvataggio non confermato: aggiorna il registro.');
    if(token!==epoch||owner!==selectedId||!authorized())return false;
    revision=r.revision;state=r.state;audit=r.audit;
-   render();notice('Modifica salvata online (revisione '+revision+
+   render();
+   if(kind==='customer'&&category==='customer')void refreshShared();
+   notice('Modifica salvata online (revisione '+revision+
     '). L’autista la vedrà al prossimo aggiornamento online; lo storico rimane nell’audit.');
    return true;
   }catch(error){
@@ -763,12 +771,13 @@ export function setupDriverRecords(account){
  function setCategory(next){
   if(!tabs.some(x=>x[0]===next)||busy||next===category)return;
   if(!canLeave())return;
-  category=next;filter.value='';visibleLimit=35;
+  category=next;filter.value='';quickFilter='all';visibleLimit=35;
   tabsRoot.querySelectorAll('button').forEach(b=>{
    const selected=b.dataset.kind===category;
    b.classList.toggle('selected',selected);b.setAttribute('aria-pressed',String(selected));
   });
   render();
+  if(category==='customer'&&state)void refreshShared();
  }
  function openForPhone(phone='',kind='trip'){
   if(!canLeave())return false;
@@ -777,6 +786,7 @@ export function setupDriverRecords(account){
   choose.replaceChildren(); // Old roster options must never point at the wrong driver.
   desiredPhone=typeof phone==='string'?phone:'';
   selectedId='';state=null;revision=null;audit=[];visibleLimit=35;
+  sharedSeq++;sharedSites=null;sharedCheckedAt='';sharedError=false;sharedLoading=false;quickFilter='all';
   filter.value='';category='';setCategory(kind==='customer'?'customer':'trip');
   list.replaceChildren();metrics();void load();
   return true;
