@@ -38,6 +38,9 @@ on:
       - 'tests/maps-redirect-diagnostic.mjs'
       - 'tests/qa-maps-reader-live.test.mjs'
       - 'tests/qa-account-release.test.mjs'
+      - 'tests/qa-release-versions.test.mjs'
+      - 'tests/qa-regression-contract.test.mjs'
+      - 'tests/qa-no-auto-publish.test.mjs'
       - 'tests/qa-driver-management-fixes.test.mjs'
       - 'tests/leaked-password-protection.test.mjs'
       - '.github/workflows/qa-account-release.yml'
@@ -78,6 +81,9 @@ on:
       - 'tests/maps-redirect-diagnostic.mjs'
       - 'tests/qa-maps-reader-live.test.mjs'
       - 'tests/qa-account-release.test.mjs'
+      - 'tests/qa-release-versions.test.mjs'
+      - 'tests/qa-regression-contract.test.mjs'
+      - 'tests/qa-no-auto-publish.test.mjs'
       - 'tests/qa-driver-management-fixes.test.mjs'
       - 'tests/leaked-password-protection.test.mjs'
 permissions:
@@ -115,7 +121,7 @@ jobs:
           node --check driver-session-vault.mjs
           node --check recupera-password.mjs
           node --check sw.js
-          node --test tests/qa-driver-management-fixes.test.mjs tests/qa-manual-customers.test.mjs tests/qa-realtime.test.mjs tests/qa-account-release.test.mjs tests/driver-session-vault.test.mjs tests/leaked-password-protection.test.mjs tests/qa-company-tariffs.test.mjs tests/customer-site-matches.test.mjs tests/personal-customer-certification.test.mjs tests/records-intelligence.test.mjs
+          node --test tests/qa-driver-management-fixes.test.mjs tests/qa-manual-customers.test.mjs tests/qa-realtime.test.mjs tests/qa-account-release.test.mjs tests/driver-session-vault.test.mjs tests/leaked-password-protection.test.mjs tests/qa-company-tariffs.test.mjs tests/customer-site-matches.test.mjs tests/personal-customer-certification.test.mjs tests/records-intelligence.test.mjs tests/qa-release-versions.test.mjs tests/qa-regression-contract.test.mjs tests/qa-no-auto-publish.test.mjs
       - name: Verify live protected driver records API
         run: node --test tests/qa-admin-records-live.test.mjs
       - name: Verify live Maps reader CORS and authentication boundary
