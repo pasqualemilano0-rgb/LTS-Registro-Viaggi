@@ -1,0 +1,39 @@
+{
+  "version": 2,
+  "rewrites": [
+    {
+      "source": "/LTS-Registro-Viaggi",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/LTS-Registro-Viaggi/:path*",
+      "destination": "/:path*"
+    }
+  ],
+  "redirects": [
+    {
+      "source": "/",
+      "destination": "/LTS-Registro-Viaggi/amministratore/",
+      "permanent": false
+    }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow, noarchive"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "no-referrer"
+        },
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        }
+      ]
+    }
+  ]
+}
