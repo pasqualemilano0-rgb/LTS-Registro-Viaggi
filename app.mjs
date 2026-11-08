@@ -629,10 +629,22 @@ function tripCard(trip,amountContext){
  const amount=D.tripAmounts(trip,amountContext);const saturday=D.saturdayAllowanceStatus(trip,amountContext);
  const card=el('article',{class:'panel trip-card'},el('div',{class:'trip-meta'},el('span',{class:'date-badge'},formatDate(trip.date)),el('span',{class:'trip-money',title:amount.missingTariff?'Totale parziale: alcune tariffe non sono impostate':'Trasferta ed extra'},D.formatMoney(amount.totalCents),amount.missingTariff?' *':'')),el('h3',{class:'trip-container'},trip.container),el('p',{class:'trip-client'},trip.client),el('p',{class:'trip-location'},icon('pin'),trip.city));
  if(trip.secondClient)card.append(el('p',{class:'trip-location'},icon('plus'),`${trip.secondClient} · ${trip.secondCity}`));
- if(trip.services.length)card.append(el('div',{class:'trip-services'},trip.services.map(key=>el('span',{class:'mini-chip'},D.SERVICES.find(s=>s.key===key)?.label||key))));
+ if(trip.services.length)card.append(el('div',{class:'trip-services'},trip.services.map(key=>{
+  const label=D.SERVICES.find(s=>s.key===key)?.label||key;
+  const value=key==='sabatoTrasferta'&&saturday.status==='included'
+   ? 'già conteggiato nella giornata'
+   : D.formatMoney(trip.extraCents?.[key]);
+  return el('span',{class:'mini-chip'},label,' · ',value);
+ })));
  if(trip.note)card.append(el('p',{class:'trip-note-summary'},el('span',{class:'trip-note-prefix'},'Nota:'),el('span',{class:'trip-note-text',title:trip.note},trip.note)));
  else card.append(el('button',{type:'button',class:'trip-option trip-note-add','aria-label':`INSERISCI NOTA · ${trip.container} · ${formatDate(trip.date)}`,on:{click:()=>editTrip(trip,{focusNote:true})}},el('span',{class:'plus-disc','aria-hidden':'true'},'+'),'INSERISCI NOTA'));
  if(saturday.status!=='none')card.append(el('p',{class:'saturday-note',dataset:{saturdayStatus:saturday.status}},saturdayNoteText(saturday.status)));
+ card.append(el('div',{class:'trip-amount-lines'},
+  el('div',{class:'trip-amount-line'},el('strong',{},'Trasferta'),el('span',{},D.formatMoney(amount.pickupCents))),
+  el('div',{class:'trip-amount-line'},el('strong',{},'Servizi extra'),el('span',{},D.formatMoney(amount.extraCents)))));
+ card.append(el('div',{class:'trip-total-band'},el('span',{class:'trip-total-label'},amount.missingTariff?'Totale parziale':'Totale'),
+  el('strong',{},D.formatMoney(amount.totalCents))));
+ if(amount.missingTariff)card.append(el('p',{class:'trip-total-warning'},'Una o più tariffe non sono impostate. Il totale è parziale.'));
  card.append(el('div',{class:'trip-card-footer'},el('p',{class:'trip-breakdown'},`Prese ${D.formatMoney(amount.pickupCents)} · Extra ${D.formatMoney(amount.extraCents)}`),el('div',{class:'inline-actions'},el('button',{type:'button',class:'icon-button','aria-label':`Modifica viaggio ${trip.container} del ${formatDate(trip.date)}`,on:{click:()=>editTrip(trip)}},icon('edit')),el('button',{type:'button',class:'icon-button danger','aria-label':`Elimina viaggio ${trip.container} del ${formatDate(trip.date)}`,on:{click:()=>confirmAction('Eliminare questo viaggio?',`${trip.container} · ${formatDate(trip.date)}. Il viaggio sarà rimosso dal registro.`,async()=>{requireCurrentEditor(editorVersion(trip),state.trips.find(current=>current.id===trip.id),'Il viaggio');await persist({...state,trips:state.trips.filter(t=>t.id!==trip.id)});render();toast('Viaggio eliminato.');})}},icon('trash')))));
  card.append(el('button',{type:'button',class:'trip-repeat-action',
   'aria-label':`Ripeti percorso ${trip.client}, ${trip.city}. Nuovo viaggio senza container e servizi.`,
