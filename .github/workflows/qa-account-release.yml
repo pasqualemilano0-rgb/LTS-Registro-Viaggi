@@ -114,6 +114,8 @@ jobs:
           node --check account-access.mjs
           node --check shared/admin-record-operations.mjs
           node --check server/admin-records-core.mjs
+          node --check amministratore/smart-console.mjs
+          node --check amministratore/smart-console-model.mjs
           node --check amministratore/driver-records.mjs
           node --check amministratore/personal-customer-certification.mjs
           node --check amministratore/personal-customer-maps-ui.mjs
