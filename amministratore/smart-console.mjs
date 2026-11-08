@@ -1,4 +1,4 @@
-import {searchSmartConsole,smartConsoleAlerts} from './smart-console-model.mjs?v=20261108-smart-v1';
+import {searchSmartConsole,smartConsoleAlerts,smartCommandIntent} from './smart-console-model.mjs?v=20261108-smart-v1';
 
 const byId=id=>document.getElementById(id);
 const el=(tag,className='',value='')=>{
@@ -10,7 +10,7 @@ const el=(tag,className='',value='')=>{
 const safeCount=value=>Number.isSafeInteger(value)&&value>=0?value:null;
 
 export function setupSmartConsole({
- authorized,getDrivers,getReport,getCustomers,openView,openRecords,openCustomer,
+ authorized,getDrivers,getReport,getCustomers,openView,openRecords,openCustomer,openManualCustomer,
  clearPrivateCode
 }){
  const trigger=byId('smart-command-open'),overlay=byId('smart-overlay'),
@@ -122,6 +122,13 @@ export function setupSmartConsole({
    results.append(el('p','smart-muted','Cerca autista, telefono, cliente, località o container. Le ricerche usano solo i dati già caricati e autorizzati.'));
    return;
   }
+  const task=smartCommandIntent(q);
+  if(task){
+   const group=el('section','smart-result-group');
+   group.append(el('h3','','Azione suggerita'));
+   appendAction(group,task.label,()=>action(task.action));
+   results.append(group);
+  }
   const report=getReport(),catalog=getCustomers();
   const found=searchSmartConsole({
    query:q,drivers:getDrivers(),customers:catalog?.customers,
@@ -142,12 +149,7 @@ export function setupSmartConsole({
    {kind:'trips',name:'Viaggi del periodo caricato',caption:item=>{
     const t=item.row;
     return [t.driverName,t.client,t.city,t.date].filter(Boolean).join(' · ');
-   },open:item=>{
-    const date=item.row.date;
-    const month=byId('report-month');
-    if(month&&/^\d{4}-\d{2}-\d{2}$/.test(date||''))month.value=date.slice(0,7);
-    goTo('trips');
-   },button:'Apri mese'}
+   },open:()=>goTo('trips'),button:'Apri registro'}
   ];
   let total=0;
   for(const spec of specs){
@@ -165,7 +167,7 @@ export function setupSmartConsole({
    }
    results.append(group);
   }
-  if(!total)results.append(el('p','smart-muted','Nessuna corrispondenza nei dati caricati. Per una ricerca completa apri l’archivio interessato.'));
+  if(!total&&!task)results.append(el('p','smart-muted','Nessuna corrispondenza nei dati caricati. Per una ricerca completa apri l’archivio interessato.'));
  }
  function render(){
   if(!isVisible()||!allowed()){if(openState)close({focus:false});return;}
@@ -189,6 +191,9 @@ export function setupSmartConsole({
           action==='alerts'||action==='exports'||action==='analysis'||
           action==='records'||action==='security')goTo(action);
   else if(action==='customers')goTo('rates');
+  else if(action==='manual'){
+   close({focus:false});if(authorized())openManualCustomer();
+  }
  }
  trigger.addEventListener('click',()=>{if(isVisible())close();else open();});
  document.querySelectorAll('[data-smart-open]').forEach(button=>
