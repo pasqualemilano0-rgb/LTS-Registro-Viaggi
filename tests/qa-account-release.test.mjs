@@ -357,7 +357,7 @@ test('dedicated admin console loads only verified administrative transport',asyn
  const css=readFileSync(new URL('../amministratore/admin.css',import.meta.url),'utf8');
  const model=await import('../amministratore/model.mjs');
  assert.match(adminHtml,/Content-Security-Policy/);
- assert.match(adminHtml,/src="\.\/admin[.]mjs\?v=20261108-smart-v1"/);
+ assert.match(adminHtml,/src="\.\/admin[.]mjs\?v=20261108-smart-v2"/);
  assert.match(adminJs,/import \* as account from '\.\.\/account-access[.]mjs\?v=20261107-realtime-v1'/);
  assert.match(adminJs,/await account[.]verifySession\(\)/);
  assert.match(adminJs,/account[.]getRole\(\)!=='admin'/);
@@ -461,7 +461,7 @@ test('TOTP admin flow uses verified backend session and never exposes secret in 
  assert.match(html,/id="mfa-warning"/);
  assert.match(html,/pattern="\[0-9\]\{6\}"/);
  assert.match(html,/img-src 'self' data:/);
- assert.match(html,/admin\.mjs\?v=20261108-smart-v1/);
+ assert.match(html,/admin\.mjs\?v=20261108-smart-v2/);
  assert.match(html,/admin\.css\?v=20261104-company-v3/);
  assert.match(admin,/account\.enrollAdminTotp/);
  assert.match(admin,/account\.verifyAdminTotp/);
@@ -482,7 +482,7 @@ test('MFA enrollment requires the latest QR and a correctly synchronized device 
  assert.match(html,/Data e ora automatiche/);
  assert.match(html,/fuso orario automatico/);
  assert.match(html,/codice basato sull'ora/);
- assert.match(html,/admin[.]mjs[?]v=20261108-smart-v1/);
+ assert.match(html,/admin[.]mjs[?]v=20261108-smart-v2/);
 });
 
 test('Authenticator app switching preserves the existing enrollment instead of regenerating QR',()=>{
@@ -947,4 +947,21 @@ test('Porti keeps the booking and vessel programs, without the two removed notic
  for(const brand of ['conateco.png','tfg-portal.png','sct-compact.png'])
   assert.ok(existsSync(new URL('../porti/assets/terminal-logos/'+brand,import.meta.url)));
  assert.match(sw,/const CACHE = PREFIX \+ '20\d{6}-[a-z0-9-]+-v\d+'/);
+});
+
+test('Smart Console V2 keeps context inside its authorized drawer and never writes data on preview',()=>{
+ const html=read('amministratore/index.html');
+ const ui=read('amministratore/smart-console.mjs');
+ const css=read('amministratore/smart-console.css');
+ assert.match(html,/id="smart-detail"/);
+ assert.match(html,/id="smart-detail-body"/);
+ assert.match(html,/id="smart-detail-actions"/);
+ assert.match(html,/smart-console[.]css[?]v=20261108-smart-v2/);
+ assert.match(ui,/function showDetail\(spec,item\)/);
+ assert.match(ui,/home[.]hidden=true;embedded[.]hidden=true;detail[.]hidden=false/);
+ assert.match(ui,/smart-result-buttons/);
+ assert.match(ui,/if\(mode==='home'\)close\(\);else resetTask\(\)/);
+ assert.match(ui,/mode==='detail'\)resetTask\(\)/);
+ assert.doesNotMatch(ui,/\b(?:localStorage|sessionStorage|indexedDB|innerHTML|fetch)\b/);
+ assert.match(css,/[.]smart-detail-actions/);
 });
