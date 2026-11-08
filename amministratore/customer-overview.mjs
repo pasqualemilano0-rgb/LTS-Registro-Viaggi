@@ -119,6 +119,7 @@ export function setupCustomerOverview(account,onSetRate=null){
    const changed=JSON.stringify(records)!==JSON.stringify(next)||
     JSON.stringify(tariffRows)!==JSON.stringify(rates);
    records=next;tariffRows=rates;
+   window.dispatchEvent(new Event('lts-admin-data-refreshed'));
    if(changed||!silent)render();
    const clock=new Date().toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'});
    status.textContent='Elenco clienti Supabase sincronizzato alle '+clock+
@@ -143,5 +144,9 @@ export function setupCustomerOverview(account,onSetRate=null){
  more.addEventListener('click',()=>{expanded=!expanded;render();});
  refresh.addEventListener('click',()=>{void load();});
  reset();
- return {load,reset};
+ return {load,reset,peek(){
+  if(!records)return null;
+  const links=tariffRows?tariffLinkedCustomerSites(records,tariffRows):null;
+  return {customers:records,unpriced:links?.unpriced??null};
+ }};
 }

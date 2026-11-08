@@ -1,6 +1,6 @@
 /** Administrator reporting UI. Aggregates are authoritative only when returned by the API. */
 import {setupInsights} from './report-insights.mjs?v=20261104-company-v3';
-import {setupCustomerOverview} from './customer-overview.mjs?v=20261107-manual-shared-v1';
+import {setupCustomerOverview} from './customer-overview.mjs?v=20261108-smart-v1';
 import {setupCompanyRates} from './company-rates.mjs?v=20261107-manual-shared-v1';
 import {setupDriverRecords} from './driver-records.mjs?v=20261108-rc3-v1';
 import {setupCompanyExtras} from './company-extras.mjs?v=20261107-company-extras-v2';
@@ -305,6 +305,7 @@ export function setupReport(account){
    }
    rows=append?[...rows,...result.trips]:result.trips;
    page=result;
+   window.dispatchEvent(new Event('lts-admin-data-refreshed'));
    el('report-error').hidden=true;
    updateDriverOptions(result.drivers);
    const summary=result.summary;
@@ -412,6 +413,13 @@ export function setupReport(account){
  });
  el('report-next').addEventListener('click',()=>void load(true));
  return {reset,open,refreshActive,
+  peek(){return page?{summary:page.summary,month:page.month,reportedAt:page.reportedAt,
+   incompleteArchives:page.incompleteArchives,trips:rows}:null;},
+  peekCustomers(){return companyDirectory.peek();},
+  openRateForSite(site){if(!site||!account.isVerified()||account.getRole()!=='admin')return;
+   open('rates');if(el('dashboard').dataset.view==='rates')companyRates.prefillSite(site);},
+  openManualCustomer(){if(!account.isVerified()||account.getRole()!=='admin')return;
+   open('rates');if(el('dashboard').dataset.view==='rates')companyRates.focusManual();},
   openRecordsForPhone(phone,kind='trip'){open('records',phone,kind);},
   openPrivateCustomers(){open('records',null,'customer');}};
 }

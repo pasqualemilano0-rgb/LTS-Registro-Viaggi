@@ -2,7 +2,8 @@ import * as account from '../account-access.mjs?v=20261107-realtime-v1';
 import realtimeConfig from '../runtime-config.mjs';
 import {createLtsRealtime} from '../realtime-client.mjs?v=20261107-roster-realtime-v1';
 import {STATUS_LABELS,driverSummary,filterDrivers} from './model.mjs';
-import {setupReport} from './report.mjs?v=20261108-rc3-v1';
+import {setupReport} from './report.mjs?v=20261108-smart-v1';
+import {setupSmartConsole} from './smart-console.mjs?v=20261108-smart-v1';
 import {rememberPosition,readPosition,clearPosition} from './admin-position.mjs';
 
 const byId=id=>document.getElementById(id);
@@ -28,6 +29,18 @@ function restoreAdminPosition(saved){
  }));
 }
 const companyView=setupReport(account);
+const smartConsole=setupSmartConsole({
+ authorized:()=>account.isVerified()&&account.getRole()==='admin'&&
+  !dashboard.hidden&&byId('mfa-panel').hidden,
+ getDrivers:()=>drivers,
+ getReport:()=>companyView.peek(),
+ getCustomers:()=>companyView.peekCustomers(),
+ openView:view=>companyView.open(view),
+ openRecords:(phone,kind)=>companyView.openRecordsForPhone(phone,kind),
+ openCustomer:site=>companyView.openRateForSite(site),
+ openManualCustomer:()=>companyView.openManualCustomer(),
+ clearPrivateCode:()=>hideCode()
+});
 let adminRealtime=null;
 function startAdminRealtime(){
  if(!account.isVerified()||account.getRole()!=='admin'||dashboard.hidden||
@@ -76,6 +89,7 @@ function clearMfa(){
  setError(byId('mfa-error'),'');
 }
 function showMfaPanel(setup=false,resumed=false,purpose='primary'){
+ smartConsole.reset();byId('smart-command-open').hidden=true;
  adminRealtime?.stop();
  if(!setup)clearMfa();
  mfaMode=setup?(purpose==='backup'?'backup':'setup'):'login';
@@ -127,6 +141,7 @@ async function loadBackupFactors(){
  }catch(error){byId('mfa-backup-status').textContent=errorText(error,'Stato backup non disponibile. Riprova online.');}
 }
 function lock(message='Accedi come amministratore per continuare.'){
+ smartConsole.reset();byId('smart-command-open').hidden=true;
  adminRealtime?.stop();adminRealtime=null;
  clearAdminPosition();
  drivers=[];companyView.reset();clearMfa();
@@ -142,6 +157,7 @@ function showDashboard(status={}){
  byId('mfa-warning').hidden=status.mfa_enrolled===true;
  byId('mfa-backup-card').hidden=!(status.mfa_enrolled&&status.mfa_verified);
  loginPanel.hidden=true;dashboard.hidden=false;byId('logout').hidden=false;
+ byId('smart-command-open').hidden=false;
  setError(loginError,'');inform('');
  companyView.open(previousPosition?.view||
   (status.mfa_enrolled===true&&status.mfa_verified===true?'overview':'security'));
@@ -193,6 +209,7 @@ async function loadDrivers({silent=false}={}){
    const changed=JSON.stringify(drivers)!==JSON.stringify(result.drivers);
    drivers=result.drivers;
    if(changed||!silent)renderRoster();
+  smartConsole.refresh();
    setError(listError,'');
    if(!silent)inform('');
    return true;
