@@ -1,0 +1,35 @@
+name: LTS QA PRIVATA — demo isolata senza deploy
+on:
+  push:
+    branches: [qa/lts-10-10-demo-privata]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  synthetic-preview:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 14
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Ensure QA modules cannot reach live endpoints
+        run: |
+          node --check account-access.mjs
+          node --check runtime-config.mjs
+          node --check shared-maps-client.mjs
+          node --check maps-reader-client.mjs
+          node --check tests/qa-private-preview-browser.mjs
+          node --test tests/qa-private-contract.test.mjs
+      - name: Install isolated Chromium for local synthetic app
+        run: |
+          mkdir -p "$RUNNER_TEMP/lts-playwright"
+          npm install --prefix "$RUNNER_TEMP/lts-playwright" --no-save --no-package-lock playwright@1.56.1
+          "$RUNNER_TEMP/lts-playwright/node_modules/.bin/playwright" install --with-deps chromium
+      - name: Run fully local browser QA
+        run: LTS_BROWSER_PLAYWRIGHT="$RUNNER_TEMP/lts-playwright" node tests/qa-private-preview-browser.mjs
