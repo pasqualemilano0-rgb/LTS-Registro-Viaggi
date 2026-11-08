@@ -1,7 +1,7 @@
 /** Audited driver records console. Never stores someone else's archive in localStorage.
  * All actions need a verified admin session/MFA and a server-side revision CAS.
  */
-import {SERVICES,formatMoney,toCents} from '../shared/domain.mjs';
+import {SERVICES,formatMoney,toCents,buildTripAmountContext,tripAmounts,saturdayAllowanceStatus} from '../shared/domain.mjs';
 import {sharedMapsCustomers} from '../shared-maps-client.mjs';
 import {companyFareSnapshot} from '../shared/company-fares.mjs';
 import {buildDriverCustomerCatalog} from './driver-customer-catalog.mjs?v=20261107-driver-customer-picker-v1';
@@ -242,6 +242,48 @@ export function setupDriverRecords(account){
    'Revisioni: '+item.beforeRevision+' → '+item.afterRevision,
    item.reason?'Motivo: '+item.reason:''].filter(Boolean);
  }
+
+ function tripCardBody(item,amountContext){
+  const amounts=tripAmounts(item,amountContext);
+  const saturday=saturdayAllowanceStatus(item,amountContext);
+  const body=make('div','records-card-text');
+  body.append(make('h3','records-card-title',item.date));
+  body.append(make('p','records-trip-route',item.client+' · '+item.city));
+  const details=make('div','records-trip-details');
+  const row=(label,value)=>{
+   const element=make('div','records-trip-detail');
+   element.append(make('strong','',label),make('span','',value));
+   details.append(element);
+  };
+  row('Container',item.container||'—');
+  row('Trasferta',money(item.fareCents));
+  if(item.secondClient){
+   row('Seconda presa',item.secondClient+' · '+item.secondCity);
+   if(item.sumPickupFares!==false)row('Seconda trasferta',money(item.secondFareCents));
+   else row('Seconda trasferta','Non sommata');
+  }
+  if(item.services?.length){
+   row('Extra',money(amounts.extraCents));
+   const services=make('div','records-trip-services');
+   for(const service of SERVICES.filter(s=>item.services.includes(s.key))){
+    const entry=make('div','records-trip-service');
+    const value=service.key==='sabatoTrasferta'&&saturday.status==='included'
+     ? 'Già conteggiato su un altro viaggio della data'
+     : money(item.extraCents?.[service.key]);
+    entry.append(make('span','',service.label),make('span','',value));
+    services.append(entry);
+   }
+   details.append(services);
+  }else row('Extra','Nessuno');
+  if(item.note)details.append(make('p','records-trip-note','Note: '+item.note));
+  body.append(details);
+  const total=make('div','records-trip-total');
+  total.append(make('span','',amounts.missingTariff?'Totale parziale':'Totale'),make('strong','',money(amounts.totalCents)));
+  body.append(total);
+  if(amounts.missingTariff)body.append(make('p','records-trip-warning','Una o più tariffe non sono impostate: il totale visualizzato è parziale.'));
+  if(saturday.status==='included')body.append(make('p','records-trip-warning','SABATO TRASFERTA conteggiato una sola volta per questa data.'));
+  return body;
+ }
  function render({keepEditor=false}={}){
   metrics();if(!keepEditor)clearEditor();
   const values=source(),term=filter.value.trim().toLocaleUpperCase('it-IT');
@@ -254,11 +296,14 @@ export function setupDriverRecords(account){
    return;
   }
   if(!matched.length){list.append(make('p','records-empty','Nessun elemento corrisponde alla ricerca.'));return;}
+  const amountContext=category==='trip'?buildTripAmountContext(state.trips):null;
   for(const item of matched.slice(0,visibleLimit)){
-   const card=make('article','records-card');
-   const body=make('div','records-card-text');
-   const lines=summary(item);
-   lines.forEach((t,i)=>body.append(make(i===0?'h3':'p',i===0?'records-card-title':'',t)));
+   const card=make('article',category==='trip'?'records-card records-trip-card':'records-card');
+   const body=category==='trip'?tripCardBody(item,amountContext):make('div','records-card-text');
+   if(category!=='trip'){
+    const lines=summary(item);
+    lines.forEach((t,i)=>body.append(make(i===0?'h3':'p',i===0?'records-card-title':'',t)));
+   }
    const actions=make('div','records-card-actions');
    if(category==='history'){
     if(item.action==='delete'){
