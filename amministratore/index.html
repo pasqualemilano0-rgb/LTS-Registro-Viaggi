@@ -214,6 +214,15 @@
           <div class="records-count"><span>Revisione archivio</span><strong id="records-revision">—</strong></div>
         </div>
         <div id="records-tabs" class="records-tabs" role="group" aria-label="Tipi di inserimenti da amministrare"></div>
+        <section id="records-worklist" class="records-worklist" aria-label="Controlli e filtri operativi" hidden>
+          <div class="records-worklist-heading">
+            <div><strong>Controlli rapidi</strong><p id="records-worklist-subtitle">Seleziona una categoria per vedere i dati da verificare.</p></div>
+            <span id="records-worklist-primary" class="records-worklist-count">—</span>
+          </div>
+          <div id="records-quick-filters" class="records-quick-filters" role="group" aria-label="Filtra gli inserimenti per qualità dei dati"></div>
+          <div id="records-data-quality" class="records-quality-grid" aria-label="Qualità dei dati dell’archivio selezionato"></div>
+          <p id="records-shared-status" class="records-shared-status" role="status" aria-live="polite"></p>
+        </section>
         <div class="records-head">
           <label>Cerca negli inserimenti
             <input id="records-search" type="search" placeholder="Nome, località, container…" autocomplete="off">
