@@ -3,7 +3,7 @@
    Nessuna modifica a permessi, importi, persistenza o navigazione. */
 :root {
   --lts-ink: #183f4d;
-  --lts-muted: #637f8b;
+  --lts-muted: #516e7a;
   --lts-teal: #086d7e;
   --lts-teal-dark: #075766;
   --lts-line: #d5e3e8;
@@ -77,7 +77,7 @@ body {
 .trip-card .trip-container { color: var(--lts-ink); }
 .trip-card .trip-money { color: var(--lts-teal); font-weight: 800; }
 .trip-card .trip-client { color: #3c6170; }
-.trip-card .trip-location { color: #637f8b; }
+.trip-card .trip-location { color: #516e7a; }
 .trip-card .trip-services { margin-top: 12px; }
 .trip-card .mini-chip {
   border: 1px solid #d3e7e9;
@@ -126,7 +126,7 @@ body {
   border-top: 0;
   padding-top: 0;
 }
-.trip-card .trip-breakdown { color: #728996; }
+.trip-card .trip-breakdown { color: #506b76; }
 .trip-card .inline-actions { gap: 8px; }
 .trip-card .icon-button {
   width: 44px;
@@ -522,7 +522,7 @@ body {
   display:block;font-size:15px;line-height:1.3;color:#164555;
 }
 #admin-records-panel .records-worklist-heading p {
-  margin:4px 0 0;font-size:11px;color:#607e89;line-height:1.5;
+  margin:4px 0 0;font-size:11px;color:#506c77;line-height:1.5;
 }
 #admin-records-panel .records-worklist-count {
   background:#e4f4f3;color:#0b6c70;border:1px solid #d0e9e7;
@@ -559,7 +559,7 @@ body {
   font-variant-numeric:tabular-nums;
 }
 #admin-records-panel .records-quality-item small {
-  font-size:10px;line-height:1.4;color:#8499a2;
+  font-size:11px;line-height:1.4;color:#506c77;
 }
 #admin-records-panel .records-shared-status {
   margin:0;color:#597882;font-size:11px;line-height:1.55;
@@ -591,7 +591,7 @@ body {
   color:#9a681f;background:#fff2e1;
 }
 #admin-records-panel .records-customer-address {
-  font-size:12px;color:#647f8b;margin:0;line-height:1.45;
+  font-size:12px;color:#506c77;margin:0;line-height:1.45;
   overflow-wrap:anywhere;
 }
 #admin-records-panel .records-customer-details {
@@ -608,7 +608,7 @@ body {
 }
 #admin-records-panel .records-customer-details[open] summary::after {transform:rotate(180deg);}
 #admin-records-panel .records-customer-details p {
-  color:#607e89;font-size:12px;line-height:1.5;
+  color:#506c77;font-size:12px;line-height:1.5;
   overflow-wrap:anywhere;margin:6px 0;
 }
 #admin-records-panel .records-customer-card .records-card-actions {
@@ -634,7 +634,7 @@ body {
   #admin-records-panel .records-quick-filter {white-space:nowrap;font-size:11px;}
   #admin-records-panel .records-quality-item {padding:11px 9px;}
   #admin-records-panel .records-quality-item strong {font-size:21px;}
-  #admin-records-panel .records-quality-item small {font-size:9px;}
+  #admin-records-panel .records-quality-item small {font-size:11px;}
   #admin-records-panel .records-customer-card .records-card-actions {
     grid-template-columns:repeat(2,minmax(0,1fr));
   }
