@@ -291,3 +291,77 @@ body {
 @media (prefers-reduced-motion: reduce) {
   :where(.trip-card, .records-card, .button, .nav-item) { transition: none !important; }
 }
+
+
+/* Mobile-safe inline deletion confirmation: the action is explicit and audited. */
+#admin-records-panel .records-delete-confirm {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  margin: 1px 0 5px;
+  background: #fff9fa;
+  border: 1px solid #e7c7ce;
+  border-radius: 16px;
+}
+#admin-records-panel .records-delete-title {
+  color: #873747;
+  font-size: 17px;
+  font-weight: 850;
+  margin: 0;
+}
+#admin-records-panel .records-delete-explainer {
+  color: #625b62;
+  font-size: 12px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+#admin-records-panel .records-delete-label {
+  display: grid;
+  gap: 8px;
+  color: #543d45;
+  font-size: 12px;
+  font-weight: 800;
+}
+#admin-records-panel .records-delete-reason {
+  min-height: 85px;
+  width: 100%;
+  padding: 12px;
+  font-size: 16px;
+  resize: vertical;
+  color: var(--lts-ink);
+  background: #fff;
+  border: 1px solid #d7abb7;
+  border-radius: 11px;
+}
+#admin-records-panel .records-delete-error {
+  color: #a2384c;
+  background: #fff0f2;
+  border: 1px solid #e8c4cd;
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+}
+#admin-records-panel .records-delete-error[hidden] { display: none !important; }
+#admin-records-panel .records-delete-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+#admin-records-panel .records-delete-actions button {
+  min-width: 0;
+  min-height: 47px;
+  border-radius: 12px;
+  padding: 10px 8px;
+  white-space: normal;
+  line-height: 1.3;
+}
+#admin-records-panel .records-delete-submit {
+  border: 1px solid #a8475a;
+  background: #a8475a;
+  color: #fff;
+  font-weight: 800;
+}
+#admin-records-panel .records-delete-submit:disabled { opacity: .6; }
+#admin-records-panel .records-card-actions[hidden] { display: none !important; }
