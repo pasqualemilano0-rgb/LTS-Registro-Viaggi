@@ -11,7 +11,7 @@ import {companyFareSnapshot} from '/LTS-Registro-Viaggi/shared/company-fares.mjs
 import {companyExtraSnapshot} from '/LTS-Registro-Viaggi/shared/company-extras.mjs';
 import {mapsLinkForCompanySync,filterSharedCustomers} from '/LTS-Registro-Viaggi/shared/maps-company-routing.mjs';
 import {dedupedCustomerDirectory,matchingSharedCustomer} from '/LTS-Registro-Viaggi/shared/customer-site-matches.mjs';
-import {combinedTripCustomerChoices} from '/LTS-Registro-Viaggi/shared/trip-customer-choices.mjs';
+import {combinedTripCustomerChoices,filterTripCustomerChoices} from '/LTS-Registro-Viaggi/shared/trip-customer-choices.mjs';
 import { appendPushSettings } from '/LTS-Registro-Viaggi/push-client.mjs';
 import { parseCustomerCsv, mergeCustomerCsv, exportCustomerCsv, MAX_CUSTOMER_CSV_BYTES } from '/LTS-Registro-Viaggi/shared/customer-csv.mjs';
 
@@ -500,7 +500,7 @@ function renderInsert(main){
    const query=input.value.trim();
    if(!query||document.activeElement!==input){hide();return;}
    const all=combinedTripCustomerChoices({personal:state.customers,trips:state.trips,shared:companyCustomers});
-   choices=filterSharedCustomers(all,query).slice(0,12);active=-1;
+   choices=filterTripCustomerChoices(all,query,12);active=-1;
    if(!choices.length){hide();return;}
    menu.replaceChildren(...choices.map((customer,index)=>el('button',{type:'button',id:menu.id+'-'+index,role:'option','aria-selected':'false',class:'trip-client-suggestion',on:{pointerdown:event=>{event.preventDefault();pick(customer);},click:()=>pick(customer)}},el('strong',{},customer.name),el('span',{},customer.city||'Località da completare'),customer.address?el('small',{},customer.address):null)));
    menu.hidden=false;input.setAttribute('aria-expanded','true');
