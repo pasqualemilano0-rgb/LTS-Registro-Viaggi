@@ -9,8 +9,9 @@ test('driver entrypoints load the original LTS theme and preserve account routes
  for(const p of ['index.html','shell.html']){
   const source=read(p);
   assert.match(source,/app[.]css[?]v=20261107-manual-shared-v1/);
+  assert.match(source,/visual-theme[.]css[?]v=20\d{6}-[a-z0-9-]+-v\d+/);
   assert.doesNotMatch(source,/href="[^"]*pro-theme[.]css/);
-  assert.match(source,/app[.]mjs[?]v=20261107-manual-shared-v1/);
+  assert.match(source,/app[.]mjs[?]v=20\d{6}-[a-z0-9-]+-v\d+/);
   assert.match(source,/photo-splash[.]css[?]v=20261106-scania-photo-hd-v2/);
   assert.match(source,/assets\/lts-full-photo-hd[.]webp/);
  }
@@ -25,10 +26,11 @@ test('driver entrypoints load the original LTS theme and preserve account routes
  assert.match(html,/id="pro-insights"/);
 });
 
-test('new PWA worker precaches the original stylesheet, not the unused override',()=>{
+test('new PWA worker precaches both base and active stylesheet',()=>{
  const sw=read('sw.js');
- assert.match(sw,/const CACHE = PREFIX \+ '20261107-manual-shared-v1'/);
+ assert.match(sw,/const CACHE = PREFIX \+ '20\d{6}-[a-z0-9-]+-v\d+'/);
  assert.match(sw,/"\/LTS-Registro-Viaggi\/app[.]css"/);
+ assert.match(sw,/"\/LTS-Registro-Viaggi\/visual-theme[.]css"/);
  assert.doesNotMatch(sw,/"\/LTS-Registro-Viaggi\/pro-theme[.]css"/);
  assert.doesNotMatch(sw,/service_role|sb_secret_/i);
 });
