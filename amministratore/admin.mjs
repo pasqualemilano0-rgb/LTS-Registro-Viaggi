@@ -3,7 +3,7 @@ import realtimeConfig from '../runtime-config.mjs';
 import {createLtsRealtime} from '../realtime-client.mjs?v=20261107-roster-realtime-v1';
 import {STATUS_LABELS,driverSummary,filterDrivers} from './model.mjs';
 import {setupReport} from './report.mjs?v=20261108-smart-v1';
-import {setupSmartConsole} from './smart-console.mjs?v=20261108-smart-v1';
+import {setupSmartConsole} from './smart-console.mjs?v=20261108-smart-v2';
 import {rememberPosition,readPosition,clearPosition} from './admin-position.mjs';
 
 const byId=id=>document.getElementById(id);
