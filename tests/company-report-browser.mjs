@@ -21,7 +21,7 @@ export const manageDrivers=async(action)=>action==='list'?{drivers:[
  {id:'11111111-1111-4111-8111-111111111111',
   firstName:'Mario',lastName:'Rossi',phone:'+393331111111',
   status:'active',enabled:true}
-]}:{};
+]}:action==='issue'?{code:'A'.repeat(43)}:{};
 let mockRates=[{id:'1',client:'CLIENTE ALFA',city:'NAPOLI',cents:15000,revision:1,
  updatedAt:'2026-11-06T12:00:00Z'}];
 let mockExtras=['facchinaggioBilico','facchinaggioReefer','reefer','adr',
@@ -281,6 +281,15 @@ try{
  assert.equal(await page.locator('#smart-embed-body #invite-form').count(),0);
  assert.equal(await page.locator('#management-panel #invite-form').count(),1);
  assert.equal(await page.locator('#invite-first').inputValue(),'TEST');
+ // The original guarded invite form must actually submit from the drawer.
+ await page.locator('[data-smart-action="invite"]').click();
+ await page.locator('#invite-last').fill('SMART');
+ await page.locator('#invite-form button[type="submit"]').click();
+ await page.waitForFunction(()=>!document.querySelector('#secret-panel').hidden);
+ assert.equal((await page.locator('#secret-code').inputValue()).length,43);
+ await page.locator('#smart-back').click();
+ assert.equal(await page.locator('#secret-code').inputValue(),'');
+ assert.equal(await page.locator('#invite-first').inputValue(),'');
  await page.locator('[data-smart-action="restore"]').click();
  assert.equal(await page.locator('#smart-embed-body #restore-form').count(),1);
  await page.locator('#smart-close').click();
