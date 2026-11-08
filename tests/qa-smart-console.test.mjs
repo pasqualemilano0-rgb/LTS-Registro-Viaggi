@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {searchSmartConsole,smartConsoleAlerts} from '../amministratore/smart-console-model.mjs';
+import {searchSmartConsole,smartConsoleAlerts,smartCommandIntent} from '../amministratore/smart-console-model.mjs';
 const read=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
 const drivers=[
  {firstName:'Mario',lastName:'Rossi',phone:'+393331111111',status:'active'},
@@ -65,4 +65,16 @@ test('smart panel only uses existing authorized app state and original guarded f
  assert.match(smart,/byId\('dashboard'\)[.]inert=true/);
  assert.doesNotMatch(smart,/localStorage|indexedDB|sessionStorage|fetch\(|innerHTML|service[_-]?role/i);
  assert.doesNotMatch(read('amministratore/smart-console-model.mjs'),/localStorage|fetch\(|innerHTML/i);
+});
+
+test('Italian task phrases suggest safe actions without changing records',()=>{
+ assert.equal(smartCommandIntent('invita un autista')?.action,'invite');
+ assert.equal(smartCommandIntent('reinserisci autista')?.action,'restore');
+ assert.equal(smartCommandIntent('aggiungi cliente')?.action,'manual');
+ assert.equal(smartCommandIntent('esporta report')?.action,'exports');
+ assert.equal(smartCommandIntent('cerca le tariffe')?.action,'rates');
+ assert.equal(smartCommandIntent('mostra le anomalie')?.action,'alerts');
+ assert.equal(smartCommandIntent('cerca viaggi')?.action,'trips');
+ assert.equal(smartCommandIntent('Mario Rossi'),null);
+ assert.equal(smartCommandIntent(''),null);
 });
