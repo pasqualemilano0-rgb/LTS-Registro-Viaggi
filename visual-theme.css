@@ -365,3 +365,139 @@ body {
 }
 #admin-records-panel .records-delete-submit:disabled { opacity: .6; }
 #admin-records-panel .records-card-actions[hidden] { display: none !important; }
+
+
+/* Certificate a personal customer using a reviewed Google Maps location. */
+#admin-records-panel .records-certify-panel {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 11px;
+  background: #f6fbfb;
+  border: 1px solid #bcdde3;
+  border-radius: 18px;
+  padding: clamp(15px, 3vw, 21px);
+  min-width: 0;
+}
+#admin-records-panel .records-certify-title {
+  margin: 0;
+  font-size: clamp(17px, 3.5vw, 20px);
+  font-weight: 850;
+  color: var(--lts-ink);
+}
+#admin-records-panel .records-certify-description {
+  color: #5c7785;
+  font-size: 12px;
+  line-height: 1.6;
+  margin: 0;
+}
+#admin-records-panel .records-certify-label {
+  display: grid;
+  gap: 7px;
+  font-size: 12px;
+  font-weight: 800;
+  color: #315968;
+  min-width: 0;
+}
+#admin-records-panel .records-certify-label input {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  min-height: 49px;
+  border-radius: 12px;
+  border: 1px solid #b9d5dd;
+  color: var(--lts-ink);
+  font-size: 16px;
+  background: #fff;
+  padding: 11px 12px;
+}
+#admin-records-panel .records-certify-read {
+  min-height: 46px;
+  justify-self: start;
+  font-weight: 800;
+}
+#admin-records-panel .records-certify-status {
+  margin: 0;
+  font-size: 12px;
+  color: #366879;
+  line-height: 1.55;
+  border-radius: 10px;
+}
+#admin-records-panel .records-certify-status[data-error="true"] {
+  border: 1px solid #eac4cb;
+  color: #a03d50;
+  background: #fff3f5;
+  padding: 10px 11px;
+}
+#admin-records-panel .records-certify-preview {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  background: #fff;
+  border: 1px solid #ccdde3;
+  border-radius: 14px;
+  padding: 15px;
+}
+#admin-records-panel .records-certify-preview[hidden] { display: none !important; }
+#admin-records-panel .records-certify-site-title {
+  font-size: 15px;
+  color: var(--lts-ink);
+  font-weight: 850;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+#admin-records-panel .records-certify-site-city,
+#admin-records-panel .records-certify-site-address {
+  font-size: 12px;
+  color: #5c7989;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+#admin-records-panel .records-certify-result {
+  padding: 12px;
+  border-radius: 12px;
+  color: #075e6a;
+  background: #e1f4f0;
+  font-weight: 800;
+  font-size: 12px;
+  line-height: 1.5;
+  margin: 2px 0;
+}
+#admin-records-panel .records-certify-warnings {
+  padding: 11px 12px;
+  margin: 2px 0;
+  color: #825d24;
+  background: #fff8e8;
+  border: 1px solid #f0e0bd;
+  border-radius: 10px;
+  font-size: 11px;
+  line-height: 1.55;
+}
+#admin-records-panel .records-certify-choice {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 11px 0;
+  font-size: 12px;
+  color: #315a67;
+  font-weight: 750;
+  line-height: 1.55;
+}
+#admin-records-panel .records-certify-choice input[type=checkbox] {
+  width: 22px;
+  height: 22px;
+  flex: none;
+  min-height: 22px;
+  margin-top: 1px;
+  accent-color: var(--lts-teal);
+}
+#admin-records-panel .records-certify-submit {
+  min-height: 49px;
+  padding: 12px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 850;
+}
+@media(max-width:700px){
+  #admin-records-panel .records-certify-read,
+  #admin-records-panel .records-certify-submit { width: 100%; }
+}
