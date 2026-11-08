@@ -296,14 +296,7 @@ export function setupDriverRecords(account){
    String(b.createdAt).localeCompare(String(a.createdAt)));
   return [...raw].sort((a,b)=>(a.name||a.client||'').localeCompare(b.name||b.client||'','it'));
  }
- function matches(item,term){
-  if(!term)return true;
-  const text=category==='trip'?[item.client,item.city,item.container,item.date,item.note]:
-   category==='customer'?[item.name,item.city,item.address,item.phone]:
-   category==='tariff'?[item.client,item.city]:
-   category==='extra'?[item.name]:[item.category,item.action,item.reason,item.recordId,item.at];
-  return text.join(' ').toLocaleUpperCase('it-IT').includes(term);
- }
+ function matches(item,term){return archiveMatchesSearch(item,category,term);}
  function summary(item){
   if(category==='trip')return [item.date,item.client+' · '+item.city,
    'Container: '+item.container+' · Trasferta: '+money(item.fareCents),
@@ -362,9 +355,14 @@ export function setupDriverRecords(account){
  }
  function render({keepEditor=false}={}){
   metrics();if(!keepEditor)clearEditor();
-  const values=source(),term=filter.value.trim().toLocaleUpperCase('it-IT');
-  const matched=values.filter(item=>matches(item,term));
-  list.replaceChildren();counter.textContent=matched.length+' elementi visualizzabili';
+  const tripSummary=category==='trip'&&state?tripWorklistSummary(state.trips):null;
+  worklistUI(tripSummary);
+  const values=source(),term=filter.value.trim();
+  const matched=values.filter(item=>matches(item,term)&&(
+   category==='customer'?customerMatchesQuickFilter(item,quickFilter,sharedSites):
+   category==='trip'&&quickFilter==='incomplete'?tripSummary?.incompleteIds.has(String(item.id)):
+   true));
+  list.replaceChildren();counter.textContent=matched.length+' elementi visualizzabili su '+values.length;
   add.hidden=!state||!['trip','customer'].includes(category);
   add.textContent=category==='trip'?'Aggiungi viaggio':'Nuovo cliente personale';
   if(!state){
@@ -376,7 +374,22 @@ export function setupDriverRecords(account){
   for(const item of matched.slice(0,visibleLimit)){
    const card=make('article',category==='trip'?'records-card records-trip-card':'records-card');
    const body=category==='trip'?tripCardBody(item,amountContext):make('div','records-card-text');
-   if(category!=='trip'){
+   if(category==='customer'){
+    card.classList.add('records-customer-card');
+    const assessment=assessPersonalCustomer(item,sharedSites);
+    body.append(make('h3','records-card-title',item.name));
+    const meta=make('div','records-customer-meta');
+    meta.append(make('p','records-customer-city',item.city||'Località non indicata'));
+    meta.append(make('span','records-customer-badge is-'+assessment.status,assessment.label));
+    body.append(meta);
+    body.append(make('p','records-customer-address',item.address||'Indirizzo non disponibile'));
+    const extra=make('details','records-customer-details');
+    extra.append(make('summary','','Altri dati'));
+    if(item.phone)extra.append(make('p','','Telefono: '+item.phone));
+    if(item.vat)extra.append(make('p','','Partita IVA: '+item.vat));
+    if(!item.phone&&!item.vat)extra.append(make('p','','Nessun altro dato personale registrato.'));
+    body.append(extra);
+   }else if(category!=='trip'){
     const lines=summary(item);
     lines.forEach((t,i)=>body.append(make(i===0?'h3':'p',i===0?'records-card-title':'',t)));
    }
@@ -393,6 +406,13 @@ export function setupDriverRecords(account){
     edit.setAttribute('aria-label','Modifica '+(labels[category]||'inserimento')+' '+summary(item)[0]);
     edit.addEventListener('click',()=>openEditor(item));
     actions.append(edit);
+    if(category==='customer'){
+     const certify=make('button','button outline small records-card-certify','Certifica Maps');
+     certify.type='button';
+     certify.setAttribute('aria-label','Certifica con Google Maps '+item.name+' · '+item.city);
+     certify.addEventListener('click',()=>openEditor(item,{focusCertification:true}));
+     actions.append(certify);
+    }
     if(category!=='extra'){
      const remove=make('button','button outline small records-danger','Elimina');
      remove.type='button';remove.addEventListener('click',()=>openDeleteConfirmation(item,card,actions));
