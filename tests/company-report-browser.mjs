@@ -271,6 +271,31 @@ try{
  assert.match(await page.locator('#smart-results').textContent(),/CLIENTE/i);
  await page.locator('#smart-search').fill('ABCD');
  assert.match(await page.locator('#smart-results').textContent(),/ABCD1234567/i);
+ // V2 contextual read-only previews preserve the active dashboard, search and data.
+ await page.locator('#smart-results .smart-result-buttons button').first().click();
+ assert.equal(await page.locator('#smart-detail').isVisible(),true);
+ assert.match(await page.locator('#smart-detail-body').textContent(),/ABCD1234567/);
+ assert.equal(await page.locator('#dashboard').getAttribute('data-view'),'overview');
+ await page.locator('#smart-back').click();
+ assert.equal(await page.locator('#smart-search').inputValue(),'ABCD');
+ await page.locator('#smart-search').fill('ROSSI');
+ await page.locator('#smart-results .smart-result-buttons button').first().click();
+ assert.match(await page.locator('#smart-detail-body').textContent(),/Mario Rossi/);
+ assert.match(await page.locator('#smart-detail-actions').textContent(),/Clienti personali/);
+ await page.locator('#smart-back').click();
+ // Company tariff form stays the original protected form, portalled temporarily.
+ await page.locator('#smart-search').fill('GAMMA');
+ await page.locator('#smart-results .smart-result-buttons button').first().click();
+ assert.match(await page.locator('#smart-detail-body').textContent(),/CLIENTE GAMMA/);
+ await page.locator('#smart-detail-actions button').filter({hasText:'Modifica tariffa'}).click();
+ await page.locator('#smart-embed-body #company-rates-editor').waitFor({state:'visible'});
+ await page.waitForFunction(()=>document.querySelector('#company-rate-client').value==='CLIENTE GAMMA');
+ assert.equal(await page.locator('#company-rate-city').inputValue(),'ROMA');
+ assert.equal(await page.locator('#dashboard').getAttribute('data-view'),'overview');
+ assert.equal(await page.locator('#company-rate-submit').isEnabled(),true);
+ await page.locator('#smart-back').click();
+ assert.equal(await page.locator('#smart-embed-body #company-rates-editor').count(),0);
+ assert.equal(await page.locator('#company-rates #company-rates-editor').count(),1);
  // Inline original authenticated forms, with no duplicate event listeners.
  await page.locator('[data-smart-action="invite"]').click();
  assert.equal(await page.locator('#smart-embed-body #invite-form').count(),1);
