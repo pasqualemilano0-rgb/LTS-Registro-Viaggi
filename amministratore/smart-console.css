@@ -1,5 +1,5 @@
 /* LTS Smart Console V1 — isolated, keyboard-accessible operations drawer */
-#smart-command-open{border-color:#a3d7d5;background:#e9f7f5;color:#075d69;font-weight:800}
+#smart-command-open{border-color:#a3d7d5;background:#e9f7f5;color:#075d69;font-weight:800;white-space:nowrap;flex-shrink:0}
 #smart-command-open[hidden],.smart-overlay[hidden],.smart-panel [hidden]{display:none!important}
 body.smart-is-open{overflow:hidden}
 .smart-overlay{position:fixed;inset:0;z-index:3000;display:flex;justify-content:flex-end;isolation:isolate}
