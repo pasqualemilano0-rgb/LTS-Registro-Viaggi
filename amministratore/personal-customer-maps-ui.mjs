@@ -105,8 +105,10 @@ export function attachPersonalCustomerCertification({
    warnings.textContent=(proposal.warnings||[]).join(' ');
    warnings.hidden=!warnings.textContent;
    modeText.textContent=outcome.mode==='existing'
-    ?'Sede già nella lista condivisa. Dopo la conferma, il cliente personale duplicato verrà rimosso.'
-    :'Sede non ancora condivisa. Dopo la conferma verrà inserita nella lista condivisa e il cliente personale sarà rimosso.';
+    ?outcome.site.source==='manual'
+     ?'Sede già nella lista condivisa come cliente manuale. Dopo la conferma il duplicato personale verrà rimosso. Il link Maps verifica questa operazione ma non viene aggiunto alla scheda condivisa manuale.'
+     :'Sede Google Maps già nella lista condivisa. Dopo la conferma il cliente personale duplicato verrà rimosso.'
+    :'Sede non ancora condivisa. Dopo la conferma verrà inserita con il link Google Maps nella lista condivisa e il cliente personale sarà rimosso.';
    submit.textContent=outcome.mode==='existing'
     ?'Certifica e rimuovi il duplicato'
     :'Condividi, certifica e unifica';
