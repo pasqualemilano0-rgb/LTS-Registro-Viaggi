@@ -14,7 +14,7 @@ test('dashboard accessibile solo dal pannello admin, CSP e versioni coerenti',()
    'pro-city','pro-container','pro-compare-driver','pro-alerts','pro-alert-count',
    'pro-export-pdf','pro-export-xlsx','pro-records'])
    assert.match(html,new RegExp('id="'+id+'"'));
- assert.match(html,/admin\.mjs\?v=20261108-customer-certify-v1/);
+ assert.match(html,/admin\.mjs\?v=20261108-worklist-v1/);
  assert.match(html,/admin\.css\?v=20261104-company-v3/);
  assert.match(js,/account-access\.mjs\?v=20261107-realtime-v1/);
  assert.match(js,/setupReport\(account\)/);
@@ -26,7 +26,7 @@ test('dashboard accessibile solo dal pannello admin, CSP e versioni coerenti',()
  assert.match(report,/function driverProfile\(/);
  assert.match(report,/function driverDirectory\(/);
  assert.match(report,/function renderAmountChart\(/);
- assert.match(js,/report\.mjs\?v=20261108-customer-certify-v1/);
+ assert.match(js,/report\.mjs\?v=20261108-worklist-v1/);
  assert.match(report,/setupInsights\(account\)/);
  const advanced=read('amministratore/report-insights.mjs');
  const exportsModule=read('amministratore/report-export.mjs');
@@ -281,7 +281,7 @@ test('driver trip picker searches Maps, manual company tariffs and personal driv
  assert.match(css,/records-site-results\[hidden\]/);
  assert.match(css,/records-site-option-address/);
  assert.match(html,/driver-records[.]css[?]v=20261107-driver-private-customers-v1/);
- assert.match(report,/driver-records[.]mjs[?]v=20261108-customer-certify-v1/);
+ assert.match(report,/driver-records[.]mjs[?]v=20261108-worklist-v1/);
  assert.doesNotMatch([source,css].join('\n'),/innerHTML|SUPABASE_SERVICE_ROLE_KEY|sb_secret_/);
 });
 
@@ -370,4 +370,24 @@ test('personal customer Maps certification is explicit, deduplicated and auditab
  assert.match(matching,/normalizedStreetKey/);
  assert.match(theme,/records-certify-panel/);
  assert.doesNotMatch(view,/localStorage|innerHTML|window[.]prompt/);
+});
+
+test('admin archive displays verified operational filters and conservative statuses',()=>{
+ const html=read('amministratore/index.html');
+ const source=read('amministratore/driver-records.mjs');
+ const helper=read('amministratore/records-intelligence.mjs');
+ const css=read('visual-theme.css');
+ for(const id of ['records-worklist','records-worklist-subtitle','records-worklist-primary',
+  'records-quick-filters','records-data-quality','records-shared-status'])
+  assert.match(html,new RegExp('id="'+id+'"'));
+ assert.match(source,/refreshShared\(/);
+ assert.match(source,/archiveCustomerMetrics/);
+ assert.match(source,/customerMatchesQuickFilter/);
+ assert.match(source,/tripWorklistSummary/);
+ assert.match(source,/openEditor\(item,\{focusCertification:true\}\)/);
+ assert.match(source,/record[s]-customer-details/);
+ assert.match(css,/records-customer-card/);
+ assert.match(css,/records-quality-grid/);
+ assert.match(helper,/normalizedStreetKey/);
+ assert.doesNotMatch(helper,/deleteRecord|window[.]confirm|localStorage/);
 });
