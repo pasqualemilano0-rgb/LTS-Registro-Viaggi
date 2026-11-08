@@ -18,7 +18,9 @@ const types = {
   '.svg':'image/svg+xml',
   '.webmanifest':'application/manifest+json'
 };
+let simulateOffline = false;
 const server = createServer(async (req,res) => {
+  if (simulateOffline) { req.socket.destroy(); return; }
   const pathname = new URL(req.url,'http://127.0.0.1').pathname;
   if (!pathname.startsWith(prefix)) {res.writeHead(404).end();return;}
   const rel = decodeURIComponent(pathname.slice(prefix.length));
@@ -71,11 +73,13 @@ try {
   assert.equal(cached.index,false,'Authentication page must never be cached');
   assert.equal(cached.script,false,'Authenticated admin logic must never be precached');
 
+  simulateOffline = true;
   await context.setOffline(true);
   await page.reload({waitUntil:'domcontentloaded'});
-  assert.match(await page.locator('h1').textContent(),/Connessione necessaria/);
+  assert.ok(await page.getByRole('heading', {name:'Connessione necessaria'}).isVisible());
   assert.ok(await page.getByRole('link',{name:'Riprova ad accedere'}).isVisible());
   assert.equal(await page.locator('#login-phone').count(),0);
+  simulateOffline = false;
   await context.setOffline(false);
   await page.reload({waitUntil:'domcontentloaded'});
   assert.equal(await page.locator('#login-phone').count(),1);
