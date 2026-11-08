@@ -1,4 +1,4 @@
-/* LTS Smart Console V1 — isolated, keyboard-accessible operations drawer */
+/* LTS Smart Console V2 — isolated, keyboard-accessible operations drawer */
 #smart-command-open{border-color:#a3d7d5;background:#e9f7f5;color:#075d69;font-weight:800;white-space:nowrap;flex-shrink:0}
 #smart-command-open[hidden],.smart-overlay[hidden],.smart-panel [hidden]{display:none!important}
 body.smart-is-open{overflow:hidden}
@@ -51,3 +51,20 @@ body.smart-is-open{overflow:hidden}
  .smart-action{padding:10px;font-size:12px}
 }
 @media(prefers-reduced-motion:reduce){.smart-action{transition:none!important}}
+
+/* V2: preview in the same protected drawer, with native editing as a separate action. */
+.smart-result-buttons{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.smart-result-buttons .smart-action{min-width:70px!important}
+.smart-detail{display:grid;gap:12px}
+.smart-detail-title{font-size:19px;line-height:1.25;overflow-wrap:anywhere;margin:2px 0 10px}
+.smart-detail-fields{margin:0;display:grid;gap:8px}
+.smart-detail-field{display:grid;grid-template-columns:minmax(95px,35%) minmax(0,1fr);gap:8px;border-bottom:1px solid #e4edef;padding:8px 0}
+.smart-detail-field dt{font-weight:750;color:#446676;font-size:12px}
+.smart-detail-field dd{margin:0;font-size:14px;color:#123d4a;overflow-wrap:anywhere}
+.smart-detail-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.smart-detail-actions .smart-action{width:100%}
+@media(max-width:390px){
+ .smart-result{flex-wrap:wrap}
+ .smart-result-buttons{width:100%;justify-content:flex-start}
+ .smart-detail-actions{grid-template-columns:1fr}
+}
