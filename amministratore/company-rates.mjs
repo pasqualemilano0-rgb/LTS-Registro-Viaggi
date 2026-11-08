@@ -41,7 +41,11 @@ export function setupCompanyRates(account){
  const maps=setupCompanyMaps(account,{onSaved:async()=>{await load();}});
  const manual=setupCompanyManual(account,{onSaved:async()=>{await load();}});
  const authorized=()=>account.isVerified()&&account.getRole()==='admin'&&
-  !get('dashboard').hidden&&get('dashboard').dataset.view==='rates';
+  !get('dashboard').hidden&&(
+   get('dashboard').dataset.view==='rates'||
+   (!get('smart-overlay')?.hidden&&
+    get('smart-embed-body')?.contains(get('company-rates-editor')))
+  );
  const feedback=(message,error=false)=>{status.textContent=message;status.dataset.error=String(error);};
  const rateForSite=site=>rows.find(rate=>clean(rate.client)===clean(site.name)&&
   clean(rate.city)===clean(site.city));
@@ -72,7 +76,7 @@ export function setupCompanyRates(account){
   client.disabled=true;city.disabled=true;cancel.hidden=false;
   submit.textContent='Aggiorna importo';
   cityChoices();
-  pane.querySelector('#company-rates-editor').scrollIntoView({block:'start',behavior:'smooth'});
+  get('company-rates-editor').scrollIntoView({block:'start',behavior:'smooth'});
   amount.focus({preventScroll:true});
  }
  function prefillSite(site){
@@ -81,7 +85,7 @@ export function setupCompanyRates(account){
   if(existing){editRate(existing);return;}
   clearForm();client.value=site.name;city.value=site.city;cityChoices();
   feedback('Sede selezionata: '+site.name+' · '+site.city+'. Inserisci soltanto la tariffa in euro.');
-  pane.querySelector('#company-rates-editor').scrollIntoView({block:'start',behavior:'smooth'});
+  get('company-rates-editor').scrollIntoView({block:'start',behavior:'smooth'});
   amount.focus({preventScroll:true});
  }
  function renderRates(term){
