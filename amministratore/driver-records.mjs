@@ -6,6 +6,9 @@ import {sharedMapsCustomers} from '../shared-maps-client.mjs';
 import {companyFareSnapshot} from '../shared/company-fares.mjs';
 import {buildDriverCustomerCatalog} from './driver-customer-catalog.mjs?v=20261107-driver-customer-picker-v1';
 import {attachPersonalCustomerCertification} from './personal-customer-maps-ui.mjs?v=20261108-certify-v1';
+import {RECORD_FILTERS,assessPersonalCustomer,archiveCustomerMetrics,
+ customerMatchesQuickFilter,tripWorklistSummary,archiveMatchesSearch}
+ from './records-intelligence.mjs?v=20261108-worklist-v1';
 const $=id=>document.getElementById(id);
 const make=(tag,className='',txt='')=>{
  const e=document.createElement(tag);
@@ -160,11 +163,15 @@ export function setupDriverRecords(account){
   refresh=$('records-refresh'),status=$('records-status'),
   filter=$('records-search'),list=$('records-list'),
   editor=$('records-editor'),add=$('records-add'),counter=$('records-count'),
-  tabsRoot=$('records-tabs');
+  tabsRoot=$('records-tabs'),worklist=$('records-worklist'),
+  quickBar=$('records-quick-filters'),quality=$('records-data-quality'),
+  sharedStatus=$('records-shared-status'),worklistSubtitle=$('records-worklist-subtitle'),
+  worklistPrimary=$('records-worklist-primary');
  let drivers=[],selectedId='',revision=null,state=null,audit=[],
   category='trip',busy=false,loading=false,editing=false,epoch=0,
   desiredPhone='',visibleLimit=35,catalogRequest=0,activePickerDisposers=[],
-  editorBaseline='',writeSeq=0;
+  editorBaseline='',writeSeq=0,quickFilter='all',sharedSites=null,
+  sharedLoading=false,sharedSeq=0,sharedCheckedAt='',sharedError=false;
  const authorized=()=>account.isVerified()&&account.getRole()==='admin'&&
   !$('dashboard').hidden&&$('dashboard').dataset.view==='records';
  const notice=(message,problem=false)=>{
@@ -183,6 +190,73 @@ export function setupDriverRecords(account){
   catalogRequest++;activePickerDisposers.splice(0).forEach(dispose=>dispose());
   editor.replaceChildren();editor.hidden=true;editing=false;editorBaseline='';
  }
+
+ function worklistUI(trips=null){
+  const supported=category==='customer'||category==='trip';
+  worklist.hidden=!supported;
+  if(!supported)return;
+  const choices=RECORD_FILTERS[category];
+  if(!choices.some(opt=>opt.key===quickFilter))quickFilter='all';
+  quickBar.replaceChildren();
+  for(const opt of choices){
+   const btn=make('button','records-quick-filter'+(quickFilter===opt.key?' selected':''),opt.label);
+   btn.type='button';btn.setAttribute('aria-pressed',String(opt.key===quickFilter));
+   btn.disabled=category==='customer'&&['possible','shared'].includes(opt.key)&&!Array.isArray(sharedSites);
+   btn.addEventListener('click',()=>{
+    if(!authorized()||busy||btn.disabled)return;
+    quickFilter=opt.key;visibleLimit=35;render({keepEditor:true});
+   });
+   quickBar.append(btn);
+  }
+  quality.replaceChildren();
+  const metric=(label,num,explain)=>{
+   const item=make('div','records-quality-item');
+   item.append(make('span','',label),make('strong','',num===null||num===undefined?'—':String(num)));
+   item.append(make('small','',explain));quality.append(item);
+  };
+  if(category==='customer'){
+   const m=state?archiveCustomerMetrics(state.customers,sharedSites):null;
+   metric('Indirizzo mancante',m?.missing,'Anagrafiche da completare');
+   metric('Possibili duplicati',m?.possible,'Da verificare, mai eliminati da soli');
+   metric('Già nel condiviso',m?.shared,'Corrispondenza di nome, città e via');
+   worklistPrimary.textContent=m?m.review+' da controllare':'—';
+   worklistSubtitle.textContent='Confronta i clienti personali con le sedi condivise senza modificare i viaggi.';
+   sharedStatus.hidden=false;
+   sharedStatus.textContent=sharedLoading?'Verifica dell’elenco condiviso in corso…':
+    sharedSites?(sharedError?'Verifica condiviso non riuscita: ultimo controllo alle ':
+      'Elenco condiviso verificato alle ')+sharedCheckedAt+
+      '. Le corrispondenze non eliminano automaticamente i clienti.':
+    'Elenco condiviso non verificato. I filtri sui duplicati saranno disponibili dopo il controllo.';
+  }else{
+   const m=trips||(state?tripWorklistSummary(state.trips):null);
+   metric('Viaggi registrati',m?.total,'Archivio selezionato');
+   metric('Importi incompleti',m?.incomplete,'Tariffe o extra da completare');
+   worklistPrimary.textContent=m?m.incomplete+' da completare':'—';
+   worklistSubtitle.textContent='Trova i viaggi che richiedono importi, senza ricalcolare i dati storici.';
+   sharedStatus.hidden=true;
+  }
+ }
+ async function refreshShared(){
+  if(!authorized()||category!=='customer'||!state||!selectedId)return;
+  const token=++sharedSeq,owner=selectedId,instance=epoch;
+  sharedLoading=true;sharedError=false;worklistUI();
+  try{
+   const results=await sharedMapsCustomers();
+   if(token!==sharedSeq||instance!==epoch||owner!==selectedId||!authorized())return;
+   sharedSites=results;
+   sharedCheckedAt=new Date().toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'});
+   sharedError=false;
+  }catch(error){
+   if(token!==sharedSeq||instance!==epoch||owner!==selectedId||!authorized())return;
+   sharedError=true;
+   if(!sharedSites)notice('Archivio personale disponibile. Elenco condiviso non verificato: '+
+    (error?.message||'Controlla la connessione.'),true);
+  }finally{
+   if(token===sharedSeq&&instance===epoch&&owner===selectedId&&authorized()){
+    sharedLoading=false;render({keepEditor:true});
+   }
+  }
+ }
  function metrics(){
   const counts=state?
    [state.trips.length,state.customers.length,state.tariffs.length]:null;
@@ -193,9 +267,10 @@ export function setupDriverRecords(account){
  function reset(){
   epoch++;writeSeq++;drivers=[];selectedId='';revision=null;state=null;audit=[];
   category='trip';busy=false;loading=false;desiredPhone='';visibleLimit=35;
+  sharedSeq++;sharedSites=null;sharedCheckedAt='';sharedLoading=false;sharedError=false;quickFilter='all';
   choose.replaceChildren();list.replaceChildren();clearEditor();filter.value='';
   notice('Seleziona Archivi autisti per caricare gli inserimenti sincronizzati.');
-  metrics();counter.textContent='';refresh.disabled=false;choose.disabled=false;
+  metrics();worklistUI();counter.textContent='';refresh.disabled=false;choose.disabled=false;
   filter.disabled=false;add.disabled=false;add.hidden=true;
   tabsRoot.querySelectorAll('button').forEach(b=>b.classList.toggle('selected',b.dataset.kind==='trip'));
  }
