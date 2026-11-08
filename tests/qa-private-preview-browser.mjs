@@ -45,9 +45,9 @@ try{
  assert.match(await page.locator('.qa-private-banner').textContent(),/QA PRIVATA/);
  const admin=await page.locator('#dashboard').getAttribute('data-view');
  assert.equal(admin,'overview');
- assert.equal(await page.locator('#records-driver').count(),0,'No unknown selector is assumed');
+ assert.equal(await page.locator('#records-driver').count(),1,'Driver selector must be available');
  await page.evaluate(()=>document.getElementById('records-tab').click());
- await page.waitForFunction(()=>document.querySelector('#dashboard')?.dataset.view==='records',{timeout:15000});
+ await page.waitForFunction(()=>document.querySelector('#dashboard')?.dataset.view==='records',null,{timeout:15000});
  // Synthetic personal archive is loaded only from the local test adapter.
  await page.waitForFunction(()=>document.querySelector('#records-tabs')?.childElementCount>=3);
  assert.equal(external.length,0,'QA admin attempted a production API request');
