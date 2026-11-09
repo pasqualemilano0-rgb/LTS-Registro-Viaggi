@@ -58,13 +58,14 @@ let adminArchive={
   createdAt:'2026-11-04T08:00:00Z',updatedAt:'2026-11-04T08:00:00Z'}],
  customers:[{id:'c1',name:'CLIENTE ALFA',city:'NAPOLI',address:'VIA TEST 1, NAPOLI',vat:'',phone:''},
   {id:'c2',name:'CLIENTE AUTISTA',city:'CASERTA',address:'VIA PERSONALE 7',vat:'',phone:''}],
- tariffs:[],extraRates:{adr:null,reefer:null,pernotto:null,preOrario:0,
+ tariffs:[{id:'r1',customerId:'c2',client:'CLIENTE AUTISTA',city:'CASERTA',cents:6200}],
+ extraRates:{adr:null,reefer:null,pernotto:null,preOrario:0,
   sabatoPorto:null,sabatoTrasferta:null,facchinaggioBilico:null,facchinaggioReefer:null}
 };
 export const adminRecords=async(action,data={})=>{
  if(action==='list')return {drivers:[{id:'11111111-1111-4111-8111-111111111111',
   name:'Mario Rossi',phone:'+393331111111',status:'active',revision:adminArchiveRevision,
-  updatedAt:'2026-11-04T08:00:00Z',counts:{trips:1,customers:2,legacyTariffs:0}}]};
+  updatedAt:'2026-11-04T08:00:00Z',counts:{trips:1,customers:2,legacyTariffs:1}}]};
  if(action==='read'){await new Promise(resolve=>setTimeout(resolve,90));return {archive:{revision:adminArchiveRevision,
   state:structuredClone(adminArchive),updatedAt:new Date().toISOString()},
   audit:structuredClone(adminAudit)};}
@@ -91,9 +92,14 @@ export const adminRecords=async(action,data={})=>{
    else if(data.operation==='update'&&data.category==='customer'){
     const customerIndex=adminArchive.customers.findIndex(c=>c.id===data.recordId);
     if(customerIndex<0)throw new Error('Personal customer missing');
+    const original=adminArchive.customers[customerIndex];
     adminArchive.customers[customerIndex]={
-     ...adminArchive.customers[customerIndex],...data.patch,updatedAt:new Date().toISOString()
+     ...original,...data.patch,updatedAt:new Date().toISOString()
     };
+    if(data.patch.name&&data.patch.name!==original.name){
+     adminArchive.tariffs=adminArchive.tariffs.map(rate=>
+      rate.customerId===data.recordId?{...rate,client:data.patch.name}:rate);
+    }
    }else if(data.operation==='update'&&data.category==='extra')adminArchive.extraRates[data.recordId]=data.patch.cents;
    else throw new Error('Mock action unavailable');
   adminArchiveRevision++;
@@ -662,19 +668,39 @@ try{
  assert.equal(await page.locator('#records-editor input[name=address]').inputValue(),'VIA TEST 2, SALERNO');
  assert.equal(await page.locator('#records-editor input[name=phone]').inputValue(),'');
  assert.equal(await page.locator('#records-editor input[name=vat]').inputValue(),'');
- assert.match(await corporatePicker.locator('.records-site-chosen').textContent(),/Salva modifica/);
+ assert.match(await corporatePicker.locator('.records-site-chosen').textContent(),/NON ANCORA SALVATA/);
+ const acknowledgement=page.locator('#records-editor .records-private-rate-ack');
+ assert.equal(await acknowledgement.isVisible(),true);
+ assert.equal(await acknowledgement.locator('input').isChecked(),false,
+  'A different company selection must require a fresh tariff acknowledgement');
+ const checkboxSize=await acknowledgement.locator('input').evaluate(el=>{
+  const box=el.getBoundingClientRect();
+  return {width:box.width,height:box.height};
+ });
+ assert.ok(checkboxSize.width<=24&&checkboxSize.height<=24,
+  'Linked tariff confirmation must remain a compact checkbox on mobile');
+ await corporatePicker.locator('.records-company-jump').click();
+ assert.equal(await page.locator('#records-editor input[name=reason]').evaluate(
+  el=>document.activeElement===el),true,'Shortcut must lead to the audit and save controls');
  await corporatePicker.locator('input[type=search]').fill('CLIENTE SOLO MANUALE');
  await corporatePicker.locator('.records-site-option').filter({hasText:'CLIENTE SOLO MANUALE'}).click();
  assert.equal(await page.locator('#records-editor input[name=name]').inputValue(),'CLIENTE SOLO MANUALE');
  assert.equal(await page.locator('#records-editor input[name=city]').inputValue(),'BARI');
  assert.equal(await page.locator('#records-editor input[name=address]').inputValue(),'',
   'A company entry without an address must not inherit the old personal address');
+ // The company can be selected first; the final acknowledgement is made next to the save button.
+ assert.equal(await acknowledgement.locator('input').isChecked(),false,
+  'Picking a second site resets the linked-tariff consent');
  // The existing audited manual editing flow must remain available.
  await page.locator('#records-editor input[name=city]').fill('CASERTA');
  await page.locator('#records-editor input[name="name"]').fill('CLIENTE AUTISTA CORRETTO');
  await page.locator('#records-editor input[name="address"]').fill('VIA PERSONALE 99');
  await page.locator('#records-editor input[name="phone"]').fill('+390811234567');
  await page.locator('#records-editor input[name="reason"]').fill('Correzione anagrafica cliente personale');
+ await page.locator('#records-editor button[type="submit"]').click();
+ assert.equal(await page.locator('#records-revision').textContent(),'4',
+  'Saving a selected company customer without confirming linked tariffs must be blocked');
+ await acknowledgement.locator('input').check();
  await page.locator('#records-editor button[type="submit"]').click();
  await page.waitForFunction(()=>document.querySelector('#records-revision').textContent==='5');
  await page.waitForFunction(()=>document.querySelector('#records-list').textContent.includes('CLIENTE AUTISTA CORRETTO'));

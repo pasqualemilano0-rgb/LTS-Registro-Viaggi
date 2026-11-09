@@ -165,3 +165,29 @@
 .records-company-picker .records-site-chosen{
  color:#155f6d;border-color:#76bcc8;background:#f5fcfd;font-size:12px
 }
+
+/* Correct the oversized checkbox inherited from the admin-wide input rule.
+ * Show the linked-rate acknowledgement beside the final save action.
+ */
+#admin-records-panel .records-private-rate-ack{
+ grid-column:1/-1;display:flex;align-items:flex-start;gap:12px;
+ min-width:0;padding:12px 14px;margin:2px 0 0;
+ border:1px solid #badce3;border-radius:12px;background:#fff;
+ color:#285669;font-size:12px;line-height:1.55;font-weight:650;
+ cursor:pointer
+}
+#admin-records-panel .records-private-rate-ack input[type=checkbox]{
+ width:22px;height:22px;min-width:22px;min-height:22px;
+ max-width:22px;max-height:22px;flex:0 0 22px;
+ margin:0;padding:0;border-radius:5px;align-self:flex-start;
+ accent-color:#087c93
+}
+#admin-records-panel .records-private-rate-ack span{min-width:0;flex:1;overflow-wrap:anywhere}
+#admin-records-panel .records-private-rate-ack[hidden]{display:none!important}
+.records-company-jump{grid-column:1/-1;min-height:45px;justify-self:stretch;
+ width:100%;padding:10px 13px;font-size:13px;font-weight:800}
+.records-company-jump[hidden]{display:none!important}
+@media(max-width:550px){
+ #admin-records-panel .records-private-rate-ack{gap:10px;padding:11px}
+ #admin-records-panel .records-private-rate-ack span{font-size:12px}
+}
