@@ -1,11 +1,14 @@
 /** Personal-customer safety helpers. Shared company rows are never mutable here. */
-export function restoreDeletedPersonalCustomer(state,record){
+export function restoreDeletedPersonalCustomer(state,record,removedTariffs=[]){
  if(!state||!Array.isArray(state.customers)||!record||typeof record!=='object'||
   typeof record.id!=='string'||!record.id.trim())throw new Error('Cliente da ripristinare non valido.');
  if(state.customers.some(c=>c.id===record.id))throw new Error('Cliente già presente: ripristino non necessario.');
  if(state.customers.some(c=>c.name===record.name))
   throw new Error('Esiste già un cliente con questo nome. Controlla la rubrica prima di ripristinare.');
- return {...state,customers:[...state.customers,{...record}]};
+ const currentTariffs=Array.isArray(state.tariffs)?state.tariffs:[];
+ const restored=(Array.isArray(removedTariffs)?removedTariffs:[]).filter(t=>
+  !currentTariffs.some(current=>current.id===t.id));
+ return {...state,customers:[...state.customers,{...record}],tariffs:[...currentTariffs,...restored]};
 }
 /** Non-destructive CSV preview; only filled values count as changes. */
 export function customerCsvChanges(customers,rows,{limit=12}={}){
