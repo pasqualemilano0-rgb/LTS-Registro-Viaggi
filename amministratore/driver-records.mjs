@@ -221,16 +221,16 @@ function personalCompanyPicker(form,{name,city,address,phone,vat,isDuplicate,lin
   'Scegli un cliente condiviso per compilare nome, località e indirizzo del cliente personale. '+
   'I viaggi passati non cambiano; la scheda resta nell’archivio personale dell’autista. '+
   'Telefono e partita IVA del precedente cliente saranno svuotati: controllali prima di salvare.'));
- let ratesAcknowledged=null;
+ let ratesAcknowledged=null,confirmation=null;
  if(linkedRates>0){
-  const ack=make('label','records-private-rate-ack');
+  confirmation=make('label','records-private-rate-ack');
+  confirmation.hidden=true;
   ratesAcknowledged=document.createElement('input');
   ratesAcknowledged.type='checkbox';
   ratesAcknowledged.name='confirmLinkedPersonalRates';
-  ack.append(ratesAcknowledged,make('span','',
+  confirmation.append(ratesAcknowledged,make('span','',
    'Questa scheda ha '+linkedRates+' tariffa/e personali collegate. '+
    'Confermo che il nome di queste tariffe seguirà il nuovo cliente, ma gli importi non cambieranno.'));
-  panel.append(ack);
  }
  const label=make('label','records-field records-site-search-label');
  label.append(make('span','','Cerca nell’elenco condiviso (nome, città o indirizzo)'));
@@ -251,7 +251,9 @@ function personalCompanyPicker(form,{name,city,address,phone,vat,isDuplicate,lin
  const chosen=make('p','records-site-chosen');chosen.hidden=true;
  const hint=make('p','records-site-hint','In attesa del catalogo condiviso.');
  hint.setAttribute('role','status');hint.setAttribute('aria-live','polite');
- panel.append(label,count,results,chosen,hint);
+ const jump=make('button','button outline records-company-jump','Vai al salvataggio ↓');
+ jump.type='button';jump.hidden=true;
+ panel.append(label,count,results,chosen,hint,jump);
  form.append(panel);
  const controller=new AbortController();
  let ready=false,sites=[],shown=[],active=-1;
@@ -261,10 +263,6 @@ function personalCompanyPicker(form,{name,city,address,phone,vat,isDuplicate,lin
  }
  function pick(site){
   if(!site||site.source==='personal')return;
-  if(ratesAcknowledged&&!ratesAcknowledged.checked){
-   hint.textContent='Conferma prima il trasferimento del nome delle tariffe personali collegate.';
-   hint.classList.add('records-site-warning');return;
-  }
   if(String(site.name).length>500||String(site.city).length>500||
      String(site.address||'').length>1000){
    hint.textContent='Dati aziendali troppo lunghi: verifica il cliente prima di sostituirlo.';
@@ -279,8 +277,13 @@ function personalCompanyPicker(form,{name,city,address,phone,vat,isDuplicate,lin
   phone.value='';vat.value='';
   input.value=site.name+' · '+site.city;
   chosen.textContent='Cliente aziendale selezionato: '+site.name+' · '+site.city+
-   (site.address?' · '+site.address:'')+'. Conferma con «Salva modifica».';
-  chosen.hidden=false;
+   (site.address?' · '+site.address:'')+'. MODIFICA NON ANCORA SALVATA.';
+  chosen.hidden=false;jump.hidden=false;
+  if(confirmation){
+   confirmation.hidden=false;
+   ratesAcknowledged.checked=false;
+   ratesAcknowledged.required=true;
+  }
   hint.classList.remove('records-site-warning');
   hint.textContent='Scheda personale compilata dal condiviso. Contatti precedenti svuotati. '+
    'Controlla i campi e salva; i viaggi storici non vengono modificati.';
@@ -332,8 +335,13 @@ function personalCompanyPicker(form,{name,city,address,phone,vat,isDuplicate,lin
    (!mapsAvailable||!tariffsAvailable?' Alcune fonti non sono disponibili.':''):
    'Elenco aziendale non disponibile: nessuna sostituzione automatica possibile.';
  }
+ jump.addEventListener('click',()=>{
+  const target=form.elements.namedItem('reason');
+  target?.scrollIntoView({block:'center',behavior:'smooth'});
+  target?.focus({preventScroll:true});
+ },{signal:controller.signal});
  input.addEventListener('focus',show,{signal:controller.signal});
- input.addEventListener('input',()=>{chosen.hidden=true;show();},{signal:controller.signal});
+ input.addEventListener('input',show,{signal:controller.signal});
  input.addEventListener('keydown',event=>{
   if(event.key==='Escape'){close();return;}
   if(event.key==='ArrowDown'||event.key==='ArrowUp'){
@@ -349,7 +357,7 @@ function personalCompanyPicker(form,{name,city,address,phone,vat,isDuplicate,lin
  for(const field of [name,city,address,phone,vat]){
   field.addEventListener('input',()=>{chosen.hidden=true;},{signal:controller.signal});
  }
- return {panel,catalog,dispose:()=>controller.abort()};
+ return {panel,catalog,confirmation,dispose:()=>controller.abort()};
 }
 
 export function setupDriverRecords(account){
@@ -805,6 +813,7 @@ export function setupDriverRecords(account){
   }
   field(form,'Motivo della modifica (audit)','reason','',{maxLength:500,
    placeholder:'Esempio: correzione su richiesta dell’autista'});
+  if(companyPicker?.confirmation)form.append(companyPicker.confirmation);
   const buttons=make('div','records-form-actions');
   const submit=make('button','button primary','Salva modifica');
   submit.type='submit';buttons.append(submit);
