@@ -728,7 +728,7 @@ try{
  // Simulate production HTTP 400: error must be visible beside save, and
  // the user's edited form must remain intact for a second attempt.
  await page.evaluate(async()=>{
-  const account=await import('/account-access.mjs');
+  const account=await import('/account-access.mjs?v=20261107-realtime-v1');
   account.mockRejectNextCustomerSave();
  });
  await page.locator('#records-editor button[type="submit"]').click();
