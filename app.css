@@ -745,3 +745,15 @@ h1,h2,h3{letter-spacing:-.035em}
  .register-undo-button{width:100%}
  .register-tools{padding:12px;margin:12px 0}
 }
+
+
+/* Recoverable personal-contact deletion and readable CSV field preview. */
+.customer-undo-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;
+ padding:12px 14px;margin:0 0 14px;border:1px solid #9ac9d2;border-radius:12px;
+ background:#eff9fb;color:#16495a;font-size:12px;font-weight:650;line-height:1.5}
+.customer-undo-bar span{min-width:0;overflow-wrap:anywhere}
+.customer-undo-bar button{flex:none;min-height:42px;padding:8px 12px}
+.customer-csv-diff{margin:10px 0;padding:12px;border-radius:10px;background:#f0f7fa;
+ color:#16495a;font-size:12px;line-height:1.6;overflow-wrap:anywhere}
+@media(max-width:380px){.customer-undo-bar{align-items:stretch;flex-direction:column}
+ .customer-undo-bar button{width:100%}}
