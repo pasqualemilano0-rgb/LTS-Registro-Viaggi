@@ -45,7 +45,10 @@ function saveEditorScratchpad(){
  if(!store.usingAccount()||!accountAccess.isVerified())return Promise.resolve();
  const action=tripDraftHasWork(draft,editingId,draftBaselineDate)?
   store.saveTripEditorDraft(editorDraftSnapshot()):store.clearTripEditorDraft();
- return action.catch(error=>{
+ return action.then(()=>{
+  const node=document.querySelector('#trip-draft-state');
+  if(node){node.textContent='Bozza aggiornata sul dispositivo.';node.dataset.status='saved';}
+ }).catch(error=>{
   const node=document.querySelector('#trip-draft-state');
   if(node){node.textContent='Attenzione: bozza non conservata ('+(error.message||'errore di memoria')+').';node.dataset.status='error';}
   throw error;
@@ -571,7 +574,7 @@ function renderInsert(main){
  form.append(services);
  const estimate=el('div',{class:'preview-total'});const saturdayNote=el('p',{class:'saturday-note',role:'status',hidden:true});const missing=el('p',{class:'missing-note'});form.append(estimate,saturdayNote,missing);
  const save=el('button',{type:'submit',class:'primary-button full','data-save':true},icon('check'),editingId?'Salva modifiche':'Salva viaggio');
- const draftStatus=el('p',{id:'trip-draft-state',class:'trip-draft-state',role:'status','aria-live':'polite'},'I dati in compilazione sono conservati sul dispositivo.');
+ const draftStatus=el('p',{id:'trip-draft-state',class:'trip-draft-state',role:'status','aria-live':'polite'},'Le modifiche vengono conservate sul dispositivo durante la compilazione.');
  const syncDetail=el('p',{id:'trip-save-hint',class:'trip-save-hint',role:'status','aria-live':'polite'});
  form.append(save,draftStatus,syncDetail,el('p',{class:'privacy-footnote'},icon('lock'),'Tariffe e note restano nell’app, mai nel PDF.'));
  function collect(){draft={date:date.input.value,container:container.input.value,client:client.input.value,city:city.input.value,secondClient:secondClient?.input.value||'',secondCity:secondCity?.input.value||'',services:[...form.querySelectorAll('[name=service]:checked')].map(n=>n.value),second:draft.second,note:noteInput.value,noteOpen:Boolean(draft.noteOpen),servicesOpen:Boolean(draft.servicesOpen)};}
@@ -1888,7 +1891,7 @@ window.addEventListener('online',()=>realtimeBridge?.resume());
 window.addEventListener('focus',()=>realtimeBridge?.resume());
 window.addEventListener('offline',()=>realtimeBridge?.resume());
 document.addEventListener('visibilitychange',()=>realtimeBridge?.resume());
-window.addEventListener('visibilitychange',()=>{if(document.hidden&&tripDraftHasWork(draft,editingId,draftBaselineDate))keepEditorScratchpad();});
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&tripDraftHasWork(draft,editingId,draftBaselineDate))keepEditorScratchpad();});
 window.addEventListener('beforeunload',event=>{if(busy||tripDraftHasWork(draft,editingId,draftBaselineDate)){event.preventDefault();event.returnValue='';}});
 navigator.serviceWorker?.addEventListener('message',event=>{
  const data=event.data;
