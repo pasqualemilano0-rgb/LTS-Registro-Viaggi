@@ -8,7 +8,7 @@ const html=read('amministratore/index.html');
 test('driver entrypoints load the original LTS theme and preserve account routes',()=>{
  for(const p of ['index.html','shell.html']){
   const source=read(p);
-  assert.match(source,/app[.]css[?]v=20261109-register-explorer-v4/);
+  assert.match(source,/app[.]css[?]v=20261109-customer-delete-v4/);
   assert.match(source,/visual-theme[.]css[?]v=20\d{6}-[a-z0-9-]+-v\d+/);
   assert.doesNotMatch(source,/href="[^"]*pro-theme[.]css/);
   assert.match(source,/app[.]mjs[?]v=20\d{6}-[a-z0-9-]+-v\d+/);

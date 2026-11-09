@@ -99,5 +99,5 @@ test('register UI uses live filtering, undo, narrow rendering, archived PDF scop
  assert.match(css,/register-filter\[aria-pressed=true\]/);
  assert.match(css,/register-month-arrow:focus-visible/);
  assert.match(worker,/shared\/register-explorer[.]mjs/);
- assert.match(shell,/20261109-register-explorer-v4/);
+ assert.match(shell,/20261109-customer-delete-v4/);
 });

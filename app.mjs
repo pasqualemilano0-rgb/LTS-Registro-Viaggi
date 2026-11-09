@@ -12,7 +12,7 @@ import {readMapsCustomer} from '/LTS-Registro-Viaggi/maps-reader-client.mjs';
 import {companyFareSnapshot} from '/LTS-Registro-Viaggi/shared/company-fares.mjs';
 import {companyExtraSnapshot} from '/LTS-Registro-Viaggi/shared/company-extras.mjs';
 import {mapsLinkForCompanySync,filterSharedCustomers} from '/LTS-Registro-Viaggi/shared/maps-company-routing.mjs';
-import {dedupedCustomerDirectory,matchingSharedCustomer} from '/LTS-Registro-Viaggi/shared/customer-site-matches.mjs';
+import {dedupedCustomerDirectory,matchingSharedCustomer,canonicalPersonalCustomer} from '/LTS-Registro-Viaggi/shared/customer-site-matches.mjs';
 import {combinedTripCustomerChoices,filterTripCustomerChoices} from '/LTS-Registro-Viaggi/shared/trip-customer-choices.mjs';
 import { appendPushSettings } from '/LTS-Registro-Viaggi/push-client.mjs';
 import { parseCustomerCsv, mergeCustomerCsv, exportCustomerCsv, MAX_CUSTOMER_CSV_BYTES } from '/LTS-Registro-Viaggi/shared/customer-csv.mjs';
@@ -1132,6 +1132,17 @@ async function importCustomersCsv(file){
  }catch(err){toast(err.message||'Impossibile leggere il CSV.',true);}
 }
 function customerDialog(customer=null,proposal=null,{focusRates=false}={}){
+ // The directory decorates its personal rows for rendering. Resolve the
+ // original archive entry before establishing the optimistic edit fingerprint.
+ // Never allow an aziendale-only card to be edited/deleted as a personal row.
+ if(customer){
+  const original=canonicalPersonalCustomer(state.customers,customer);
+  if(!original){
+   toast('Questo cliente personale non è più disponibile nel tuo registro. Aggiorna la rubrica e riprova.',true);
+   return;
+  }
+  customer=original;
+ }
  const expectedCustomer=editorVersion(customer);
  const seed=customer||proposal;const {dialog,body}=modal(customer?'Modifica cliente':proposal?'Controlla cliente da Maps':'Nuovo cliente',{subtitle:proposal?'Controlla nome, città e indirizzo. Completa i dati mancanti: il cliente sarà aggiunto solo premendo Salva cliente.':'Inserisci i recapiti utili. Il telefono è facoltativo.'});const form=el('form',{novalidate:true});const error=el('div',{class:'form-error',role:'alert'});
  if(proposal?.warnings?.length)form.append(el('p',{class:'info-note'},proposal.warnings.join(' ')));
@@ -1147,7 +1158,7 @@ function customerDialog(customer=null,proposal=null,{focusRates=false}={}){
  form.append(el('p',{class:'info-note'},icon('lock'),'Le trasferte sono uguali per tutti gli autisti e si modificano solo dal tariffario aziendale.'));
  const actions=el('div',{class:'dialog-actions'});
  if(customer)actions.append(button('Elimina','secondary danger',()=>{
-  dialog.close();confirmAction('Eliminare questo cliente?',`${customer.name}. Saranno rimosse anche le sue tariffe. I viaggi già salvati resteranno nel registro.`,async()=>{requireCurrentEditor(expectedCustomer,state.customers.find(current=>current.id===customer.id),'Il cliente');await persist({...state,customers:state.customers.filter(c=>c.id!==customer.id),tariffs:state.tariffs.filter(t=>t.customerId!==customer.id&&t.client!==customer.name)});render();toast('Cliente eliminato.');});
+  dialog.close();confirmAction('Eliminare questo cliente?',`${customer.name}. Verranno rimosse solo le sue tariffe personali. I viaggi già salvati e il tariffario aziendale rimarranno invariati.`,async()=>{requireCurrentEditor(expectedCustomer,state.customers.find(current=>current.id===customer.id),'Il cliente');await persist({...state,customers:state.customers.filter(c=>c.id!==customer.id),tariffs:state.tariffs.filter(t=>t.customerId!==customer.id&&t.client!==customer.name)});render();toast('Cliente eliminato.');});
  }));
  actions.append(el('button',{type:'submit',class:'primary-button','data-save':true},'Salva cliente'));form.append(actions);
  form.addEventListener('submit',async event=>{event.preventDefault();error.textContent='';try{

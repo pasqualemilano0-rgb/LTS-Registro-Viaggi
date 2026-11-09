@@ -61,3 +61,14 @@ export function dedupedCustomerDirectory(shared,personal){
  });
  return {shared:shownShared,personal:uniquePersonal,matchedPersonal};
 }
+
+/** Return the exact owned archive record, not the copy decorated for display.
+ * The directory adds view-only fields (e.g. directorySource) which must not
+ * cause a false "changed on another device" error during editing/deletion.
+ * Never match a customer by name or accept a company-only shared card. */
+export function canonicalPersonalCustomer(personalCustomers,selection){
+ if(!Array.isArray(personalCustomers)||!selection||typeof selection!=='object'||
+    selection.directorySource==='shared'||
+    typeof selection.id!=='string'||!selection.id.trim())return null;
+ return personalCustomers.find(entry=>entry.id===selection.id)??null;
+}
