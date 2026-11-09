@@ -43,21 +43,29 @@ export function matchingSharedCustomer(shared,record){
  return candidates.length===1?candidates[0]:null;
 }
 export function dedupedCustomerDirectory(shared,personal){
- const uniqueShared=[];
+ // Group by company+municipality before checking individual site identity.
+ // Distinct warehouses remain separate even when their name and city match.
+ const siteBuckets=new Map(),uniqueShared=[];
+ const bucketKey=site=>nameKey(site)+'|'+cityKey(site);
  for(const site of Array.isArray(shared)?shared:[]){
-  if(!uniqueShared.some(other=>sameSharedSite(other,site)))uniqueShared.push(site);
+  const key=bucketKey(site),bucket=siteBuckets.get(key)||[];
+  if(!bucket.some(other=>sameSharedSite(other,site))){
+   uniqueShared.push(site);bucket.push(site);siteBuckets.set(key,bucket);
+  }
  }
- const uniquePersonal=[],matchedPersonal=[];
+ const uniquePersonal=[],matchedPersonal=[],localPhoneByShared=new Map();
  for(const person of Array.isArray(personal)?personal:[]){
-  const matched=matchingSharedCustomer(uniqueShared,person);
-  if(matched)matchedPersonal.push({personal:person,shared:matched});
-  else uniquePersonal.push(person);
+  const candidates=siteBuckets.get(bucketKey(person))||[];
+  const matched=matchingSharedCustomer(candidates,person);
+  if(matched){
+   matchedPersonal.push({personal:person,shared:matched});
+   if(person.phone&&!localPhoneByShared.has(matched))localPhoneByShared.set(matched,person.phone);
+  }else uniquePersonal.push(person);
  }
- // A private phone stays local to this driver's in-memory view; it is NEVER
- // uploaded into the company registry and never changes the personal archive.
+ // Personal phones are display-only and are never sent to the shared service.
  const shownShared=uniqueShared.map(site=>{
-  const local=matchedPersonal.find(row=>row.shared===site)?.personal;
-  return local?.phone&&!site.phone?{...site,phone:local.phone}:site;
+  const phone=localPhoneByShared.get(site);
+  return phone&&!site.phone?{...site,phone}:site;
  });
  return {shared:shownShared,personal:uniquePersonal,matchedPersonal};
 }
