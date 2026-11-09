@@ -24,7 +24,7 @@ export function setupCompanyExtras(account){
  function render(){
   list.replaceChildren();
   if(!loaded)return;
-  for(const service of SERVICES){
+  for(const service of SERVICES.filter(item=>item.key!=='reefer')){
    const rate=rates.find(row=>row.serviceKey===service.key);
    const form=el('form','','company-extra-row');
    form.dataset.service=service.key;
