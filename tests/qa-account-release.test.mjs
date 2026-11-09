@@ -956,7 +956,7 @@ test('Smart Console V2 keeps context inside its authorized drawer and never writ
  assert.match(html,/id="smart-detail"/);
  assert.match(html,/id="smart-detail-body"/);
  assert.match(html,/id="smart-detail-actions"/);
- assert.match(html,/smart-console[.]css[?]v=20261109-shared-trip-v1/);
+ assert.match(html,/smart-console[.]css[?]v=20261108-smart-v2/);
  assert.match(ui,/function showDetail\(spec,item\)/);
  assert.match(ui,/home[.]hidden=true;embedded[.]hidden=true;detail[.]hidden=false/);
  assert.match(ui,/smart-result-buttons/);
