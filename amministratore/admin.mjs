@@ -4,6 +4,7 @@ import {createLtsRealtime} from '../realtime-client.mjs?v=20261107-roster-realti
 import {STATUS_LABELS,driverSummary,filterDrivers,driverInitial} from './model.mjs?v=20261109-alpha-v1';
 import {setupReport} from './report.mjs?v=20261108-smart-v2';
 import {setupSmartConsole} from './smart-console.mjs?v=20261108-smart-v2';
+import {setupAdminStatus} from './admin-status.mjs';
 import {rememberPosition,readPosition,clearPosition} from './admin-position.mjs';
 
 const byId=id=>document.getElementById(id);
@@ -29,6 +30,7 @@ function restoreAdminPosition(saved){
  }));
 }
 const companyView=setupReport(account);
+const adminStatus=setupAdminStatus(account);
 const smartConsole=setupSmartConsole({
  authorized:()=>account.isVerified()&&account.getRole()==='admin'&&
   !dashboard.hidden&&byId('mfa-panel').hidden,
@@ -142,6 +144,7 @@ async function loadBackupFactors(){
  }catch(error){byId('mfa-backup-status').textContent=errorText(error,'Stato backup non disponibile. Riprova online.');}
 }
 function lock(message='Accedi come amministratore per continuare.'){
+ adminStatus.reset();
  selectedInitial='';
  byId('search').value='';byId('status-filter').value='all';
  smartConsole.reset();byId('smart-command-open').hidden=true;
