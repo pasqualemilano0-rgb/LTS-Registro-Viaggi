@@ -407,7 +407,7 @@ function useCustomerInTrip(customer){
  const client=D.normalizeText(customer.name),city=D.normalizeText(customer.city);
  const apply=()=>{
   draft={...draft,client,city};
-  navigate('insert');
+  keepEditorScratchpad();navigate('insert',{keepDraft:true});
   toast(city?'Cliente e località inseriti nel viaggio.':'Cliente inserito: completa la località.');
  };
  if(draft.client&&D.normalizeText(draft.client)!==client)
@@ -494,6 +494,12 @@ function renderInsert(main){
  const updateDateCaption=()=>{dateCaptionText.textContent=/^\d{4}-(0[1-9]|1[0-2])-([0-2]\d|3[01])$/.test(date.input.value)?formatDate(date.input.value):'Data';};
  date.input.addEventListener('input',updateDateCaption);date.input.addEventListener('change',updateDateCaption);updateDateCaption();
  form.append(el('div',{class:'section-hero insert-hero'},el('h1',{},editingId?'Modifica viaggio':'Inserisci viaggio'),date.wrap));
+ // The most frequent workflow is a return trip: keep the shortcut above the form.
+ const latestRoute=D.sortTrips(state.trips)[0]||null;
+ if(!editingId&&latestRoute)form.append(el('section',{class:'trip-quick-route','aria-label':'Inserimento rapido'},
+  el('div',{},el('strong',{},'Percorso abituale'),el('p',{},latestRoute.client+' · '+latestRoute.city)),
+  button('Ripeti ultimo percorso','secondary',()=>repeatRoute(latestRoute),'refresh',
+   {class:'secondary-button trip-quick-route-action'})));
  // Dashboard shortcut: reuse the same Google Maps import and confirmation path
  // as Clienti. Preserve the current unsaved journey before opening the dialog.
  if(!editingId)form.append(el('section',{class:'dashboard-maps-shortcut',
@@ -572,7 +578,7 @@ function renderInsert(main){
  options.append(servicesToggle);
  const services=el('div',{class:'service-grid trip-service-editor',id:'trip-services',hidden:!draft.servicesOpen},D.SERVICES.map(service=>el('label',{class:'service-chip'},el('input',{type:'checkbox',name:'service',value:service.key,'aria-label':service.label,checked:draft.services.includes(service.key),on:{change:()=>{collect();updateEstimate();}}}),el('span',{class:'chip-check','aria-hidden':'true'},'✓'),service.label)));
  form.append(services);
- const estimate=el('div',{class:'preview-total'});const saturdayNote=el('p',{class:'saturday-note',role:'status',hidden:true});const missing=el('p',{class:'missing-note'});form.append(estimate,saturdayNote,missing);
+ const estimate=el('div',{class:'preview-total'});const estimateBreakdown=el('div',{class:'trip-estimate-breakdown',role:'group','aria-label':'Dettaglio importi stimati'});const saturdayNote=el('p',{class:'saturday-note',role:'status',hidden:true});const missing=el('p',{class:'missing-note'});form.append(estimate,estimateBreakdown,saturdayNote,missing);
  const save=el('button',{type:'submit',class:'primary-button full','data-save':true},icon('check'),editingId?'Salva modifiche':'Salva viaggio');
  const draftStatus=el('p',{id:'trip-draft-state',class:'trip-draft-state',role:'status','aria-live':'polite'},'Le modifiche vengono conservate sul dispositivo durante la compilazione.');
  const syncDetail=el('p',{id:'trip-save-hint',class:'trip-save-hint',role:'status','aria-live':'polite'});
@@ -600,6 +606,11 @@ function renderInsert(main){
   const amount=D.tripAmounts(candidate,previewContext);const saturday=D.saturdayAllowanceStatus(candidate,previewContext);
   hint.textContent=firstTariff?`Tariffa aziendale · ${D.formatMoney(firstTariff.cents)}`:'';
   estimate.replaceChildren(el('span',{},icon('wallet'),draft.second?'Trasferte + extra':'Trasferta + extra'),draft.client&&draft.city?el('strong',{},D.formatMoney(amount.totalCents)):el('small',{},'Scegli cliente e città'));
+  estimateBreakdown.replaceChildren(
+   el('div',{},el('span',{},'Prima presa'),el('strong',{},draft.client&&draft.city?D.formatMoney(candidate.fareCents):'—')),
+   ...(draft.second?[el('div',{},el('span',{},'Seconda presa'),el('strong',{},draft.secondClient&&draft.secondCity?D.formatMoney(candidate.secondFareCents):'—'))]:[]),
+   el('div',{},el('span',{},'Servizi extra'),el('strong',{},D.formatMoney(amount.extraCents)))
+  );
   saturdayNote.textContent=saturdayNoteText(saturday.status);saturdayNote.hidden=saturday.status==='none';saturdayNote.dataset.saturdayStatus=saturday.status;
   const hasAny=Boolean(draft.client||draft.city||draft.services.length);const unknown=(candidate.fareCents===null&&Boolean(draft.client&&draft.city))||(draft.second&&candidate.secondFareCents===null&&Boolean(draft.secondClient&&draft.secondCity))||draft.services.some(key=>extraCents[key]===null&&!(key==='sabatoTrasferta'&&saturday.status==='included'));
   missingEstimateTariffs=Boolean(hasAny&&unknown);
@@ -713,8 +724,7 @@ function repeatRoute(trip){
   toast('Percorso pronto. Inserisci il nuovo container e controlla i dati prima di salvare.');
  };
  // A route shortcut must not silently replace work typed into the current form.
- const filled=Boolean(editingId||draft.container.trim()||draft.client.trim()||
-  draft.city.trim()||draft.second||draft.services.length||draft.note.trim());
+ const filled=tripDraftHasWork(draft,editingId,draftBaselineDate);
  if(filled)confirmAction('Usare questo percorso?',
   'I dati già compilati nel modulo saranno sostituiti. Il viaggio originale non verrà modificato.',
   apply,'Usa percorso');
