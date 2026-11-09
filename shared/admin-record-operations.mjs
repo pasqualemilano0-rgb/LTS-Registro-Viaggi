@@ -59,7 +59,20 @@ function nextEntry(category,id,patch,existing,now){
  }
  throw new Error('Archivio non valido.');
 }
-export function applyAdminRecordEdit(raw,{action,category,id,patch={},restoreRecord=null}={},now=new Date().toISOString()){
+/** Count only journeys mentioning this exact personal customer and location.
+ * No ID relation exists on trips, so never match on name alone.
+ */
+export function linkedCustomerTripCount(state,customer){
+ if(!customer||!normalizeText(customer.name)||!normalizeText(customer.city))return 0;
+ const name=normalizeText(customer.name),city=normalizeText(customer.city);
+ return (Array.isArray(state?.trips)?state.trips:[]).filter(t=>
+  (normalizeText(t.client)===name&&normalizeText(t.city)===city)||
+  (normalizeText(t.secondClient)===name&&normalizeText(t.secondCity)===city)).length;
+}
+
+export function applyAdminRecordEdit(raw,{action,category,id,patch={},restoreRecord=null,updateLinkedTrips=false}={},now=new Date().toISOString()){
+ if(typeof updateLinkedTrips!=='boolean'||(updateLinkedTrips&&(action!=='update'||category!=='customer')))
+  throw new Error('Aggiornamento viaggi non consentito.');
  const state=validateState(raw);
  if(!['trip','customer','tariff','extra'].includes(category))throw new Error('Tipo di dato non consentito.');
  if(!['create','update','delete','restore'].includes(action))throw new Error('Operazione non consentita.');
@@ -96,13 +109,33 @@ export function applyAdminRecordEdit(raw,{action,category,id,patch={},restoreRec
    after=nextEntry(category,key,patch,original,now);
    collection[index]=after;
    if(category==='customer'&&after.name!==original.name){
-    // Preserve historical journey labels/snapshots, but keep linked personal
-    // legacy tariffs valid under the archive's referential integrity rules.
+    // Keep linked legacy personal tariffs referentially valid; retain their amounts.
     state.tariffs=state.tariffs.map(t=>t.customerId===key?{...t,client:normalizeText(after.name)}:t);
+   }
+   if(category==='customer'&&updateLinkedTrips&&
+      (normalizeText(original.name)!==normalizeText(after.name)||
+       normalizeText(original.city)!==normalizeText(after.city))){
+    const oldName=normalizeText(original.name),oldCity=normalizeText(original.city);
+    if(!oldName||!oldCity)throw new Error('La scheda originale deve avere nome e località per collegare i viaggi.');
+    const nextName=normalizeText(after.name),nextCity=normalizeText(after.city);
+    if(!nextName||!nextCity)throw new Error('Il cliente aziendale deve avere nome e località.');
+    state.trips=state.trips.map(trip=>{
+     const first=normalizeText(trip.client)===oldName&&normalizeText(trip.city)===oldCity;
+     const second=normalizeText(trip.secondClient)===oldName&&normalizeText(trip.secondCity)===oldCity;
+     return first||second?{...trip,
+      ...(first?{client:nextName,city:nextCity}:{}),
+      ...(second?{secondClient:nextName,secondCity:nextCity}:{}),
+      // Preserve fare snapshots, dates, containers, notes and service amounts.
+      updatedAt:now}:trip;
+    });
    }
   }
  }
  const checked=validateState(state);
  const checkAfter=after?checked[name].find(x=>x.id===key):null;
- return {state:checked,before,after:checkAfter||null};
+ return {state:checked,before,after:checkAfter||null,
+  affectedTrips:category==='customer'&&updateLinkedTrips&&
+  (normalizeText(original?.name)!==normalizeText(after?.name)||
+   normalizeText(original?.city)!==normalizeText(after?.city))?
+   linkedCustomerTripCount(raw,original):0};
 }

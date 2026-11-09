@@ -2,7 +2,7 @@ import * as account from '../account-access.mjs?v=20261107-realtime-v1';
 import realtimeConfig from '../runtime-config.mjs';
 import {createLtsRealtime} from '../realtime-client.mjs?v=20261107-roster-realtime-v1';
 import {STATUS_LABELS,driverSummary,filterDrivers,driverInitial} from './model.mjs?v=20261109-alpha-v1';
-import {setupReport} from './report.mjs?v=20261109-customer-confirm-v1';
+import {setupReport} from './report.mjs?v=20261109-customer-trip-sync-v1';
 import {setupSmartConsole} from './smart-console.mjs?v=20261108-smart-v2';
 import {setupAdminStatus} from './admin-status.mjs';
 import {rememberPosition,readPosition,clearPosition} from './admin-position.mjs';

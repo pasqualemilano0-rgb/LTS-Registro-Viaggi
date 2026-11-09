@@ -73,6 +73,7 @@ export const adminRecords=async(action,data={})=>{
   await new Promise(resolve=>setTimeout(resolve,90));
   if(data.expectedRevision!==adminArchiveRevision)throw new Error('Revision conflict');
   const rows=adminArchive.trips,idx=rows.findIndex(x=>x.id===data.recordId);
+  let affectedTrips=0;
   if(data.operation==='delete'){
    if(data.category!=='customer')throw new Error('Mock delete supports customers only');
    if(!data.reason||String(data.reason).trim().length<8)throw new Error('Audit reason required');
@@ -100,6 +101,20 @@ export const adminRecords=async(action,data={})=>{
      adminArchive.tariffs=adminArchive.tariffs.map(rate=>
       rate.customerId===data.recordId?{...rate,client:data.patch.name}:rate);
     }
+    if(data.updateLinkedTrips===true){
+     const norm=x=>String(x||'').trim().toUpperCase();
+     const oldName=norm(original.name),oldCity=norm(original.city);
+     if(!oldName||!oldCity)throw new Error('Customer identity missing');
+     adminArchive.trips=adminArchive.trips.map(trip=>{
+      const first=norm(trip.client)===oldName&&norm(trip.city)===oldCity;
+      const second=norm(trip.secondClient)===oldName&&norm(trip.secondCity)===oldCity;
+      if(first||second)affectedTrips++;
+      return first||second?{...trip,
+       ...(first?{client:data.patch.name,city:data.patch.city}:{}),
+       ...(second?{secondClient:data.patch.name,secondCity:data.patch.city}:{}),
+       updatedAt:new Date().toISOString()}:trip;
+     });
+    }
    }else if(data.operation==='update'&&data.category==='extra')adminArchive.extraRates[data.recordId]=data.patch.cents;
    else throw new Error('Mock action unavailable');
   adminArchiveRevision++;
@@ -107,7 +122,7 @@ export const adminRecords=async(action,data={})=>{
    category:data.category,action:data.operation,recordId:data.recordId,reason:data.reason||'',
    beforeRevision:adminArchiveRevision-1,afterRevision:adminArchiveRevision});
   return {revision:adminArchiveRevision,state:structuredClone(adminArchive),
-   audit:structuredClone(adminAudit)};
+   audit:structuredClone(adminAudit),affectedTrips};
  }
  throw new Error('Mock action unavailable');
 };
@@ -755,6 +770,29 @@ try{
  await page.locator('#records-tabs button[data-kind="customer"]').click();
  assert.match(await page.locator('#records-list').textContent(),/CLIENTE ALFA/);
  assert.match(await page.locator('#records-list').textContent(),/CLIENTE AUTISTA CORRETTO/);
+ // Updating a personal customer must NEVER mutate journeys by default.
+ // Explicit opt-in synchronizes exactly matching historical customer locations.
+ const oldRevision=Number(await page.locator('#records-revision').textContent());
+ await page.locator('#records-list .records-card').filter({hasText:'CLIENTE ALFA'})
+  .locator('button[aria-label^="Modifica"]').click();
+ const corporate=page.locator('#records-editor .records-company-picker');
+ await page.waitForFunction(()=>!document.querySelector('.records-company-picker input[type=search]')?.disabled);
+ await corporate.locator('input[type=search]').fill('CLIENTE BETA');
+ await corporate.locator('.records-site-option').filter({hasText:'CLIENTE BETA'}).click();
+ const tripAck=page.locator('#records-editor .records-private-trip-sync');
+ assert.equal(await tripAck.isVisible(),true);
+ assert.match(await tripAck.textContent(),/1 viaggi già registrati/);
+ assert.equal(await tripAck.locator('input[type=checkbox]').isChecked(),false,
+  'Updating historical trips must be opt-in, never implicit');
+ await tripAck.locator('input[type=checkbox]').check();
+ await page.locator('#records-editor input[name=reason]').fill('Cambio cliente e aggiornamento viaggio autorizzato');
+ await page.locator('#records-editor button[type=submit]').click();
+ await page.waitForFunction(n=>Number(document.querySelector('#records-revision').textContent)>n,oldRevision);
+ assert.match(await page.locator('#records-status').textContent(),/1 viaggi collegati aggiornati/);
+ await page.locator('#records-tabs button[data-kind="trip"]').click();
+ assert.match(await page.locator('#records-list').textContent(),/CLIENTE BETA/);
+ assert.match(await page.locator('#records-list').textContent(),/150,00/,
+  'Historic trip price must remain unchanged after customer replacement');
  // One shared company extra price: no individual driver selector.
  await openAdminTab('rates-tab');
  await page.waitForFunction(()=>document.querySelectorAll('.company-extra-row').length===8);

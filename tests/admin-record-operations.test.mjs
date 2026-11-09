@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {emptyState,emptyExtraRates,validateState} from '../shared/domain.mjs';
-import {applyAdminRecordEdit} from '../shared/admin-record-operations.mjs';
+import {applyAdminRecordEdit,linkedCustomerTripCount} from '../shared/admin-record-operations.mjs';
 const now='2026-11-07T08:00:00.000Z';
 const make=()=>{
  const s=emptyState();
@@ -91,4 +91,53 @@ test('unknown edits and duplicate ID are rejected, never silently merged',()=>{
   id:'nonexistent',patch:{note:'TEST'}}),/non trovato/);
  assert.throws(()=>applyAdminRecordEdit(make(),{action:'update',category:'trip',
   id:'t1',patch:{fareCents:-1}}),/centesimi/);
+});
+
+
+test('opt-in updates only trips with exact original name and city, preserving fares and other fields',()=>{
+ const state=make();
+ state.trips.push({...structuredClone(state.trips[0]),id:'t2',city:'SALERNO',fareCents:7500});
+ state.trips.push({...structuredClone(state.trips[0]),id:'t3',client:'ALTRO',city:'MILANO',
+   secondClient:'ACME',secondCity:'NAPOLI',fareCents:3500,secondFareCents:9000});
+ state.trips.push({...structuredClone(state.trips[0]),id:'t4',client:'ACME',city:'NAPOLI',
+   secondClient:'ALTRO',secondCity:'ROMA',note:'VIAGGIO SEPARATO'});
+ const original=validateState(state);
+ assert.equal(linkedCustomerTripCount(original,original.customers[0]),3);
+ const {state:next,affectedTrips}=applyAdminRecordEdit(original,{
+  action:'update',category:'customer',id:'c1',
+  updateLinkedTrips:true,patch:{name:'ACME NUOVA',city:'CASERTA',address:'VIA NUOVA'}
+ },now);
+ assert.equal(affectedTrips,3);
+ assert.equal(next.customers[0].name,'ACME NUOVA');
+ assert.equal(next.trips[0].client,'ACME NUOVA');
+ assert.equal(next.trips[0].city,'CASERTA');
+ assert.equal(next.trips[0].fareCents,5000);
+ assert.equal(next.trips[0].container,original.trips[0].container);
+ assert.equal(next.trips[0].date,original.trips[0].date);
+ assert.equal(next.trips[0].createdAt,original.trips[0].createdAt);
+ assert.equal(next.trips[1].client,'ACME');
+ assert.equal(next.trips[1].city,'SALERNO');
+ assert.equal(next.trips[1].updatedAt,original.trips[1].updatedAt);
+ assert.equal(next.trips[2].client,'ALTRO');
+ assert.equal(next.trips[2].secondClient,'ACME NUOVA');
+ assert.equal(next.trips[2].secondCity,'CASERTA');
+ assert.equal(next.trips[2].secondFareCents,9000);
+ assert.equal(next.trips[3].note,'VIAGGIO SEPARATO');
+ assert.equal(original.trips[0].client,'ACME');
+});
+test('without explicit confirmation customer edit leaves every historical trip unchanged',()=>{
+ const current=make();
+ const updated=applyAdminRecordEdit(current,{
+  action:'update',category:'customer',id:'c1',
+  patch:{name:'ACME NUOVA',city:'CASERTA'}},now);
+ assert.equal(updated.affectedTrips,0);
+ assert.deepEqual(updated.state.trips,current.trips);
+});
+test('opt-in cannot be supplied for other edit categories or malformed flags',()=>{
+ const current=make();
+ assert.throws(()=>applyAdminRecordEdit(current,{action:'update',category:'trip',id:'t1',
+  patch:{note:'TEST'},updateLinkedTrips:true},now),/non consentito/);
+ assert.throws(()=>applyAdminRecordEdit(current,{action:'update',category:'customer',id:'c1',
+  patch:{name:'TEST'},updateLinkedTrips:'true'},now),/non consentito/);
+ assert.equal(linkedCustomerTripCount(current,{name:'ACME',city:''}),0);
 });
