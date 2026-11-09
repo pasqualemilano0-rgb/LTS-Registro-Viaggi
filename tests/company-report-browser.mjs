@@ -715,9 +715,15 @@ try{
  await page.locator('#records-editor button[type="submit"]').click();
  assert.equal(await page.locator('#records-revision').textContent(),'4',
   'Saving a selected company customer without confirming linked tariffs must be blocked');
+ assert.equal(await page.locator('#records-editor .records-save-feedback').isVisible(),true,
+  'Blocked save must show a message NEXT TO the save button, not only at the archive header');
+ assert.match(await page.locator('#records-editor .records-save-feedback').textContent(),/verifica/i);
  await acknowledgement.locator('input').check();
  await page.locator('#records-editor button[type="submit"]').click();
  await page.waitForFunction(()=>document.querySelector('#records-revision').textContent==='5');
+ await page.waitForFunction(()=>document.querySelector('.records-save-toast')?.textContent.includes('Modifica salvata online'));
+ assert.equal(await page.locator('.records-save-toast').isVisible(),true,
+  'Saved update must confirm success without making the admin scroll to the top');
  await page.waitForFunction(()=>document.querySelector('#records-list').textContent.includes('CLIENTE AUTISTA CORRETTO'));
  assert.match(await page.locator('#records-list').textContent(),/CLIENTE AUTISTA CORRETTO/);
  assert.match(await page.locator('#records-list').textContent(),/VIA PERSONALE 99/);
