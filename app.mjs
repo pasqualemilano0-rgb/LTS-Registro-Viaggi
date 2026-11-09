@@ -983,7 +983,8 @@ function customerCard(customer,{shared=false}={}){
 }
 function renderCustomers(main){
  main.append(heading('LA TUA RUBRICA','Clienti','Cerca una sede o scegli un cliente per il prossimo viaggio.'));
- main.append(customerUndoAction(),companyCustomersPanel());
+ const undo=customerUndoAction();if(undo)main.append(undo);
+ main.append(companyCustomersPanel());
  refreshView=()=>updateCompanyCustomersPanel();
 }
 function renderTariffs(main){
