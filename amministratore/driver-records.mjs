@@ -208,6 +208,135 @@ function sitePicker(form,{title,client,city,fare,keepFare=false}){
  return {panel,catalog,dispose:()=>controller.abort()};
 }
 
+
+/** Replace a private driver's customer identity using a verified company
+ * directory entry. This edits ONLY that private record on explicit submit:
+ * it does not migrate old trips, delete records or create shared customers.
+ */
+function personalCompanyPicker(form,{name,city,address,phone,vat,isDuplicate}){
+ const panel=make('section','records-site-picker records-company-picker');
+ panel.setAttribute('aria-label','Sostituisci con cliente aziendale');
+ panel.append(make('h4','records-site-heading','Sostituisci con cliente aziendale'));
+ panel.append(make('p','records-editor-note',
+  'Scegli un cliente condiviso per compilare nome, località e indirizzo del cliente personale. '+
+  'I viaggi passati non cambiano; la scheda resta nell’archivio personale dell’autista. '+
+  'Telefono e partita IVA del precedente cliente saranno svuotati: controllali prima di salvare.'));
+ const label=make('label','records-field records-site-search-label');
+ label.append(make('span','','Cerca nell’elenco condiviso (nome, città o indirizzo)'));
+ const input=document.createElement('input');
+ input.type='search';input.autocomplete='off';input.disabled=true;
+ input.placeholder='Cerca cliente aziendale…';
+ input.setAttribute('aria-label','Cerca un cliente condiviso da sostituire');
+ input.setAttribute('role','combobox');
+ input.setAttribute('aria-autocomplete','list');
+ const id='records-company-results-'+crypto.randomUUID();
+ input.setAttribute('aria-controls',id);
+ input.setAttribute('aria-expanded','false');
+ label.append(input);
+ const count=make('p','records-site-count','Caricamento clienti aziendali…');
+ const results=make('div','records-site-results');
+ results.id=id;results.hidden=true;results.setAttribute('role','listbox');
+ results.setAttribute('aria-label','Clienti aziendali condivisi');
+ const chosen=make('p','records-site-chosen');chosen.hidden=true;
+ const hint=make('p','records-site-hint','In attesa del catalogo condiviso.');
+ hint.setAttribute('role','status');hint.setAttribute('aria-live','polite');
+ panel.append(label,count,results,chosen,hint);
+ form.append(panel);
+ const controller=new AbortController();
+ let ready=false,sites=[],shown=[],active=-1;
+ function close(){
+  results.hidden=true;input.setAttribute('aria-expanded','false');
+  input.removeAttribute('aria-activedescendant');active=-1;
+ }
+ function pick(site){
+  if(!site||site.source==='personal')return;
+  if(String(site.name).length>500||String(site.city).length>500||
+     String(site.address||'').length>1000){
+   hint.textContent='Dati aziendali troppo lunghi: verifica il cliente prima di sostituirlo.';
+   hint.classList.add('records-site-warning');return;
+  }
+  if(isDuplicate(site.name)){
+   hint.textContent='Un altro cliente personale ha già questo nome. Verifica i duplicati prima di sostituirlo.';
+   hint.classList.add('records-site-warning');return;
+  }
+  name.value=site.name;city.value=site.city;
+  address.value=site.address||'';
+  phone.value='';vat.value='';
+  input.value=site.name+' · '+site.city;
+  chosen.textContent='Cliente aziendale selezionato: '+site.name+' · '+site.city+
+   (site.address?' · '+site.address:'')+'. Conferma con «Salva modifica».';
+  chosen.hidden=false;
+  hint.classList.remove('records-site-warning');
+  hint.textContent='Scheda personale compilata dal condiviso. Contatti precedenti svuotati. '+
+   'Controlla i campi e salva; i viaggi storici non vengono modificati.';
+  close();
+ }
+ function highlight(index){
+  if(!shown.length)return;
+  active=Math.max(0,Math.min(shown.length-1,index));
+  results.querySelectorAll('[role=option]').forEach((option,i)=>{
+   option.classList.toggle('is-active',i===active);
+   option.setAttribute('aria-selected',String(i===active));
+   if(i===active){
+    input.setAttribute('aria-activedescendant',option.id);
+    option.scrollIntoView({block:'nearest'});
+   }
+  });
+ }
+ function show(){
+  if(!ready)return;
+  const matches=filterDriverCustomerCatalog(sites,{scope:'shared',query:input.value});
+  shown=matches.slice(0,input.value.trim()?15:10);
+  active=-1;results.replaceChildren();
+  count.textContent=matches.length+' clienti aziendali trovati'+
+   (matches.length>shown.length?' · continua a digitare':'');
+  if(!matches.length)results.append(make('p','records-site-no-results',
+   'Nessun cliente condiviso corrispondente. Prova un altro nome o località.'));
+  for(const [i,site] of shown.entries()){
+   const button=make('button','records-site-option');
+   button.type='button';button.id=id+'-'+i;
+   button.setAttribute('role','option');button.setAttribute('aria-selected','false');
+   const body=make('span','records-site-option-body');
+   body.append(make('strong','records-site-option-name',site.name),
+    make('span','records-site-option-city',site.city));
+   if(site.address)body.append(make('span','records-site-option-address',site.address));
+   button.append(body,make('span','records-site-option-source',
+    site.source==='maps'?'Google Maps':'Cliente condiviso'));
+   button.addEventListener('click',()=>pick(site),{signal:controller.signal});
+   results.append(button);
+  }
+  results.hidden=false;input.setAttribute('aria-expanded','true');
+ }
+ function catalog(entries,{mapsAvailable=true,tariffsAvailable=true}={}){
+  sites=filterDriverCustomerCatalog(entries,{scope:'shared'});
+  ready=true;input.disabled=sites.length===0;
+  count.textContent=sites.length+' clienti aziendali disponibili';
+  hint.classList.toggle('records-site-warning',!mapsAvailable||!tariffsAvailable||!sites.length);
+  hint.textContent=sites.length?
+   'Cerca e seleziona il cliente aziendale da usare per questa scheda personale.'+
+   (!mapsAvailable||!tariffsAvailable?' Alcune fonti non sono disponibili.':''):
+   'Elenco aziendale non disponibile: nessuna sostituzione automatica possibile.';
+ }
+ input.addEventListener('focus',show,{signal:controller.signal});
+ input.addEventListener('input',()=>{chosen.hidden=true;show();},{signal:controller.signal});
+ input.addEventListener('keydown',event=>{
+  if(event.key==='Escape'){close();return;}
+  if(event.key==='ArrowDown'||event.key==='ArrowUp'){
+   event.preventDefault();if(results.hidden)show();
+   highlight(event.key==='ArrowDown'?active+1:active<0?shown.length-1:active-1);
+  }else if(event.key==='Enter'&&!results.hidden&&active>=0&&shown[active]){
+   event.preventDefault();pick(shown[active]);
+  }
+ },{signal:controller.signal});
+ document.addEventListener('pointerdown',event=>{
+  if(!panel.contains(event.target))close();
+ },{signal:controller.signal});
+ for(const field of [name,city,address,phone,vat]){
+  field.addEventListener('input',()=>{chosen.hidden=true;},{signal:controller.signal});
+ }
+ return {panel,catalog,dispose:()=>controller.abort()};
+}
+
 export function setupDriverRecords(account){
  const panel=$('admin-records-panel'),choose=$('records-driver'),
   refresh=$('records-refresh'),status=$('records-status'),
@@ -593,7 +722,7 @@ export function setupDriverRecords(account){
    'La modifica viene registrata nell’audit amministrativo e sincronizzata sul registro dell’autista.');
   form.append(note);
   const values=item||{};
-  let serviceBoxes=[],pickers=[];
+  let serviceBoxes=[],pickers=[],companyPicker=null;
   if(kind==='customer'){
    const owner=drivers.find(driver=>driver.id===selectedId);
    form.append(make('p','records-private-note',
@@ -636,11 +765,18 @@ export function setupDriverRecords(account){
    form.append(section);
    field(form,'Note del viaggio','note',values.note||'',{kind:'textarea',maxLength:2000});
   }else if(kind==='customer'){
-   field(form,'Nome cliente','name',values.name||'',{required:true,maxLength:500});
-   field(form,'Località','city',values.city||'',{maxLength:500});
-   field(form,'Via e indirizzo','address',values.address||'',{maxLength:1000});
-   field(form,'Telefono','phone',values.phone||'',{kind:'tel',maxLength:40});
-   field(form,'Partita IVA','vat',values.vat||'',{maxLength:100});
+   const name=field(form,'Nome cliente','name',values.name||'',{required:true,maxLength:500});
+   const city=field(form,'Località','city',values.city||'',{maxLength:500});
+   const address=field(form,'Via e indirizzo','address',values.address||'',{maxLength:1000});
+   const phone=field(form,'Telefono','phone',values.phone||'',{kind:'tel',maxLength:40});
+   const vat=field(form,'Partita IVA','vat',values.vat||'',{maxLength:100});
+   if(item){
+    companyPicker=personalCompanyPicker(form,{name,city,address,phone,vat,
+     isDuplicate:next=>state.customers.some(row=>row.id!==item.id&&
+      normalizeSearch(row.name)===normalizeSearch(next))});
+    form.insertBefore(companyPicker.panel,name.parentElement);
+    activePickerDisposers.push(companyPicker.dispose);
+   }
   }else if(kind==='tariff'){
    form.append(make('p','records-editor-note',
     values.client+' · '+values.city+' — tariffa personale storica, distinta dal listino comune.'));
@@ -696,7 +832,7 @@ export function setupDriverRecords(account){
    activePickerDisposers.push(certification.dispose);
   }
   editor.scrollIntoView({block:'start',behavior:'smooth'});
-  if(kind==='trip'){
+  if(kind==='trip'||(kind==='customer'&&companyPicker)){
    const personalCustomers=Array.isArray(state?.customers)?state.customers:[];
    void Promise.allSettled([sharedMapsCustomers(),account.companyTariffs('list')]).then(results=>{
     if(catalogToken!==catalogRequest||driverAtOpen!==selectedId||!authorized()||
@@ -708,11 +844,13 @@ export function setupDriverRecords(account){
     const combined=buildDriverCustomerCatalog({
      sharedSites:customers,companyRates:tariffs,personalCustomers
     });
-    pickers.forEach(p=>p.catalog(combined,tariffs,{mapsAvailable,tariffsAvailable}));
+    if(companyPicker)companyPicker.catalog(combined,{mapsAvailable,tariffsAvailable});
+    else pickers.forEach(p=>p.catalog(combined,tariffs,{mapsAvailable,tariffsAvailable}));
    }).catch(()=>{
     if(catalogToken!==catalogRequest||!editor.contains(form))return;
     const combined=buildDriverCustomerCatalog({personalCustomers});
-    pickers.forEach(p=>p.catalog(combined,[],{mapsAvailable:false,tariffsAvailable:false}));
+    if(companyPicker)companyPicker.catalog(combined,{mapsAvailable:false,tariffsAvailable:false});
+    else pickers.forEach(p=>p.catalog(combined,[],{mapsAvailable:false,tariffsAvailable:false}));
    });
   }
   if(focusCertification&&kind==='customer'&&item){
