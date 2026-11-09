@@ -324,6 +324,39 @@ export function activateAccountFromSession() {
   });
 }
 export function usingAccount() { return Boolean(accountOwner); }
+/** Local-only, per-account editor scratchpad. It is NOT included in backups,
+ * sync payloads or the public asset cache. A verified login gates read/write. */
+const TRIP_EDITOR_DRAFT_PREFIX='trip-editor-v1:';
+let editorDraftQueue=Promise.resolve();
+function tripEditorDraftAction(mode,value=null){
+ const owner=accountOwner;
+ if(!owner||!account.isVerified())return Promise.reject(new Error('Accedi per recuperare la bozza del viaggio.'));
+ if(mode==='write'&&JSON.stringify(value).length>10000)
+  return Promise.reject(new Error('La bozza è troppo grande per essere conservata.'));
+ const next=editorDraftQueue.then(async()=>{
+  if(accountOwner!==owner||!account.isVerified())throw new Error('Account cambiato: bozza non salvata.');
+  const db=await database();
+  try{
+   return await new Promise((resolve,reject)=>{
+    const transaction=db.transaction('meta',mode==='read'?'readonly':'readwrite');
+    const meta=transaction.objectStore('meta');
+    const key=TRIP_EDITOR_DRAFT_PREFIX+owner;
+    let stored=null;
+    if(mode==='read'){const request=meta.get(key);request.onsuccess=()=>{stored=request.result||null;};}
+    else if(mode==='delete')meta.delete(key);
+    else meta.put(value,key);
+    transaction.oncomplete=()=>resolve(stored);
+    transaction.onerror=transaction.onabort=()=>reject(new Error('Impossibile aggiornare la bozza locale. Verifica lo spazio del dispositivo.'));
+   });
+  }finally{db.close();}
+ });
+ editorDraftQueue=next.catch(()=>{});
+ return next;
+}
+export function readTripEditorDraft(){return tripEditorDraftAction('read');}
+export function saveTripEditorDraft(snapshot){return tripEditorDraftAction('write',snapshot);}
+export function clearTripEditorDraft(){return tripEditorDraftAction('delete');}
+
 // Legacy archives remain untouched under the original IndexedDB key. They are
 // only visible to a freshly verified account owner using this browser profile.
 async function legacyRecordForVerifiedAccount() {
