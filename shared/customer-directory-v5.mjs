@@ -8,7 +8,7 @@ export const CUSTOMER_BATCH_SIZE=24;
 const plain=value=>String(value??'').normalize('NFD').replace(/\p{M}/gu,'')
  .toLocaleUpperCase('it-IT').replace(/[^\p{L}\p{N}]+/gu,' ').trim().replace(/\s+/gu,' ');
 const key=value=>plain(value).replace(/\s+/gu,'');
-const siteFamily=customer=>key(customer?.name)+'|'+key(customer?.city).replace(/\b(?:AV|BN|NA|CE|SA)\b$/u,'');
+const siteFamily=customer=>key(customer?.name)+'|'+key(String(customer?.city??'').replace(/\s*\([A-Z]{2}\)\s*$/iu,''));
 const address=customer=>normalizedStreetKey(customer?.address);
 const findIndex=(bucket,customer)=>bucket?.find(row=>sameSharedSite(row,customer))??null;
 
@@ -44,6 +44,7 @@ export function buildCustomerDirectory(shared,personal){
    const row=sharedRows.get(linked);
    // Never transmit personal phone numbers or contact details to the shared API.
    if(!row.linkedPersonal)row.linkedPersonal=record;
+   if(record.phone)row.searchText+=' '+plain(record.phone);
   }
   personalRows.push(directoryRow(record,'personal',{
    linkedShared:linked??null,possibleDuplicate:!linked&&candidates.length>0,
