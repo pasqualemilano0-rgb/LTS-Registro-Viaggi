@@ -191,3 +191,18 @@
  #admin-records-panel .records-private-rate-ack{gap:10px;padding:11px}
  #admin-records-panel .records-private-rate-ack span{font-size:12px}
 }
+
+/* Explicit opt-in to rename just the matching journeys on an audited customer update. */
+#admin-records-panel .records-private-trip-sync{
+ grid-column:1/-1;display:flex;align-items:flex-start;gap:12px;min-width:0;
+ padding:12px 14px;margin:2px 0 0;background:#f2fbfa;
+ border:1px solid #83c8c0;border-radius:12px;color:#185c59;
+ font-size:12px;font-weight:700;line-height:1.55;cursor:pointer
+}
+#admin-records-panel .records-private-trip-sync input[type=checkbox]{
+ width:22px;height:22px;min-width:22px;min-height:22px;
+ max-width:22px;max-height:22px;flex:0 0 22px;
+ margin:0;padding:0;align-self:flex-start;accent-color:#087c93
+}
+#admin-records-panel .records-private-trip-sync span{min-width:0;flex:1;overflow-wrap:anywhere}
+#admin-records-panel .records-private-trip-sync[hidden]{display:none!important}
