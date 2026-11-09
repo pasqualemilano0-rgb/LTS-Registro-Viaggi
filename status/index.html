@@ -4,8 +4,13 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="referrer" content="no-referrer">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src https://api.github.com; base-uri 'none'; object-src 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; worker-src 'self'; manifest-src 'self'; img-src 'self'; connect-src https://api.github.com; base-uri 'none'; object-src 'none'; form-action 'none'">
   <meta name="theme-color" content="#0b2635">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="LTS Stato">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" type="image/png" href="../assets/icon-192.png">
+  <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
   <meta name="description" content="Stato pubblico e controlli di disponibilità LTS Registro Viaggi, senza dati riservati">
   <title>LTS Control Center · Stato servizi</title>
   <link rel="stylesheet" href="./status.css">
@@ -21,6 +26,18 @@
     <p>Verifiche esterne in sola lettura, eseguite da GitHub. Nessuna credenziale o archivio degli autisti viene letto.</p>
     <div class="summary"><span id="overall" class="pill waiting" role="status" aria-live="polite">Verifica in corso</span><span id="last-check" class="timestamp">Ultimo controllo: da caricare</span></div>
    </section>
+   <section class="setup" aria-label="Installazione e avvisi">
+      <div class="setup-copy">
+        <h2>Control Center sul telefono</h2>
+        <p>Installalo come app indipendente e abilita, se vuoi, un avviso locale per le anomalie confermate <strong>mentre il pannello è aperto</strong>.</p>
+        <p id="install-hint" class="hint">Su Android: menu del browser → Installa app. Su iPhone: Condividi → Aggiungi alla schermata Home.</p>
+        <p id="alerts-hint" class="hint" role="status" aria-live="polite">Per essere avvisato a pannello chiuso servono le notifiche del monitor esterno ChatGPT, configurate separatamente.</p>
+      </div>
+      <div class="setup-actions">
+        <button id="install-pwa" type="button">Installa Control Center</button>
+        <button id="enable-alerts" type="button" aria-pressed="false">Attiva avvisi locali</button>
+      </div>
+    </section>
    <div class="section-title"><h2>Disponibilità</h2><button type="button" id="refresh">Aggiorna stato</button></div>
    <section class="grid" aria-label="Controlli servizi">
     <article class="tile"><div class="item-top"><span class="glyph">◎</span><span class="state waiting" id="s-site">In attesa</span></div><h3>Sito principale</h3><p>Caricamento della pagina pubblica LTS.</p></article>
