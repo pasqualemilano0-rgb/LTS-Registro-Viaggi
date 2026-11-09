@@ -19,9 +19,9 @@ on:
       - '.github/workflows/refresh-lts-porti-snapshots.yml'
   workflow_dispatch:
   schedule:
-    # Una verifica giornaliera prepara soltanto snapshot non pubblicati.
+    # Dal lunedi al sabato (UTC): snapshot non pubblicati; nessuna acquisizione domenicale.
     # L'acquisizione Cloudflare resta indipendente; niente pubblicazione automatica.
-    - cron: '38 5 * * *'
+    - cron: '38 5 * * 1-6'
 
 permissions:
   contents: read
