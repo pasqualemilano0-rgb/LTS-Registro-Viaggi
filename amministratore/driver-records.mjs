@@ -410,11 +410,17 @@ export function setupDriverRecords(account){
  saveToast.hidden=true;saveToast.setAttribute('role','status');
  saveToast.setAttribute('aria-live','polite');
  document.body.append(saveToast);
+ let saveToastTimer;
  const showSaveToast=(message,problem=false)=>{
+  clearTimeout(saveToastTimer);
   if(!authorized()||!panel.isConnected)return;
   saveToast.textContent=message;
   saveToast.classList.toggle('is-error',problem);
   saveToast.hidden=false;
+  saveToastTimer=setTimeout(()=>{
+   saveToast.hidden=true;
+   saveToastTimer=undefined;
+  },problem?6000:3000);
  };
  // Only actual form values count as unsaved changes, not search suggestions.
  const formSnapshot=form=>JSON.stringify([...new FormData(form).entries()]);
