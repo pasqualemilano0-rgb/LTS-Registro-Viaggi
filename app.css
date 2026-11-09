@@ -698,3 +698,50 @@ h1,h2,h3{letter-spacing:-.035em}
 .trip-estimate-breakdown span{font-size:10px;color:#5d7e8f}
 .trip-estimate-breakdown strong{font-size:14px;color:#1d495d;font-variant-numeric:tabular-nums}
 @media(max-width:390px){.trip-quick-route-action{width:100%}}
+
+
+/* Driver Registro V4: compact searchable register, accessible actions and mobile paging. */
+.view-register .section-hero{flex-wrap:wrap;row-gap:13px}
+.view-register .section-hero>div:first-child{flex:1 1 205px;min-width:0}
+.register-month-picker{display:flex;align-items:center;gap:7px;flex:1 1 235px;max-width:100%;min-width:0}
+.register-month-arrow{display:grid;place-items:center;width:44px;min-width:44px;height:48px;border:1px solid #d7e8ee;border-radius:10px;background:#fff;color:var(--teal);font-size:28px;font-weight:700;cursor:pointer}
+.register-month-arrow:disabled{opacity:.4;cursor:not-allowed}
+.register-month-field{flex:1;min-width:0;color:#fff;text-align:center}
+.register-month-field .month-caption{display:block;color:#fff;font-size:12px;font-weight:800;line-height:1.5;margin-bottom:4px}
+.register-month-field input{display:block;width:100%;min-width:0;min-height:44px;padding:8px;border:0;border-radius:10px;background:#fff;color:#006f89;font-size:15px;font-weight:700}
+.register-overview{margin-bottom:12px}
+.register-alert-action{display:flex;align-items:center;gap:9px;min-height:49px;width:100%;margin:0 0 12px;padding:10px 12px;border:1px solid #e9c582;background:#fff9ec;border-radius:11px;color:#785419;text-align:left;font-size:12px;font-weight:750;cursor:pointer}
+.register-alert-action .icon{width:21px;height:21px;flex:none}
+.register-alert-action span{margin-left:auto;text-decoration:underline;white-space:nowrap}
+.register-month-row{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px}
+.register-header-actions{display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:8px}
+.register-header-actions .secondary-button,.register-header-actions .pdf-button{min-height:44px}
+.register-undo-banner{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;background:#eaf7f6;border:1px solid #b7ded8;color:#194d49;border-radius:13px;padding:13px;margin:0 0 13px}
+.register-undo-banner>div{flex:1 1 200px;min-width:0}
+.register-undo-banner strong{font-size:13px;overflow-wrap:anywhere}
+.register-undo-banner p{font-size:11px;line-height:1.45;margin-top:4px}
+.register-undo-button{flex:0 0 auto;min-height:44px}
+.register-tools{margin:12px 0 16px;padding:13px;background:#fff;border:1px solid #d7e6ec;border-radius:13px}
+.register-search-wrap{position:relative;display:flex;align-items:center;min-width:0}
+.register-search-wrap>.icon{position:absolute;left:12px;width:20px;height:20px;pointer-events:none;color:#66818e}
+.register-search-wrap input{width:100%;height:49px;min-height:49px;padding:10px 72px 10px 41px;border:1px solid #ccdfe8;border-radius:10px;background:#f9fcfd;color:var(--ink);font-size:16px;min-width:0}
+.register-clear{position:absolute;right:4px;min-height:43px;padding:7px 9px;border:0;background:transparent;color:var(--teal);font-weight:800;font-size:11px;cursor:pointer}
+.register-clear[hidden]{display:none}
+.register-filter-row{display:flex;gap:7px;overflow-x:auto;scrollbar-width:thin;padding:12px 0 5px;max-width:100%}
+.register-filter{flex:0 0 auto;min-height:44px;padding:9px 12px;border:1px solid #cfdee6;background:#f7fafc;border-radius:9px;font-size:12px;font-weight:750;color:#4e7282;cursor:pointer}
+.register-filter.active,.register-filter[aria-pressed=true]{background:#e0f3f8;border-color:#62afc4;color:#005e76}
+.register-result-count{font-size:11px;color:#5f7987;line-height:1.4;margin:9px 0 0}
+.register-trip-list:has(.empty-state){display:block}
+.register-load-more{display:block;width:100%;margin:13px 0 10px;text-align:center;font-size:13px;min-height:48px}
+.register-load-more[hidden]{display:none}
+.register-pdf-hint{font-size:11px;color:#67818e;line-height:1.55;margin:12px 0 20px}
+.register-month-arrow:focus-visible,.register-month-field input:focus-visible,.register-filter:focus-visible,.register-alert-action:focus-visible,.register-clear:focus-visible,.register-load-more:focus-visible,.register-undo-button:focus-visible{outline:3px solid #48b9d1;outline-offset:2px}
+@media(max-width:540px){
+ .view-register .section-hero>div:first-child{flex-basis:100%}
+ .register-month-picker{flex:1 1 100%;width:100%}
+ .register-month-row{align-items:flex-start}
+ .register-header-actions{width:100%;justify-content:stretch}
+ .register-header-actions .secondary-button,.register-header-actions .pdf-button{flex:1 1 auto}
+ .register-undo-button{width:100%}
+ .register-tools{padding:12px;margin:12px 0}
+}
