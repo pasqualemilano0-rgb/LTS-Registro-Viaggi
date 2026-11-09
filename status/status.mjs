@@ -87,10 +87,6 @@ function refreshAlertButton() {
 async function initPWA() {
   const install=document.getElementById('install-pwa');
   const installHint=document.getElementById('install-hint');
-  if ('serviceWorker' in navigator) {
-    try { await navigator.serviceWorker.register('./sw.js',{scope:'./'}); }
-    catch { installHint.textContent='La modalità offline non è disponibile su questo browser; puoi aprire comunque il pannello dal link.'; }
-  }
   const setInstalled=()=>{
     install.hidden=true;
     installHint.textContent='Control Center installato sul dispositivo.';
@@ -102,6 +98,11 @@ async function initPWA() {
     installPromptEvent=event;
     install.hidden=false;
   });
+  // Capture install prompt before SW registration: the browser can fire it immediately.
+  if ('serviceWorker' in navigator) {
+    try { await navigator.serviceWorker.register('./sw.js',{scope:'./'}); }
+    catch { installHint.textContent='La modalità offline non è disponibile su questo browser; puoi aprire comunque il pannello dal link.'; }
+  }
   window.addEventListener('appinstalled',setInstalled);
   install.addEventListener('click',async()=>{
     if (!installPromptEvent) {
