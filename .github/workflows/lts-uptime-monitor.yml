@@ -1,6 +1,11 @@
 name: LTS Control Center — monitor disponibilita gratuito
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/lts-uptime-monitor.yml'
+      - 'scripts/lts_health_monitor.py'
   schedule:
     # Best effort; GitHub may delay scheduled runs.
     - cron: '23 * * * *'
