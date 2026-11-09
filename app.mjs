@@ -957,21 +957,34 @@ function renderRegister(main){
 }
 function searchBox(placeholder,onSearch){const input=el('input',{type:'search',placeholder,value:searchValue,'aria-label':placeholder,autocapitalize:'characters',on:{input:event=>{searchValue=event.target.value;onSearch();}}});return el('div',{class:'search'},icon('search'),input);}
 /** Compact customer cards: operational notes and tariff values are kept out of this list. */
-function customerCard(customer,{shared=false}={}){
+function customerCard(customer,{shared=false,linkedPersonal=null,linkedShared=null,possibleDuplicate=false}={}){
  const city=String(customer.city||'').trim();
  const address=String(customer.address||'').trim();
- const phone=String(customer.phone||'').trim();
+ const phone=String(customer.phone||linkedPersonal?.phone||'').trim();
  const dial=phone.replace(/[^0-9+]/gu,'');
  const canCall=/^\+?[0-9]{5,16}$/u.test(dial);
  const actions=el('div',{class:'directory-card-actions'},
   el('button',{type:'button',class:'secondary-button directory-use-customer',
    on:{click:()=>useCustomerInTrip(customer)}},icon('plus'),'Usa nel viaggio'));
  if(shared&&customer.mapsUrl)actions.append(el('a',{class:'directory-open-maps',href:customer.mapsUrl,
-  target:'_blank',rel:'noopener noreferrer',
-  'aria-label':`Apri Google Maps per ${customer.name}`},icon('pin'),'Apri Maps'));
- else if(!shared)actions.append(el('button',{type:'button',class:'text-button directory-edit-customer',
-  on:{click:()=>customerDialog(customer)},
-  'aria-label':`Modifica cliente ${customer.name}`},icon('edit'),'Modifica'));
+   target:'_blank',rel:'noopener noreferrer',
+   'aria-label':'Apri Google Maps per '+customer.name},icon('pin'),'Apri Maps'));
+ if(!shared)actions.append(el('button',{type:'button',class:'text-button directory-edit-customer',
+   on:{click:()=>customerDialog(customer)},
+   'aria-label':'Modifica cliente '+customer.name},icon('edit'),'Modifica'));
+ if(shared&&linkedPersonal)actions.append(el('button',{type:'button',
+   class:'text-button directory-edit-customer directory-linked-personal',
+   'aria-label':'Modifica contatto personale collegato a '+customer.name,
+   on:{click:()=>customerDialog(linkedPersonal)}},icon('edit'),'Modifica mio contatto'));
+ const detail=possibleDuplicate?
+   el('p',{class:'customer-duplicate-hint'},icon('info'),
+    'Possibile corrispondenza aziendale: verifica indirizzo e sede prima di unirli.'):
+   linkedShared?
+   el('p',{class:'customer-linked-hint'},icon('link'),
+    'Contatto personale associato a una sede aziendale.'):
+   shared&&linkedPersonal?
+   el('p',{class:'customer-linked-hint'},icon('link'),
+    'Contatto personale collegato: puoi modificarlo senza cambiare la sede aziendale.'):null;
  const content=el('div',{class:'directory-card-content'},
   el('div',{class:'directory-card-title'},el('h3',{},customer.name),
    el('span',{class:shared?'customer-source shared':'customer-source personal'},
@@ -979,11 +992,19 @@ function customerCard(customer,{shared=false}={}){
   city?el('p',{class:'directory-card-city'},el('span',{class:'directory-field-label'},'Località'),el('span',{},city)):null,
   address?el('p',{class:'directory-card-address'},el('span',{class:'directory-field-label'},'Via'),el('span',{class:'directory-address-text',title:address},address)):null,
   phone?el('p',{class:'directory-card-phone'},el('span',{class:'directory-field-label'},'Telefono'),
-   canCall?el('a',{href:'tel:'+dial,'aria-label':`Chiama ${phone}`},icon('phone'),phone):el('span',{},phone)):null);
+   canCall?el('a',{href:'tel:'+dial,'aria-label':'Chiama '+phone},icon('phone'),phone):el('span',{},phone)):null,
+  detail);
  return el('article',{class:'panel customer-card directory-card'},content,actions);
 }
 function renderCustomers(main){
  main.append(heading('LA TUA RUBRICA','Clienti','Cerca una sede o scegli un cliente per il prossimo viaggio.'));
+ if(lastDeletedCustomer&&lastDeletedCustomer.owner===user?.id)
+  main.append(el('section',{class:'customer-undo-banner',role:'status'},
+   el('div',{},el('strong',{},'Cliente eliminato: '+lastDeletedCustomer.snapshot.customer.name),
+    el('p',{},'Puoi ripristinare il contatto personale e le tariffe originali in questa sessione.')),
+   button('Annulla eliminazione','secondary',async()=>{
+    try{await undoDeletedPersonalCustomer();}catch(error){toast(error.message||'Ripristino non riuscito.',true);}
+   },'refresh',{class:'secondary-button customer-undo-action'})));
  main.append(companyCustomersPanel());
  refreshView=()=>updateCompanyCustomersPanel();
 }
@@ -1134,6 +1155,39 @@ async function importCustomersCsv(file){
   body.append(error,el('div',{class:'dialog-actions'},button('Annulla','secondary',()=>dialog.close()),confirm));
  }catch(err){toast(err.message||'Impossibile leggere il CSV.',true);}
 }
+/** Undo is account-scoped and available only in the current authenticated session. */
+async function deletePersonalCustomer(customer){
+ const owner=user?.id;
+ if(!owner||!store.usingAccount()||!accountAccess.isVerified())
+  throw new Error('Accedi al tuo account per eliminare il cliente.');
+ const {next,snapshot}=removePersonalCustomer(state,customer.id);
+ try{await persist(next);}
+ catch(error){
+  if(!(error.pendingState&&!state.customers.some(row=>row.id===customer.id)))throw error;
+ }
+ if(user?.id!==owner)return;
+ lastDeletedCustomer={owner,snapshot};
+ render();
+ toast(store.getSyncInfo?.().pending?
+  'Cliente eliminato sul dispositivo. Puoi annullare; sincronizzazione in attesa.':
+  'Cliente personale eliminato. Puoi annullare dalla sezione Clienti.');
+}
+async function undoDeletedPersonalCustomer(){
+ const saved=lastDeletedCustomer;
+ if(!saved||!store.usingAccount()||!accountAccess.isVerified()||saved.owner!==user?.id)
+  throw new Error('Ripristino disponibile soltanto nello stesso account e nella sessione corrente.');
+ const next=restorePersonalCustomer(state,saved.snapshot);
+ try{await persist(next);}
+ catch(error){
+  if(!(error.pendingState&&state.customers.some(row=>row.id===saved.snapshot.customer.id)))throw error;
+ }
+ lastDeletedCustomer=null;
+ render();
+ toast(store.getSyncInfo?.().pending?
+  'Cliente ripristinato sul dispositivo. Sincronizzazione in attesa.':
+  'Cliente personale e tariffe ripristinati.');
+}
+
 function customerDialog(customer=null,proposal=null,{focusRates=false}={}){
  // The directory decorates its personal rows for rendering. Resolve the
  // original archive entry before establishing the optimistic edit fingerprint.
@@ -1161,7 +1215,7 @@ function customerDialog(customer=null,proposal=null,{focusRates=false}={}){
  form.append(el('p',{class:'info-note'},icon('lock'),'Le trasferte sono uguali per tutti gli autisti e si modificano solo dal tariffario aziendale.'));
  const actions=el('div',{class:'dialog-actions'});
  if(customer)actions.append(button('Elimina','secondary danger',()=>{
-  dialog.close();confirmAction('Eliminare questo cliente?',`${customer.name}. Verranno rimosse solo le sue tariffe personali. I viaggi già salvati e il tariffario aziendale rimarranno invariati.`,async()=>{requireCurrentEditor(expectedCustomer,state.customers.find(current=>current.id===customer.id),'Il cliente');await persist({...state,customers:state.customers.filter(c=>c.id!==customer.id),tariffs:state.tariffs.filter(t=>t.customerId!==customer.id&&t.client!==customer.name)});render();toast('Cliente eliminato.');});
+  dialog.close();confirmAction('Eliminare questo cliente?',`${customer.name}. Verranno rimosse solo le sue tariffe personali. I viaggi già salvati e il tariffario aziendale rimarranno invariati.`,async()=>{requireCurrentEditor(expectedCustomer,state.customers.find(current=>current.id===customer.id),'Il cliente');await deletePersonalCustomer(customer);});
  }));
  actions.append(el('button',{type:'submit',class:'primary-button','data-save':true},'Salva cliente'));form.append(actions);
  form.addEventListener('submit',async event=>{event.preventDefault();error.textContent='';try{
