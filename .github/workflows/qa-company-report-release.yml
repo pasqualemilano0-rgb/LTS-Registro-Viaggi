@@ -30,6 +30,7 @@ on:
       - 'shared/register-explorer.mjs'
       - 'tests/qa-register-explorer.test.mjs'
       - 'tests/qa-register-browser.mjs'
+      - 'tests/qa-customers-controls-browser.mjs'
       - 'tests/report-export.test.mjs'
       - 'tests/qa-account-release.test.mjs'
       - 'tests/qa-release-versions.test.mjs'
@@ -66,6 +67,7 @@ on:
       - 'shared/register-explorer.mjs'
       - 'tests/qa-register-explorer.test.mjs'
       - 'tests/qa-register-browser.mjs'
+      - 'tests/qa-customers-controls-browser.mjs'
       - 'tests/qa-pro-theme.test.mjs'
       - 'tests/qa-driver-management-fixes.test.mjs'
       - '.github/workflows/qa-company-report-release.yml'
@@ -101,6 +103,7 @@ jobs:
           node --check supabase/functions/lts-company-tariffs/tariff-handler.mjs
           node --check tests/company-report-browser.mjs
           node --check tests/qa-register-browser.mjs
+          node --check tests/qa-customers-controls-browser.mjs
           node --check tests/qa-report-production-http-smoke.mjs
           node --test tests/admin-record-operations.test.mjs
           node --test tests/qa-driver-management-fixes.test.mjs tests/qa-manual-customers.test.mjs tests/qa-realtime.test.mjs tests/qa-company-report-release.test.mjs tests/qa-pro-theme.test.mjs tests/qa-account-release.test.mjs tests/qa-trip-editor-safety.test.mjs tests/qa-register-explorer.test.mjs tests/driver-session-vault.test.mjs tests/leaked-password-protection.test.mjs tests/report-export.test.mjs tests/qa-release-versions.test.mjs tests/qa-regression-contract.test.mjs tests/qa-no-auto-publish.test.mjs
@@ -138,6 +141,9 @@ jobs:
       - name: 390px mobile Register V4 search, filters, pagination and undo
         run: LTS_BROWSER_PLAYWRIGHT="$RUNNER_TEMP/lts-playwright" node tests/qa-register-browser.mjs
 
+      - name: V5 mobile Clienti buttons, refresh success/error and filters on Chromium
+        run: LTS_BROWSER_PLAYWRIGHT="$RUNNER_TEMP/lts-playwright" node tests/qa-customers-controls-browser.mjs
+
       - name: PWA offline Chromium cache and private API regression
         run: LTS_BROWSER_PLAYWRIGHT="$RUNNER_TEMP/lts-playwright" node tests/qa-offline-worker-browser.mjs
 
@@ -170,5 +176,8 @@ jobs:
         run: LTS_BROWSER_PLAYWRIGHT="$RUNNER_TEMP/lts-playwright" LTS_BROWSER_ENGINE=webkit node tests/company-report-browser.mjs
       - name: 390px Safari Register V4 search, filters, pagination and undo
         run: LTS_BROWSER_PLAYWRIGHT="$RUNNER_TEMP/lts-playwright" LTS_BROWSER_ENGINE=webkit node tests/qa-register-browser.mjs
+      - name: V5 mobile Clienti buttons, refresh success/error and filters on Safari WebKit
+        run: LTS_BROWSER_PLAYWRIGHT="$RUNNER_TEMP/lts-playwright" LTS_BROWSER_ENGINE=webkit node tests/qa-customers-controls-browser.mjs
+
       - name: Safari WebKit offline IndexedDB and outbox consistency
         run: LTS_BROWSER_PLAYWRIGHT="$RUNNER_TEMP/lts-playwright" LTS_BROWSER_ENGINE=webkit node tests/qa-offline-store-browser.mjs
