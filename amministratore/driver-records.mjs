@@ -2,6 +2,7 @@
  * All actions need a verified admin session/MFA and a server-side revision CAS.
  */
 import {SERVICES,formatMoney,toCents,buildTripAmountContext,tripAmounts,saturdayAllowanceStatus} from '../shared/domain.mjs';
+import {linkedCustomerTripCount} from '../shared/admin-record-operations.mjs';
 import {sharedMapsCustomers} from '../shared-maps-client.mjs';
 import {companyFareSnapshot} from '../shared/company-fares.mjs';
 import {buildDriverCustomerCatalog,filterDriverCustomerCatalog} from './driver-customer-catalog.mjs?v=20261109-personal-company-v1';
@@ -213,7 +214,7 @@ function sitePicker(form,{title,client,city,fare,keepFare=false}){
  * directory entry. This edits ONLY that private record on explicit submit:
  * it does not migrate old trips, delete records or create shared customers.
  */
-function personalCompanyPicker(form,{name,city,address,phone,vat,isDuplicate,linkedRates=0}){
+function personalCompanyPicker(form,{name,city,address,phone,vat,isDuplicate,linkedRates=0,linkedTrips=0}){
  const panel=make('section','records-site-picker records-company-picker');
  panel.setAttribute('aria-label','Sostituisci con cliente aziendale');
  panel.append(make('h4','records-site-heading','Sostituisci con cliente aziendale'));
@@ -221,7 +222,18 @@ function personalCompanyPicker(form,{name,city,address,phone,vat,isDuplicate,lin
   'Scegli un cliente condiviso per compilare nome, località e indirizzo del cliente personale. '+
   'I viaggi passati non cambiano; la scheda resta nell’archivio personale dell’autista. '+
   'Telefono e partita IVA del precedente cliente saranno svuotati: controllali prima di salvare.'));
- let ratesAcknowledged=null,confirmation=null;
+ let ratesAcknowledged=null,confirmation=null,tripConfirmation=null,updateTrips=null;
+ if(linkedTrips>0){
+  tripConfirmation=make('label','records-private-trip-sync');
+  tripConfirmation.hidden=true;
+  updateTrips=document.createElement('input');updateTrips.type='checkbox';
+  updateTrips.name='updateLinkedTrips';
+  tripConfirmation.append(updateTrips,make('span','',
+   'Aggiorna anche '+linkedTrips+' viaggi già registrati con questo cliente e località. '+
+   'Cambieranno soltanto i nomi e le località delle prese corrispondenti; '+
+   'date, importi, container, note e servizi resteranno invariati.'));
+ }
+
  if(linkedRates>0){
   confirmation=make('label','records-private-rate-ack');
   confirmation.hidden=true;
@@ -279,6 +291,10 @@ function personalCompanyPicker(form,{name,city,address,phone,vat,isDuplicate,lin
   chosen.textContent='Cliente aziendale selezionato: '+site.name+' · '+site.city+
    (site.address?' · '+site.address:'')+'. MODIFICA NON ANCORA SALVATA.';
   chosen.hidden=false;jump.hidden=false;
+  if(tripConfirmation){
+   tripConfirmation.hidden=false;
+   updateTrips.checked=false; // Explicit opt-in every time a company site is picked.
+  }
   if(confirmation){
    confirmation.hidden=false;
    ratesAcknowledged.checked=false;
@@ -355,9 +371,16 @@ function personalCompanyPicker(form,{name,city,address,phone,vat,isDuplicate,lin
   if(!panel.contains(event.target))close();
  },{signal:controller.signal});
  for(const field of [name,city,address,phone,vat]){
-  field.addEventListener('input',()=>{chosen.hidden=true;},{signal:controller.signal});
+  field.addEventListener('input',()=>{
+   chosen.hidden=true;
+   if(field===name||field===city){
+    if(tripConfirmation){updateTrips.checked=false;tripConfirmation.hidden=true;}
+   }
+  },{signal:controller.signal});
  }
- return {panel,catalog,confirmation,dispose:()=>controller.abort()};
+ return {panel,catalog,confirmation,tripConfirmation,
+  updateLinkedTrips:()=>Boolean(updateTrips?.checked&&!tripConfirmation?.hidden&&
+   !chosen.hidden),dispose:()=>controller.abort()};
 }
 
 export function setupDriverRecords(account){
@@ -797,7 +820,8 @@ export function setupDriverRecords(account){
     companyPicker=personalCompanyPicker(form,{name,city,address,phone,vat,
      isDuplicate:next=>state.customers.some(row=>row.id!==item.id&&
       normalizeSearch(row.name)===normalizeSearch(next)),
-     linkedRates:state.tariffs.filter(row=>row.customerId===item.id).length});
+     linkedRates:state.tariffs.filter(row=>row.customerId===item.id).length,
+     linkedTrips:linkedCustomerTripCount(state,item)});
     form.insertBefore(companyPicker.panel,name.parentElement);
     activePickerDisposers.push(companyPicker.dispose);
    }
@@ -813,6 +837,7 @@ export function setupDriverRecords(account){
   }
   field(form,'Motivo della modifica (audit)','reason','',{maxLength:500,
    placeholder:'Esempio: correzione su richiesta dell’autista'});
+  if(companyPicker?.tripConfirmation)form.append(companyPicker.tripConfirmation);
   if(companyPicker?.confirmation)form.append(companyPicker.confirmation);
   const buttons=make('div','records-form-actions');
   const submit=make('button','button primary','Salva modifica');
@@ -837,8 +862,11 @@ export function setupDriverRecords(account){
     }else patch.cents=price(input('cents').value);
     if(kind==='tariff'&&patch.cents===null)throw new Error('Inserisci un importo.');
    }catch(error){notice(error.message,true);return;}
+   const updateLinkedTrips=kind==='customer'&&Boolean(item)&&
+    companyPicker?.updateLinkedTrips()===true;
    void mutate({operation:item?'update':'create',category:kind,
-    recordId:item?.id||crypto.randomUUID(),patch,reason:input('reason').value});
+    recordId:item?.id||crypto.randomUUID(),patch,reason:input('reason').value,
+    updateLinkedTrips});
   });
   editor.append(form);editorBaseline=formSnapshot(form);
   if(kind==='customer'&&item){
@@ -884,7 +912,7 @@ export function setupDriverRecords(account){
    section?.querySelector('input[type=url]')?.focus({preventScroll:true});
   }else form.querySelector('input:not([type=checkbox])')?.focus({preventScroll:true});
  }
- async function mutate({operation,category:kind,recordId,patch={},reason='',auditId=null}){
+ async function mutate({operation,category:kind,recordId,patch={},reason='',auditId=null,updateLinkedTrips=false}){
   if(busy||!authorized()||!state||revision===null)return false;
   const owner=selectedId,token=epoch,expectedRevision=revision,write=++writeSeq;
   busy=true;refresh.disabled=true;
@@ -898,7 +926,8 @@ export function setupDriverRecords(account){
   try{
    const r=await account.adminRecords('mutate',{
     driverId:owner,expectedRevision,requestId:crypto.randomUUID(),
-    operation,category:kind,recordId,patch,reason,...(auditId?{auditId}:{})
+    operation,category:kind,recordId,patch,reason,...(auditId?{auditId}:{}),
+    ...(updateLinkedTrips?{updateLinkedTrips:true}:{})
    });
    if(!Number.isSafeInteger(r?.revision)||!r?.state||!Array.isArray(r.audit))
     throw new Error('Salvataggio non confermato: aggiorna il registro.');
@@ -906,8 +935,10 @@ export function setupDriverRecords(account){
    revision=r.revision;state=r.state;audit=r.audit;invalidateDerived();
    render();
    if(kind==='customer'&&category==='customer')void refreshShared();
-   notice('Modifica salvata online (revisione '+revision+
-    '). L’autista la vedrà al prossimo aggiornamento online; lo storico rimane nell’audit.');
+   const updatedTrips=Number.isSafeInteger(r.affectedTrips)?r.affectedTrips:0;
+   notice('Modifica salvata online (revisione '+revision+')'+
+    (updateLinkedTrips?' · '+updatedTrips+' viaggi collegati aggiornati.':'.')+
+    ' L’autista la vedrà al prossimo aggiornamento online; lo storico rimane nell’audit.');
    return true;
   }catch(error){
    if(write===writeSeq&&token===epoch&&owner===selectedId){
