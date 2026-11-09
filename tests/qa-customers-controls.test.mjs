@@ -54,3 +54,23 @@ test('no customer refresh can update account state after the logged-in owner cha
  assert.match(block,/if\(tab==='customers'\)updateCompanyCustomersPanel\(\)/);
  assert.doesNotMatch(block,/state[.]customers=/);
 });
+
+test('out-of-order refreshes and logout cannot apply an older customer response',()=>{
+ const a=app.indexOf('async function refreshCompanyCustomers()');
+ const b=app.indexOf('/** Update only the company list',a);
+ const refresh=app.slice(a,b);
+ assert.match(app,/let companyCustomersRequest=0;/);
+ assert.match(refresh,/request=\+\+companyCustomersRequest/);
+ assert.match(refresh,/request!==companyCustomersRequest/g);
+ assert.match(refresh,/!store[.]usingAccount\(\)/);
+ assert.match(refresh,/!accountAccess[.]isVerified\(\)/);
+ assert.equal((refresh.match(/request!==companyCustomersRequest/g)||[]).length,2);
+});
+
+test('manual refresh does not display raw backend error messages',()=>{
+ const a=app.indexOf('function customerRefreshControl(');
+ const b=app.indexOf('function companyCustomersPanel(',a);
+ const control=app.slice(a,b);
+ assert.doesNotMatch(control,/status[.]textContent=error[?][.]message/);
+ assert.match(control,/Verifica l’accesso e la connessione/);
+});
