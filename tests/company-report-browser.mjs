@@ -311,6 +311,11 @@ try{
  assert.equal(confirmSeen,1);
  assert.equal(await page.locator('#smart-embed-body #company-rates-editor').count(),1);
  assert.equal(await page.locator('#company-rate-amount').inputValue(),'90,00');
+ await page.evaluate(()=>window.dispatchEvent(new Event('lts-admin-company-rate-save-started')));
+ await page.locator('#smart-back').click();
+ assert.equal(await page.locator('#smart-embed-body #company-rates-editor').count(),1,
+  'Cannot detach original tariff form while save in progress');
+ await page.evaluate(()=>window.dispatchEvent(new Event('lts-admin-company-rate-save-completed')));
  page.once('dialog',async dialog=>{confirmSeen++;await dialog.accept();});
  await page.locator('#smart-back').click();
  assert.equal(confirmSeen,2);
@@ -720,8 +725,17 @@ try{
  assert.equal(await page.locator('#report-panel').isVisible(),false,'Security view must hide reports');
  await openAdminTab('report-tab');
  await page.waitForFunction(()=>document.querySelector('#report-count').textContent==='2');
- await page.locator('#logout').click();
+ // Authorized search must be cleared immediately on logout, even with an open preview.
+ await page.locator('#smart-command-open').click();
+ await page.locator('#smart-search').fill('ROSSI');
+ await page.locator('#smart-results .smart-result-buttons button').first().click();
+ assert.equal(await page.locator('#smart-detail').isVisible(),true);
+ await page.locator('#logout').evaluate(element=>element.click());
  await page.waitForFunction(()=>document.querySelector('#dashboard').hidden===true);
+ assert.equal(await page.locator('#smart-overlay').isVisible(),false);
+ assert.equal(await page.locator('#smart-detail-body').textContent(),'');
+ assert.equal(await page.locator('#smart-search').inputValue(),'');
+ assert.equal(await page.locator('#roster-count').textContent(),'');
  assert.equal(await page.locator('#report-count').textContent(),'—');
  assert.equal(await page.locator('#report-rows tr').count(),0);
  assert.equal(await page.locator('#report-driver-cards .report-person-card').count(),0);
