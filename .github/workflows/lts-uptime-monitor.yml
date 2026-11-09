@@ -1,0 +1,47 @@
+name: LTS Control Center — monitor disponibilita gratuito
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/lts-uptime-monitor.yml'
+      - 'scripts/lts_health_monitor.py'
+  schedule:
+    # Best effort; GitHub may delay scheduled runs.
+    - cron: '23 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: lts-public-uptime-monitor
+  cancel-in-progress: false
+
+jobs:
+  availability:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Recupera monitor read-only
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Sito pubblico
+        if: ${{ !cancelled() }}
+        run: python3 scripts/lts_health_monitor.py --check site
+      - name: Pannello amministratore
+        if: ${{ !cancelled() }}
+        run: python3 scripts/lts_health_monitor.py --check admin
+      - name: Bundle JavaScript
+        if: ${{ !cancelled() }}
+        run: python3 scripts/lts_health_monitor.py --check bundle
+      - name: API login (solo preflight CORS)
+        if: ${{ !cancelled() }}
+        run: python3 scripts/lts_health_monitor.py --check auth
+      - name: Riepilogo verifiche
+        if: ${{ !cancelled() }}
+        run: |
+          echo '### LTS Control Center' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Controlli HTTP in sola lettura: nessun login, password o dato personale.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Il monitor certifica solo la disponibilita tecnica, non le funzionalita applicative.' >> "$GITHUB_STEP_SUMMARY"

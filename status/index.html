@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="referrer" content="no-referrer">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src https://api.github.com; base-uri 'none'; object-src 'none'; form-action 'none'">
+  <meta name="theme-color" content="#0b2635">
+  <meta name="description" content="Stato pubblico e controlli di disponibilità LTS Registro Viaggi, senza dati riservati">
+  <title>LTS Control Center · Stato servizi</title>
+  <link rel="stylesheet" href="./status.css">
+  <script type="module" src="./status.mjs"></script>
+</head>
+<body>
+ <div class="wrap">
+  <header class="top"><a href="../" class="brand"><span class="logo">LTS</span><span>Registro Viaggi<small>Control Center</small></span></a><a class="back" href="../">Apri l'app ↗</a></header>
+  <main>
+   <section class="hero">
+    <div class="kicker">MONITORAGGIO PUBBLICO · SENZA DATI RISERVATI</div>
+    <h1>Stato dei servizi LTS</h1>
+    <p>Verifiche esterne in sola lettura, eseguite da GitHub. Nessuna credenziale o archivio degli autisti viene letto.</p>
+    <div class="summary"><span id="overall" class="pill waiting" role="status" aria-live="polite">Verifica in corso</span><span id="last-check" class="timestamp">Ultimo controllo: da caricare</span></div>
+   </section>
+   <div class="section-title"><h2>Disponibilità</h2><button type="button" id="refresh">Aggiorna stato</button></div>
+   <section class="grid" aria-label="Controlli servizi">
+    <article class="tile"><div class="item-top"><span class="glyph">◎</span><span class="state waiting" id="s-site">In attesa</span></div><h3>Sito principale</h3><p>Caricamento della pagina pubblica LTS.</p></article>
+    <article class="tile"><div class="item-top"><span class="glyph">▦</span><span class="state waiting" id="s-admin">In attesa</span></div><h3>Area amministratore</h3><p>Raggiungibilità della pagina di accesso, non verifica dell'autenticazione.</p></article>
+    <article class="tile"><div class="item-top"><span class="glyph">{ }</span><span class="state waiting" id="s-bundle">In attesa</span></div><h3>Applicazione JavaScript</h3><p>Disponibilità del file necessario per avviare l'app.</p></article>
+    <article class="tile"><div class="item-top"><span class="glyph">◇</span><span class="state waiting" id="s-auth">In attesa</span></div><h3>API login</h3><p>Risposta preliminare CORS, senza tentativi di accesso.</p></article>
+   </section>
+   <div class="section-title"><h2>Qualità e pubblicazioni</h2></div>
+   <section class="grid secondary-grid" aria-label="Ultimi controlli pubblicazione">
+    <article class="tile"><div class="item-top"><span class="glyph">↥</span><span class="state waiting" id="s-deploy">In attesa</span></div><h3>Pubblicazione sito</h3><p id="deploy-time">Ultimo rilascio verificabile.</p></article>
+    <article class="tile"><div class="item-top"><span class="glyph">✓</span><span class="state waiting" id="s-qa">In attesa</span></div><h3>Test di rilascio</h3><p id="qa-time">Ultimo controllo pubblico.</p></article>
+   </section>
+   <section class="note"><h2>Come leggere lo stato</h2>
+    <p>Verde significa che una richiesta tecnica è riuscita, <strong>non</strong> che login reale, sincronizzazione, salvataggi o permessi siano certificati. I controlli programmati da GitHub possono essere ritardati; dati vecchi o mancanti non vengono mostrati come successi.</p>
+    <p>Dettagli tecnici su <a href="https://github.com/pasqualemilano0-rgb/LTS-Registro-Viaggi/actions" rel="noopener noreferrer" target="_blank">GitHub Actions</a>. Non condividere password, dati personali o archivi nei report di errore pubblici.</p>
+    <p class="hint" id="info" role="status" aria-live="polite"></p>
+   </section>
+  </main>
+  <footer>© LTS Registro Viaggi · Monitoraggio pubblico, senza servizi esterni a pagamento <a href="../privacy/">Privacy</a></footer>
+ </div>
+</body>
+</html>
