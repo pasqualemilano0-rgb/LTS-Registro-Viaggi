@@ -148,7 +148,13 @@ function lock(message='Accedi come amministratore per continuare.'){
  adminRealtime?.stop();adminRealtime=null;
  clearAdminPosition();
  drivers=[];companyView.reset();clearMfa();
- byId('roster').replaceChildren();hideCode();
+ byId('roster').replaceChildren();byId('roster-count').textContent='';
+ for(const key of ['total','active','blocked','pending'])byId('stat-'+key).textContent='—';
+ for(const button of byId('roster-letters').querySelectorAll('button')){
+  button.setAttribute('aria-pressed',String(button.dataset.letter===''));
+  button.disabled=Boolean(button.dataset.letter);
+ }
+ hideCode();
  byId('mfa-panel').hidden=true;
  dashboard.hidden=true;loginPanel.hidden=false;byId('logout').hidden=true;
  setError(listError,'');
