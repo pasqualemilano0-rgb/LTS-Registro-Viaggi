@@ -1,7 +1,7 @@
 import * as account from '../account-access.mjs?v=20261107-realtime-v1';
 import realtimeConfig from '../runtime-config.mjs';
 import {createLtsRealtime} from '../realtime-client.mjs?v=20261107-roster-realtime-v1';
-import {STATUS_LABELS,driverSummary,filterDrivers} from './model.mjs';
+import {STATUS_LABELS,driverSummary,filterDrivers,driverInitial} from './model.mjs';
 import {setupReport} from './report.mjs?v=20261108-smart-v2';
 import {setupSmartConsole} from './smart-console.mjs?v=20261108-smart-v2';
 import {rememberPosition,readPosition,clearPosition} from './admin-position.mjs';
@@ -142,6 +142,8 @@ async function loadBackupFactors(){
  }catch(error){byId('mfa-backup-status').textContent=errorText(error,'Stato backup non disponibile. Riprova online.');}
 }
 function lock(message='Accedi come amministratore per continuare.'){
+ selectedInitial='';
+ byId('search').value='';byId('status-filter').value='all';
  smartConsole.reset();byId('smart-command-open').hidden=true;
  adminRealtime?.stop();adminRealtime=null;
  clearAdminPosition();
@@ -226,10 +228,37 @@ async function loadDrivers({silent=false}={}){
    if(token===driverRequest)refresh.disabled=false;
  }
 }
+let selectedInitial='';
+function renderLetters(){
+ const area=byId('roster-letters');
+ if(!area.childElementCount){
+  for(const letter of ['',...'ABCDEFGHIJKLMNOPQRSTUVWXYZ','#']){
+   const button=make('button','roster-letter',letter||'Tutte');
+   button.type='button';button.dataset.letter=letter;
+   button.setAttribute('aria-label',letter?
+    'Mostra cognomi con iniziale '+letter:'Mostra tutti i cognomi');
+   button.addEventListener('click',()=>{
+    selectedInitial=selectedInitial===letter?'':letter;
+    renderRoster();
+   });
+   area.append(button);
+  }
+ }
+ const available=new Set(drivers.map(driverInitial));
+ if(selectedInitial&&!available.has(selectedInitial))selectedInitial='';
+ for(const button of area.querySelectorAll('button')){
+  const letter=button.dataset.letter;
+  button.disabled=Boolean(letter)&&!available.has(letter);
+  button.setAttribute('aria-pressed',String(selectedInitial===letter));
+ }
+}
 function renderRoster(){
+ renderLetters();
  const summary=driverSummary(drivers);
  for(const name of ['total','active','blocked','pending'])byId('stat-'+name).textContent=String(summary[name]);
- const nodes=filterDrivers(drivers,byId('search').value,byId('status-filter').value);
+ const nodes=filterDrivers(drivers,byId('search').value,byId('status-filter').value,selectedInitial);
+ byId('roster-count').textContent=nodes.length+' su '+drivers.length+
+  ' autisti · ordine alfabetico per cognome'+(selectedInitial?' · iniziale '+selectedInitial:'');
  const roster=byId('roster');roster.replaceChildren();
  byId('empty').hidden=nodes.length!==0;
  for(const entry of nodes){
