@@ -7,6 +7,7 @@ import {dirname, resolve} from 'node:path';
 
 const ROOT=resolve(dirname(fileURLToPath(import.meta.url)),'..');
 const access=readFileSync(resolve(ROOT,'porti-access.mjs'),'utf8');
+const app=readFileSync(resolve(ROOT,'app.mjs'),'utf8');
 const page=readFileSync(resolve(ROOT,'porti/index.html'),'utf8');
 const sw=readFileSync(resolve(ROOT,'sw.js'),'utf8');
 const BASE='/LTS-Registro-Viaggi/';
@@ -17,7 +18,8 @@ function element(tag){
   setAttribute(name,value){this.attributes[name]=value;},
   append(...nodes){this.children.push(...nodes);}};
 }
-function fixture({standalone=false,parentPath=BASE,source=access}={}){
+function fixture({standalone=false,parentPath=BASE,source=access,
+ now='2026-11-10T10:00:00Z'}={}){
  const events=new Map(),imports=[],calls=[];
  const body={hidden:true,children:[],
   replaceChildren(...nodes){this.children=nodes;},
@@ -31,7 +33,10 @@ function fixture({standalone=false,parentPath=BASE,source=access}={}){
   postMessage(data,target){calls.push(['message',data,target]);}};
  window.parent=standalone?window:parent;
  const sourceUnderTest=source.replaceAll('await import(', 'await window.__recordImport(');
- vm.runInNewContext(sourceUnderTest,{window,location,document,
+ class ControlledDate extends Date{
+  constructor(...args){if(args.length)super(...args);else super(now);}
+ }
+ vm.runInNewContext(sourceUnderTest,{window,location,document,Date:ControlledDate,
   setTimeout(fn){calls.push(['timer',fn]);return 42;},
   clearTimeout(id){calls.push(['clear',id]);}},{timeout:1500});
  return {body,events,imports,calls,parent,window};
@@ -89,11 +94,45 @@ test('Original maintenance notice remains a one-line rollback',()=>{
 });
 
 test('Protected Pages entry and current PWA cache are required for reopening',()=>{
- assert.match(page,/src="\.\.\/porti-access\.mjs\?v=20261106-porti-original-v1"/);
+ assert.match(page,/src="\.\.\/porti-access\.mjs\?v=20261109-porti-sunday-v1"/);
  assert.match(page,/<body hidden>/);
  assert.doesNotMatch(page,/<script(?![^>]*porti-access)[^>]*>/g);
  assert.match(access,/}else if\(!sameOriginParent\(\)\)\{/);
- assert.match(sw,/const CACHE = PREFIX \+ '20261106-porti-clean-v20'/);
+ assert.match(sw,/const CACHE = PREFIX \+ '20261109-porti-sunday-v1'/);
  assert.match(sw,/BASE \+ 'porti\/app\.js'/);
  assert.match(sw,/if \(NETWORK_FIRST_CODE\.has\(url\.pathname\)\)/);
+});
+
+test('Porti is suspended on Italian Sundays, never starting Booking modules',()=>{
+ for(const now of ['2026-11-07T23:00:00Z','2026-11-08T12:00:00Z',
+  '2026-11-08T22:59:59Z','2026-03-28T23:00:00Z',
+  '2026-03-29T21:59:59Z']){
+  const x=fixture({now});
+  assert.equal(x.imports.length,0);
+  assert.equal(x.events.size,0,'A suspended Porti must not set up a privileged iframe handshake');
+  assert.equal(x.body.hidden,false);
+  assert.match(JSON.stringify(x.body.children),/Porti sospesi la domenica/);
+  assert.match(JSON.stringify(x.body.children),/Registro Viaggi/);
+ }
+});
+test('Porti reopens automatically at Italian Monday midnight, independent of UTC',async()=>{
+ for(const now of ['2026-11-07T22:59:59Z','2026-11-08T23:00:00Z',
+  '2026-03-29T22:00:00Z']){
+  const x=fixture({now});
+  const handler=x.events.get('message');
+  assert.equal(typeof handler,'function','Porti must reopen on permitted weekdays');
+  await handler({origin:ORIGIN,source:x.parent,data:{type:'lts-porti-authorized'}});
+  assert.equal(x.imports.length,2);
+ }
+});
+test('The parent LTS app keeps Register usable and blocks Porti iframe on Sundays',()=>{
+ assert.match(app,/function isPortiSundayInRome\(at=new Date\(\)\)/);
+ assert.match(app,/timeZone:'Europe\/Rome',weekday:'short'/);
+ assert.match(app,/if\(sunday\)\{/);
+ assert.match(app,/Porti sospesi la domenica/);
+ assert.match(app,/navigate\('register'\)/);
+ assert.match(app,/setInterval\(syncPortiSundayState,60_000\)/);
+ assert.match(access,/timeZone:'Europe\/Rome',weekday:'short'/);
+ assert.match(access,/if\(isPortiSundayInRome\(\)\)\{/);
+ assert.match(app,/porti\/index\.html\?v=20261109-weekdays-porti-v1/);
 });

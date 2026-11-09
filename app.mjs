@@ -268,11 +268,43 @@ function render(){
  if(tab!=='porti')main.append(syncNode());
  scroll.scrollTop=scrollTop;
 }
+// Porti follows the Rome calendar, regardless of device timezone.
+function isPortiSundayInRome(at=new Date()){
+ return new Intl.DateTimeFormat('en-US',{timeZone:'Europe/Rome',weekday:'short'}).format(at)==='Sun';
+}
+let portiLastSuspended=null;
 function renderPorti(main){
- const url=(runtimeConfig.basePath??'/')+'porti/index.html?v=20261106-porti-clean-v2';
+ const sunday=isPortiSundayInRome();
+ portiLastSuspended=sunday;
+ if(sunday){
+  main.append(
+   el('div',{class:'porti-heading'},el('h1',{},'Porti')),
+   el('section',{class:'porti-sunday-notice',role:'status','aria-live':'polite'},
+    el('div',{class:'porti-sunday-icon','aria-hidden':'true'},'⚓'),
+    el('h2',{},'Porti sospesi la domenica'),
+    el('p',{},'Come previsto dal calendario LTS, le consultazioni Porti riprenderanno automaticamente lunedì. Il Registro Viaggi resta operativo.'),
+    el('button',{class:'porti-sunday-return',type:'button',on:{click:()=>navigate('register')}},'Apri Registro Viaggi'),
+    el('p',{class:'porti-sunday-hint'},'Per urgenze consulta i siti ufficiali dei terminal: questa app non rilascia autorizzazioni.'),
+    el('div',{class:'porti-sunday-sources'},
+     el('a',{href:'https://www.conateco.it/berth-forecast/',target:'_blank',rel:'noopener noreferrer'},'CO.NA.TE.CO.'),
+     el('a',{href:'https://tfg.bucci.it/@/TFGW_TP_ETA',target:'_blank',rel:'noopener noreferrer'},'TFG'),
+     el('a',{href:'https://www.salernocontainerterminal.com/vessel-schedule/',target:'_blank',rel:'noopener noreferrer'},'SCT'))
+   )
+  );
+  return;
+ }
+ const url=(runtimeConfig.basePath??'/')+'porti/index.html?v=20261109-weekdays-porti-v1';
  portiFrame=el('iframe',{class:'porti-frame',src:url,title:'Porti e booking',referrerpolicy:'no-referrer'});
  main.append(el('div',{class:'porti-heading'},el('h1',{},'Porti')),portiFrame);
 }
+function syncPortiSundayState(){
+ if(tab==='porti'&&portiLastSuspended!==null&&portiLastSuspended!==isPortiSundayInRome()){
+  unmountPorti();
+  render();
+ }
+}
+setInterval(syncPortiSundayState,60_000);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)syncPortiSundayState();});
 // The port module is a subview of a verified LTS account, not a public standalone app.
 window.addEventListener('message',event=>{
  if(event.origin!==location.origin || event.data?.type!=='lts-porti-ready')return;
