@@ -1,5 +1,6 @@
 import * as D from '/LTS-Registro-Viaggi/shared/domain.mjs';
 import { quickTripFromRoute } from '/LTS-Registro-Viaggi/shared/quick-trip.mjs';
+import {TRIP_DRAFT_VERSION,tripDraftHasWork,possibleTripDuplicate,restoreTripEditorSnapshot} from '/LTS-Registro-Viaggi/shared/trip-editor-safety.mjs';
 import {unionStates} from '/LTS-Registro-Viaggi/shared/sync-merge.mjs';
 import * as store from '/LTS-Registro-Viaggi/client-store.mjs';
 import runtimeConfig from '/LTS-Registro-Viaggi/runtime-config.mjs';
@@ -37,6 +38,33 @@ let month = today().slice(0,7);
 let editingId = null;
 let editingBaseline = null;
 let draft = newDraft();
+let tripDraftRecoveryMessage='';
+function editorDraftSnapshot(){return {version:TRIP_DRAFT_VERSION,draft:structuredClone(draft),editingId,editingBaseline};}
+function saveEditorScratchpad(){
+ if(!store.usingAccount()||!accountAccess.isVerified())return Promise.resolve();
+ const action=tripDraftHasWork(draft,editingId,today())?
+  store.saveTripEditorDraft(editorDraftSnapshot()):store.clearTripEditorDraft();
+ return action.catch(error=>{
+  const node=document.querySelector('#trip-draft-state');
+  if(node){node.textContent='Attenzione: bozza non conservata ('+(error.message||'errore di memoria')+').';node.dataset.status='error';}
+  throw error;
+ });
+}
+function keepEditorScratchpad(){void saveEditorScratchpad().catch(()=>{});}
+async function recoverEditorScratchpad(){
+ tripDraftRecoveryMessage='';
+ if(!store.usingAccount()||!accountAccess.isVerified())return;
+ try{
+  const snapshot=await store.readTripEditorDraft();
+  const recovered=restoreTripEditorSnapshot(snapshot,state.trips);
+  if(!recovered)return;
+  if(!tripDraftHasWork(recovered.draft,recovered.editingId,today()))return;
+  draft=recovered.draft;editingId=recovered.editingId;editingBaseline=recovered.editingBaseline;
+  tripDraftRecoveryMessage=recovered.removedEdit?
+   'La versione originale del viaggio non è più presente. I dati sono stati recuperati come nuovo viaggio: controllali prima di salvare.':
+   'Bozza recuperata dal dispositivo. Controlla e salva quando sei pronto.';
+ }catch(error){tripDraftRecoveryMessage='Non è stato possibile leggere la bozza precedente: '+(error.message||'memoria non disponibile');}
+}
 let busy = false;
 let searchValue = '';
 let syncMessage = 'Archivio personale';
@@ -173,6 +201,9 @@ function setStatus(status){
  const current=document.querySelector('#sync-status');if(current)current.replaceWith(syncNode());
  const top=document.querySelector('#sync-status-top');if(top)top.replaceWith(syncNode(true));
  const wrap=document.querySelector('.sync-banner-wrap');if(wrap)wrap.hidden=syncSavedOnline;
+ const hint=document.querySelector('#trip-save-hint');
+ if(hint)hint.textContent=status?.status==='synced'?'Registro sincronizzato online.':
+  syncWarning?'Sincronizzazione in sospeso: '+syncMessage:'Stato archivio: '+syncMessage;
 }
 async function persist(nextState){
  if(busy)throw new Error('Attendi il salvataggio in corso.');
@@ -195,7 +226,15 @@ function unmountPorti(){
  // Leaving Porti stops its polling and discards the in-frame booking query.
  portiFrame.src='about:blank';portiFrame.remove();portiFrame=null;
 }
-function navigate(next){if(next==='customers'&&tab!=='customers'){companyCustomerSearch='';customerDirectoryScope='all';customerDirectoryLimit=24;}if(next!=='register')activationWelcome=false;if(tab==='porti'&&next!==tab)unmountPorti();tab=next;searchValue='';render();if(next==='insert'||next==='customers')void refreshCompanyCustomers();if(['insert','tariffs','customers'].includes(next)&&store.usingAccount()&&navigator.onLine!==false){void store.syncPending().catch(()=>{});void refreshCompanyRates();}const scroll=document.querySelector('.app-scroll');if(scroll)scroll.scrollTop=0;window.scrollTo({top:0,behavior:'auto'});}
+function navigate(next,{keepDraft=false}={}){
+ if(next!==tab&&tab==='insert'&&!keepDraft&&tripDraftHasWork(draft,editingId,today())){
+  if(busy){toast('Attendi la fine del salvataggio prima di uscire.',true);return;}
+  confirmAction('Uscire dal viaggio?',
+   'Ci sono dati non salvati nel Registro. Conservali sul dispositivo per riprendere la compilazione più tardi.',
+   async()=>{await saveEditorScratchpad();navigate(next,{keepDraft:true});},'Conserva e apri');
+  return;
+ }
+ if(next==='customers'&&tab!=='customers'){companyCustomerSearch='';customerDirectoryScope='all';customerDirectoryLimit=24;}if(next!=='register')activationWelcome=false;if(tab==='porti'&&next!==tab)unmountPorti();tab=next;searchValue='';render();if(next==='insert'||next==='customers')void refreshCompanyCustomers();if(['insert','tariffs','customers'].includes(next)&&store.usingAccount()&&navigator.onLine!==false){void store.syncPending().catch(()=>{});void refreshCompanyRates();}const scroll=document.querySelector('.app-scroll');if(scroll)scroll.scrollTop=0;window.scrollTo({top:0,behavior:'auto'});}
 function render(){
  const scrollTop=document.querySelector('.app-scroll')?.scrollTop||0;
  refreshView=null;
@@ -239,7 +278,7 @@ function receiveState(record,{source}={}){
  const changedIdentity=Boolean(user?.id&&record.user?.id!==user.id);
  const previous=state;state=D.validateState(record.state);refreshDraftCustomers(previous,state);user=record.user||null;pdfReport=null;
  if(changedIdentity){
-  draft=newDraft();editingId=null;editingBaseline=null;document.querySelectorAll('dialog').forEach(dialog=>dialog.close());render();
+  draft=newDraft();editingId=null;editingBaseline=null;tripDraftRecoveryMessage='';document.querySelectorAll('dialog').forEach(dialog=>dialog.close());render();
   // initialize() owns first-time account onboarding. Avoid opening two
   // profile dialogs after switching from a legacy device archive.
   if(source!=='account'&&(!state.profile.firstName||!state.profile.lastName))openProfile(true);
@@ -440,7 +479,10 @@ function renderInsert(main){
  const layout=el('div',{class:'form-layout'});const form=el('form',{class:'panel form-panel',novalidate:true});
  const error=el('div',{class:'form-error',role:'alert'});
  form.append(error);
- if(editingId)form.append(el('div',{class:'editing-banner'},'Stai modificando un viaggio',el('button',{type:'button',class:'remove-button',on:{click:()=>{editingId=null;editingBaseline=null;draft=newDraft();render();}}},'Annulla')));
+ if(tripDraftRecoveryMessage){form.append(el('p',{class:'trip-recovery-notice',role:'status'},tripDraftRecoveryMessage));tripDraftRecoveryMessage='';}
+ if(editingId)form.append(el('div',{class:'editing-banner'},'Stai modificando un viaggio',el('button',{type:'button',class:'remove-button',on:{click:()=>confirmAction('Annullare la modifica?',
+  'Le modifiche non ancora salvate saranno eliminate. Il viaggio già registrato non verrà cambiato.',
+  async()=>{editingId=null;editingBaseline=null;draft=newDraft();await saveEditorScratchpad();render();},'Scarta la bozza')}},'Annulla')));
  const date=field('Data','date',draft.date,{type:'date',required:true,min:'1900-01-01',max:'2199-12-31'});
  date.wrap.classList.add('date-capsule');
  const dateCaptionText=el('span',{},'Data');
@@ -455,7 +497,7 @@ function renderInsert(main){
   el('div',{class:'dashboard-maps-shortcut-copy'},icon('pin'),
    el('div',{},el('strong',{},'Nuovo cliente?'),
     el('p',{},'Aggiungilo da Google Maps senza uscire dalla dashboard.'))),
-  button('Aggiungi da Google Maps','secondary',()=>{collect();mapsCustomerDialog();},'plus',
+  button('Aggiungi da Google Maps','secondary',()=>{collect();keepEditorScratchpad();mapsCustomerDialog();},'plus',
    {class:'secondary-button dashboard-maps-shortcut-button',
     'aria-label':'Aggiungi un cliente da Google Maps'})));
  const container=decorateTripField(field('Sigla container','container',draft.container,{placeholder:'MSDU345676.8',class:'container-input',required:true,maxlength:500}),'addTrip','container-field');
@@ -466,7 +508,7 @@ function renderInsert(main){
  const suggestionRefreshes=[];
  form.append(el('div',{class:'trip-fields'},container.wrap,tripCustomerAutocomplete(client,city),city.wrap),datalist(customerListId,[...state.customers.map(c=>c.name),...state.trips.map(t=>t.client),...companyCustomers.map(c=>c.name)]));
  let cities=datalist(cityListId,citySuggestions(draft.client));form.append(cities);
- const add=el('button',{type:'button',class:'add-pickup trip-option','aria-label':draft.second?'Rimuovi seconda presa':'Aggiungi una seconda presa','aria-expanded':String(Boolean(draft.second)),on:{click:()=>{collect();draft.second=!draft.second;if(!draft.second){draft.secondClient='';draft.secondCity='';}render();}}},icon('pin'),el('span',{class:'tile-label'},'Seconda presa'),el('span',{class:'plus-disc','aria-hidden':'true'},draft.second?'−':'+'));
+ const add=el('button',{type:'button',class:'add-pickup trip-option','aria-label':draft.second?'Rimuovi seconda presa':'Aggiungi una seconda presa','aria-expanded':String(Boolean(draft.second)),on:{click:()=>{collect();draft.second=!draft.second;if(!draft.second){draft.secondClient='';draft.secondCity='';}keepEditorScratchpad();render();}}},icon('pin'),el('span',{class:'tile-label'},'Seconda presa'),el('span',{class:'plus-disc','aria-hidden':'true'},draft.second?'−':'+'));
  const options=el('div',{class:'trip-options','aria-label':'Opzioni del viaggio'},add);form.append(options);
  let secondClient=null,secondCity=null;
  if(draft.second){
@@ -489,7 +531,7 @@ function renderInsert(main){
    input.value=customer.name;cityField.input.value=customer.city;hide();
    if(second){form.querySelector('#second-cities')?.replaceWith(datalist('second-cities',citySuggestions(customer.name)));}
    else{const updated=datalist(cityListId,citySuggestions(customer.name));cities.replaceWith(updated);cities=updated;}
-   updateEstimate();
+   updateEstimate();keepEditorScratchpad();
   }
   function highlight(){
    [...menu.children].forEach((option,index)=>{option.classList.toggle('active',index===active);option.setAttribute('aria-selected',String(index===active));});
@@ -518,18 +560,21 @@ function renderInsert(main){
  const noteInput=el('textarea',{id:'trip-note',name:'note',value:draft.note||'',maxlength:2000,rows:3,autocapitalize:'characters',spellcheck:'false',placeholder:'Scrivi una nota per questo viaggio'});
  const noteEditor=el('section',{class:'trip-note-editor',id:'trip-note-editor',hidden:!draft.noteOpen},el('label',{class:'field-label',for:'trip-note'},'Nota del viaggio',el('span',{class:'optional'},'Facoltativa')),noteInput,el('p',{class:'trip-note-help'},icon('lock'),'Visibile solo nell’app · esclusa dal PDF mensile'));
  const noteSymbol=el('span',{class:'plus-disc','aria-hidden':'true'},draft.noteOpen?'−':'+');
- const noteToggle=el('button',{type:'button',class:'trip-option','aria-expanded':String(Boolean(draft.noteOpen)),'aria-controls':'trip-note-editor',on:{click:()=>{collect();draft.noteOpen=!draft.noteOpen;noteEditor.hidden=!draft.noteOpen;noteToggle.setAttribute('aria-expanded',String(draft.noteOpen));noteSymbol.textContent=draft.noteOpen?'−':'+';if(draft.noteOpen)noteInput.focus();}}},icon('edit'),el('span',{class:'tile-label'},'INSERISCI NOTA'),noteSymbol);
+ const noteToggle=el('button',{type:'button',class:'trip-option','aria-expanded':String(Boolean(draft.noteOpen)),'aria-controls':'trip-note-editor',on:{click:()=>{collect();draft.noteOpen=!draft.noteOpen;noteEditor.hidden=!draft.noteOpen;noteToggle.setAttribute('aria-expanded',String(draft.noteOpen));noteSymbol.textContent=draft.noteOpen?'−':'+';keepEditorScratchpad();if(draft.noteOpen)noteInput.focus();}}},icon('edit'),el('span',{class:'tile-label'},'INSERISCI NOTA'),noteSymbol);
  options.append(noteToggle);form.append(noteEditor);
- noteInput.addEventListener('input',()=>{const start=noteInput.selectionStart,end=noteInput.selectionEnd;const upper=noteInput.value.toLocaleUpperCase('it-IT');if(upper!==noteInput.value){noteInput.value=upper;noteInput.setSelectionRange(start,end);}collect();});
+ noteInput.addEventListener('input',()=>{const start=noteInput.selectionStart,end=noteInput.selectionEnd;const upper=noteInput.value.toLocaleUpperCase('it-IT');if(upper!==noteInput.value){noteInput.value=upper;noteInput.setSelectionRange(start,end);}collect();keepEditorScratchpad();});
  const servicesSymbol=el('span',{class:'plus-disc','aria-hidden':'true'},draft.servicesOpen?'−':'+');
- const servicesToggle=el('button',{type:'button',class:'trip-option','aria-expanded':String(Boolean(draft.servicesOpen)),'aria-controls':'trip-services',on:{click:()=>{collect();draft.servicesOpen=!draft.servicesOpen;services.hidden=!draft.servicesOpen;servicesToggle.setAttribute('aria-expanded',String(draft.servicesOpen));servicesSymbol.textContent=draft.servicesOpen?'−':'+';}}},icon('sliders'),el('span',{class:'tile-label'},'Servizi extra'),servicesSymbol);
+ const servicesToggle=el('button',{type:'button',class:'trip-option','aria-expanded':String(Boolean(draft.servicesOpen)),'aria-controls':'trip-services',on:{click:()=>{collect();draft.servicesOpen=!draft.servicesOpen;services.hidden=!draft.servicesOpen;servicesToggle.setAttribute('aria-expanded',String(draft.servicesOpen));servicesSymbol.textContent=draft.servicesOpen?'−':'+';keepEditorScratchpad();}}},icon('sliders'),el('span',{class:'tile-label'},'Servizi extra'),servicesSymbol);
  options.append(servicesToggle);
  const services=el('div',{class:'service-grid trip-service-editor',id:'trip-services',hidden:!draft.servicesOpen},D.SERVICES.map(service=>el('label',{class:'service-chip'},el('input',{type:'checkbox',name:'service',value:service.key,'aria-label':service.label,checked:draft.services.includes(service.key),on:{change:()=>{collect();updateEstimate();}}}),el('span',{class:'chip-check','aria-hidden':'true'},'✓'),service.label)));
  form.append(services);
  const estimate=el('div',{class:'preview-total'});const saturdayNote=el('p',{class:'saturday-note',role:'status',hidden:true});const missing=el('p',{class:'missing-note'});form.append(estimate,saturdayNote,missing);
  const save=el('button',{type:'submit',class:'primary-button full','data-save':true},icon('check'),editingId?'Salva modifiche':'Salva viaggio');
- form.append(save,el('p',{class:'privacy-footnote'},icon('lock'),'Tariffe e note restano nell’app, mai nel PDF.'));
+ const draftStatus=el('p',{id:'trip-draft-state',class:'trip-draft-state',role:'status','aria-live':'polite'},'I dati in compilazione sono conservati sul dispositivo.');
+ const syncDetail=el('p',{id:'trip-save-hint',class:'trip-save-hint',role:'status','aria-live':'polite'});
+ form.append(save,draftStatus,syncDetail,el('p',{class:'privacy-footnote'},icon('lock'),'Tariffe e note restano nell’app, mai nel PDF.'));
  function collect(){draft={date:date.input.value,container:container.input.value,client:client.input.value,city:city.input.value,secondClient:secondClient?.input.value||'',secondCity:secondCity?.input.value||'',services:[...form.querySelectorAll('[name=service]:checked')].map(n=>n.value),second:draft.second,note:noteInput.value,noteOpen:Boolean(draft.noteOpen),servicesOpen:Boolean(draft.servicesOpen)};}
+ let missingEstimateTariffs=false;
  function updateEstimate(){
   collect();
   const firstTariff=companyRatesLoaded?D.findTariff({tariffs:companyRates},draft.client,draft.city):null;
@@ -553,16 +598,25 @@ function renderInsert(main){
   estimate.replaceChildren(el('span',{},icon('wallet'),draft.second?'Trasferte + extra':'Trasferta + extra'),draft.client&&draft.city?el('strong',{},D.formatMoney(amount.totalCents)):el('small',{},'Scegli cliente e città'));
   saturdayNote.textContent=saturdayNoteText(saturday.status);saturdayNote.hidden=saturday.status==='none';saturdayNote.dataset.saturdayStatus=saturday.status;
   const hasAny=Boolean(draft.client||draft.city||draft.services.length);const unknown=(candidate.fareCents===null&&Boolean(draft.client&&draft.city))||(draft.second&&candidate.secondFareCents===null&&Boolean(draft.secondClient&&draft.secondCity))||draft.services.some(key=>extraCents[key]===null&&!(key==='sabatoTrasferta'&&saturday.status==='included'));
-  missing.textContent=hasAny&&unknown?'Alcune tariffe non sono impostate. Puoi comunque salvare il viaggio.':'';
+  missingEstimateTariffs=Boolean(hasAny&&unknown);
+  missing.textContent=missingEstimateTariffs?'Alcune tariffe non sono impostate. Prima del salvataggio dovrai confermare il totale parziale.':'';
   missing.style.marginBottom=missing.textContent?'16px':'0';
  }
  for(const {input}of[date,container,client,city,...(secondClient?[secondClient,secondCity]:[])])input.addEventListener('input',()=>{collect();updateEstimate();});
  client.input.addEventListener('change',()=>{autofillCity(client.input,city.input);const next=datalist(cityListId,citySuggestions(client.input.value));cities.replaceWith(next);cities=next;updateEstimate();});
- container.input.addEventListener('blur',()=>{container.input.value=D.normalizeContainer(container.input.value);collect();});
+ container.input.addEventListener('blur',()=>{container.input.value=D.normalizeContainer(container.input.value);collect();keepEditorScratchpad();});
+ form.addEventListener('input',()=>{collect();keepEditorScratchpad();});
+ form.addEventListener('change',()=>{collect();keepEditorScratchpad();});
  form.addEventListener('submit',async event=>{
   event.preventDefault();if(busy)return;collect();error.textContent='';form.querySelectorAll('[aria-invalid]').forEach(n=>n.removeAttribute('aria-invalid'));
   const checked=D.validateTrip(draft);
   if(!checked.valid){error.textContent=Object.values(checked.errors)[0];const firstKey=Object.keys(checked.errors)[0];if(firstKey==='note'){draft.noteOpen=true;noteEditor.hidden=false;noteToggle.setAttribute('aria-expanded','true');noteSymbol.textContent='−';}const firstBad=form.elements[firstKey];if(firstBad instanceof HTMLElement){firstBad.setAttribute('aria-invalid','true');firstBad.focus();}return;}
+  updateEstimate();
+  const duplicate=possibleTripDuplicate(state.trips,draft,editingId);
+  const warnings=[];
+  if(duplicate)warnings.push('Esiste già un viaggio del '+formatDate(duplicate.date)+' con questo container, cliente e località.');
+  if(missingEstimateTariffs)warnings.push('Una o più tariffe aziendali non sono disponibili: il totale mostrato è parziale.');
+  const commit=async()=>{
   save.disabled=true;
   try{
    const existing=state.trips.find(t=>t.id===editingId)||null;
@@ -581,11 +635,25 @@ function renderInsert(main){
    let next={...state,trips:existing?state.trips.map(t=>t.id===existing.id?trip:t):[...state.trips,trip]};
    const clients=[{name:trip.client,city:trip.city},...(trip.secondClient?[{name:trip.secondClient,city:trip.secondCity}]:[])];
    for(const customer of clients)if(!next.customers.some(c=>c.name===customer.name))next=D.upsertCustomer(next,customer);
-   await persist(next);const savedDate=draft.date;editingId=null;editingBaseline=null;draft={...newDraft(),date:savedDate};render();toast(existing?'Viaggio aggiornato.':'Viaggio salvato nel registro.');
-  }catch(err){error.textContent=err.message||'Salvataggio non riuscito. Riprova.';save.disabled=false;}
+   await persist(next);
+   const pending=store.getSyncInfo?.().pending;
+   const savedDate=draft.date;
+   editingId=null;editingBaseline=null;draft={...newDraft(),date:savedDate};
+   try{await store.clearTripEditorDraft();}catch{tripDraftRecoveryMessage='Il viaggio è salvato, ma la vecchia bozza locale non è stata cancellata. Controlla prima di inserire un altro viaggio.';}
+   render();
+   toast(pending?'Viaggio salvato sul dispositivo. Sincronizzazione online in attesa.':(existing?'Viaggio aggiornato e sincronizzato.':'Viaggio salvato e sincronizzato.'));
+  }catch(err){error.textContent=err.message||'Salvataggio non riuscito. Riprova.';save.disabled=false;throw err;}
+  };
+  if(warnings.length)confirmAction('Controlla il viaggio',warnings.join(' ')+ ' Vuoi salvare comunque?',commit,'Conferma e salva');
+  else try{await commit();}catch{ /* Il messaggio resta nel modulo, senza perdere i dati. */ }
  });
  refreshTripFareEstimate=updateEstimate;
- updateEstimate();layout.append(form);
+ updateEstimate();
+ const info=store.getSyncInfo?.()||{};
+ syncDetail.textContent=info.conflict?'Sincronizzazione bloccata: apri Profilo per risolvere il conflitto.':
+  info.pending?'Viaggi salvati localmente; invio online in attesa.':
+  info.status==='synced'?'Registro sincronizzato online.':'Verifica lo stato di sincronizzazione nella barra in alto.';
+ layout.append(form);
  const recent=el('aside',{class:'recent-preview'},el('p',{class:'recent-heading'},'L’ULTIMO VIAGGIO'));
  const latest=D.sortTrips(state.trips)[0];
  recent.append(latest?tripCard(latest,amountContext):emptyState('Pronto a partire','Inserisci il primo viaggio: lo ritroverai qui e nel resoconto mensile.','truck'));
@@ -606,13 +674,23 @@ function renderInsert(main){
 }
 function citySuggestions(client){const normalized=D.normalizeText(client);return unique([...companyRates.filter(t=>t.client===normalized).map(t=>t.city),...state.tariffs.filter(t=>t.client===normalized).map(t=>t.city),...state.customers.filter(c=>c.name===normalized).map(c=>c.city),...state.trips.filter(t=>t.client===normalized).map(t=>t.city),...companyCustomers.filter(c=>D.normalizeText(c.name)===normalized).map(c=>D.normalizeText(c.city))]);}
 function autofillCity(client,city){if(!city.value.trim()){const normalized=D.normalizeText(client.value);const tariffCities=unique(companyRates.filter(t=>t.client===normalized).map(t=>t.city));if(tariffCities.length===1)city.value=tariffCities[0];else if(!tariffCities.length){const customer=state.customers.find(c=>c.name===normalized);if(customer?.city)city.value=customer.city;else{const values=citySuggestions(client.value);if(values.length===1)city.value=values[0];}}}}
-function editTrip(trip,{focusNote=false}={}){editingId=trip.id;editingBaseline=tripEditVersion(trip);draft={...trip,services:[...trip.services],second:Boolean(trip.secondClient||trip.secondCity),note:trip.note||'',noteOpen:focusNote||Boolean(trip.note),servicesOpen:true};navigate('insert');if(focusNote)document.querySelector('#trip-note')?.focus();}
+function editTrip(trip,{focusNote=false}={}){
+ const apply=()=>{
+  editingId=trip.id;editingBaseline=tripEditVersion(trip);
+  draft={...trip,services:[...trip.services],second:Boolean(trip.secondClient||trip.secondCity),note:trip.note||'',noteOpen:focusNote||Boolean(trip.note),servicesOpen:true};
+  keepEditorScratchpad();navigate('insert',{keepDraft:true});
+  if(focusNote)document.querySelector('#trip-note')?.focus();
+ };
+ if(tripDraftHasWork(draft,editingId,today())&&editingId!==trip.id)
+  confirmAction('Sostituire la bozza corrente?','Stai per aprire la modifica di un altro viaggio. La bozza attuale sarà sostituita.',apply,'Apri modifica');
+ else apply();
+}
 function repeatRoute(trip){
  const apply=()=>{
   editingId=null;
   editingBaseline=null;
   draft=quickTripFromRoute(trip,today());
-  navigate('insert');
+  keepEditorScratchpad();navigate('insert');
   document.querySelector('input[name="container"]')?.focus();
   toast('Percorso pronto. Inserisci il nuovo container e controlla i dati prima di salvare.');
  };
@@ -1734,6 +1812,7 @@ async function initialize(){
   const subscribe=store.subscribeStatus||store.onStatus;if(subscribe)subscribe(setStatus);
   if(!subscribed&&store.subscribeState){store.subscribeState(receiveState);subscribed=true;}
   if(result?.status)setStatus(result.status);
+  await recoverEditorScratchpad();
   const notificationTab=location.hash.slice(1);if(['insert','register'].includes(notificationTab))tab=notificationTab;
   if(!(await finishInitialTruckLoading()))return;
   render();
