@@ -15,7 +15,7 @@ test('dashboard accessibile solo dal pannello admin, CSP e versioni coerenti',()
    'pro-export-pdf','pro-export-xlsx','pro-records'])
    assert.match(html,new RegExp('id="'+id+'"'));
  assert.match(html,/admin\.mjs\?v=20261108-smart-v2/);
- assert.match(html,/admin\.css\?v=20261104-company-v3/);
+ assert.match(html,/admin\.css\?v=20261109-alpha-v1/);
  assert.match(js,/account-access\.mjs\?v=20261107-realtime-v1/);
  assert.match(js,/setupReport\(account\)/);
  assert.match(js,/companyView\.reset\(\)/);
