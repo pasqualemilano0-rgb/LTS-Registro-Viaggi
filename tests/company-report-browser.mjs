@@ -641,6 +641,36 @@ try{
   .filter({hasText:'CLIENTE AUTISTA'}).locator('button[aria-label^="Modifica"]').click();
  assert.match(await page.locator('#records-editor .records-private-note').textContent(),
   /Cliente personale di Mario Rossi/);
+ // The administrator can replace a personal customer with a verified shared entry.
+ const corporatePicker=page.locator('#records-editor .records-company-picker');
+ await page.waitForFunction(()=>!document.querySelector('.records-company-picker input[type=search]')?.disabled);
+ assert.equal(await corporatePicker.locator('select').count(),0);
+ await corporatePicker.locator('input[type=search]').fill('CLIENTE AUTISTA');
+ assert.equal(await corporatePicker.locator('.records-site-option').count(),0,
+  'Personal customers must not appear in the company directory picker');
+ await corporatePicker.locator('input[type=search]').fill('CLIENTE ALFA');
+ await corporatePicker.locator('.records-site-option').filter({hasText:'CLIENTE ALFA'}).click();
+ assert.match(await corporatePicker.locator('.records-site-hint').textContent(),/altro cliente personale/i);
+ assert.equal(await page.locator('#records-editor input[name=name]').inputValue(),'CLIENTE AUTISTA',
+  'A conflicting existing personal name must never replace the current record');
+ await page.locator('#records-editor input[name=phone]').fill('+390811112222');
+ await page.locator('#records-editor input[name=vat]').fill('IT12345678901');
+ await corporatePicker.locator('input[type=search]').fill('CLIENTE BETA');
+ await corporatePicker.locator('.records-site-option').filter({hasText:'CLIENTE BETA'}).click();
+ assert.equal(await page.locator('#records-editor input[name=name]').inputValue(),'CLIENTE BETA');
+ assert.equal(await page.locator('#records-editor input[name=city]').inputValue(),'SALERNO');
+ assert.equal(await page.locator('#records-editor input[name=address]').inputValue(),'VIA TEST 2, SALERNO');
+ assert.equal(await page.locator('#records-editor input[name=phone]').inputValue(),'');
+ assert.equal(await page.locator('#records-editor input[name=vat]').inputValue(),'');
+ assert.match(await corporatePicker.locator('.records-site-chosen').textContent(),/Salva modifica/);
+ await corporatePicker.locator('input[type=search]').fill('CLIENTE SOLO MANUALE');
+ await corporatePicker.locator('.records-site-option').filter({hasText:'CLIENTE SOLO MANUALE'}).click();
+ assert.equal(await page.locator('#records-editor input[name=name]').inputValue(),'CLIENTE SOLO MANUALE');
+ assert.equal(await page.locator('#records-editor input[name=city]').inputValue(),'BARI');
+ assert.equal(await page.locator('#records-editor input[name=address]').inputValue(),'',
+  'A company entry without an address must not inherit the old personal address');
+ // The existing audited manual editing flow must remain available.
+ await page.locator('#records-editor input[name=city]').fill('CASERTA');
  await page.locator('#records-editor input[name="name"]').fill('CLIENTE AUTISTA CORRETTO');
  await page.locator('#records-editor input[name="address"]').fill('VIA PERSONALE 99');
  await page.locator('#records-editor input[name="phone"]').fill('+390811234567');

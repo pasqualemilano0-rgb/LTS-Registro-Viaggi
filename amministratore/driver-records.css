@@ -144,3 +144,24 @@
  .records-site-option{padding:12px 10px;gap:8px}
  .records-site-option-source{max-width:91px;flex-shrink:0}
 }
+
+/* Administrator-only replacement from the real shared customer directory. */
+.records-company-picker{margin:10px 0 4px}
+.records-company-picker .records-editor-note{grid-column:1/-1;margin:0;
+ font-size:12px;line-height:1.55;color:#496977}
+.records-company-picker .records-site-results{
+ display:flex;flex-direction:column;align-items:stretch;gap:6px;
+ max-height:min(420px,50dvh);overflow-y:auto
+}
+.records-company-picker .records-site-option{
+ flex:0 0 auto;height:auto;min-height:68px;overflow:visible
+}
+.records-company-picker .records-site-option-body{
+ display:flex;flex-direction:column;min-width:0;gap:4px
+}
+.records-company-picker .records-site-option-name{
+ display:block;-webkit-line-clamp:unset;overflow:visible;overflow-wrap:anywhere;line-height:1.4
+}
+.records-company-picker .records-site-chosen{
+ color:#155f6d;border-color:#76bcc8;background:#f5fcfd;font-size:12px
+}
