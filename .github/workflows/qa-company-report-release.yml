@@ -27,6 +27,9 @@ on:
       - 'tests/qa-offline-worker-browser.mjs'
       - 'tests/qa-offline-store-browser.mjs'
       - 'tests/qa-trip-editor-safety.test.mjs'
+      - 'shared/register-explorer.mjs'
+      - 'tests/qa-register-explorer.test.mjs'
+      - 'tests/qa-register-browser.mjs'
       - 'tests/report-export.test.mjs'
       - 'tests/qa-account-release.test.mjs'
       - 'tests/qa-release-versions.test.mjs'
@@ -60,6 +63,9 @@ on:
       - 'tests/qa-offline-worker-browser.mjs'
       - 'tests/qa-offline-store-browser.mjs'
       - 'tests/qa-trip-editor-safety.test.mjs'
+      - 'shared/register-explorer.mjs'
+      - 'tests/qa-register-explorer.test.mjs'
+      - 'tests/qa-register-browser.mjs'
       - 'tests/qa-pro-theme.test.mjs'
       - 'tests/qa-driver-management-fixes.test.mjs'
       - '.github/workflows/qa-company-report-release.yml'
@@ -94,9 +100,10 @@ jobs:
           node --check shared/company-extras.mjs
           node --check supabase/functions/lts-company-tariffs/tariff-handler.mjs
           node --check tests/company-report-browser.mjs
+          node --check tests/qa-register-browser.mjs
           node --check tests/qa-report-production-http-smoke.mjs
           node --test tests/admin-record-operations.test.mjs
-          node --test tests/qa-driver-management-fixes.test.mjs tests/qa-manual-customers.test.mjs tests/qa-realtime.test.mjs tests/qa-company-report-release.test.mjs tests/qa-pro-theme.test.mjs tests/qa-account-release.test.mjs tests/qa-trip-editor-safety.test.mjs tests/driver-session-vault.test.mjs tests/leaked-password-protection.test.mjs tests/report-export.test.mjs tests/qa-release-versions.test.mjs tests/qa-regression-contract.test.mjs tests/qa-no-auto-publish.test.mjs
+          node --test tests/qa-driver-management-fixes.test.mjs tests/qa-manual-customers.test.mjs tests/qa-realtime.test.mjs tests/qa-company-report-release.test.mjs tests/qa-pro-theme.test.mjs tests/qa-account-release.test.mjs tests/qa-trip-editor-safety.test.mjs tests/qa-register-explorer.test.mjs tests/driver-session-vault.test.mjs tests/leaked-password-protection.test.mjs tests/report-export.test.mjs tests/qa-release-versions.test.mjs tests/qa-regression-contract.test.mjs tests/qa-no-auto-publish.test.mjs
   production-endpoint-smoke:
     runs-on: ubuntu-24.04
     timeout-minutes: 5
@@ -128,6 +135,9 @@ jobs:
       - name: Mobile dashboard flow with synthetic mock records
         run: LTS_BROWSER_PLAYWRIGHT="$RUNNER_TEMP/lts-playwright" node tests/company-report-browser.mjs
 
+      - name: 390px mobile Register V4 search, filters, pagination and undo
+        run: LTS_BROWSER_PLAYWRIGHT="$RUNNER_TEMP/lts-playwright" node tests/qa-register-browser.mjs
+
       - name: PWA offline Chromium cache and private API regression
         run: LTS_BROWSER_PLAYWRIGHT="$RUNNER_TEMP/lts-playwright" node tests/qa-offline-worker-browser.mjs
 
@@ -158,5 +168,7 @@ jobs:
           "$RUNNER_TEMP/lts-playwright/node_modules/.bin/playwright" install --with-deps webkit
       - name: Safari WebKit mobile admin, certifies Maps and restores archived customer
         run: LTS_BROWSER_PLAYWRIGHT="$RUNNER_TEMP/lts-playwright" LTS_BROWSER_ENGINE=webkit node tests/company-report-browser.mjs
+      - name: 390px Safari Register V4 search, filters, pagination and undo
+        run: LTS_BROWSER_PLAYWRIGHT="$RUNNER_TEMP/lts-playwright" LTS_BROWSER_ENGINE=webkit node tests/qa-register-browser.mjs
       - name: Safari WebKit offline IndexedDB and outbox consistency
         run: LTS_BROWSER_PLAYWRIGHT="$RUNNER_TEMP/lts-playwright" LTS_BROWSER_ENGINE=webkit node tests/qa-offline-store-browser.mjs

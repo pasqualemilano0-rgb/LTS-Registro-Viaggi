@@ -1,5 +1,6 @@
 import * as D from '/LTS-Registro-Viaggi/shared/domain.mjs';
 import { quickTripFromRoute } from '/LTS-Registro-Viaggi/shared/quick-trip.mjs';
+import {REGISTER_PAGE_SIZE,registerTripCounts,filterRegisterTrips,paginateRegisterTrips,stepRegisterMonth} from '/LTS-Registro-Viaggi/shared/register-explorer.mjs';
 import {TRIP_DRAFT_VERSION,tripDraftHasWork,possibleTripDuplicate,restoreTripEditorSnapshot} from '/LTS-Registro-Viaggi/shared/trip-editor-safety.mjs';
 import {unionStates} from '/LTS-Registro-Viaggi/shared/sync-merge.mjs';
 import * as store from '/LTS-Registro-Viaggi/client-store.mjs';
@@ -35,6 +36,8 @@ let user = null;
 let tab = 'insert';
 let tariffTab = 'base';
 let month = today().slice(0,7);
+let registerQuery='',registerFilter='all',registerLimit=REGISTER_PAGE_SIZE;
+let lastDeletedTrip=null;
 let editingId = null;
 let editingBaseline = null;
 let draft = newDraft();
@@ -282,7 +285,8 @@ function receiveState(record,{source}={}){
  const changedIdentity=Boolean(user?.id&&record.user?.id!==user.id);
  const previous=state;state=D.validateState(record.state);refreshDraftCustomers(previous,state);user=record.user||null;pdfReport=null;
  if(changedIdentity){
-  draft=newDraft();draftBaselineDate=draft.date;editingId=null;editingBaseline=null;tripDraftRecoveryMessage='';document.querySelectorAll('dialog').forEach(dialog=>dialog.close());render();
+  draft=newDraft();draftBaselineDate=draft.date;editingId=null;editingBaseline=null;tripDraftRecoveryMessage='';
+  lastDeletedTrip=null;registerQuery='';registerFilter='all';registerLimit=REGISTER_PAGE_SIZE;document.querySelectorAll('dialog').forEach(dialog=>dialog.close());render();
   // initialize() owns first-time account onboarding. Avoid opening two
   // profile dialogs after switching from a legacy device archive.
   if(source!=='account'&&(!state.profile.firstName||!state.profile.lastName))openProfile(true);
@@ -655,6 +659,7 @@ function renderInsert(main){
    await persist(next);
    const pending=store.getSyncInfo?.().pending;
    const savedDate=draft.date;
+   month=savedDate.slice(0,7);registerQuery='';registerFilter='all';registerLimit=REGISTER_PAGE_SIZE;
    editingId=null;editingBaseline=null;draft={...newDraft(),date:savedDate};draftBaselineDate=savedDate;
    try{await store.clearTripEditorDraft();}catch{tripDraftRecoveryMessage='Il viaggio è salvato, ma la vecchia bozza locale non è stata cancellata. Controlla prima di inserire un altro viaggio.';}
    render();
@@ -751,12 +756,58 @@ function tripCard(trip,amountContext){
  card.append(el('div',{class:'trip-total-band'},el('span',{class:'trip-total-label'},amount.missingTariff?'Totale parziale':'Totale'),
   el('strong',{},D.formatMoney(amount.totalCents))));
  if(amount.missingTariff)card.append(el('p',{class:'trip-total-warning'},'Una o più tariffe non sono impostate. Il totale è parziale.'));
- card.append(el('div',{class:'trip-card-footer'},el('p',{class:'trip-breakdown'},`Prese ${D.formatMoney(amount.pickupCents)} · Extra ${D.formatMoney(amount.extraCents)}`),el('div',{class:'inline-actions'},el('button',{type:'button',class:'icon-button','aria-label':`Modifica viaggio ${trip.container} del ${formatDate(trip.date)}`,on:{click:()=>editTrip(trip)}},icon('edit')),el('button',{type:'button',class:'icon-button danger','aria-label':`Elimina viaggio ${trip.container} del ${formatDate(trip.date)}`,on:{click:()=>confirmAction('Eliminare questo viaggio?',`${trip.container} · ${formatDate(trip.date)}. Il viaggio sarà rimosso dal registro.`,async()=>{requireCurrentEditor(editorVersion(trip),state.trips.find(current=>current.id===trip.id),'Il viaggio');await persist({...state,trips:state.trips.filter(t=>t.id!==trip.id)});render();toast('Viaggio eliminato.');})}},icon('trash')))));
+ card.append(el('div',{class:'trip-card-footer'},el('p',{class:'trip-breakdown'},`Prese ${D.formatMoney(amount.pickupCents)} · Extra ${D.formatMoney(amount.extraCents)}`),el('div',{class:'inline-actions'},el('button',{type:'button',class:'icon-button','aria-label':`Modifica viaggio ${trip.container} del ${formatDate(trip.date)}`,on:{click:()=>editTrip(trip)}},icon('edit')),el('button',{type:'button',class:'icon-button','aria-label':`Duplica dati del viaggio ${trip.container} del ${formatDate(trip.date)}`,on:{click:()=>duplicateRegisteredTrip(trip)}},icon('refresh')),el('button',{type:'button',class:'icon-button danger','aria-label':`Elimina viaggio ${trip.container} del ${formatDate(trip.date)}`,on:{click:()=>confirmAction('Eliminare questo viaggio?',`${trip.container} · ${formatDate(trip.date)}. Il viaggio sarà rimosso dal registro.`,async()=>deleteRegisteredTrip(trip))}},icon('trash')))));
  card.append(el('button',{type:'button',class:'trip-repeat-action',
   'aria-label':`Ripeti percorso ${trip.client}, ${trip.city}. Nuovo viaggio senza container e servizi.`,
   on:{click:()=>repeatRoute(trip)}},icon('refresh'),'Ripeti percorso'));
  return card;
 }
+
+/** Undo is one-level and only for this verified account's current session.
+ * A retained trip snapshot is never re-priced during restoration. */
+async function deleteRegisteredTrip(trip){
+ requireCurrentEditor(editorVersion(trip),state.trips.find(current=>current.id===trip.id),'Il viaggio');
+ try{await persist({...state,trips:state.trips.filter(item=>item.id!==trip.id)});}
+ catch(error){
+  // The offline outbox may already contain the deletion even if sync is blocked.
+  if(!(error.pendingState&&!state.trips.some(item=>item.id===trip.id)))throw error;
+ }
+ lastDeletedTrip={owner:user?.id||null,trip:structuredClone(trip)};
+ render();
+ toast(store.getSyncInfo?.().pending?'Eliminazione salvata sul dispositivo. Apri il Registro per annullare.':
+  'Viaggio eliminato. Puoi annullare dal Registro viaggi.');
+}
+async function undoLastDeletedTrip(){
+ const item=lastDeletedTrip;
+ if(!item||item.owner!==user?.id||!store.usingAccount())throw new Error('Ripristino non disponibile per questo account.');
+ if(state.trips.some(trip=>trip.id===item.trip.id)){
+  lastDeletedTrip=null;render();toast('Questo viaggio è già presente nel registro.');return;
+ }
+ try{await persist({...state,trips:[...state.trips,structuredClone(item.trip)]});}
+ catch(error){
+  if(!(error.pendingState&&state.trips.some(trip=>trip.id===item.trip.id)))throw error;
+ }
+ lastDeletedTrip=null;month=item.trip.date.slice(0,7);registerFilter='all';registerQuery='';registerLimit=REGISTER_PAGE_SIZE;
+ render();toast(store.getSyncInfo?.().pending?'Viaggio ripristinato sul dispositivo, sincronizzazione in attesa.':'Viaggio ripristinato.');
+}
+function duplicateRegisteredTrip(trip){
+ const apply=()=>{
+  editingId=null;editingBaseline=null;
+  draft={...newDraft(),date:today(),client:trip.client,city:trip.city,
+   secondClient:trip.secondClient||'',secondCity:trip.secondCity||'',
+   second:Boolean(trip.secondCity),services:[...(trip.services||[])],
+   note:trip.note||'',noteOpen:Boolean(trip.note),servicesOpen:Boolean(trip.services?.length)};
+  draftBaselineDate=draft.date;keepEditorScratchpad();navigate('insert',{keepDraft:true});
+  document.querySelector('input[name="container"]')?.focus();
+  toast('Dati copiati. Inserisci il nuovo container e verifica servizi e tariffe prima di salvare.');
+ };
+ if(tripDraftHasWork(draft,editingId,draftBaselineDate))
+  confirmAction('Sostituire la bozza corrente?',
+   'La bozza attuale verrà sostituita con una copia da completare. Il viaggio originale resta invariato.',
+   apply,'Duplica dati');
+ else apply();
+}
+
 function renderRegister(main){
  if(activationWelcome){
   const needsProfile=!state.profile.firstName||!state.profile.lastName;
@@ -770,21 +821,136 @@ function renderRegister(main){
     button('Chiudi','text',()=>{activationWelcome=false;render();},'close',
       {class:'text-button activation-register-dismiss','aria-label':'Chiudi conferma attivazione'})));
  }
- main.append(heading('TUTTO AL SUO POSTO','Registro mensile','I tuoi viaggi, dal più recente al meno recente.',el('div',{class:'month-control'},el('label',{class:'visually-hidden',for:'month-select'},'Mese del registro'),el('span',{class:'month-caption','aria-hidden':'true'},D.formatMonth(month)),el('input',{id:'month-select',type:'month',value:month,min:'1900-01',max:'2199-12',on:{change:event=>{if(/^\d{4}-(0[1-9]|1[0-2])$/.test(event.target.value)){month=event.target.value;pdfReport=null;render();}}}}))));
- const amountContext=D.buildTripAmountContext(state);const summary=D.monthlySummary(state,month);const trips=D.monthlyTrips(state,month);
- main.append(el('section',{class:'panel overview','aria-label':'Riepilogo del mese'},el('div',{class:'overview-top'},el('div',{},el('p',{class:'overview-label'},'Totale trasferte ed extra'),el('p',{class:'overview-amount'},D.formatMoney(summary.totalCents))),el('span',{class:'trip-count'},`${summary.count} ${summary.count===1?'viaggio':'viaggi'}`)),el('div',{class:'overview-bottom'},el('div',{},'TRASFERTE',el('strong',{},D.formatMoney(summary.pickupCents))),el('div',{},'SERVIZI EXTRA',el('strong',{},D.formatMoney(summary.extraCents))))));
- if(summary.missingTariffCount)main.append(el('p',{class:'missing-note',style:'margin-top:10px'},`${summary.missingTariffCount} ${summary.missingTariffCount===1?'viaggio ha tariffe mancanti':'viaggi hanno tariffe mancanti'}: il totale potrebbe essere parziale.`));
- if(trips.some(trip=>D.saturdayAllowanceStatus(trip,amountContext).status==='included'))main.append(el('p',{class:'saturday-summary-note'},'SABATO TRASFERTA è conteggiato una sola volta per data. Le trasferte di tutti i viaggi si sommano.'));
+
+ const changeRegisterMonth=value=>{
+  if(!/^\d{4}-(0[1-9]|1[0-2])$/u.test(value)||value===month)return;
+  month=value;pdfReport=null;registerQuery='';registerFilter='all';registerLimit=REGISTER_PAGE_SIZE;render();
+ };
+ const monthPicker=el('div',{class:'register-month-picker','aria-label':'Naviga tra i mesi'},
+  el('button',{type:'button',class:'register-month-arrow','aria-label':'Mese precedente',
+   disabled:stepRegisterMonth(month,-1)===month,
+   on:{click:()=>changeRegisterMonth(stepRegisterMonth(month,-1))}},'‹'),
+  el('label',{class:'register-month-field'},
+   el('span',{class:'month-caption'},D.formatMonth(month)),
+   el('input',{id:'month-select',type:'month',value:month,min:'1900-01',max:'2199-12-31'.slice(0,7),
+    'aria-label':'Seleziona mese del registro',
+    on:{change:event=>changeRegisterMonth(event.target.value)}})),
+  el('button',{type:'button',class:'register-month-arrow','aria-label':'Mese successivo',
+   disabled:stepRegisterMonth(month,1)===month,
+   on:{click:()=>changeRegisterMonth(stepRegisterMonth(month,1))}},'›'));
+ main.append(heading('TUTTO AL SUO POSTO','Registro mensile',
+  'Trova un viaggio, controlla le tariffe o apri il resoconto del mese.',monthPicker));
+ const amountContext=D.buildTripAmountContext(state);
+ const trips=D.monthlyTrips(state,month);
+ const summary=D.monthlySummary(state,month);
+ const counts=registerTripCounts(trips,amountContext);
+ const openFilter=(key)=>{
+  registerFilter=key;registerQuery='';registerLimit=REGISTER_PAGE_SIZE;
+  if(registerSearchInput)registerSearchInput.value='';
+  updateRegisterList();document.querySelector('#register-list-title')?.scrollIntoView({block:'nearest'});
+ };
+ main.append(el('section',{class:'panel overview register-overview','aria-label':'Riepilogo del mese'},
+  el('div',{class:'overview-top'},
+   el('div',{},el('p',{class:'overview-label'},'Totale del mese · tutti i viaggi'),
+    el('p',{class:'overview-amount'},D.formatMoney(summary.totalCents))),
+   el('span',{class:'trip-count'},summary.count+' '+(summary.count===1?'viaggio':'viaggi'))),
+  el('div',{class:'overview-bottom'},
+   el('div',{},'TRASFERTE',el('strong',{},D.formatMoney(summary.pickupCents))),
+   el('div',{},'SERVIZI EXTRA',el('strong',{},D.formatMoney(summary.extraCents))))));
+ if(counts.unpriced)main.append(el('button',{type:'button',class:'register-alert-action',
+  on:{click:()=>openFilter('unpriced')}},icon('info'),
+  counts.unpriced+' '+(counts.unpriced===1?'viaggio con tariffe da verificare':'viaggi con tariffe da verificare'),
+  el('span',{},'Mostra')));
+ if(trips.some(trip=>D.saturdayAllowanceStatus(trip,amountContext).status==='included'))
+  main.append(el('p',{class:'saturday-summary-note'},'SABATO TRASFERTA è conteggiato una sola volta per data. Le trasferte di tutti i viaggi si sommano.'));
  const pdf=el('button',{type:'button',class:'pdf-button',disabled:!trips.length,on:{click:async()=>{
-  pdf.disabled=true;try{
-   const module=await import('/LTS-Registro-Viaggi/shared/pdf.mjs');const logo=await module.loadPdfLogo();pdfReport=module.generateMonthlyPdf({state,month,logoDataUrl:logo});render();toast('PDF pronto: aprilo o condividilo.');
+  pdf.disabled=true;
+  try{
+   const module=await import('/LTS-Registro-Viaggi/shared/pdf.mjs');const logo=await module.loadPdfLogo();
+   pdfReport=module.generateMonthlyPdf({state,month,logoDataUrl:logo});
+   render();toast('PDF del mese pronto: aprilo o condividilo.');
   }catch(err){toast(err.message||'Impossibile creare il PDF.',true);pdf.disabled=false;}
- }}},icon('pdf'),'Genera PDF');
- main.append(el('div',{class:'month-row'},el('h2',{},'Viaggi del mese'),pdf));
- if(pdfReport){const report=pdfReport;main.append(el('div',{class:'panel pdf-ready'},icon('pdf'),el('p',{},'Il tuo resoconto è pronto',el('small',{},`${report.pages} ${report.pages===1?'pagina':'pagine'} · senza importi`)),button('Apri / condividi','secondary',async()=>{try{const module=await import('/LTS-Registro-Viaggi/shared/pdf.mjs');await module.shareOrDownloadPdf(report);}catch(err){if(err.name!=='AbortError')toast(err.message||'Impossibile aprire il PDF.',true);}},'share')));}
- if(trips.length)main.append(el('div',{class:'trip-list',style:pdfReport?'margin-top:16px':''},trips.map(trip=>tripCard(trip,amountContext))));
- else main.append(emptyState('Il mese è tutto da scrivere','Qui compariranno i viaggi inseriti per il mese selezionato.','calendar',button('Inserisci un viaggio','primary',()=>navigate('insert'),'plus')));
- main.append(el('p',{class:'subtle-footer'},'Scorri liberamente: tutti i viaggi del mese sono qui.'));
+ }}},icon('pdf'),'PDF del mese');
+ main.append(el('div',{class:'month-row register-month-row'},
+  el('h2',{id:'register-list-title'},'Viaggi del mese'),
+  el('div',{class:'register-header-actions'},
+   button('Nuovo viaggio','secondary',()=>navigate('insert'),'plus',{class:'secondary-button'}),
+   pdf)));
+ if(pdfReport){
+  const report=pdfReport;
+  main.append(el('div',{class:'panel pdf-ready'},icon('pdf'),
+   el('p',{},'Il tuo resoconto è pronto',
+    el('small',{},report.pages+' '+(report.pages===1?'pagina':'pagine')+' · senza importi')),
+   button('Apri / condividi','secondary',async()=>{
+    try{const module=await import('/LTS-Registro-Viaggi/shared/pdf.mjs');await module.shareOrDownloadPdf(report);}
+    catch(err){if(err.name!=='AbortError')toast(err.message||'Impossibile aprire il PDF.',true);}
+   },'share')));
+ }
+ if(lastDeletedTrip&&lastDeletedTrip.owner===user?.id){
+  main.append(el('section',{class:'register-undo-banner',role:'status'},
+   el('div',{},el('strong',{},'Ultima eliminazione: '+lastDeletedTrip.trip.container),
+    el('p',{},'Puoi ripristinare il viaggio eliminato, con gli importi originali.')),
+   button('Annulla eliminazione','secondary',async()=>{
+    try{await undoLastDeletedTrip();}
+    catch(error){toast(error.message||'Ripristino non riuscito.',true);}
+   },'refresh',{class:'secondary-button register-undo-button'})));
+ }
+ // Filtering only changes the view; it never changes the archived journeys.
+ const searchWrap=el('div',{class:'register-search-wrap'},icon('search'));
+ let registerSearchInput=null;
+ const search=el('input',{id:'register-search',type:'search',value:registerQuery,
+  placeholder:'Container, cliente, località, data o nota',
+  maxlength:120,autocapitalize:'characters',autocomplete:'off',
+  'aria-label':'Cerca tra i viaggi del mese',
+  on:{input:event=>{registerQuery=event.target.value;registerLimit=REGISTER_PAGE_SIZE;updateRegisterList();}}});
+ registerSearchInput=search;
+ const clear=el('button',{type:'button',class:'register-clear',hidden:!registerQuery,
+  'aria-label':'Cancella ricerca',
+  on:{click:()=>{registerQuery='';search.value='';registerLimit=REGISTER_PAGE_SIZE;updateRegisterList();search.focus();}}},'Cancella');
+ searchWrap.append(search,clear);
+ const filterLabels=[['all','Tutti'],['unpriced','Tariffe mancanti'],['second','Seconda presa'],['extras','Servizi extra']];
+ const filterButtons=new Map();
+ const filterWrap=el('div',{class:'register-filter-row',role:'group','aria-label':'Filtra i viaggi'},
+  filterLabels.map(([key,label])=>{
+   const node=el('button',{type:'button',class:'register-filter'+(registerFilter===key?' active':''),
+    'aria-pressed':String(registerFilter===key),
+    on:{click:()=>{registerFilter=key;registerLimit=REGISTER_PAGE_SIZE;updateRegisterList();}}},
+    label+' ('+counts[key]+')');
+   filterButtons.set(key,node);return node;
+  }));
+ const count=el('p',{class:'register-result-count',role:'status','aria-live':'polite'});
+ const list=el('div',{class:'trip-list register-trip-list','aria-label':'Elenco viaggi del mese'});
+ const more=el('button',{type:'button',class:'secondary-button register-load-more',hidden:true,
+  on:{click:()=>{registerLimit+=REGISTER_PAGE_SIZE;updateRegisterList();}}},'Mostra altri viaggi');
+ const tools=el('section',{class:'register-tools','aria-label':'Ricerca e filtri registro'},searchWrap,filterWrap,count);
+ main.append(tools,list,more,el('p',{class:'register-pdf-hint'},'Il PDF include tutti i viaggi del mese, anche quando applichi una ricerca o un filtro.'));
+ function updateRegisterList(){
+  for(const [key,node] of filterButtons){
+   const active=registerFilter===key;
+   node.classList.toggle('active',active);node.setAttribute('aria-pressed',String(active));
+  }
+  clear.hidden=!registerQuery;
+  const matches=filterRegisterTrips(trips,{query:registerQuery,filter:registerFilter,amountContext});
+  const page=paginateRegisterTrips(matches,registerLimit);
+  count.textContent=matches.length+' '+(matches.length===1?'viaggio trovato':'viaggi trovati')+
+   (matches.length<counts.all?' su '+counts.all+' del mese':'');
+  if(!trips.length){
+   list.replaceChildren(emptyState('Il mese è tutto da scrivere',
+    'Qui compariranno i viaggi inseriti per il mese selezionato.','calendar',
+    button('Inserisci un viaggio','primary',()=>navigate('insert'),'plus')));
+  }else if(!matches.length){
+   list.replaceChildren(emptyState('Nessun viaggio trovato',
+    'Modifica la ricerca o scegli un altro filtro. I dati originali non cambiano.','search'));
+  }else{
+   list.replaceChildren(...page.visible.map(trip=>tripCard(trip,amountContext)));
+  }
+  more.hidden=!page.hasMore;
+  more.textContent='Mostra altri '+Math.min(REGISTER_PAGE_SIZE,page.total-page.visible.length)+
+    ' · '+page.visible.length+' di '+page.total;
+ }
+ updateRegisterList();
+ refreshView=()=>{if(tab==='register')render();};
+
 }
 function searchBox(placeholder,onSearch){const input=el('input',{type:'search',placeholder,value:searchValue,'aria-label':placeholder,autocapitalize:'characters',on:{input:event=>{searchValue=event.target.value;onSearch();}}});return el('div',{class:'search'},icon('search'),input);}
 /** Compact customer cards: operational notes and tariff values are kept out of this list. */
