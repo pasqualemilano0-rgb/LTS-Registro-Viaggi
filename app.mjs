@@ -621,11 +621,13 @@ function renderInsert(main){
   if(duplicate)warnings.push('Esiste già un viaggio del '+formatDate(duplicate.date)+' con questo container, cliente e località.');
   if(missingEstimateTariffs)warnings.push('Una o più tariffe aziendali non sono disponibili: il totale mostrato è parziale.');
   const commit=async()=>{
+  let attemptedTrip=null;
   save.disabled=true;
   try{
    const existing=state.trips.find(t=>t.id===editingId)||null;
    if(editingId&&tripEditVersion(existing)!==editingBaseline)throw new Error('Il viaggio è stato aggiornato o eliminato su un altro dispositivo. La bozza è conservata: annulla la modifica e riapri il viaggio aggiornato dal Registro.');
    const trip=D.createTrip(draft,{...state,tariffs:[]},existing);
+   attemptedTrip=trip;
    const sameFirst=Boolean(existing&&D.normalizeText(existing.client)===trip.client&&D.normalizeText(existing.city)===trip.city);
    const sameSecond=Boolean(existing&&D.normalizeText(existing.secondClient)===trip.secondClient&&D.normalizeText(existing.secondCity)===trip.secondCity);
    trip.fareCents=companyFareSnapshot(companyRates,companyRatesLoaded,trip.client,trip.city,{unchanged:sameFirst,previous:existing?.fareCents});
@@ -646,7 +648,19 @@ function renderInsert(main){
    try{await store.clearTripEditorDraft();}catch{tripDraftRecoveryMessage='Il viaggio è salvato, ma la vecchia bozza locale non è stata cancellata. Controlla prima di inserire un altro viaggio.';}
    render();
    toast(pending?'Viaggio salvato sul dispositivo. Sincronizzazione online in attesa.':(existing?'Viaggio aggiornato e sincronizzato.':'Viaggio salvato e sincronizzato.'));
-  }catch(err){error.textContent=err.message||'Salvataggio non riuscito. Riprova.';save.disabled=false;throw err;}
+  }catch(err){
+   if(err.pendingState&&attemptedTrip&&state.trips.some(saved=>saved.id===attemptedTrip.id)){
+    // The local outbox already contains this trip; a retry must EDIT it,
+    // not create a duplicate when the online revision is in conflict.
+    editingId=attemptedTrip.id;
+    editingBaseline=tripEditVersion(attemptedTrip);
+    keepEditorScratchpad();
+    error.textContent='Viaggio già conservato sul dispositivo. Non inserirlo di nuovo: apri Profilo e risolvi la sincronizzazione prima di riprovare.';
+    const title=form.querySelector('.insert-hero h1');if(title)title.textContent='Modifica viaggio';
+    if(save.lastChild?.nodeType===Node.TEXT_NODE)save.lastChild.textContent='Salva modifiche';
+   }else error.textContent=err.message||'Salvataggio non riuscito. Riprova.';
+   save.disabled=false;throw err;
+  }
   };
   if(warnings.length)confirmAction('Controlla il viaggio',warnings.join(' ')+ ' Vuoi salvare comunque?',commit,'Conferma e salva');
   else try{await commit();}catch{ /* Il messaggio resta nel modulo, senza perdere i dati. */ }
