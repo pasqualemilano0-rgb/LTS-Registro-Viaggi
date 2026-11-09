@@ -112,7 +112,9 @@ export function applyAdminRecordEdit(raw,{action,category,id,patch={},restoreRec
     // Keep linked legacy personal tariffs referentially valid; retain their amounts.
     state.tariffs=state.tariffs.map(t=>t.customerId===key?{...t,client:normalizeText(after.name)}:t);
    }
-   if(category==='customer'&&updateLinkedTrips){
+   if(category==='customer'&&updateLinkedTrips&&
+      (normalizeText(original.name)!==normalizeText(after.name)||
+       normalizeText(original.city)!==normalizeText(after.city))){
     const oldName=normalizeText(original.name),oldCity=normalizeText(original.city);
     if(!oldName||!oldCity)throw new Error('La scheda originale deve avere nome e località per collegare i viaggi.');
     const nextName=normalizeText(after.name),nextCity=normalizeText(after.city);
@@ -132,6 +134,8 @@ export function applyAdminRecordEdit(raw,{action,category,id,patch={},restoreRec
  const checked=validateState(state);
  const checkAfter=after?checked[name].find(x=>x.id===key):null;
  return {state:checked,before,after:checkAfter||null,
-  affectedTrips:category==='customer'&&updateLinkedTrips?
+  affectedTrips:category==='customer'&&updateLinkedTrips&&
+  (normalizeText(original?.name)!==normalizeText(after?.name)||
+   normalizeText(original?.city)!==normalizeText(after?.city))?
    linkedCustomerTripCount(raw,original):0};
 }
