@@ -29,7 +29,7 @@ export function findLatest(runs,predicate) {
 }
 
 // Optional on-device notifications only while this page is open.
-// Background alerts are provided separately by the user's ChatGPT automation.
+// Background alerts are provided separately by the user's monitor esterno automation.
 const ALERT_ENABLED_KEY='lts-control-local-alerts-v1';
 const LAST_ALERT_KEY='lts-control-last-alert-v1';
 const STATUS_URL='/LTS-Registro-Viaggi/status/';
@@ -74,15 +74,15 @@ function refreshAlertButton() {
   if (!button||!hint) return;
   if (!('Notification' in window) || !('serviceWorker' in navigator)) {
     button.disabled=true;
-    hint.textContent='Questo browser non supporta gli avvisi locali. Usa le notifiche ChatGPT per gli avvisi in background.';
+    hint.textContent='Questo browser non supporta gli avvisi locali. Usa le notifiche del monitor esterno per gli avvisi in background.';
     return;
   }
   const enabled=storageRead(ALERT_ENABLED_KEY)==='yes' && Notification.permission==='granted';
   button.textContent=enabled?'Disattiva avvisi locali':'Attiva avvisi locali';
   button.setAttribute('aria-pressed',String(enabled));
-  if(enabled) hint.textContent='Avvisi locali attivi mentre il pannello è aperto. A pannello chiuso usa gli avvisi ChatGPT.';
-  else if(Notification.permission==='denied') hint.textContent='Notifiche bloccate nel browser: riabilitale dalle impostazioni del sito. A pannello chiuso usa ChatGPT.';
-  else hint.textContent='Gli avvisi locali funzionano solo mentre il pannello è aperto. Per avvisi a pannello chiuso usa ChatGPT.';
+  if(enabled) hint.textContent='Avvisi locali attivi mentre il pannello è aperto. A pannello chiuso usa gli avvisi del monitor esterno.';
+  else if(Notification.permission==='denied') hint.textContent='Notifiche bloccate nel browser: riabilitale dalle impostazioni del sito. A pannello chiuso usa monitor esterno.';
+  else hint.textContent='Gli avvisi locali funzionano solo mentre il pannello è aperto. Per avvisi a pannello chiuso usa monitor esterno.';
 }
 async function initPWA() {
   const install=document.getElementById('install-pwa');
