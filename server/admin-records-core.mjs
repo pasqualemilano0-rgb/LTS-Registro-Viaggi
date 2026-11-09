@@ -149,8 +149,13 @@ async function mutate(admin,actorId,input){
  try{patched=applyAdminRecordEdit(current.state,{
   action:operation,category,id,patch:input.patch||{},restoreRecord:restored,updateLinkedTrips
  });}catch(error){throw {status:400,error:error.message||'Dati da modificare non validi.'};}
- const auditReason=updateLinkedTrips&&patched.affectedTrips>0?
-  (reason?reason+' · ':'')+'Modificati '+patched.affectedTrips+' viaggi collegati':reason;
+ const auditDetails=[
+  ...(updateLinkedTrips&&patched.affectedTrips>0?
+   ['Modificati '+patched.affectedTrips+' viaggi collegati']:[]),
+  ...(patched.preservedLegacyTariffs>0?
+   [patched.preservedLegacyTariffs+' tariffe storiche conservate separate']:[])
+ ];
+ const auditReason=[reason,...auditDetails].filter(Boolean).join(' · ');
  if(auditReason.length>500)throw {status:400,error:'Motivo della modifica troppo lungo.'};
  const {data,error}=await admin.rpc('lts_admin_archive_commit',{
   p_actor_id:actorId,p_driver_id:driverId,p_expected_revision:current.revision,
@@ -165,7 +170,8 @@ async function mutate(admin,actorId,input){
   throw {status:503};
  }
  if(!Number.isSafeInteger(data)||data!==current.revision+1)throw {status:503};
- return {revision:data,state:patched.state,affectedTrips:patched.affectedTrips||0};
+ return {revision:data,state:patched.state,affectedTrips:patched.affectedTrips||0,
+  preservedLegacyTariffs:patched.preservedLegacyTariffs||0};
 }
 export async function handleAdminRecords(req,{getClients}={}){
  const origin=req.headers.get('Origin');
