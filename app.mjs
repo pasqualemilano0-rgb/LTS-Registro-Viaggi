@@ -16,6 +16,7 @@ import {dedupedCustomerDirectory,matchingSharedCustomer,canonicalPersonalCustome
 import {combinedTripCustomerChoices,filterTripCustomerChoices} from '/LTS-Registro-Viaggi/shared/trip-customer-choices.mjs';
 import { appendPushSettings } from '/LTS-Registro-Viaggi/push-client.mjs';
 import { parseCustomerCsv, mergeCustomerCsv, exportCustomerCsv, MAX_CUSTOMER_CSV_BYTES } from '/LTS-Registro-Viaggi/shared/customer-csv.mjs';
+import {restoreDeletedPersonalCustomer,customerCsvChanges} from '/LTS-Registro-Viaggi/shared/customer-quality.mjs';
 
 const root = document.querySelector('#app');
 const today = () => { const now = new Date(); return `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`; };
@@ -38,6 +39,7 @@ let tariffTab = 'base';
 let month = today().slice(0,7);
 let registerQuery='',registerFilter='all',registerLimit=REGISTER_PAGE_SIZE;
 let lastDeletedTrip=null;
+let lastDeletedCustomer=null;
 let editingId = null;
 let editingBaseline = null;
 let draft = newDraft();
@@ -981,7 +983,7 @@ function customerCard(customer,{shared=false}={}){
 }
 function renderCustomers(main){
  main.append(heading('LA TUA RUBRICA','Clienti','Cerca una sede o scegli un cliente per il prossimo viaggio.'));
- main.append(companyCustomersPanel());
+ main.append(customerUndoAction(),companyCustomersPanel());
  refreshView=()=>updateCompanyCustomersPanel();
 }
 function renderTariffs(main){
@@ -1124,12 +1126,34 @@ async function importCustomersCsv(file){
   if(file.size>MAX_CUSTOMER_CSV_BYTES)throw new Error('Il CSV non deve superare 2 MB.');
   let text;try{text=new TextDecoder('utf-8',{fatal:true}).decode(await file.arrayBuffer());}catch{throw new Error('Salva il CSV in formato UTF-8 e riprova.');}
   const rows=parseCustomerCsv(text);const preview=mergeCustomerCsv(state,rows);
+  const changes=customerCsvChanges(state.customers,rows);
   const {dialog,body}=modal('Importa clienti CSV',{subtitle:`${preview.count} clienti nel file: ${preview.added} nuovi, ${preview.updated} da aggiornare.`});
-  body.append(el('p',{class:'profile-description'},'Vengono aggiornati solo i campi compilati dei clienti con lo stesso nome. Gli altri clienti, le tariffe e i viaggi restano conservati.'),el('ul',{class:'csv-preview'},rows.slice(0,5).map(row=>el('li',{},el('strong',{},row.name),el('span',{},[row.city,row.address].filter(Boolean).join(' · '))))));
+  body.append(el('p',{class:'profile-description'},'Vengono aggiornati solo i campi compilati dei clienti con lo stesso nome. Gli altri clienti, le tariffe e i viaggi restano conservati.'),
+   el('p',{class:'customer-csv-diff'},changes.total?changes.total+' clienti con modifiche effettive: '+changes.shown.map(change=>change.name+' ('+(change.kind==='new'?'nuovo':change.fields.join(', '))+')').join('; ')+(changes.total>changes.shown.length?' · altri '+(changes.total-changes.shown.length):''):'Nessuna modifica effettiva ai clienti esistenti.'),el('ul',{class:'csv-preview'},rows.slice(0,5).map(row=>el('li',{},el('strong',{},row.name),el('span',{},[row.city,row.address].filter(Boolean).join(' · '))))));
   if(rows.length>5)body.append(el('p',{class:'field-hint'},`E altri ${rows.length-5} record nel file.`));
   const error=el('div',{class:'form-error',role:'alert'});const confirm=button('Importa clienti','primary',async()=>{confirm.disabled=true;error.textContent='';try{const next=mergeCustomerCsv(state,rows);await persist(next.state);dialog.close();render();toast(`${next.count} clienti controllati: rubrica aggiornata.`);}catch(err){error.textContent=err.message;confirm.disabled=false;}});
   body.append(error,el('div',{class:'dialog-actions'},button('Annulla','secondary',()=>dialog.close()),confirm));
  }catch(err){toast(err.message||'Impossibile leggere il CSV.',true);}
+}
+/** A short-lived, account-scoped undo. Never restores a company customer. */
+async function undoLastDeletedCustomer(){
+ const snapshot=lastDeletedCustomer;
+ if(!snapshot||snapshot.owner!==accountAccess.getAccountId()||
+  !store.usingAccount()||!accountAccess.isVerified()){
+  lastDeletedCustomer=null;toast('Ripristino non disponibile per questo account.',true);return;
+ }
+ try{
+  const next=restoreDeletedPersonalCustomer(state,snapshot.customer,snapshot.tariffs);
+  await persist(D.validateState(next));
+  lastDeletedCustomer=null;render();toast('Cliente personale e relative tariffe ripristinati.');
+ }catch(error){toast(error.message||'Impossibile ripristinare il cliente.',true);}
+}
+function customerUndoAction(){
+ if(!lastDeletedCustomer||lastDeletedCustomer.owner!==accountAccess.getAccountId()||
+  !store.usingAccount()||!accountAccess.isVerified())return null;
+ return el('div',{class:'customer-undo-bar',role:'status'},
+  el('span',{},'Cliente eliminato: '+lastDeletedCustomer.customer.name),
+  button('Annulla eliminazione','secondary',()=>{void undoLastDeletedCustomer();},'refresh'));
 }
 function customerDialog(customer=null,proposal=null,{focusRates=false}={}){
  // The directory decorates its personal rows for rendering. Resolve the
@@ -1158,7 +1182,12 @@ function customerDialog(customer=null,proposal=null,{focusRates=false}={}){
  form.append(el('p',{class:'info-note'},icon('lock'),'Le trasferte sono uguali per tutti gli autisti e si modificano solo dal tariffario aziendale.'));
  const actions=el('div',{class:'dialog-actions'});
  if(customer)actions.append(button('Elimina','secondary danger',()=>{
-  dialog.close();confirmAction('Eliminare questo cliente?',`${customer.name}. Verranno rimosse solo le sue tariffe personali. I viaggi già salvati e il tariffario aziendale rimarranno invariati.`,async()=>{requireCurrentEditor(expectedCustomer,state.customers.find(current=>current.id===customer.id),'Il cliente');await persist({...state,customers:state.customers.filter(c=>c.id!==customer.id),tariffs:state.tariffs.filter(t=>t.customerId!==customer.id&&t.client!==customer.name)});render();toast('Cliente eliminato.');});
+  dialog.close();confirmAction('Eliminare questo cliente?',`${customer.name}. Verranno rimosse solo le sue tariffe personali. I viaggi già salvati e il tariffario aziendale rimarranno invariati.`,async()=>{requireCurrentEditor(expectedCustomer,state.customers.find(current=>current.id===customer.id),'Il cliente');const deletedCustomer={...customer};
+   const deletedTariffs=state.tariffs.filter(t=>t.customerId===customer.id||t.client===customer.name).map(t=>({...t}));
+   const owner=accountAccess.getAccountId();
+   await persist({...state,customers:state.customers.filter(c=>c.id!==customer.id),tariffs:state.tariffs.filter(t=>t.customerId!==customer.id&&t.client!==customer.name)});
+   lastDeletedCustomer={customer:deletedCustomer,tariffs:deletedTariffs,owner};
+   render();toast('Cliente eliminato. Puoi annullare dalla sezione Clienti.');});
  }));
  actions.append(el('button',{type:'submit',class:'primary-button','data-save':true},'Salva cliente'));form.append(actions);
  form.addEventListener('submit',async event=>{event.preventDefault();error.textContent='';try{
