@@ -38,11 +38,12 @@ let month = today().slice(0,7);
 let editingId = null;
 let editingBaseline = null;
 let draft = newDraft();
+let draftBaselineDate=draft.date;
 let tripDraftRecoveryMessage='';
 function editorDraftSnapshot(){return {version:TRIP_DRAFT_VERSION,draft:structuredClone(draft),editingId,editingBaseline};}
 function saveEditorScratchpad(){
  if(!store.usingAccount()||!accountAccess.isVerified())return Promise.resolve();
- const action=tripDraftHasWork(draft,editingId,today())?
+ const action=tripDraftHasWork(draft,editingId,draftBaselineDate)?
   store.saveTripEditorDraft(editorDraftSnapshot()):store.clearTripEditorDraft();
  return action.catch(error=>{
   const node=document.querySelector('#trip-draft-state');
@@ -59,7 +60,7 @@ async function recoverEditorScratchpad(){
   const recovered=restoreTripEditorSnapshot(snapshot,state.trips);
   if(!recovered)return;
   if(!tripDraftHasWork(recovered.draft,recovered.editingId,today()))return;
-  draft=recovered.draft;editingId=recovered.editingId;editingBaseline=recovered.editingBaseline;
+  draftBaselineDate=today();draft=recovered.draft;editingId=recovered.editingId;editingBaseline=recovered.editingBaseline;
   tripDraftRecoveryMessage=recovered.removedEdit?
    'La versione originale del viaggio non è più presente. I dati sono stati recuperati come nuovo viaggio: controllali prima di salvare.':
    'Bozza recuperata dal dispositivo. Controlla e salva quando sei pronto.';
@@ -227,7 +228,7 @@ function unmountPorti(){
  portiFrame.src='about:blank';portiFrame.remove();portiFrame=null;
 }
 function navigate(next,{keepDraft=false}={}){
- if(next!==tab&&tab==='insert'&&!keepDraft&&tripDraftHasWork(draft,editingId,today())){
+ if(next!==tab&&tab==='insert'&&!keepDraft&&tripDraftHasWork(draft,editingId,draftBaselineDate)){
   if(busy){toast('Attendi la fine del salvataggio prima di uscire.',true);return;}
   confirmAction('Uscire dal viaggio?',
    'Ci sono dati non salvati nel Registro. Conservali sul dispositivo per riprendere la compilazione più tardi.',
@@ -278,7 +279,7 @@ function receiveState(record,{source}={}){
  const changedIdentity=Boolean(user?.id&&record.user?.id!==user.id);
  const previous=state;state=D.validateState(record.state);refreshDraftCustomers(previous,state);user=record.user||null;pdfReport=null;
  if(changedIdentity){
-  draft=newDraft();editingId=null;editingBaseline=null;tripDraftRecoveryMessage='';document.querySelectorAll('dialog').forEach(dialog=>dialog.close());render();
+  draft=newDraft();draftBaselineDate=draft.date;editingId=null;editingBaseline=null;tripDraftRecoveryMessage='';document.querySelectorAll('dialog').forEach(dialog=>dialog.close());render();
   // initialize() owns first-time account onboarding. Avoid opening two
   // profile dialogs after switching from a legacy device archive.
   if(source!=='account'&&(!state.profile.firstName||!state.profile.lastName))openProfile(true);
@@ -482,7 +483,7 @@ function renderInsert(main){
  if(tripDraftRecoveryMessage){form.append(el('p',{class:'trip-recovery-notice',role:'status'},tripDraftRecoveryMessage));tripDraftRecoveryMessage='';}
  if(editingId)form.append(el('div',{class:'editing-banner'},'Stai modificando un viaggio',el('button',{type:'button',class:'remove-button',on:{click:()=>confirmAction('Annullare la modifica?',
   'Le modifiche non ancora salvate saranno eliminate. Il viaggio già registrato non verrà cambiato.',
-  async()=>{editingId=null;editingBaseline=null;draft=newDraft();await saveEditorScratchpad();render();},'Scarta la bozza')}},'Annulla')));
+  async()=>{editingId=null;editingBaseline=null;draft=newDraft();draftBaselineDate=draft.date;await saveEditorScratchpad();render();},'Scarta la bozza')}},'Annulla')));
  const date=field('Data','date',draft.date,{type:'date',required:true,min:'1900-01-01',max:'2199-12-31'});
  date.wrap.classList.add('date-capsule');
  const dateCaptionText=el('span',{},'Data');
@@ -638,7 +639,7 @@ function renderInsert(main){
    await persist(next);
    const pending=store.getSyncInfo?.().pending;
    const savedDate=draft.date;
-   editingId=null;editingBaseline=null;draft={...newDraft(),date:savedDate};
+   editingId=null;editingBaseline=null;draft={...newDraft(),date:savedDate};draftBaselineDate=savedDate;
    try{await store.clearTripEditorDraft();}catch{tripDraftRecoveryMessage='Il viaggio è salvato, ma la vecchia bozza locale non è stata cancellata. Controlla prima di inserire un altro viaggio.';}
    render();
    toast(pending?'Viaggio salvato sul dispositivo. Sincronizzazione online in attesa.':(existing?'Viaggio aggiornato e sincronizzato.':'Viaggio salvato e sincronizzato.'));
@@ -681,7 +682,7 @@ function editTrip(trip,{focusNote=false}={}){
   keepEditorScratchpad();navigate('insert',{keepDraft:true});
   if(focusNote)document.querySelector('#trip-note')?.focus();
  };
- if(tripDraftHasWork(draft,editingId,today())&&editingId!==trip.id)
+ if(tripDraftHasWork(draft,editingId,draftBaselineDate)&&editingId!==trip.id)
   confirmAction('Sostituire la bozza corrente?','Stai per aprire la modifica di un altro viaggio. La bozza attuale sarà sostituita.',apply,'Apri modifica');
  else apply();
 }
@@ -1192,7 +1193,7 @@ async function importFile(file){
         throw new Error('Il registro è cambiato durante l’anteprima. Riapri Importa backup per evitare di perdere modifiche.');
       const combined=unionStates(D.validateState(state),imported,{prefer:null});
       await persist(combined);
-      draft=newDraft();editingId=null;editingBaseline=null;
+      draft=newDraft();draftBaselineDate=draft.date;editingId=null;editingBaseline=null;
       month=state.trips.length?D.sortTrips(state.trips)[0].date.slice(0,7):today().slice(0,7);
       dialog.close();navigate('register');
       toast('Backup unito. Verifica viaggi, clienti e tariffe dopo la sincronizzazione.');
@@ -1707,7 +1708,7 @@ function renderAccountGate(message=''){
      renderAccountGate('Sessione locale chiusa. Puoi accedere con un altro account.');
    },'log-out',{class:'secondary-button account-session-switch'})):null;
   // Never leave an authenticated profile, document or port iframe on screen.
-  unmountPorti();state=D.emptyState();user=null;draft=newDraft();
+  unmountPorti();state=D.emptyState();user=null;draft=newDraft();draftBaselineDate=draft.date;
   pdfReport=null;editingId=null;editingBaseline=null;busy=false;
   document.querySelectorAll('dialog[open]').forEach(node=>node.close());
   const gate=el('section',{class:'boot account-gate account-gate-premium'},
@@ -1887,7 +1888,8 @@ window.addEventListener('online',()=>realtimeBridge?.resume());
 window.addEventListener('focus',()=>realtimeBridge?.resume());
 window.addEventListener('offline',()=>realtimeBridge?.resume());
 document.addEventListener('visibilitychange',()=>realtimeBridge?.resume());
-window.addEventListener('beforeunload',event=>{if(busy){event.preventDefault();event.returnValue='';}});
+window.addEventListener('visibilitychange',()=>{if(document.hidden&&tripDraftHasWork(draft,editingId,draftBaselineDate))keepEditorScratchpad();});
+window.addEventListener('beforeunload',event=>{if(busy||tripDraftHasWork(draft,editingId,draftBaselineDate)){event.preventDefault();event.returnValue='';}});
 navigator.serviceWorker?.addEventListener('message',event=>{
  const data=event.data;
  if(data?.type!=='LTS_REMINDER_OPEN'||!['insert','register'].includes(data.section))return;
