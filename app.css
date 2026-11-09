@@ -757,3 +757,14 @@ h1,h2,h3{letter-spacing:-.035em}
  color:#16495a;font-size:12px;line-height:1.6;overflow-wrap:anywhere}
 @media(max-width:380px){.customer-undo-bar{align-items:stretch;flex-direction:column}
  .customer-undo-bar button{width:100%}}
+
+
+/* Accessible feedback for explicit customer refresh; never overlays the search input. */
+.customer-refresh-feedback{display:block;margin:4px 0 12px;padding:10px 12px;
+ background:#edf8fb;border:1px solid #c2e1e9;border-radius:10px;
+ color:#14576b;font-size:12px;font-weight:650;line-height:1.5;overflow-wrap:anywhere}
+.customer-refresh-feedback[hidden]{display:none}
+.company-customer-list button[aria-busy="true"]{opacity:.7;cursor:progress}
+.company-customer-list button[aria-busy="true"] .icon{animation:lts-refresh-spin 1.1s linear infinite}
+@keyframes lts-refresh-spin{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.company-customer-list button[aria-busy="true"] .icon{animation:none}}
