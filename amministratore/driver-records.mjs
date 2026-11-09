@@ -242,7 +242,7 @@ function personalCompanyPicker(form,{name,city,address,phone,vat,isDuplicate,lin
   ratesAcknowledged.name='confirmLinkedPersonalRates';
   confirmation.append(ratesAcknowledged,make('span','',
    'Questa scheda ha '+linkedRates+' tariffa/e personali collegate. '+
-   'Confermo che il nome di queste tariffe seguirà il nuovo cliente, ma gli importi non cambieranno.'));
+   'Confermo il cambio cliente: gli importi resteranno invariati. Se una tariffa con lo stesso nome e località esiste già, la precedente rimarrà separata come tariffa storica, senza cancellazioni.'));
  }
  const label=make('label','records-field records-site-search-label');
  label.append(make('span','','Cerca nell’elenco condiviso (nome, città o indirizzo)'));
@@ -404,6 +404,18 @@ export function setupDriverRecords(account){
  const notice=(message,problem=false)=>{
   status.textContent=message;status.classList.toggle('records-error',problem);
  };
+ // Confirmation stays visible at the bottom of the phone, unlike the
+ // archive status header located far above the save button.
+ const saveToast=make('div','records-save-toast');
+ saveToast.hidden=true;saveToast.setAttribute('role','status');
+ saveToast.setAttribute('aria-live','polite');
+ document.body.append(saveToast);
+ const showSaveToast=(message,problem=false)=>{
+  if(!authorized()||!panel.isConnected)return;
+  saveToast.textContent=message;
+  saveToast.classList.toggle('is-error',problem);
+  saveToast.hidden=false;
+ };
  // Only actual form values count as unsaved changes, not search suggestions.
  const formSnapshot=form=>JSON.stringify([...new FormData(form).entries()]);
  function canLeave(){
@@ -506,6 +518,7 @@ export function setupDriverRecords(account){
   $('records-revision').textContent=revision??'—';
  }
  function reset(){
+  saveToast.hidden=true;saveToast.textContent='';
   epoch++;writeSeq++;drivers=[];selectedId='';revision=null;state=null;audit=[];
   invalidateDerived();
   category='trip';busy=false;loading=false;desiredPhone='';visibleLimit=35;
@@ -844,8 +857,26 @@ export function setupDriverRecords(account){
   submit.type='submit';buttons.append(submit);
   const cancelButton=make('button','button outline','Annulla');cancelButton.type='button';
   cancelButton.addEventListener('click',()=>{if(canLeave())clearEditor();});buttons.append(cancelButton);form.append(buttons);
-  form.addEventListener('submit',event=>{
+  const feedback=make('p','records-save-feedback');
+  feedback.hidden=true;feedback.setAttribute('role','alert');
+  form.insertBefore(feedback,buttons);
+  const showFeedback=(message)=>{
+   feedback.textContent=message;feedback.hidden=false;
+   feedback.scrollIntoView({block:'nearest',behavior:'smooth'});
+   showSaveToast(message,true);
+  };
+  // Native invalid constraints suppress submit events. Tell the admin which
+  // field blocked saving; the browser's own tooltip is often off-screen.
+  form.addEventListener('invalid',event=>{
+   const control=event.target;
+   if(!(control instanceof HTMLElement))return;
+   const label=control.closest('label')?.querySelector('span')?.textContent||
+    control.getAttribute('aria-label')||control.name||'Campo';
+   showFeedback('Salvataggio non inviato: verifica «'+label+'».');
+  },true);
+  form.addEventListener('submit',async event=>{
    event.preventDefault();
+   feedback.hidden=true;saveToast.hidden=true;
    const input=name=>form.elements.namedItem(name);
    const patch={};
    try{
@@ -861,12 +892,15 @@ export function setupDriverRecords(account){
      for(const field of ['name','city','address','phone','vat'])patch[field]=input(field).value;
     }else patch.cents=price(input('cents').value);
     if(kind==='tariff'&&patch.cents===null)throw new Error('Inserisci un importo.');
-   }catch(error){notice(error.message,true);return;}
+   }catch(error){showFeedback(error.message);return;}
    const updateLinkedTrips=kind==='customer'&&Boolean(item)&&
     companyPicker?.updateLinkedTrips()===true;
-   void mutate({operation:item?'update':'create',category:kind,
+   const ok=await mutate({operation:item?'update':'create',category:kind,
     recordId:item?.id||crypto.randomUUID(),patch,reason:input('reason').value,
     updateLinkedTrips});
+   if(!ok&&form.isConnected)
+    showFeedback(status.textContent||'Salvataggio non riuscito. Controlla i dati e riprova.');
+   else if(ok)showSaveToast(status.textContent);
   });
   editor.append(form);editorBaseline=formSnapshot(form);
   if(kind==='customer'&&item){
@@ -936,8 +970,10 @@ export function setupDriverRecords(account){
    render();
    if(kind==='customer'&&category==='customer')void refreshShared();
    const updatedTrips=Number.isSafeInteger(r.affectedTrips)?r.affectedTrips:0;
+   const historic=Number.isSafeInteger(r.preservedLegacyTariffs)?r.preservedLegacyTariffs:0;
    notice('Modifica salvata online (revisione '+revision+')'+
     (updateLinkedTrips?' · '+updatedTrips+' viaggi collegati aggiornati.':'.')+
+    (historic?' · '+historic+' tariffa/e precedente/i conservata/e separata/e per evitare duplicati.':'')+
     ' L’autista la vedrà al prossimo aggiornamento online; lo storico rimane nell’audit.');
    return true;
   }catch(error){
