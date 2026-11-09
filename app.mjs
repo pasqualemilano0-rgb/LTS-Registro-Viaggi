@@ -332,7 +332,8 @@ async function refreshCompanyCustomers(){
  const owner=accountAccess.getAccountId(),request=++companyCustomersRequest;
  try{
   const customers=await sharedMapsCustomers();
-  if(owner!==accountAccess.getAccountId()||request!==companyCustomersRequest)return false;
+  if(owner!==accountAccess.getAccountId()||request!==companyCustomersRequest||
+     !store.usingAccount()||!accountAccess.isVerified())return false;
   const changed=!companyCustomersLoaded||JSON.stringify(companyCustomers)!==JSON.stringify(customers)||Boolean(companyCustomersError);
   companyCustomers=customers;
   companyCustomersLoaded=true;
@@ -359,7 +360,8 @@ async function refreshCompanyCustomers(){
   return true;
  }catch(error){
   // Keep the existing personal data and previously loaded shared suggestions.
-  if(owner!==accountAccess.getAccountId()||request!==companyCustomersRequest)return false;
+  if(owner!==accountAccess.getAccountId()||request!==companyCustomersRequest||
+     !store.usingAccount()||!accountAccess.isVerified())return false;
   companyCustomersError='Impossibile aggiornare l’elenco clienti aziendali. Verifica la connessione e riprova.';
   if(tab==='customers')updateCompanyCustomersPanel();
   return false;
@@ -444,7 +446,8 @@ function customerRefreshControl(label='Aggiorna'){
      'Impossibile aggiornare: verifica l’accesso all’account e la connessione Internet.';
    }
   }catch(error){
-   status.textContent=error?.message||'Impossibile aggiornare i clienti aziendali.';
+   // Keep backend and authentication errors out of the visible client directory.
+   status.textContent='Impossibile aggiornare i clienti aziendali. Verifica l’accesso e la connessione.';
   }finally{
    control.disabled=false;control.removeAttribute('aria-busy');
   }
