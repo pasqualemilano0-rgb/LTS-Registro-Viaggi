@@ -328,11 +328,11 @@ async function refreshCompanyRates({quiet=true}={}){
 }
 /** Read-only shared list. An unavailable network never unlocks an account. */
 async function refreshCompanyCustomers(){
- if(!sharedMapsEnabled()||!store.usingAccount()||!accountAccess.isVerified())return;
+ if(!sharedMapsEnabled()||!store.usingAccount()||!accountAccess.isVerified())return false;
  const owner=accountAccess.getAccountId(),request=++companyCustomersRequest;
  try{
   const customers=await sharedMapsCustomers();
-  if(owner!==accountAccess.getAccountId()||request!==companyCustomersRequest)return;
+  if(owner!==accountAccess.getAccountId()||request!==companyCustomersRequest)return false;
   const changed=!companyCustomersLoaded||JSON.stringify(companyCustomers)!==JSON.stringify(customers)||Boolean(companyCustomersError);
   companyCustomers=customers;
   companyCustomersLoaded=true;
@@ -356,11 +356,13 @@ async function refreshCompanyCustomers(){
     update(form.querySelector('#second-cities'),citySuggestions(second?.value||draft.secondClient));
    }
   }
- }catch{
+  return true;
+ }catch(error){
   // Keep the existing personal data and previously loaded shared suggestions.
-  if(owner!==accountAccess.getAccountId()||request!==companyCustomersRequest)return;
+  if(owner!==accountAccess.getAccountId()||request!==companyCustomersRequest)return false;
   companyCustomersError='Impossibile aggiornare l’elenco clienti aziendali. Verifica la connessione e riprova.';
   if(tab==='customers')updateCompanyCustomersPanel();
+  return false;
  }
 }
 /** Update only the company list, leaving the search field, caret and keyboard intact. */
@@ -422,8 +424,36 @@ function useCustomerInTrip(customer){
    apply,'Usa cliente');
  else apply();
 }
+/** Explicit refresh has visible success/failure feedback and cannot be double-submitted.
+ * Background refresh still updates suggestions without stealing input focus. */
+function customerRefreshControl(label='Aggiorna'){
+ const status=el('p',{class:'customer-refresh-feedback',role:'status','aria-live':'polite',hidden:true});
+ const control=button(label,'text',async()=>{
+  if(control.disabled)return;
+  control.disabled=true;
+  control.setAttribute('aria-busy','true');
+  status.hidden=false;status.textContent='Aggiornamento clienti aziendali in corso…';
+  try{
+   const ok=await refreshCompanyCustomers();
+   if(ok){
+    status.textContent=companyCustomers.length+' '+(companyCustomers.length===1?
+     'cliente aziendale aggiornato.':'clienti aziendali aggiornati.')+
+     ' Controllo completato: '+new Intl.DateTimeFormat('it-IT',{hour:'2-digit',minute:'2-digit'}).format(new Date())+'.';
+   }else{
+    status.textContent=companyCustomersError||
+     'Impossibile aggiornare: verifica l’accesso all’account e la connessione Internet.';
+   }
+  }catch(error){
+   status.textContent=error?.message||'Impossibile aggiornare i clienti aziendali.';
+  }finally{
+   control.disabled=false;control.removeAttribute('aria-busy');
+  }
+ },'refresh',{'aria-label':'Aggiorna clienti aziendali'});
+ return {control,status};
+}
 function companyCustomersPanel(){
  const panel=el('section',{class:'panel company-customer-list customer-hub','aria-label':'Elenco clienti'});
+ const customerRefresh=customerRefreshControl();
  const searchResults=()=>{
   const next=input.value;
   // On a new search always include both shared and personal customers.
@@ -469,8 +499,8 @@ function companyCustomersPanel(){
   el('div',{class:'customer-hub-heading'},
    el('div',{},el('h2',{},'Trova un cliente'),
     el('p',{class:'company-customer-help'},'Un elenco unico, con clienti aziendali e personali.')),
-   button('Aggiorna','text',()=>{void refreshCompanyCustomers();},'refresh',
-    {'aria-label':'Aggiorna clienti aziendali'})),
+   customerRefresh.control),
+  customerRefresh.status,
   el('div',{class:'company-customer-search'},icon('search'),input,clearSearch),
   scope,
   el('div',{class:'customer-hub-actions'},
