@@ -572,29 +572,46 @@ try{
  await page.waitForFunction(()=>!document.querySelector('#records-refresh').disabled);
  assert.equal(await page.locator('#records-revision').textContent(),'3');
  await page.locator('#records-list .records-card-actions button').first().click();
- // Compact page-native searchable customer picker.
+ // Shared company list is the default, with an explicit personal-customer switch.
  const primarySite=page.locator('#records-editor .records-site-picker').first();
  assert.equal(await primarySite.locator('select').count(),0);
  await page.waitForFunction(()=>!document.querySelector('.records-site-picker input[type=search]').disabled);
+ const scopes=primarySite.locator('.records-site-scope');
+ assert.equal(await scopes.filter({hasText:'Condivisi'}).getAttribute('aria-pressed'),'true');
+ await primarySite.locator('input[type="search"]').fill('CLIENTE');
+ assert.equal(await primarySite.locator('.records-site-option-source').filter({hasText:'Cliente autista'}).count(),0);
+ // Every row must have its natural height on a mobile viewport; no overlapping labels.
+ const placements=await primarySite.locator('.records-site-option').evaluateAll(elements=>
+  elements.map(element=>{const box=element.getBoundingClientRect();return {top:box.top,bottom:box.bottom};}));
+ for(let idx=1;idx<placements.length;idx++)
+  assert.ok(placements[idx].top>=placements[idx-1].bottom-1,'Shared customer choices may not overlap');
+ await scopes.filter({hasText:'Personali autista'}).click();
  await primarySite.locator('input[type="search"]').fill('CLIENTE AUTISTA');
  await primarySite.locator('.records-site-option').filter({hasText:'CLIENTE AUTISTA'}).click();
  assert.equal(await page.locator('#records-editor input[name="client"]').inputValue(),'CLIENTE AUTISTA');
  assert.equal(await page.locator('#records-editor input[name="city"]').inputValue(),'CASERTA');
- assert.equal(await page.locator('#records-editor input[name="fareCents"]').inputValue(),'');
+ assert.equal(await page.locator('#records-editor input[name="fareCents"]').inputValue(),'150,00',
+  'Changing an existing trip customer must not erase its previous fare');
+ await scopes.filter({hasText:'Condivisi'}).click();
  await primarySite.locator('input[type="search"]').fill('CLIENTE MANUALE');
  await primarySite.locator('.records-site-option').filter({hasText:'CLIENTE MANUALE'}).click();
  assert.equal(await page.locator('#records-editor input[name="client"]').inputValue(),'CLIENTE MANUALE');
  assert.equal(await page.locator('#records-editor input[name="city"]').inputValue(),'AVELLINO');
- assert.equal(await page.locator('#records-editor input[name="fareCents"]').inputValue(),'76,00');
+ assert.equal(await page.locator('#records-editor input[name="fareCents"]').inputValue(),'150,00');
+ await primarySite.locator('.records-site-apply-fare').click();
+ assert.equal(await page.locator('#records-editor input[name="fareCents"]').inputValue(),'76,00',
+  'A new company rate is only applied after an explicit action');
  await primarySite.locator('input[type="search"]').fill('CLIENTE BETA');
  await primarySite.locator('.records-site-option').filter({hasText:'CLIENTE BETA'}).click();
  assert.equal(await page.locator('#records-editor input[name="client"]').inputValue(),'CLIENTE BETA');
  assert.equal(await page.locator('#records-editor input[name="city"]').inputValue(),'SALERNO');
- assert.equal(await page.locator('#records-editor input[name="fareCents"]').inputValue(),'');
+ assert.equal(await page.locator('#records-editor input[name="fareCents"]').inputValue(),'76,00');
  await primarySite.locator('input[type="search"]').fill('CLIENTE ALFA');
  await primarySite.locator('.records-site-option').filter({hasText:'CLIENTE ALFA'}).click();
  assert.equal(await page.locator('#records-editor input[name="client"]').inputValue(),'CLIENTE ALFA');
  assert.equal(await page.locator('#records-editor input[name="city"]').inputValue(),'NAPOLI');
+ assert.equal(await page.locator('#records-editor input[name="fareCents"]').inputValue(),'76,00');
+ await primarySite.locator('.records-site-apply-fare').click();
  assert.equal(await page.locator('#records-editor input[name="fareCents"]').inputValue(),'150,00');
  await page.locator('#records-editor textarea[name="note"]').fill('BOZZA NON SALVATA');
  await page.locator('#records-search').fill('NESSUN RISULTATO');

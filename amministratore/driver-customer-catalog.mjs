@@ -31,3 +31,21 @@ export function buildDriverCustomerCatalog({sharedSites=[],companyRates=[],perso
   a.city.localeCompare(b.city,'it')||order[a.source]-order[b.source]||
   a.address.localeCompare(b.address,'it'));
 }
+
+/** Filter by origin while preserving distinct shared depots and safe manual search.
+ * "shared" includes Google Maps and company/manual entries; never includes
+ * the driver's own private customers, even when names look similar.
+ */
+export function filterDriverCustomerCatalog(sites,{scope='shared',query=''}={}){
+ const normal=value=>String(value??'').normalize('NFD')
+  .replace(/[\u0300-\u036f]/g,'').toLocaleUpperCase('it-IT').trim();
+ const words=normal(query).split(/\s+/u).filter(Boolean);
+ if(!['shared','personal','all'].includes(scope))return [];
+ return (Array.isArray(sites)?sites:[]).filter(site=>{
+  if(!site||!['maps','company','personal'].includes(site.source))return false;
+  if(scope==='shared'&&site.source==='personal')return false;
+  if(scope==='personal'&&site.source!=='personal')return false;
+  const haystack=normal([site.name,site.city,site.address].join(' '));
+  return words.every(word=>haystack.includes(word));
+ });
+}

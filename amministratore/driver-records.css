@@ -114,3 +114,33 @@
 .records-private-note{grid-column:1/-1;margin:0;padding:12px 14px;border:1px solid #c9e1e7;
  border-radius:11px;background:#edf7f9;color:#285b69;font-size:12px;line-height:1.55;font-weight:650}
 .records-card-actions button[aria-label^="Modifica Cliente personale"]{min-height:46px}
+
+/* Mobile fix: list rows have intrinsic height, never compressed into overlapping grid tracks. */
+.records-site-results{
+ display:flex;flex-direction:column;align-items:stretch;justify-content:flex-start;
+ gap:6px;max-height:min(430px,52dvh);overflow-y:auto;overflow-x:hidden;min-width:0
+}
+.records-site-option{
+ flex:0 0 auto;align-self:stretch;height:auto;min-height:70px;max-height:none;
+ display:flex;align-items:flex-start;line-height:normal;overflow:visible;
+}
+.records-site-option-body{display:flex;flex-direction:column;gap:4px;min-width:0;align-self:center}
+.records-site-option-name{display:block;-webkit-line-clamp:unset;overflow:visible;line-height:1.4}
+.records-site-option-city,.records-site-option-address{display:block;line-height:1.4;overflow-wrap:anywhere}
+.records-site-option-source{align-self:center;line-height:1.35}
+.records-site-scopes{display:flex;flex-wrap:wrap;gap:8px;grid-column:1/-1}
+.records-site-scope{flex:1 1 auto;min-height:42px;padding:8px 10px;
+ border:1px solid #b9d4dd;border-radius:10px;background:#fff;color:#315c6c;
+ font-size:12px;font-weight:750;cursor:pointer}
+.records-site-scope.selected,.records-site-scope[aria-pressed=true]{
+ background:#07697d;border-color:#07697d;color:#fff
+}
+.records-site-scope:focus-visible{outline:3px solid #65b7c5;outline-offset:2px}
+.records-site-apply-fare{grid-column:1/-1;min-height:43px;justify-self:stretch;white-space:normal}
+.records-site-apply-fare[hidden]{display:none!important}
+@media(max-width:550px){
+ .records-site-scopes{gap:5px}
+ .records-site-scope{font-size:11px;padding:8px 5px;min-width:0}
+ .records-site-option{padding:12px 10px;gap:8px}
+ .records-site-option-source{max-width:91px;flex-shrink:0}
+}
