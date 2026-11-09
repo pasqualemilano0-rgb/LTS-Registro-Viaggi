@@ -62,7 +62,7 @@ async function update() {
       setState('s-'+key,state);
       states.push(state);
     }
-    setState('overall',summarize(states));
+    setState('overall',summarize([...states,monitorState]));
     document.getElementById('last-check').textContent='Ultimo controllo: '+formattedDate(monitor?.run_started_at||monitor?.created_at);
     const history=await getJSON(api+'/actions/runs?branch=main&per_page=50');
     const runs=history.workflow_runs||[];
