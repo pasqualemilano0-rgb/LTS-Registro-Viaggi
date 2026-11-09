@@ -184,7 +184,7 @@ try{
  assert.ok(urls.startsWith('https://maps.app.goo.gl/'));
  await page.getByRole('button',{name:/Miei 2/}).click();
  await page.getByRole('button',{name:/Modifica cliente PRIVATO TEST UNO/}).click();
- await page.locator('.directory-use-customer').first().click();
+ await page.locator('.directory-card').filter({hasText:'PRIVATO TEST UNO'}).locator('.directory-use-customer').click();
  const actions=await page.evaluate(()=>({actions:window.qaActions,draft:window.qaCustomers.getDraft()}));
  assert.equal(actions.actions.maps,1);
  assert.equal(actions.actions.newClient,1);
