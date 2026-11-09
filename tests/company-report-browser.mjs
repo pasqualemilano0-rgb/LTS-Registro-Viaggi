@@ -73,6 +73,7 @@ export const adminRecords=async(action,data={})=>{
   await new Promise(resolve=>setTimeout(resolve,90));
   if(data.expectedRevision!==adminArchiveRevision)throw new Error('Revision conflict');
   const rows=adminArchive.trips,idx=rows.findIndex(x=>x.id===data.recordId);
+  let affectedTrips=0;
   if(data.operation==='delete'){
    if(data.category!=='customer')throw new Error('Mock delete supports customers only');
    if(!data.reason||String(data.reason).trim().length<8)throw new Error('Audit reason required');
@@ -107,6 +108,7 @@ export const adminRecords=async(action,data={})=>{
      adminArchive.trips=adminArchive.trips.map(trip=>{
       const first=norm(trip.client)===oldName&&norm(trip.city)===oldCity;
       const second=norm(trip.secondClient)===oldName&&norm(trip.secondCity)===oldCity;
+      if(first||second)affectedTrips++;
       return first||second?{...trip,
        ...(first?{client:data.patch.name,city:data.patch.city}:{}),
        ...(second?{secondClient:data.patch.name,secondCity:data.patch.city}:{}),
@@ -120,7 +122,7 @@ export const adminRecords=async(action,data={})=>{
    category:data.category,action:data.operation,recordId:data.recordId,reason:data.reason||'',
    beforeRevision:adminArchiveRevision-1,afterRevision:adminArchiveRevision});
   return {revision:adminArchiveRevision,state:structuredClone(adminArchive),
-   audit:structuredClone(adminAudit)};
+   audit:structuredClone(adminAudit),affectedTrips};
  }
  throw new Error('Mock action unavailable');
 };
