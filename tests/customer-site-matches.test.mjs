@@ -53,3 +53,16 @@ test('existing Google Maps link is recognized even with tracking query strings',
  const b={...repeated,address:'ALTRA VIA',mapsUrl:bitonto.mapsUrl+'?g_st=ac'};
  assert.equal(sameSharedSite(a,b),true);
 });
+
+test('indexed dedup handles many unrelated sites and preserves duplicate originals',()=>{
+ const sites=Array.from({length:1200},(_,i)=>({
+  name:'COMPANY '+i,city:'NAPOLI',address:'VIA '+i,mapsUrl:'https://maps.app.goo.gl/id'+i
+ }));
+ const personal=sites.slice(0,150).map((site,i)=>({...site,id:'p-'+i,phone:'081000'+i}));
+ const result=dedupedCustomerDirectory([...sites,sites[0]],personal);
+ assert.equal(result.shared.length,1200);
+ assert.equal(result.personal.length,0);
+ assert.equal(result.matchedPersonal.length,150);
+ assert.equal(result.shared[0].phone,'0810000');
+ assert.equal(result.shared[1199].phone,undefined);
+});
