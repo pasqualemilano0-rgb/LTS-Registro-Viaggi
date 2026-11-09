@@ -3,7 +3,12 @@
 // Change ONLY this flag to false after the acceptance tests and rollback check.
 const MAINTENANCE_ENABLED = false;
 
-function showMaintenance() {
+// Sunday in Europe/Rome is the one weekly pause. This is a UI policy,
+// not an authorization control; the verified LTS parent remains required.
+function isPortiSundayInRome(at=new Date()){
+ return new Intl.DateTimeFormat('en-US',{timeZone:'Europe/Rome',weekday:'short'}).format(at)==='Sun';
+}
+function showMaintenance(reason='maintenance') {
   const main=document.createElement('main');
   main.className='shell';
   main.setAttribute('role','status');
@@ -11,9 +16,12 @@ function showMaintenance() {
   const brand=document.createElement('h1');brand.textContent='LTS Registro Viaggi';
   header.append(brand);
   const section=document.createElement('section');section.className='panel';
-  const title=document.createElement('h2');title.textContent='Porti e Booking temporaneamente sospesi';
+  const title=document.createElement('h2');title.textContent=reason==='sunday'?
+   'Porti sospesi la domenica':'Porti e Booking temporaneamente sospesi';
   const message=document.createElement('p');
-  message.textContent='Stiamo completando la migrazione tecnica e i controlli di sicurezza. Registro Viaggi, clienti e dashboard restano disponibili.';
+  message.textContent=reason==='sunday'?
+   'La sezione Porti riprenderà automaticamente lunedì. Registro Viaggi, clienti e dashboard rimangono disponibili.':
+   'Stiamo completando la migrazione tecnica e i controlli di sicurezza. Registro Viaggi, clienti e dashboard restano disponibili.';
   const note=document.createElement('p');
   note.textContent='Per operazioni urgenti verifica direttamente sui siti ufficiali dei terminali. Questa pagina non conferma accettazioni o autorizzazioni al carico.';
   const home=document.createElement('a');
@@ -42,6 +50,8 @@ const sameOriginParent=()=>{
 };
 if(MAINTENANCE_ENABLED){
  showMaintenance();
+}else if(isPortiSundayInRome()){
+ showMaintenance('sunday');
 }else if(!sameOriginParent()){
  location.replace(BASE);
 }else{
@@ -61,6 +71,7 @@ if(MAINTENANCE_ENABLED){
  window.addEventListener('message',async event=>{
   if(authorized||event.source!==window.parent||event.origin!==location.origin
     ||event.data?.type!=='lts-porti-authorized')return;
+  if(isPortiSundayInRome()){clearTimeout(timeout);showMaintenance('sunday');return;}
   authorized=true;clearTimeout(timeout);
   try{
    await import('./porti/app.js?v=20261102-lts-v66');
