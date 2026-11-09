@@ -1146,13 +1146,47 @@ function mapsCustomerDialog(){
 async function importCustomersCsv(file){
  try{
   if(file.size>MAX_CUSTOMER_CSV_BYTES)throw new Error('Il CSV non deve superare 2 MB.');
-  let text;try{text=new TextDecoder('utf-8',{fatal:true}).decode(await file.arrayBuffer());}catch{throw new Error('Salva il CSV in formato UTF-8 e riprova.');}
-  const rows=parseCustomerCsv(text);const preview=mergeCustomerCsv(state,rows);
-  const {dialog,body}=modal('Importa clienti CSV',{subtitle:`${preview.count} clienti nel file: ${preview.added} nuovi, ${preview.updated} da aggiornare.`});
-  body.append(el('p',{class:'profile-description'},'Vengono aggiornati solo i campi compilati dei clienti con lo stesso nome. Gli altri clienti, le tariffe e i viaggi restano conservati.'),el('ul',{class:'csv-preview'},rows.slice(0,5).map(row=>el('li',{},el('strong',{},row.name),el('span',{},[row.city,row.address].filter(Boolean).join(' · '))))));
-  if(rows.length>5)body.append(el('p',{class:'field-hint'},`E altri ${rows.length-5} record nel file.`));
-  const error=el('div',{class:'form-error',role:'alert'});const confirm=button('Importa clienti','primary',async()=>{confirm.disabled=true;error.textContent='';try{const next=mergeCustomerCsv(state,rows);await persist(next.state);dialog.close();render();toast(`${next.count} clienti controllati: rubrica aggiornata.`);}catch(err){error.textContent=err.message;confirm.disabled=false;}});
-  body.append(error,el('div',{class:'dialog-actions'},button('Annulla','secondary',()=>dialog.close()),confirm));
+  let text;try{text=new TextDecoder('utf-8',{fatal:true}).decode(await file.arrayBuffer());}
+  catch{throw new Error('Salva il CSV in formato UTF-8 e riprova.');}
+  const rows=parseCustomerCsv(text);
+  const preview=previewCustomerCsvChanges(state,rows,8);
+  const openingFingerprint=JSON.stringify(state.customers),openingOwner=user?.id;
+  const {dialog,body}=modal('Anteprima importazione clienti',{
+   subtitle:preview.added+' nuovi · '+preview.updated+' da aggiornare · '+
+    preview.unchanged+' senza modifiche. Nessun dato è stato ancora salvato.'});
+  const fieldLabels={vat:'Partita IVA',city:'Località',address:'Indirizzo',phone:'Telefono'};
+  const changeCards=preview.details.map(detail=>
+   el('li',{class:'csv-change-card'},
+    el('strong',{},detail.name),
+    el('span',{class:'csv-change-status'},detail.type==='added'?'Nuovo':'Aggiornamento'),
+    el('ul',{},detail.fields.map(field=>el('li',{},
+     el('b',{},fieldLabels[field.field]||field.field),
+     el('span',{},field.before?'Prima: '+String(field.before).slice(0,200):'Prima: non compilato'),
+     el('span',{},'Dopo: '+String(field.after).slice(0,200))))));
+  body.append(el('p',{class:'profile-description'},
+   'Vengono modificati solo i campi compilati nel CSV. I clienti assenti dal file, le tariffe e tutti i viaggi restano invariati.'),
+   preview.changed?
+    el('section',{class:'csv-preview-diff','aria-label':'Modifiche proposte'},
+     el('h3',{},'Modifiche proposte'),
+     el('ul',{class:'csv-change-list'},changeCards),
+     preview.changed>preview.details.length?
+      el('p',{class:'field-hint'},'Altri '+(preview.changed-preview.details.length)+
+       ' clienti saranno modificati. Esporta un backup prima di importare un file grande.'):null):
+    el('p',{class:'csv-no-change'},'Tutti i clienti del CSV sono già aggiornati. Nessuna modifica necessaria.'));
+  const error=el('div',{class:'form-error',role:'alert'});
+  const confirm=button('Conferma importazione','primary',async()=>{
+   confirm.disabled=true;error.textContent='';
+   try{
+    if(user?.id!==openingOwner||JSON.stringify(state.customers)!==openingFingerprint)
+     throw new Error('La rubrica è cambiata durante l’anteprima. Chiudi e riapri il CSV per controllare le modifiche aggiornate.');
+    const next=mergeCustomerCsv(state,rows);
+    await persist(next.state);dialog.close();render();
+    toast(next.count+' clienti controllati: '+next.added+' nuovi, '+next.updated+' aggiornati.');
+   }catch(err){error.textContent=err.message;confirm.disabled=false;}
+  });
+  if(!preview.changed)confirm.disabled=true;
+  body.append(error,el('div',{class:'dialog-actions'},
+   button('Annulla','secondary',()=>dialog.close()),confirm));
  }catch(err){toast(err.message||'Impossibile leggere il CSV.',true);}
 }
 /** Undo is account-scoped and available only in the current authenticated session. */
@@ -1951,6 +1985,7 @@ function accountInstallBanner(){
   el('span',{class:'account-install-banner-wave','aria-hidden':'true'}));
 }
 function renderAccountGate(message=''){
+ lastDeletedCustomer=null;customerDirectoryCache=null;
  realtimeBridge?.stop();realtimeBridge=null;
  companyCustomers=[];
  companyCustomersError='';
