@@ -177,7 +177,7 @@ try{
  await page.locator('summary').filter({hasText:'Importa o esporta CSV'}).click();
  await page.getByRole('button',{name:'Esporta CSV'}).click();
  const csvInput=page.locator('input[type=file][accept*="csv"]');
- await page.getByRole('button',{name:'Importa CSV'}).click({noWaitAfter:true});
+ await page.locator('.csv-tools button').filter({hasText:'Importa CSV'}).click({noWaitAfter:true});
  await csvInput.setInputFiles({name:'clienti.csv',mimeType:'text/csv',
   buffer:Buffer.from('CLIENTE;PARTITA IVA;CITTÀ;INDIRIZZO\nTEST CSV;;NAPOLI;VIA TEST\n')});
  const urls=await page.locator('.directory-open-maps').first().getAttribute('href');
