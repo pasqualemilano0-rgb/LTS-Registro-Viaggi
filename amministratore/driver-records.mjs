@@ -213,7 +213,7 @@ function sitePicker(form,{title,client,city,fare,keepFare=false}){
  * directory entry. This edits ONLY that private record on explicit submit:
  * it does not migrate old trips, delete records or create shared customers.
  */
-function personalCompanyPicker(form,{name,city,address,phone,vat,isDuplicate}){
+function personalCompanyPicker(form,{name,city,address,phone,vat,isDuplicate,linkedRates=0}){
  const panel=make('section','records-site-picker records-company-picker');
  panel.setAttribute('aria-label','Sostituisci con cliente aziendale');
  panel.append(make('h4','records-site-heading','Sostituisci con cliente aziendale'));
@@ -221,6 +221,17 @@ function personalCompanyPicker(form,{name,city,address,phone,vat,isDuplicate}){
   'Scegli un cliente condiviso per compilare nome, località e indirizzo del cliente personale. '+
   'I viaggi passati non cambiano; la scheda resta nell’archivio personale dell’autista. '+
   'Telefono e partita IVA del precedente cliente saranno svuotati: controllali prima di salvare.'));
+ let ratesAcknowledged=null;
+ if(linkedRates>0){
+  const ack=make('label','records-private-rate-ack');
+  ratesAcknowledged=document.createElement('input');
+  ratesAcknowledged.type='checkbox';
+  ratesAcknowledged.name='confirmLinkedPersonalRates';
+  ack.append(ratesAcknowledged,make('span','',
+   'Questa scheda ha '+linkedRates+' tariffa/e personali collegate. '+
+   'Confermo che il nome di queste tariffe seguirà il nuovo cliente, ma gli importi non cambieranno.'));
+  panel.append(ack);
+ }
  const label=make('label','records-field records-site-search-label');
  label.append(make('span','','Cerca nell’elenco condiviso (nome, città o indirizzo)'));
  const input=document.createElement('input');
@@ -250,6 +261,10 @@ function personalCompanyPicker(form,{name,city,address,phone,vat,isDuplicate}){
  }
  function pick(site){
   if(!site||site.source==='personal')return;
+  if(ratesAcknowledged&&!ratesAcknowledged.checked){
+   hint.textContent='Conferma prima il trasferimento del nome delle tariffe personali collegate.';
+   hint.classList.add('records-site-warning');return;
+  }
   if(String(site.name).length>500||String(site.city).length>500||
      String(site.address||'').length>1000){
    hint.textContent='Dati aziendali troppo lunghi: verifica il cliente prima di sostituirlo.';
@@ -773,7 +788,8 @@ export function setupDriverRecords(account){
    if(item){
     companyPicker=personalCompanyPicker(form,{name,city,address,phone,vat,
      isDuplicate:next=>state.customers.some(row=>row.id!==item.id&&
-      normalizeSearch(row.name)===normalizeSearch(next))});
+      normalizeSearch(row.name)===normalizeSearch(next)),
+     linkedRates:state.tariffs.filter(row=>row.customerId===item.id).length});
     form.insertBefore(companyPicker.panel,name.parentElement);
     activePickerDisposers.push(companyPicker.dispose);
    }
