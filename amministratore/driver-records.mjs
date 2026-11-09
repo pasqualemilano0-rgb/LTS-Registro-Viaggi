@@ -2,7 +2,7 @@
  * All actions need a verified admin session/MFA and a server-side revision CAS.
  */
 import {SERVICES,formatMoney,toCents,buildTripAmountContext,tripAmounts,saturdayAllowanceStatus} from '../shared/domain.mjs';
-import {linkedCustomerTripCount} from '../shared/admin-record-operations.mjs';
+import {linkedCustomerTripCount} from '../shared/admin-record-operations.mjs?v=20261109-customer-trip-sync-v1';
 import {sharedMapsCustomers} from '../shared-maps-client.mjs';
 import {companyFareSnapshot} from '../shared/company-fares.mjs';
 import {buildDriverCustomerCatalog,filterDriverCustomerCatalog} from './driver-customer-catalog.mjs?v=20261109-personal-company-v1';
