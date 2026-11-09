@@ -29,6 +29,9 @@ on:
       - 'tests/qa-trip-editor-safety.test.mjs'
       - 'shared/register-explorer.mjs'
       - 'tests/qa-register-explorer.test.mjs'
+      - 'shared/customer-directory-v5.mjs'
+      - 'shared/customer-csv.mjs'
+      - 'tests/qa-customers-v5.test.mjs'
       - 'tests/qa-register-browser.mjs'
       - 'tests/report-export.test.mjs'
       - 'tests/qa-account-release.test.mjs'
@@ -65,6 +68,9 @@ on:
       - 'tests/qa-trip-editor-safety.test.mjs'
       - 'shared/register-explorer.mjs'
       - 'tests/qa-register-explorer.test.mjs'
+      - 'shared/customer-directory-v5.mjs'
+      - 'shared/customer-csv.mjs'
+      - 'tests/qa-customers-v5.test.mjs'
       - 'tests/qa-register-browser.mjs'
       - 'tests/qa-pro-theme.test.mjs'
       - 'tests/qa-driver-management-fixes.test.mjs'
@@ -103,7 +109,7 @@ jobs:
           node --check tests/qa-register-browser.mjs
           node --check tests/qa-report-production-http-smoke.mjs
           node --test tests/admin-record-operations.test.mjs
-          node --test tests/qa-driver-management-fixes.test.mjs tests/qa-manual-customers.test.mjs tests/qa-realtime.test.mjs tests/qa-company-report-release.test.mjs tests/qa-pro-theme.test.mjs tests/qa-account-release.test.mjs tests/qa-trip-editor-safety.test.mjs tests/qa-register-explorer.test.mjs tests/driver-session-vault.test.mjs tests/leaked-password-protection.test.mjs tests/report-export.test.mjs tests/qa-release-versions.test.mjs tests/qa-regression-contract.test.mjs tests/qa-no-auto-publish.test.mjs
+          node --test tests/qa-driver-management-fixes.test.mjs tests/qa-manual-customers.test.mjs tests/qa-realtime.test.mjs tests/qa-company-report-release.test.mjs tests/qa-pro-theme.test.mjs tests/qa-account-release.test.mjs tests/qa-trip-editor-safety.test.mjs tests/qa-register-explorer.test.mjs tests/qa-customers-v5.test.mjs tests/driver-session-vault.test.mjs tests/leaked-password-protection.test.mjs tests/report-export.test.mjs tests/qa-release-versions.test.mjs tests/qa-regression-contract.test.mjs tests/qa-no-auto-publish.test.mjs
   production-endpoint-smoke:
     runs-on: ubuntu-24.04
     timeout-minutes: 5
