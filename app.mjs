@@ -1162,7 +1162,7 @@ async function importCustomersCsv(file){
     el('ul',{},detail.fields.map(field=>el('li',{},
      el('b',{},fieldLabels[field.field]||field.field),
      el('span',{},field.before?'Prima: '+String(field.before).slice(0,200):'Prima: non compilato'),
-     el('span',{},'Dopo: '+String(field.after).slice(0,200))))));
+     el('span',{},'Dopo: '+String(field.after).slice(0,200)))))));
   body.append(el('p',{class:'profile-description'},
    'Vengono modificati solo i campi compilati nel CSV. I clienti assenti dal file, le tariffe e tutti i viaggi restano invariati.'),
    preview.changed?
