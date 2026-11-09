@@ -462,7 +462,7 @@ test('TOTP admin flow uses verified backend session and never exposes secret in 
  assert.match(html,/pattern="\[0-9\]\{6\}"/);
  assert.match(html,/img-src 'self' data:/);
  assert.match(html,/admin\.mjs\?v=20261108-smart-v2/);
- assert.match(html,/admin\.css\?v=20261104-company-v3/);
+ assert.match(html,/admin\.css\?v=20261109-alpha-v1/);
  assert.match(admin,/account\.enrollAdminTotp/);
  assert.match(admin,/account\.verifyAdminTotp/);
  assert.match(auth,/export async function enrollAdminTotp\(\)/);
