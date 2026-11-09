@@ -293,7 +293,17 @@ try{
  assert.equal(await page.locator('#company-rate-city').inputValue(),'ROMA');
  assert.equal(await page.locator('#dashboard').getAttribute('data-view'),'overview');
  assert.equal(await page.locator('#company-rate-submit').isEnabled(),true);
+ // Unsaved edits must not disappear through accidental Back, Escape or overlay close.
+ await page.locator('#company-rate-amount').fill('90,00');
+ let confirmSeen=0;
+ page.once('dialog',async dialog=>{confirmSeen++;await dialog.dismiss();});
  await page.locator('#smart-back').click();
+ assert.equal(confirmSeen,1);
+ assert.equal(await page.locator('#smart-embed-body #company-rates-editor').count(),1);
+ assert.equal(await page.locator('#company-rate-amount').inputValue(),'90,00');
+ page.once('dialog',async dialog=>{confirmSeen++;await dialog.accept();});
+ await page.locator('#smart-back').click();
+ assert.equal(confirmSeen,2);
  assert.equal(await page.locator('#smart-embed-body #company-rates-editor').count(),0);
  assert.equal(await page.locator('#company-rates #company-rates-editor').count(),1);
  // Inline original authenticated forms, with no duplicate event listeners.
