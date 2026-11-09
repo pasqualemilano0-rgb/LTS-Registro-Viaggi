@@ -29,10 +29,8 @@ test('scope imports all modules from public Github Pages root',()=>{
 test('routine online-save label is hidden without disabling sync or warning messages',()=>{
  const app=read('app.mjs');
  const css=read('app.css');
- const alternate=read('effeerre/app.mjs');
- const alternateCss=read('effeerre/app.css');
  const html=read('index.html');
- for(const source of [app,alternate]){
+ for(const source of [app]){
   assert.match(source,/syncSavedOnline=!syncWarning/);
   assert.match(source,/status[?][.]status==='synced'/);
   assert.match(source,/dati salvati online/);
@@ -43,7 +41,6 @@ test('routine online-save label is hidden without disabling sync or warning mess
  assert.match(app,/wrap[.]hidden=syncSavedOnline/);
  assert.match(css,/[.]sync-status\[hidden\]/);
  assert.match(css,/[.]sync-banner-wrap\[hidden\]/);
- assert.match(alternateCss,/[.]sync-status\[hidden\]/);
  assert.match(html,/app[.]mjs[?]v=20\d{6}-[a-z0-9-]+-v\d+/);
  // The backend reconciliation and online-saving mechanisms remain untouched.
  const storage=read('client-store.mjs');
@@ -51,16 +48,16 @@ test('routine online-save label is hidden without disabling sync or warning mess
 });
 
 test('installed PWA refreshes current data and update assets without dropping unsaved trips',()=>{
- const main=read('client-store.mjs'),alternate=read('effeerre/client-store.mjs');
- const mainApp=read('app.mjs'),alternateApp=read('effeerre/app.mjs');
- const worker=read('sw.js'),otherWorker=read('effeerre/sw.js');
- for(const source of [main,alternate]){
+ const main=read('client-store.mjs');
+ const mainApp=read('app.mjs');
+ const worker=read('sw.js');
+ for(const source of [main]){
   assert.match(source,/setInterval\(refreshSoon, 6000\)/);
   assert.match(source,/addEventListener\('focus', refreshSoon\)/);
   assert.match(source,/addEventListener\('pageshow', refreshSoon\)/);
   assert.match(source,/if \(!active \|\| blocked \|\| refreshing \|\| document[.]hidden/);
  }
- for(const source of [mainApp,alternateApp]){
+ for(const source of [mainApp]){
   assert.match(source,/controllerchange/);
   assert.match(source,/registration[.]update\(\)/);
   assert.match(source,/safeAppUpdateReload\(\)/);
@@ -68,7 +65,7 @@ test('installed PWA refreshes current data and update assets without dropping un
   assert.match(source,/tab==='insert'/);
   assert.match(source,/document[.]querySelector\('dialog\[open\]'\)/);
  }
- for(const source of [worker,otherWorker]){
+ for(const source of [worker]){
   assert.match(source,/const CACHE = PREFIX \+ '20\d{6}-[a-z0-9-]+-v\d+'/);
   assert.match(source,/NETWORK_FIRST_CODE/);
   assert.match(source,/app[.]mjs'/);
@@ -77,7 +74,6 @@ test('installed PWA refreshes current data and update assets without dropping un
   assert.match(source,/url[.]origin !== self[.]location[.]origin/);
  }
  assert.equal(read('index.html'),read('shell.html'));
- assert.equal(read('effeerre/index.html'),read('effeerre/shell.html'));
  assert.match(mainApp,/\},8000\);/);
  const admin=read('amministratore/admin.mjs');
  assert.match(admin,/\},10000\);/);
@@ -437,20 +433,15 @@ test('logout is authenticated on the server and remote driver disconnection is a
 
 test('public-facing UI and privacy have no assistant branding while disclosing real backend services',()=>{
  const privacy=read('privacy/index.html');
- const archived=read('effeerre/app.mjs');
  const readme=read('README.md');
- for(const [label,source] of [['LTS interface',app],['EFFE.ERRE interface',archived],
+ for(const [label,source] of [['LTS interface',app],
    ['privacy notice',privacy],['public README',readme]]){
    assert.doesNotMatch(source,/ChatGPT|Codex|OpenAI/i,label+' must not show development-assistant branding');
  }
  assert.match(app,/browser interno di un’altra app/);
- assert.match(archived,/browser interno di un’altra app/);
  assert.match(privacy,/backend HTTPS esterno/);
  assert.match(privacy,/Supabase/);
  assert.match(privacy,/GitHub Pages/);
- assert.match(read('effeerre/sw.js'),/20261107-live-sync-v1/);
- assert.equal(read('effeerre/index.html'),read('effeerre/shell.html'));
- assert.match(read('effeerre/index.html'),/20261107-live-sync-v1/);
 });
 
 test('TOTP admin flow uses verified backend session and never exposes secret in public code',()=>{
@@ -971,4 +962,8 @@ test('Smart Console V2 keeps context inside its authorized drawer and never writ
  assert.match(ui,/mode==='detail'\)resetTask\(\)/);
  assert.doesNotMatch(ui,/\b(?:localStorage|sessionStorage|indexedDB|innerHTML|fetch)\b/);
  assert.match(css,/[.]smart-detail-actions/);
+});
+
+test('unrelated EFFE.ERRE package is not shipped with LTS',()=>{
+ assert.equal(existsSync(new URL('../effeerre/',import.meta.url)),false);
 });
