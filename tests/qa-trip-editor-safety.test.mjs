@@ -65,6 +65,12 @@ test('driver wiring: account-scoped IndexedDB scratchpad, visible sync and guard
  assert.match(app,/if\(warnings[.]length\)confirmAction/);
  assert.match(app,/possibleTripDuplicate\(state[.]trips,draft,editingId\)/);
  assert.match(app,/missingEstimateTariffs/);
+ assert.match(app,/class:'trip-quick-route'/);
+ assert.match(app,/Ripeti ultimo percorso/);
+ assert.match(app,/class:'trip-estimate-breakdown'/);
+ assert.match(app,/Prima presa/);
+ assert.match(app,/Seconda presa/);
+ assert.match(app,/err[.]pendingState&&attemptedTrip/);
  assert.match(app,/Viaggio salvato sul dispositivo/);
  assert.match(worker,/shared\/trip-editor-safety[.]mjs/);
  assert.doesNotMatch(app,/localStorage[.]setItem\('trip-editor-v1:/);
