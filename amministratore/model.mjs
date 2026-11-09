@@ -11,14 +11,28 @@ export function driverSummary(entries){
   blocked:rows.filter(x=>x.status==='disabled'||x.status==='resetting').length,
   pending:rows.filter(x=>PENDING.has(x.status)).length};
 }
-export function filterDrivers(entries,query='',filter='all'){
- const q=String(query).trim().toLocaleLowerCase('it-IT');
+const collator=new Intl.Collator('it-IT',{sensitivity:'base',numeric:true});
+const searchable=value=>String(value??'').normalize('NFD').replace(/\p{M}/gu,'')
+ .toLocaleLowerCase('it-IT').replace(/\s+/gu,' ').trim();
+export function driverInitial(entry){
+ const name=String(entry?.lastName||entry?.firstName||'').normalize('NFD')
+  .replace(/\p{M}/gu,'').trim().toLocaleUpperCase('it-IT');
+ const first=name[0]||'';
+ return /^[A-Z]$/u.test(first)?first:'#';
+}
+export function filterDrivers(entries,query='',filter='all',initial=''){
+ const q=searchable(query),letter=String(initial).toLocaleUpperCase('it-IT');
  return (Array.isArray(entries)?entries:[]).filter(entry=>{
    const status=String(entry.status||'');
    if(filter==='active'&&status!=='active')return false;
    if(filter==='blocked'&&!['disabled','resetting'].includes(status))return false;
    if(filter==='pending'&&!PENDING.has(status))return false;
-   const haystack=[entry.firstName,entry.lastName,entry.phone].filter(Boolean).join(' ').toLocaleLowerCase('it-IT');
+   if(letter&&driverInitial(entry)!==letter)return false;
+   const first=entry.firstName||'',last=entry.lastName||'',phone=entry.phone||'';
+   const haystack=searchable([first,last,phone,last+' '+first].join(' '));
    return !q||haystack.includes(q);
- });
+ }).sort((a,b)=>
+   collator.compare(String(a.lastName||a.firstName||''),String(b.lastName||b.firstName||''))||
+   collator.compare(String(a.firstName||''),String(b.firstName||''))||
+   collator.compare(String(a.phone||''),String(b.phone||'')));
 }

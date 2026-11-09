@@ -14,15 +14,15 @@
   <link rel="icon" type="image/png" href="../assets/icon-192.png">
   <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
   <link rel="manifest" href="./manifest.webmanifest">
-  <link rel="stylesheet" href="./admin.css?v=20261104-company-v3">
+  <link rel="stylesheet" href="./admin.css?v=20261109-alpha-v1">
   <link rel="stylesheet" href="./pro-theme.css?v=20261104-console-v5">
   <link rel="stylesheet" href="./dashboard-v6.css?v=20261104-mobile-v7">
-  <link rel="stylesheet" href="./smart-console.css?v=20261108-smart-v1">
+  <link rel="stylesheet" href="./smart-console.css?v=20261108-smart-v2">
   <link rel="stylesheet" href="./customer-overview.css?v=20261107-manual-shared-v1">
   <link rel="stylesheet" href="./company-rates.css?v=20261107-manual-shared-v1">
   <link rel="stylesheet" href="./driver-records.css?v=20261107-driver-private-customers-v1">
   <link rel="stylesheet" href="../visual-theme.css?v=20261108-rc3-v1">
-  <script type="module" src="./admin.mjs?v=20261108-smart-v1"></script>
+  <script type="module" src="./admin.mjs?v=20261108-smart-v2"></script>
   <script type="module" src="./install-pwa.mjs?v=20261108-admin-pwa-v1"></script>
   <script type="module" src="./dashboard-mobile-nav.mjs?v=20261107-records-admin-v2"></script>
 </head>
@@ -163,6 +163,8 @@
                 </select>
               </label>
             </div>
+            <div id="roster-letters" class="roster-letters" role="group" aria-label="Filtra gli autisti per iniziale del cognome"></div>
+            <p id="roster-count" class="roster-count" role="status" aria-live="polite"></p>
             <p id="list-error" class="error-message" role="alert" hidden></p>
             <div id="roster" class="roster" aria-live="polite"></div>
             <p id="empty" class="empty" hidden>Nessun autista corrisponde alla ricerca.</p>
@@ -643,12 +645,18 @@
           <button type="button" class="smart-action" data-smart-action="customers">◉ Clienti aziendali</button>
           <button type="button" class="smart-action" data-smart-action="manual">＋ Nuovo cliente</button>
           <button type="button" class="smart-action" data-smart-action="trips">▤ Registro viaggi</button>
+          <button type="button" class="smart-action" data-smart-action="inline-rate">€ Tariffa veloce</button>
           <button type="button" class="smart-action" data-smart-action="rates">€ Tariffe e servizi</button>
           <button type="button" class="smart-action" data-smart-action="alerts">⚑ Anomalie da verificare</button>
           <button type="button" class="smart-action" data-smart-action="exports">↓ Report PDF / Excel</button>
         </div>
         <div id="smart-context" aria-label="Riepilogo operativo dai dati caricati" aria-live="polite"></div>
         <div id="smart-results" class="smart-results" aria-live="polite"></div>
+      </div>
+      <div id="smart-detail" class="smart-detail" hidden>
+        <p id="smart-detail-source" class="smart-security-note"></p>
+        <div id="smart-detail-body"></div>
+        <div id="smart-detail-actions" class="smart-detail-actions" aria-label="Azioni per la scheda selezionata"></div>
       </div>
       <div id="smart-embedded" hidden>
         <p class="smart-security-note">Il modulo è quello originale dell'app: la tua schermata resta al suo posto. Nessuna operazione avviene senza la tua conferma.</p>

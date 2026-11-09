@@ -259,6 +259,16 @@ try{
  await page.waitForFunction(()=>document.querySelector('#customer-overview-priced').textContent==='1');
  assert.equal(await page.locator('#customer-overview-total').textContent(),'3');
 
+ // Alphabetical roster: existing driver remains accessible by last-name initial.
+ await openAdminTab('management-tab');
+ await page.locator('#roster-letters button[data-letter="R"]').click();
+ assert.match(await page.locator('#roster-count').textContent(),/1 su 1 autisti/);
+ assert.match(await page.locator('#roster').textContent(),/Mario Rossi/);
+ assert.equal(await page.locator('#roster-letters button[data-letter="R"]').getAttribute('aria-pressed'),'true');
+ await page.locator('#roster-letters button[data-letter=""]').click();
+ assert.equal(await page.locator('#roster-letters button[data-letter=""]').getAttribute('aria-pressed'),'true');
+ await openAdminTab('overview-tab');
+
  // Smart Console: search across authorized data without changing active view.
  await page.waitForFunction(()=>document.querySelector('#report-count').textContent==='2');
  await page.locator('#smart-command-open').click();
@@ -271,6 +281,46 @@ try{
  assert.match(await page.locator('#smart-results').textContent(),/CLIENTE/i);
  await page.locator('#smart-search').fill('ABCD');
  assert.match(await page.locator('#smart-results').textContent(),/ABCD1234567/i);
+ // V2 contextual read-only previews preserve the active dashboard, search and data.
+ await page.locator('#smart-results .smart-result-buttons button').first().click();
+ assert.equal(await page.locator('#smart-detail').isVisible(),true);
+ assert.match(await page.locator('#smart-detail-body').textContent(),/ABCD1234567/);
+ assert.equal(await page.locator('#dashboard').getAttribute('data-view'),'overview');
+ await page.locator('#smart-back').click();
+ assert.equal(await page.locator('#smart-search').inputValue(),'ABCD');
+ await page.locator('#smart-search').fill('ROSSI');
+ await page.locator('#smart-results .smart-result-buttons button').first().click();
+ assert.match(await page.locator('#smart-detail-body').textContent(),/Mario Rossi/);
+ assert.match(await page.locator('#smart-detail-actions').textContent(),/Clienti personali/);
+ await page.locator('#smart-back').click();
+ // Company tariff form stays the original protected form, portalled temporarily.
+ await page.locator('#smart-search').fill('GAMMA');
+ await page.locator('#smart-results .smart-result-buttons button').first().click();
+ assert.match(await page.locator('#smart-detail-body').textContent(),/CLIENTE GAMMA/);
+ await page.locator('#smart-detail-actions button').filter({hasText:'Modifica tariffa'}).click();
+ await page.locator('#smart-embed-body #company-rates-editor').waitFor({state:'visible'});
+ await page.waitForFunction(()=>document.querySelector('#company-rate-client').value==='CLIENTE GAMMA');
+ assert.equal(await page.locator('#company-rate-city').inputValue(),'ROMA');
+ assert.equal(await page.locator('#dashboard').getAttribute('data-view'),'overview');
+ assert.equal(await page.locator('#company-rate-submit').isEnabled(),true);
+ // Unsaved edits must not disappear through accidental Back, Escape or overlay close.
+ await page.locator('#company-rate-amount').fill('90,00');
+ let confirmSeen=0;
+ page.once('dialog',async dialog=>{confirmSeen++;await dialog.dismiss();});
+ await page.locator('#smart-back').click();
+ assert.equal(confirmSeen,1);
+ assert.equal(await page.locator('#smart-embed-body #company-rates-editor').count(),1);
+ assert.equal(await page.locator('#company-rate-amount').inputValue(),'90,00');
+ await page.evaluate(()=>window.dispatchEvent(new Event('lts-admin-company-rate-save-started')));
+ await page.locator('#smart-back').click();
+ assert.equal(await page.locator('#smart-embed-body #company-rates-editor').count(),1,
+  'Cannot detach original tariff form while save in progress');
+ await page.evaluate(()=>window.dispatchEvent(new Event('lts-admin-company-rate-save-completed')));
+ page.once('dialog',async dialog=>{confirmSeen++;await dialog.accept();});
+ await page.locator('#smart-back').click();
+ assert.equal(confirmSeen,2);
+ assert.equal(await page.locator('#smart-embed-body #company-rates-editor').count(),0);
+ assert.equal(await page.locator('#company-rates #company-rates-editor').count(),1);
  // Inline original authenticated forms, with no duplicate event listeners.
  await page.locator('[data-smart-action="invite"]').click();
  assert.equal(await page.locator('#smart-embed-body #invite-form').count(),1);
@@ -675,8 +725,17 @@ try{
  assert.equal(await page.locator('#report-panel').isVisible(),false,'Security view must hide reports');
  await openAdminTab('report-tab');
  await page.waitForFunction(()=>document.querySelector('#report-count').textContent==='2');
- await page.locator('#logout').click();
+ // Authorized search must be cleared immediately on logout, even with an open preview.
+ await page.locator('#smart-command-open').click();
+ await page.locator('#smart-search').fill('ROSSI');
+ await page.locator('#smart-results .smart-result-buttons button').first().click();
+ assert.equal(await page.locator('#smart-detail').isVisible(),true);
+ await page.locator('#logout').evaluate(element=>element.click());
  await page.waitForFunction(()=>document.querySelector('#dashboard').hidden===true);
+ assert.equal(await page.locator('#smart-overlay').isVisible(),false);
+ assert.equal(await page.locator('#smart-detail-body').textContent(),'');
+ assert.equal(await page.locator('#smart-search').inputValue(),'');
+ assert.equal(await page.locator('#roster-count').textContent(),'');
  assert.equal(await page.locator('#report-count').textContent(),'—');
  assert.equal(await page.locator('#report-rows tr').count(),0);
  assert.equal(await page.locator('#report-driver-cards .report-person-card').count(),0);

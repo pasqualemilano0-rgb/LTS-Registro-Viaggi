@@ -1,7 +1,7 @@
 /** Administrator reporting UI. Aggregates are authoritative only when returned by the API. */
 import {setupInsights} from './report-insights.mjs?v=20261104-company-v3';
 import {setupCustomerOverview} from './customer-overview.mjs?v=20261108-smart-v1';
-import {setupCompanyRates} from './company-rates.mjs?v=20261107-manual-shared-v1';
+import {setupCompanyRates} from './company-rates.mjs?v=20261108-smart-v2';
 import {setupDriverRecords} from './driver-records.mjs?v=20261108-rc3-v1';
 import {setupCompanyExtras} from './company-extras.mjs?v=20261107-company-extras-v2';
 const el=id=>document.getElementById(id);
@@ -416,6 +416,15 @@ export function setupReport(account){
   peek(){return page?{summary:page.summary,month:page.month,reportedAt:page.reportedAt,
    incompleteArchives:page.incompleteArchives,trips:rows}:null;},
   peekCustomers(){return companyDirectory.peek();},
+  async prepareRateInline(site){
+   if(!account.isVerified()||account.getRole()!=='admin'||el('dashboard').hidden)return false;
+   const editor=el('company-rates-editor');
+   if(!editor?.closest('#smart-embed-body')||el('smart-overlay')?.hidden)return false;
+   const ready=await companyRates.load();
+   if(!ready||!editor.closest('#smart-embed-body')||el('smart-overlay')?.hidden)return false;
+   if(site)companyRates.prefillSite(site);
+   return true;
+  },
   openRateForSite(site){if(!site||!account.isVerified()||account.getRole()!=='admin')return;
    open('rates');if(el('dashboard').dataset.view==='rates')companyRates.prefillSite(site);},
   openManualCustomer(){if(!account.isVerified()||account.getRole()!=='admin')return;

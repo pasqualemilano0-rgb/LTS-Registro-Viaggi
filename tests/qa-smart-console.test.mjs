@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {searchSmartConsole,smartConsoleAlerts,smartCommandIntent} from '../amministratore/smart-console-model.mjs';
+import {filterDrivers,driverInitial} from '../amministratore/model.mjs';
 const read=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
 const drivers=[
  {firstName:'Mario',lastName:'Rossi',phone:'+393331111111',status:'active'},
@@ -77,4 +78,22 @@ test('Italian task phrases suggest safe actions without changing records',()=>{
  assert.equal(smartCommandIntent('cerca viaggi')?.action,'trips');
  assert.equal(smartCommandIntent('Mario Rossi'),null);
  assert.equal(smartCommandIntent(''),null);
+});
+
+test('driver roster sorts by Italian surname, ignores accents and filters alphabetically without modifying source',()=>{
+ const data=[
+  {firstName:'Maria',lastName:'Zorzi',phone:'3',status:'active'},
+  {firstName:'Anna',lastName:'Èsposito',phone:'1',status:'active'},
+  {firstName:'Paolo',lastName:'Bianchi',phone:'2',status:'disabled'},
+  {firstName:'Luca',lastName:'Esposito',phone:'4',status:'active'}
+ ];
+ assert.equal(driverInitial(data[1]),'E');
+ assert.deepEqual(filterDrivers(data).map(x=>x.phone),['2','1','4','3']);
+ assert.deepEqual(filterDrivers(data,'èspos','all','E').map(x=>x.phone),['1','4']);
+ assert.deepEqual(filterDrivers(data,'Esposito Anna').map(x=>x.phone),['1']);
+ assert.deepEqual(filterDrivers(data,'','blocked').map(x=>x.phone),['2']);
+ assert.deepEqual(data.map(x=>x.phone),['3','1','2','4'],'original roster is immutable');
+ const html=read('amministratore/index.html');
+ assert.match(html,/id="roster-letters"/);
+ assert.match(html,/id="roster-count"/);
 });

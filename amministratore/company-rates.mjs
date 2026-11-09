@@ -41,7 +41,11 @@ export function setupCompanyRates(account){
  const maps=setupCompanyMaps(account,{onSaved:async()=>{await load();}});
  const manual=setupCompanyManual(account,{onSaved:async()=>{await load();}});
  const authorized=()=>account.isVerified()&&account.getRole()==='admin'&&
-  !get('dashboard').hidden&&get('dashboard').dataset.view==='rates';
+  !get('dashboard').hidden&&(
+   get('dashboard').dataset.view==='rates'||
+   (!get('smart-overlay')?.hidden&&
+    get('smart-embed-body')?.contains(get('company-rates-editor')))
+  );
  const feedback=(message,error=false)=>{status.textContent=message;status.dataset.error=String(error);};
  const rateForSite=site=>rows.find(rate=>clean(rate.client)===clean(site.name)&&
   clean(rate.city)===clean(site.city));
@@ -72,7 +76,7 @@ export function setupCompanyRates(account){
   client.disabled=true;city.disabled=true;cancel.hidden=false;
   submit.textContent='Aggiorna importo';
   cityChoices();
-  pane.querySelector('#company-rates-editor').scrollIntoView({block:'start',behavior:'smooth'});
+  get('company-rates-editor').scrollIntoView({block:'start',behavior:'smooth'});
   amount.focus({preventScroll:true});
  }
  function prefillSite(site){
@@ -81,7 +85,7 @@ export function setupCompanyRates(account){
   if(existing){editRate(existing);return;}
   clearForm();client.value=site.name;city.value=site.city;cityChoices();
   feedback('Sede selezionata: '+site.name+' · '+site.city+'. Inserisci soltanto la tariffa in euro.');
-  pane.querySelector('#company-rates-editor').scrollIntoView({block:'start',behavior:'smooth'});
+  get('company-rates-editor').scrollIntoView({block:'start',behavior:'smooth'});
   amount.focus({preventScroll:true});
  }
  function renderRates(term){
@@ -219,6 +223,7 @@ export function setupCompanyRates(account){
    if(editing)Object.assign(payload,{id:editing.id,expectedRevision:editing.revision});
   }catch(e){feedback(e.message,true);return;}
   busy=true;submit.disabled=true;refresh.disabled=true;
+  window.dispatchEvent(new Event('lts-admin-company-rate-save-started'));
   feedback('Condivisione cliente e salvataggio della tariffa in corso…');
   let sharedSaved=false;
   try{
@@ -229,12 +234,16 @@ export function setupCompanyRates(account){
    }
    await account.companyTariffs('save',payload);
    clearForm();
+   window.dispatchEvent(new Event('lts-admin-company-rate-saved'));
    await load();
    if(authorized()&&ratesLoaded)
     feedback('Tariffa salvata e disponibile per tutti gli autisti al prossimo aggiornamento online. Gli importi storici restano invariati.');
   }catch(e){feedback((sharedSaved?'Cliente condiviso, ma la tariffa non è stata salvata. ':
     'Salvataggio non completato. ')+(e?.message||'Riprova.'),true);}
-  finally{busy=false;submit.disabled=!ratesLoaded;if(authorized())refresh.disabled=false;}
+  finally{
+   busy=false;submit.disabled=!ratesLoaded;if(authorized())refresh.disabled=false;
+   window.dispatchEvent(new Event('lts-admin-company-rate-save-completed'));
+  }
  });
  reset();
  return {load,reset,prefillSite,focusMaps(){maps.focus();},focusManual(){manual.focus();}};

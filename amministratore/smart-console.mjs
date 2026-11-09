@@ -11,15 +11,24 @@ const safeCount=value=>Number.isSafeInteger(value)&&value>=0?value:null;
 
 export function setupSmartConsole({
  authorized,getDrivers,getReport,getCustomers,openView,openRecords,openCustomer,openManualCustomer,
- clearPrivateCode
+ prepareRateInline,clearPrivateCode
 }){
  const trigger=byId('smart-command-open'),overlay=byId('smart-overlay'),
   panel=byId('smart-panel'),closeButton=byId('smart-close'),
   back=byId('smart-back'),search=byId('smart-search'),
   results=byId('smart-results'),summary=byId('smart-context'),
   home=byId('smart-home'),embedded=byId('smart-embedded'),
-  embedBody=byId('smart-embed-body'),heading=byId('smart-heading');
+  embedBody=byId('smart-embed-body'),heading=byId('smart-heading'),
+  detail=byId('smart-detail'),detailBody=byId('smart-detail-body'),
+  detailActions=byId('smart-detail-actions'),detailSource=byId('smart-detail-source');
  let moved=[],lastFocus=null,mode='home',openState=false;
+ let rateDirty=false,rateSaving=false,rateAttempt=0;
+ const leaveAllowed=()=>{
+  if(mode!=='rate')return true;
+  if(rateSaving)return false; // Do not detach the live form while saving.
+  return !rateDirty||window.confirm('Ci sono modifiche alla tariffa non salvate. Uscire senza salvarle?');
+ };
+ const leave=callback=>{if(leaveAllowed())callback();};
  const allowed=()=>Boolean(authorized())&&navigator.onLine!==false;
  const isVisible=()=>openState&&!overlay.hidden;
 
@@ -37,9 +46,11 @@ export function setupSmartConsole({
   clearPrivateCode();
  }
  function close({focus=true,clearSearch=true}={}){
+  rateAttempt++;rateSaving=false;rateDirty=false;
   if(moved.length)restoreEmbedded();
   overlay.hidden=true;openState=false;mode='home';
-  home.hidden=false;embedded.hidden=true;back.hidden=true;
+  home.hidden=false;embedded.hidden=true;detail.hidden=true;back.hidden=true;
+  detailBody.replaceChildren();detailActions.replaceChildren();
   document.body.classList.remove('smart-is-open');
   byId('dashboard').inert=false;
   trigger.setAttribute('aria-expanded','false');
@@ -72,8 +83,76 @@ export function setupSmartConsole({
   const first=target.querySelector('input');
   first?.focus();
  }
+ function showRateTask(site=null){
+  if(!allowed()||rateSaving)return;
+  const section=byId('company-rates-editor');
+  if(!section)return;
+  const selected=String(byId('company-rate-client')?.value||'').trim();
+  const place=String(byId('company-rate-city')?.value||'').trim();
+  const amount=String(byId('company-rate-amount')?.value||'').trim();
+  if(site?.name&&amount&&
+    (selected.toLocaleUpperCase('it-IT')!==String(site.name).trim().toLocaleUpperCase('it-IT')||
+     place.toLocaleUpperCase('it-IT')!==String(site.city).trim().toLocaleUpperCase('it-IT'))&&
+     !window.confirm('C’è una tariffa non salvata. Sostituire la bozza con la nuova sede?'))return;
+  if(mode==='rate'&&!leaveAllowed())return;
+  const attempt=++rateAttempt;
+  rateDirty=false;
+  restoreEmbedded();
+  home.hidden=true;embedded.hidden=false;detail.hidden=true;back.hidden=false;
+  mode='rate';heading.textContent=site?.name?'Tariffa della sede':'Gestisci tariffa';
+  moveExisting(section);
+  const editorStatus=byId('company-rates-status');
+  editorStatus.textContent='Verifica online dei dati aziendali…';
+  back.focus();
+  void prepareRateInline(site).then(ok=>{
+   if(attempt!==rateAttempt||!isVisible()||mode!=='rate')return;
+   if(!ok)editorStatus.textContent='Impossibile verificare l’elenco completo. Riprovare online prima di salvare.';
+  }).catch(()=>{
+   if(attempt===rateAttempt&&isVisible()&&mode==='rate')
+    editorStatus.textContent='Servizio non disponibile. Nessuna modifica è stata salvata.';
+  });
+ }
+ function showDetail(spec,item){
+  if(!allowed()||!spec||!item?.row)return;
+  const record=item.row;
+  detailBody.replaceChildren();detailActions.replaceChildren();
+  const details=el('dl','smart-detail-fields');
+  function field(label,value){
+   if(value===undefined||value===null||!String(value).trim())return;
+   const cell=el('div','smart-detail-field');
+   cell.append(el('dt','',label),el('dd','',String(value)));
+   details.append(cell);
+  }
+  if(spec.kind==='drivers'){
+   field('Telefono',record.phone);field('Stato accesso',record.status);
+   if(record.phone){
+    appendAction(detailActions,'Viaggi dell’autista',()=>{
+     close({focus:false});openRecords(record.phone,'trip');
+    });
+    appendAction(detailActions,'Clienti personali',()=>{
+     close({focus:false});openRecords(record.phone,'customer');
+    });
+   }
+   appendAction(detailActions,'Gestisci accesso',()=>goTo('drivers'));
+  }else if(spec.kind==='customers'){
+   field('Località',record.city);field('Indirizzo',record.address);
+   appendAction(detailActions,'Modifica tariffa della sede',()=>showRateTask(record));
+  }else if(spec.kind==='trips'){
+   field('Data',record.date);field('Autista',record.driverName);
+   field('Cliente',record.client);field('Località',record.city);
+   field('Container',record.container);
+   appendAction(detailActions,'Apri registro del periodo',()=>goTo('trips'));
+  }
+  detailBody.append(el('h3','smart-detail-title',item.label),details);
+  detailSource.textContent='Anteprima dei soli dati aziendali già caricati e sincronizzati. Le modifiche richiedono la procedura originale con verifica e conferma.';
+  home.hidden=true;embedded.hidden=true;detail.hidden=false;back.hidden=false;
+  mode='detail';heading.textContent='Scheda rapida';
+  back.focus();
+ }
  function resetTask(){
+  rateAttempt++;rateSaving=false;rateDirty=false;
   if(moved.length)restoreEmbedded();
+  detail.hidden=true;detailBody.replaceChildren();detailActions.replaceChildren();
   home.hidden=false;embedded.hidden=true;back.hidden=true;
   mode='home';heading.textContent='Trova e agisci';
   search.focus();
@@ -162,7 +241,12 @@ export function setupSmartConsole({
     const body=el('div','smart-result-description');
     body.append(el('strong','',item.label),el('small','',spec.caption(item)));
     row.append(body);
-    appendAction(row,spec.button,()=>spec.open(item));
+    const buttons=el('div','smart-result-buttons');
+    const preview=appendAction(buttons,'Dettagli',()=>showDetail(spec,item));
+    preview.setAttribute('aria-label','Mostra dettagli di '+item.label);
+    const direct=appendAction(buttons,spec.button,()=>spec.open(item));
+    direct.setAttribute('aria-label',spec.button+' · '+item.label);
+    row.append(buttons);
     group.append(row);
    }
    results.append(group);
@@ -180,13 +264,14 @@ export function setupSmartConsole({
   document.body.classList.add('smart-is-open');
   byId('dashboard').inert=true;
   trigger.setAttribute('aria-expanded','true');
-  home.hidden=false;embedded.hidden=true;back.hidden=true;
+  home.hidden=false;embedded.hidden=true;detail.hidden=true;back.hidden=true;
   mode='home';heading.textContent='Trova e agisci';
   render();search.focus();
  }
  function action(action){
   if(!allowed())return;
   if(action==='invite'||action==='restore')showTask(action);
+  else if(action==='inline-rate')showRateTask();
   else if(action==='drivers'||action==='trips'||action==='rates'||
           action==='alerts'||action==='exports'||action==='analysis'||
           action==='records'||action==='security')goTo(action);
@@ -195,23 +280,39 @@ export function setupSmartConsole({
    close({focus:false});if(authorized())openManualCustomer();
   }
  }
- trigger.addEventListener('click',()=>{if(isVisible())close();else open();});
+ trigger.addEventListener('click',()=>{if(isVisible())leave(()=>close());else open();});
  document.querySelectorAll('[data-smart-open]').forEach(button=>
   button.addEventListener('click',open));
- byId('smart-scrim').addEventListener('click',()=>close());
- closeButton.addEventListener('click',()=>close());
- back.addEventListener('click',resetTask);
+ byId('smart-scrim').addEventListener('click',()=>leave(()=>close()));
+ closeButton.addEventListener('click',()=>leave(()=>close()));
+ back.addEventListener('click',()=>leave(resetTask));
+ const rateForm=byId('company-rates-form');
+ rateForm.addEventListener('input',()=>{if(mode==='rate')rateDirty=true;});
+ rateForm.addEventListener('change',()=>{if(mode==='rate')rateDirty=true;});
+ window.addEventListener('lts-admin-company-rate-save-started',()=>{if(mode==='rate')rateSaving=true;});
+ window.addEventListener('lts-admin-company-rate-saved',()=>{rateDirty=false;});
+ window.addEventListener('lts-admin-company-rate-save-completed',()=>{rateSaving=false;});
  home.querySelectorAll('[data-smart-action]').forEach(button=>
   button.addEventListener('click',()=>action(button.dataset.smartAction)));
  search.addEventListener('input',renderSearch);
- window.addEventListener('lts-admin-data-refreshed',()=>{if(isVisible()&&mode==='home')render();});
+ search.addEventListener('keydown',event=>{
+  if(event.key!=='Enter'||event.isComposing||!search.value.trim())return;
+  const first=results.querySelector('.smart-result-buttons .smart-action');
+  if(!first)return;
+  event.preventDefault();first.click();
+ });
+ window.addEventListener('lts-admin-data-refreshed',()=>{
+  if(!isVisible())return;
+  if(mode==='home')render();
+  else if(mode==='detail')resetTask(); // Do not show a stale preview after data refresh.
+ });
  document.addEventListener('keydown',event=>{
   if(!event.defaultPrevented&&(event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==='k'){
    if(!authorized())return;
-   event.preventDefault();if(isVisible())close();else open();return;
+   event.preventDefault();if(isVisible())leave(()=>close());else open();return;
   }
   if(!isVisible())return;
-  if(event.key==='Escape'){event.preventDefault();close();return;}
+  if(event.key==='Escape'){event.preventDefault();leave(()=>{if(mode==='home')close();else resetTask();});return;}
   if(event.key!=='Tab')return;
   const focusable=[...panel.querySelectorAll('button:not([disabled]):not([hidden]),input:not([disabled]):not([hidden]),select:not([disabled]):not([hidden]),textarea:not([disabled]):not([hidden]),a[href]')]
    .filter(node=>node.getClientRects().length>0);
