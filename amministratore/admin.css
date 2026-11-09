@@ -339,3 +339,13 @@ button,input,select{font:inherit}button{cursor:pointer}button:disabled{opacity:.
 .roster-letter[aria-pressed="true"]{background:#006f89;border-color:#006f89;color:#fff}
 .roster-letter:disabled{opacity:.36;cursor:not-allowed}
 .roster-count{font-size:12px;color:#587581;margin:0 0 10px}
+
+/* Administrator-only operational status: never visible on the driver app. */
+.status-admin-card{margin-top:22px;padding:19px;border:1px solid #cbdfe6;border-radius:16px;background:#f6fbfd}
+.status-admin-card h2{font-size:18px;margin:0 0 8px;color:#123d50}
+.status-admin-card>p{line-height:1.5}
+.status-admin-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:18px 0}
+.status-admin-metrics>div{background:#fff;border:1px solid #dceaf0;border-radius:12px;padding:13px}
+.status-admin-metrics dt{font-size:12px;color:#567787;margin-bottom:7px}
+.status-admin-metrics dd{font-weight:750;color:#153e51;margin:0;overflow-wrap:anywhere}
+@media(max-width:670px){.status-admin-metrics{grid-template-columns:1fr}.status-admin-card{padding:14px}}
