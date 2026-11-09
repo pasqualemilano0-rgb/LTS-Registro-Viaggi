@@ -47,8 +47,9 @@ async function update() {
   button.disabled=true;
   document.getElementById('info').textContent='Recupero stato da GitHub…';
   try {
-    const monitorResponse=await getJSON(api+'/actions/workflows/lts-uptime-monitor.yml/runs?branch=main&per_page=1');
-    const monitor=monitorResponse.workflow_runs?.[0]||null;
+    const history=await getJSON(api+'/actions/runs?branch=main&per_page=100');
+    const runs=history.workflow_runs||[];
+    const monitor=findLatest(runs,r=>r.name==='LTS Control Center — monitor disponibilita gratuito');
     const monitorState=classifyRun(monitor);
     let job=null;
     if (monitor) {
@@ -64,8 +65,6 @@ async function update() {
     }
     setState('overall',summarize([...states,monitorState]));
     document.getElementById('last-check').textContent='Ultimo controllo: '+formattedDate(monitor?.run_started_at||monitor?.created_at);
-    const history=await getJSON(api+'/actions/runs?branch=main&per_page=50');
-    const runs=history.workflow_runs||[];
     const deploy=findLatest(runs,r=>r.name==='pages build and deployment');
     const qa=findLatest(runs,r=>r.name==='QA release LTS Autisti — Fase 1');
     // Historical success means last release passed, NOT current availability.
