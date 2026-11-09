@@ -4,7 +4,7 @@
 import {SERVICES,formatMoney,toCents,buildTripAmountContext,tripAmounts,saturdayAllowanceStatus} from '../shared/domain.mjs';
 import {sharedMapsCustomers} from '../shared-maps-client.mjs';
 import {companyFareSnapshot} from '../shared/company-fares.mjs';
-import {buildDriverCustomerCatalog,filterDriverCustomerCatalog} from './driver-customer-catalog.mjs?v=20261109-shared-trip-v1';
+import {buildDriverCustomerCatalog,filterDriverCustomerCatalog} from './driver-customer-catalog.mjs?v=20261109-personal-company-v1';
 import {attachPersonalCustomerCertification} from './personal-customer-maps-ui.mjs?v=20261108-certify-v1';
 import {RECORD_FILTERS,assessPersonalCustomer,archiveCustomerMetrics,
  customerMatchesQuickFilter,tripWorklistSummary,archiveMatchesSearch,archivedRestoreStatus}
