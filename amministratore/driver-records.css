@@ -206,3 +206,26 @@
 }
 #admin-records-panel .records-private-trip-sync span{min-width:0;flex:1;overflow-wrap:anywhere}
 #admin-records-panel .records-private-trip-sync[hidden]{display:none!important}
+
+/* Surface the real server/validation result at the button, not a header
+ * several viewports away. Never hide a failed write or claim success early. */
+#admin-records-panel .records-save-feedback{
+ grid-column:1/-1;padding:12px 14px;margin:0 0 4px;
+ background:#fff3ed;color:#8e351e;border:1px solid #dfa391;
+ border-radius:12px;font-size:13px;font-weight:700;line-height:1.55;
+ overflow-wrap:anywhere
+}
+#admin-records-panel .records-save-feedback[hidden]{display:none!important}
+.records-save-toast{
+ position:fixed;z-index:3000;
+ left:max(12px,env(safe-area-inset-left));
+ right:max(12px,env(safe-area-inset-right));
+ bottom:calc(85px + env(safe-area-inset-bottom));
+ max-width:650px;margin:0 auto;
+ padding:14px 16px;border:1px solid #81bfb7;border-radius:14px;
+ background:#e7f8f2;color:#125d4d;line-height:1.45;
+ box-shadow:0 8px 30px #0a354533;font-size:13px;font-weight:700;
+ overflow-wrap:anywhere;pointer-events:none
+}
+.records-save-toast.is-error{background:#fff1ed;color:#963e24;border-color:#d99c89}
+.records-save-toast[hidden]{display:none!important}
