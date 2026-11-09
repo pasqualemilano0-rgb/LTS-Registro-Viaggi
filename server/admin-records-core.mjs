@@ -125,6 +125,12 @@ async function mutate(admin,actorId,input){
   throw {status:409,error:'L’archivio è cambiato. Aggiorna prima di salvare.'};
  if(!REQUEST.test(input.requestId||''))throw {status:400};
  const operation=input.operation,category=input.category,id=input.recordId;
+ // Explicit opt-in only, authorized with the same admin MFA and revision CAS.
+ if(input.updateLinkedTrips!==undefined&&typeof input.updateLinkedTrips!=='boolean')
+  throw {status:400,error:'Conferma aggiornamento viaggi non valida.'};
+ const updateLinkedTrips=input.updateLinkedTrips===true;
+ if(updateLinkedTrips&&(operation!=='update'||category!=='customer'))
+  throw {status:400,error:'Aggiornamento viaggi consentito solo modificando un cliente.'};
  const reason=typeof input.reason==='string'?input.reason.trim():'';
  if(reason.length>500||(operation==='delete'&&reason.length<8))
   throw {status:400,error:'Per eliminare un elemento inserisci una motivazione di almeno 8 caratteri.'};
@@ -141,12 +147,15 @@ async function mutate(admin,actorId,input){
  }
  let patched;
  try{patched=applyAdminRecordEdit(current.state,{
-  action:operation,category,id,patch:input.patch||{},restoreRecord:restored
+  action:operation,category,id,patch:input.patch||{},restoreRecord:restored,updateLinkedTrips
  });}catch(error){throw {status:400,error:error.message||'Dati da modificare non validi.'};}
+ const auditReason=updateLinkedTrips&&patched.affectedTrips>0?
+  (reason?reason+' · ':'')+'Modificati '+patched.affectedTrips+' viaggi collegati':reason;
+ if(auditReason.length>500)throw {status:400,error:'Motivo della modifica troppo lungo.'};
  const {data,error}=await admin.rpc('lts_admin_archive_commit',{
   p_actor_id:actorId,p_driver_id:driverId,p_expected_revision:current.revision,
   p_new_payload:patched.state,p_request_id:input.requestId,p_category:category,
-  p_action:operation,p_record_id:id,p_reason:reason,
+  p_action:operation,p_record_id:id,p_reason:auditReason,
   p_before:patched.before??null,p_after:patched.after??null
  });
  if(error){
@@ -156,7 +165,7 @@ async function mutate(admin,actorId,input){
   throw {status:503};
  }
  if(!Number.isSafeInteger(data)||data!==current.revision+1)throw {status:503};
- return {revision:data,state:patched.state};
+ return {revision:data,state:patched.state,affectedTrips:patched.affectedTrips||0};
 }
 export async function handleAdminRecords(req,{getClients}={}){
  const origin=req.headers.get('Origin');
