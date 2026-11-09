@@ -141,3 +141,34 @@ test('opt-in cannot be supplied for other edit categories or malformed flags',()
   patch:{name:'TEST'},updateLinkedTrips:'true'},now),/non consentito/);
  assert.equal(linkedCustomerTripCount(current,{name:'ACME',city:''}),0);
 });
+
+
+test('company rename with an already existing same-city rate preserves the old rate without deleting or repricing',()=>{
+ const state=make();
+ state.tariffs.push({id:'r-company',customerId:null,client:'DE NIGRIS',city:'NAPOLI',cents:11200});
+ const before=validateState(state);
+ const {state:updated,preservedLegacyTariffs,affectedTrips}=applyAdminRecordEdit(before,{
+  action:'update',category:'customer',id:'c1',updateLinkedTrips:true,
+  patch:{name:'DE NIGRIS',city:'CAIVANO',address:'VIA NAZIONALE'}
+ },now);
+ assert.equal(preservedLegacyTariffs,1);
+ assert.equal(affectedTrips,1);
+ assert.equal(updated.customers[0].name,'DE NIGRIS');
+ assert.equal(updated.tariffs.length,2,'No rate should disappear');
+ const old=updated.tariffs.find(x=>x.id==='r1');
+ const company=updated.tariffs.find(x=>x.id==='r-company');
+ assert.deepEqual(old,{id:'r1',customerId:null,client:'ACME',city:'NAPOLI',cents:7500},
+  'Conflicting rate is retained as a detached historic record');
+ assert.deepEqual(company,{id:'r-company',customerId:null,client:'DE NIGRIS',city:'NAPOLI',cents:11200});
+ assert.equal(updated.trips[0].client,'DE NIGRIS');
+ assert.equal(updated.trips[0].fareCents,5000,'Previously recorded trip price is never recalculated');
+ assert.equal(before.trips[0].client,'ACME','Input snapshot remains untouched');
+});
+test('without tariff collision the same customer rate follows the new name with unchanged amount',()=>{
+ const result=applyAdminRecordEdit(make(),{action:'update',category:'customer',id:'c1',
+  patch:{name:'NUOVO CLIENTE',city:'CASERTA'}},now);
+ assert.equal(result.preservedLegacyTariffs,0);
+ assert.equal(result.state.tariffs[0].client,'NUOVO CLIENTE');
+ assert.equal(result.state.tariffs[0].customerId,'c1');
+ assert.equal(result.state.tariffs[0].cents,7500);
+});
