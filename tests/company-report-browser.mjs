@@ -47,6 +47,8 @@ export const companyTariffs=async(action,data={})=>{
 
 let adminArchiveRevision=3;
 let adminAudit=[];
+let rejectNextCustomerSave=false;
+export const mockRejectNextCustomerSave=()=>{rejectNextCustomerSave=true;};
 const removedPersonalRecords=new Map();
 let adminArchive={
  schemaVersion:1,profile:{firstName:'Mario',lastName:'Rossi'},
@@ -71,6 +73,10 @@ export const adminRecords=async(action,data={})=>{
   audit:structuredClone(adminAudit)};}
  if(action==='mutate'){
   await new Promise(resolve=>setTimeout(resolve,90));
+  if(rejectNextCustomerSave&&data.category==='customer'){
+   rejectNextCustomerSave=false;
+   throw new Error('Cliente e località tariffa: elemento duplicato.');
+  }
   if(data.expectedRevision!==adminArchiveRevision)throw new Error('Revision conflict');
   const rows=adminArchive.trips,idx=rows.findIndex(x=>x.id===data.recordId);
   let affectedTrips=0;
@@ -715,9 +721,26 @@ try{
  await page.locator('#records-editor button[type="submit"]').click();
  assert.equal(await page.locator('#records-revision').textContent(),'4',
   'Saving a selected company customer without confirming linked tariffs must be blocked');
+ assert.equal(await page.locator('#records-editor .records-save-feedback').isVisible(),true,
+  'Blocked save must show a message NEXT TO the save button, not only at the archive header');
+ assert.match(await page.locator('#records-editor .records-save-feedback').textContent(),/verifica/i);
  await acknowledgement.locator('input').check();
+ // Simulate production HTTP 400: error must be visible beside save, and
+ // the user's edited form must remain intact for a second attempt.
+ await page.evaluate(async()=>{
+  const account=await import('/account-access.mjs');
+  account.mockRejectNextCustomerSave();
+ });
+ await page.locator('#records-editor button[type="submit"]').click();
+ await page.waitForFunction(()=>!document.querySelector('#records-editor .records-save-feedback')?.hidden);
+ assert.match(await page.locator('#records-editor .records-save-feedback').textContent(),/tariffa.*duplicato/i);
+ assert.equal(await page.locator('#records-revision').textContent(),'4');
+ assert.equal(await page.locator('#records-editor input[name=name]').inputValue(),'CLIENTE AUTISTA CORRETTO');
  await page.locator('#records-editor button[type="submit"]').click();
  await page.waitForFunction(()=>document.querySelector('#records-revision').textContent==='5');
+ await page.waitForFunction(()=>document.querySelector('.records-save-toast')?.textContent.includes('Modifica salvata online'));
+ assert.equal(await page.locator('.records-save-toast').isVisible(),true,
+  'Saved update must confirm success without making the admin scroll to the top');
  await page.waitForFunction(()=>document.querySelector('#records-list').textContent.includes('CLIENTE AUTISTA CORRETTO'));
  assert.match(await page.locator('#records-list').textContent(),/CLIENTE AUTISTA CORRETTO/);
  assert.match(await page.locator('#records-list').textContent(),/VIA PERSONALE 99/);

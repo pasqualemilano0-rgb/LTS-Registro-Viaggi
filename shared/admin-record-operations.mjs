@@ -89,7 +89,7 @@ export function applyAdminRecordEdit(raw,{action,category,id,patch={},restoreRec
  }
  const collection=state[name],index=collection.findIndex(x=>x.id===key);
  const original=index>=0?collection[index]:null;
- let before=original,after=null;
+ let before=original,after=null,preservedLegacyTariffs=0;
  if(action==='create'||action==='restore'){
   if(original)throw new Error('Elemento già presente: aggiorna prima il registro.');
   if(action==='restore'){
@@ -109,8 +109,23 @@ export function applyAdminRecordEdit(raw,{action,category,id,patch={},restoreRec
    after=nextEntry(category,key,patch,original,now);
    collection[index]=after;
    if(category==='customer'&&after.name!==original.name){
-    // Keep linked legacy personal tariffs referentially valid; retain their amounts.
-    state.tariffs=state.tariffs.map(t=>t.customerId===key?{...t,client:normalizeText(after.name)}:t);
+    // Preserve unique client+city tariff keys and all original cent amounts.
+    // If the new company name already has a rate for the same city, keep the
+    // old personal rate as a detached historic rate rather than deleting it
+    // or overwriting the existing rate. Never silently change trip snapshots.
+    const nextName=normalizeText(after.name);
+    const occupied=new Set(state.tariffs.filter(t=>t.customerId!==key)
+     .map(t=>JSON.stringify([normalizeText(t.client),normalizeText(t.city)])));
+    state.tariffs=state.tariffs.map(t=>{
+     if(t.customerId!==key)return t;
+     const renamedKey=JSON.stringify([nextName,normalizeText(t.city)]);
+     if(occupied.has(renamedKey)){
+      preservedLegacyTariffs++;
+      return {...t,customerId:null}; // Old name and amount remain unchanged.
+     }
+     occupied.add(renamedKey);
+     return {...t,client:nextName};
+    });
    }
    if(category==='customer'&&updateLinkedTrips&&
       (normalizeText(original.name)!==normalizeText(after.name)||
@@ -133,7 +148,7 @@ export function applyAdminRecordEdit(raw,{action,category,id,patch={},restoreRec
  }
  const checked=validateState(state);
  const checkAfter=after?checked[name].find(x=>x.id===key):null;
- return {state:checked,before,after:checkAfter||null,
+ return {state:checked,before,after:checkAfter||null,preservedLegacyTariffs,
   affectedTrips:category==='customer'&&updateLinkedTrips&&
   (normalizeText(original?.name)!==normalizeText(after?.name)||
    normalizeText(original?.city)!==normalizeText(after?.city))?
