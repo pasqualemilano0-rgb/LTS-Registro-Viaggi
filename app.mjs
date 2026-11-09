@@ -13,9 +13,10 @@ import {companyFareSnapshot} from '/LTS-Registro-Viaggi/shared/company-fares.mjs
 import {companyExtraSnapshot} from '/LTS-Registro-Viaggi/shared/company-extras.mjs';
 import {mapsLinkForCompanySync,filterSharedCustomers} from '/LTS-Registro-Viaggi/shared/maps-company-routing.mjs';
 import {dedupedCustomerDirectory,matchingSharedCustomer,canonicalPersonalCustomer} from '/LTS-Registro-Viaggi/shared/customer-site-matches.mjs';
+import {CUSTOMER_BATCH_SIZE,buildCustomerDirectory,queryCustomerDirectory,removePersonalCustomer,restorePersonalCustomer} from '/LTS-Registro-Viaggi/shared/customer-directory-v5.mjs';
 import {combinedTripCustomerChoices,filterTripCustomerChoices} from '/LTS-Registro-Viaggi/shared/trip-customer-choices.mjs';
 import { appendPushSettings } from '/LTS-Registro-Viaggi/push-client.mjs';
-import { parseCustomerCsv, mergeCustomerCsv, exportCustomerCsv, MAX_CUSTOMER_CSV_BYTES } from '/LTS-Registro-Viaggi/shared/customer-csv.mjs';
+import { parseCustomerCsv, mergeCustomerCsv, previewCustomerCsvChanges, exportCustomerCsv, MAX_CUSTOMER_CSV_BYTES } from '/LTS-Registro-Viaggi/shared/customer-csv.mjs';
 
 const root = document.querySelector('#app');
 const today = () => { const now = new Date(); return `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`; };
@@ -30,7 +31,8 @@ let companyCustomersError='';
 let companyCustomersRequest=0;
 let companyCustomerSearch=''; // Single live search for company and personal customers.
 let customerDirectoryScope='all';
-let customerDirectoryLimit=24;
+let customerDirectoryLimit=CUSTOMER_BATCH_SIZE;
+let customerDirectoryCache=null,lastDeletedCustomer=null;
 let companyCustomersLoaded=false;
 let user = null;
 let tab = 'insert';
@@ -286,7 +288,7 @@ function receiveState(record,{source}={}){
  const previous=state;state=D.validateState(record.state);refreshDraftCustomers(previous,state);user=record.user||null;pdfReport=null;
  if(changedIdentity){
   draft=newDraft();draftBaselineDate=draft.date;editingId=null;editingBaseline=null;tripDraftRecoveryMessage='';
-  lastDeletedTrip=null;registerQuery='';registerFilter='all';registerLimit=REGISTER_PAGE_SIZE;document.querySelectorAll('dialog').forEach(dialog=>dialog.close());render();
+  lastDeletedTrip=null;lastDeletedCustomer=null;customerDirectoryCache=null;registerQuery='';registerFilter='all';registerLimit=REGISTER_PAGE_SIZE;document.querySelectorAll('dialog').forEach(dialog=>dialog.close());render();
   // initialize() owns first-time account onboarding. Avoid opening two
   // profile dialogs after switching from a legacy device archive.
   if(source!=='account'&&(!state.profile.firstName||!state.profile.lastName))openProfile(true);
@@ -363,22 +365,18 @@ async function refreshCompanyCustomers(){
 }
 /** Update only the company list, leaving the search field, caret and keyboard intact. */
 /** Combined search without merging or changing the private client archive. */
+function currentCustomerDirectory(){
+ const personal=state.customers,shared=companyCustomers;
+ if(!customerDirectoryCache||customerDirectoryCache.personal!==personal||
+    customerDirectoryCache.shared!==shared)
+  customerDirectoryCache={personal,shared,model:buildCustomerDirectory(shared,personal)};
+ return customerDirectoryCache.model;
+}
 function updateCompanyCustomersPanel(panel=document.querySelector('.company-customer-list')){
  if(!panel)return;
- const directory=dedupedCustomerDirectory(companyCustomers,state.customers);
- const found=filterSharedCustomers(directory.shared,companyCustomerSearch);
- // "Tutti" has one card per physical site; "Miei" still lets the driver
- // inspect/edit every original private contact, including older duplicates.
- const personal=filterSharedCustomers(
-  customerDirectoryScope==='personal'?state.customers:directory.personal,
-  companyCustomerSearch);
- const personalTotal=filterSharedCustomers(state.customers,companyCustomerSearch).length;
- const all=[...found.map(customer=>({...customer,directorySource:'shared'})),
-  ...personal.map(customer=>({...customer,directorySource:'personal'}))];
- const visible=all.filter(customer=>customerDirectoryScope==='all'||
-  customer.directorySource===customerDirectoryScope)
-  .sort((a,b)=>a.name.localeCompare(b.name,'it')||a.city.localeCompare(b.city,'it')||
-   (a.directorySource==='shared'?-1:1));
+ const result=queryCustomerDirectory(currentCustomerDirectory(),{
+  query:companyCustomerSearch,scope:customerDirectoryScope,limit:customerDirectoryLimit
+ });
  const count=panel.querySelector('.company-customer-count'),
   clear=panel.querySelector('.customer-search-clear'),
   list=panel.querySelector('.customer-directory-results'),
@@ -386,8 +384,9 @@ function updateCompanyCustomersPanel(panel=document.querySelector('.company-cust
   more=panel.querySelector('.customer-more-results');
  if(status){status.textContent=companyCustomersError;status.hidden=!companyCustomersError;}
  if(clear)clear.hidden=!companyCustomerSearch.trim();
- if(count)count.textContent=visible.length
-  ?`${visible.length} ${visible.length===1?'cliente trovato':'clienti trovati'}`
+ if(count)count.textContent=result.total
+  ?result.total+' '+(result.total===1?'cliente trovato':'clienti trovati')+
+    (result.hasMore?' · '+result.visible.length+' visualizzati':'')
   :companyCustomerSearch.trim()?'Nessun cliente corrisponde alla ricerca.'
    :companyCustomersLoaded||!sharedMapsEnabled()?'Nessun cliente in questa categoria.'
    :'Aggiornamento clienti aziendali in corso…';
@@ -396,14 +395,18 @@ function updateCompanyCustomersPanel(panel=document.querySelector('.company-cust
   button.classList.toggle('selected',chosen);
   button.setAttribute('aria-pressed',String(chosen));
   const number=button.querySelector('.customer-scope-count');
-  if(number)number.textContent=String(button.dataset.customerScope==='shared'?
-    found.length:button.dataset.customerScope==='personal'?personalTotal:all.length);
+  if(number)number.textContent=String(result.counts[button.dataset.customerScope]??0);
  });
- if(list)list.replaceChildren(...visible.slice(0,customerDirectoryLimit).map(customer=>
-  customerCard(customer,{shared:customer.directorySource==='shared'})));
+ if(list)list.replaceChildren(...result.visible.map(row=>
+  customerCard(row.customer,{
+   shared:row.source==='shared',
+   linkedPersonal:row.linkedPersonal??null,
+   linkedShared:row.linkedShared??null,
+   possibleDuplicate:row.possibleDuplicate===true
+  })));
  if(more){
-  more.hidden=visible.length<=customerDirectoryLimit;
-  more.textContent=`Mostra altri clienti (${visible.length-customerDirectoryLimit})`;
+  more.hidden=!result.hasMore;
+  more.textContent='Mostra altri clienti ('+(result.total-result.visible.length)+')';
  }
 }
 /** Pre-fill only client and location: never overwrite a stored journey. */
@@ -461,7 +464,7 @@ function companyCustomersPanel(){
     catch(error){toast(error.message,true);}
    },'download')),upload);
  const more=el('button',{type:'button',class:'secondary-button customer-more-results',
-  on:{click:()=>{customerDirectoryLimit+=24;updateCompanyCustomersPanel(panel);}}},
+  on:{click:()=>{customerDirectoryLimit+=CUSTOMER_BATCH_SIZE;updateCompanyCustomersPanel(panel);}}},
   'Mostra altri clienti');
  panel.append(
   el('div',{class:'customer-hub-heading'},
@@ -954,21 +957,34 @@ function renderRegister(main){
 }
 function searchBox(placeholder,onSearch){const input=el('input',{type:'search',placeholder,value:searchValue,'aria-label':placeholder,autocapitalize:'characters',on:{input:event=>{searchValue=event.target.value;onSearch();}}});return el('div',{class:'search'},icon('search'),input);}
 /** Compact customer cards: operational notes and tariff values are kept out of this list. */
-function customerCard(customer,{shared=false}={}){
+function customerCard(customer,{shared=false,linkedPersonal=null,linkedShared=null,possibleDuplicate=false}={}){
  const city=String(customer.city||'').trim();
  const address=String(customer.address||'').trim();
- const phone=String(customer.phone||'').trim();
+ const phone=String(customer.phone||linkedPersonal?.phone||'').trim();
  const dial=phone.replace(/[^0-9+]/gu,'');
  const canCall=/^\+?[0-9]{5,16}$/u.test(dial);
  const actions=el('div',{class:'directory-card-actions'},
   el('button',{type:'button',class:'secondary-button directory-use-customer',
    on:{click:()=>useCustomerInTrip(customer)}},icon('plus'),'Usa nel viaggio'));
  if(shared&&customer.mapsUrl)actions.append(el('a',{class:'directory-open-maps',href:customer.mapsUrl,
-  target:'_blank',rel:'noopener noreferrer',
-  'aria-label':`Apri Google Maps per ${customer.name}`},icon('pin'),'Apri Maps'));
- else if(!shared)actions.append(el('button',{type:'button',class:'text-button directory-edit-customer',
-  on:{click:()=>customerDialog(customer)},
-  'aria-label':`Modifica cliente ${customer.name}`},icon('edit'),'Modifica'));
+   target:'_blank',rel:'noopener noreferrer',
+   'aria-label':'Apri Google Maps per '+customer.name},icon('pin'),'Apri Maps'));
+ if(!shared)actions.append(el('button',{type:'button',class:'text-button directory-edit-customer',
+   on:{click:()=>customerDialog(customer)},
+   'aria-label':'Modifica cliente '+customer.name},icon('edit'),'Modifica'));
+ if(shared&&linkedPersonal)actions.append(el('button',{type:'button',
+   class:'text-button directory-edit-customer directory-linked-personal',
+   'aria-label':'Modifica contatto personale collegato a '+customer.name,
+   on:{click:()=>customerDialog(linkedPersonal)}},icon('edit'),'Modifica mio contatto'));
+ const detail=possibleDuplicate?
+   el('p',{class:'customer-duplicate-hint'},icon('info'),
+    'Possibile corrispondenza aziendale: verifica indirizzo e sede prima di unirli.'):
+   linkedShared?
+   el('p',{class:'customer-linked-hint'},icon('link'),
+    'Contatto personale associato a una sede aziendale.'):
+   shared&&linkedPersonal?
+   el('p',{class:'customer-linked-hint'},icon('link'),
+    'Contatto personale collegato: puoi modificarlo senza cambiare la sede aziendale.'):null;
  const content=el('div',{class:'directory-card-content'},
   el('div',{class:'directory-card-title'},el('h3',{},customer.name),
    el('span',{class:shared?'customer-source shared':'customer-source personal'},
@@ -976,11 +992,19 @@ function customerCard(customer,{shared=false}={}){
   city?el('p',{class:'directory-card-city'},el('span',{class:'directory-field-label'},'Località'),el('span',{},city)):null,
   address?el('p',{class:'directory-card-address'},el('span',{class:'directory-field-label'},'Via'),el('span',{class:'directory-address-text',title:address},address)):null,
   phone?el('p',{class:'directory-card-phone'},el('span',{class:'directory-field-label'},'Telefono'),
-   canCall?el('a',{href:'tel:'+dial,'aria-label':`Chiama ${phone}`},icon('phone'),phone):el('span',{},phone)):null);
+   canCall?el('a',{href:'tel:'+dial,'aria-label':'Chiama '+phone},icon('phone'),phone):el('span',{},phone)):null,
+  detail);
  return el('article',{class:'panel customer-card directory-card'},content,actions);
 }
 function renderCustomers(main){
  main.append(heading('LA TUA RUBRICA','Clienti','Cerca una sede o scegli un cliente per il prossimo viaggio.'));
+ if(lastDeletedCustomer&&lastDeletedCustomer.owner===user?.id)
+  main.append(el('section',{class:'customer-undo-banner',role:'status'},
+   el('div',{},el('strong',{},'Cliente eliminato: '+lastDeletedCustomer.snapshot.customer.name),
+    el('p',{},'Puoi ripristinare il contatto personale e le tariffe originali in questa sessione.')),
+   button('Annulla eliminazione','secondary',async()=>{
+    try{await undoDeletedPersonalCustomer();}catch(error){toast(error.message||'Ripristino non riuscito.',true);}
+   },'refresh',{class:'secondary-button customer-undo-action'})));
  main.append(companyCustomersPanel());
  refreshView=()=>updateCompanyCustomersPanel();
 }
@@ -1122,15 +1146,82 @@ function mapsCustomerDialog(){
 async function importCustomersCsv(file){
  try{
   if(file.size>MAX_CUSTOMER_CSV_BYTES)throw new Error('Il CSV non deve superare 2 MB.');
-  let text;try{text=new TextDecoder('utf-8',{fatal:true}).decode(await file.arrayBuffer());}catch{throw new Error('Salva il CSV in formato UTF-8 e riprova.');}
-  const rows=parseCustomerCsv(text);const preview=mergeCustomerCsv(state,rows);
-  const {dialog,body}=modal('Importa clienti CSV',{subtitle:`${preview.count} clienti nel file: ${preview.added} nuovi, ${preview.updated} da aggiornare.`});
-  body.append(el('p',{class:'profile-description'},'Vengono aggiornati solo i campi compilati dei clienti con lo stesso nome. Gli altri clienti, le tariffe e i viaggi restano conservati.'),el('ul',{class:'csv-preview'},rows.slice(0,5).map(row=>el('li',{},el('strong',{},row.name),el('span',{},[row.city,row.address].filter(Boolean).join(' · '))))));
-  if(rows.length>5)body.append(el('p',{class:'field-hint'},`E altri ${rows.length-5} record nel file.`));
-  const error=el('div',{class:'form-error',role:'alert'});const confirm=button('Importa clienti','primary',async()=>{confirm.disabled=true;error.textContent='';try{const next=mergeCustomerCsv(state,rows);await persist(next.state);dialog.close();render();toast(`${next.count} clienti controllati: rubrica aggiornata.`);}catch(err){error.textContent=err.message;confirm.disabled=false;}});
-  body.append(error,el('div',{class:'dialog-actions'},button('Annulla','secondary',()=>dialog.close()),confirm));
+  let text;try{text=new TextDecoder('utf-8',{fatal:true}).decode(await file.arrayBuffer());}
+  catch{throw new Error('Salva il CSV in formato UTF-8 e riprova.');}
+  const rows=parseCustomerCsv(text);
+  const preview=previewCustomerCsvChanges(state,rows,8);
+  const openingFingerprint=JSON.stringify(state.customers),openingOwner=user?.id;
+  const {dialog,body}=modal('Anteprima importazione clienti',{
+   subtitle:preview.added+' nuovi · '+preview.updated+' da aggiornare · '+
+    preview.unchanged+' senza modifiche. Nessun dato è stato ancora salvato.'});
+  const fieldLabels={vat:'Partita IVA',city:'Località',address:'Indirizzo',phone:'Telefono'};
+  const changeCards=preview.details.map(detail=>
+   el('li',{class:'csv-change-card'},
+    el('strong',{},detail.name),
+    el('span',{class:'csv-change-status'},detail.type==='added'?'Nuovo':'Aggiornamento'),
+    el('ul',{},detail.fields.map(field=>el('li',{},
+     el('b',{},fieldLabels[field.field]||field.field),
+     el('span',{},field.before?'Prima: '+String(field.before).slice(0,200):'Prima: non compilato'),
+     el('span',{},'Dopo: '+String(field.after).slice(0,200)))))));
+  body.append(el('p',{class:'profile-description'},
+   'Vengono modificati solo i campi compilati nel CSV. I clienti assenti dal file, le tariffe e tutti i viaggi restano invariati.'),
+   preview.changed?
+    el('section',{class:'csv-preview-diff','aria-label':'Modifiche proposte'},
+     el('h3',{},'Modifiche proposte'),
+     el('ul',{class:'csv-change-list'},changeCards),
+     preview.changed>preview.details.length?
+      el('p',{class:'field-hint'},'Altri '+(preview.changed-preview.details.length)+
+       ' clienti saranno modificati. Esporta un backup prima di importare un file grande.'):null):
+    el('p',{class:'csv-no-change'},'Tutti i clienti del CSV sono già aggiornati. Nessuna modifica necessaria.'));
+  const error=el('div',{class:'form-error',role:'alert'});
+  const confirm=button('Conferma importazione','primary',async()=>{
+   confirm.disabled=true;error.textContent='';
+   try{
+    if(user?.id!==openingOwner||JSON.stringify(state.customers)!==openingFingerprint)
+     throw new Error('La rubrica è cambiata durante l’anteprima. Chiudi e riapri il CSV per controllare le modifiche aggiornate.');
+    const next=mergeCustomerCsv(state,rows);
+    await persist(next.state);dialog.close();render();
+    toast(next.count+' clienti controllati: '+next.added+' nuovi, '+next.updated+' aggiornati.');
+   }catch(err){error.textContent=err.message;confirm.disabled=false;}
+  });
+  if(!preview.changed)confirm.disabled=true;
+  body.append(error,el('div',{class:'dialog-actions'},
+   button('Annulla','secondary',()=>dialog.close()),confirm));
  }catch(err){toast(err.message||'Impossibile leggere il CSV.',true);}
 }
+/** Undo is account-scoped and available only in the current authenticated session. */
+async function deletePersonalCustomer(customer){
+ const owner=user?.id;
+ if(!owner||!store.usingAccount()||!accountAccess.isVerified())
+  throw new Error('Accedi al tuo account per eliminare il cliente.');
+ const {next,snapshot}=removePersonalCustomer(state,customer.id);
+ try{await persist(next);}
+ catch(error){
+  if(!(error.pendingState&&!state.customers.some(row=>row.id===customer.id)))throw error;
+ }
+ if(user?.id!==owner)return;
+ lastDeletedCustomer={owner,snapshot};
+ render();
+ toast(store.getSyncInfo?.().pending?
+  'Cliente eliminato sul dispositivo. Puoi annullare; sincronizzazione in attesa.':
+  'Cliente personale eliminato. Puoi annullare dalla sezione Clienti.');
+}
+async function undoDeletedPersonalCustomer(){
+ const saved=lastDeletedCustomer;
+ if(!saved||!store.usingAccount()||!accountAccess.isVerified()||saved.owner!==user?.id)
+  throw new Error('Ripristino disponibile soltanto nello stesso account e nella sessione corrente.');
+ const next=restorePersonalCustomer(state,saved.snapshot);
+ try{await persist(next);}
+ catch(error){
+  if(!(error.pendingState&&state.customers.some(row=>row.id===saved.snapshot.customer.id)))throw error;
+ }
+ lastDeletedCustomer=null;
+ render();
+ toast(store.getSyncInfo?.().pending?
+  'Cliente ripristinato sul dispositivo. Sincronizzazione in attesa.':
+  'Cliente personale e tariffe ripristinati.');
+}
+
 function customerDialog(customer=null,proposal=null,{focusRates=false}={}){
  // The directory decorates its personal rows for rendering. Resolve the
  // original archive entry before establishing the optimistic edit fingerprint.
@@ -1158,7 +1249,7 @@ function customerDialog(customer=null,proposal=null,{focusRates=false}={}){
  form.append(el('p',{class:'info-note'},icon('lock'),'Le trasferte sono uguali per tutti gli autisti e si modificano solo dal tariffario aziendale.'));
  const actions=el('div',{class:'dialog-actions'});
  if(customer)actions.append(button('Elimina','secondary danger',()=>{
-  dialog.close();confirmAction('Eliminare questo cliente?',`${customer.name}. Verranno rimosse solo le sue tariffe personali. I viaggi già salvati e il tariffario aziendale rimarranno invariati.`,async()=>{requireCurrentEditor(expectedCustomer,state.customers.find(current=>current.id===customer.id),'Il cliente');await persist({...state,customers:state.customers.filter(c=>c.id!==customer.id),tariffs:state.tariffs.filter(t=>t.customerId!==customer.id&&t.client!==customer.name)});render();toast('Cliente eliminato.');});
+  dialog.close();confirmAction('Eliminare questo cliente?',`${customer.name}. Verranno rimosse solo le sue tariffe personali. I viaggi già salvati e il tariffario aziendale rimarranno invariati.`,async()=>{requireCurrentEditor(expectedCustomer,state.customers.find(current=>current.id===customer.id),'Il cliente');await deletePersonalCustomer(customer);});
  }));
  actions.append(el('button',{type:'submit',class:'primary-button','data-save':true},'Salva cliente'));form.append(actions);
  form.addEventListener('submit',async event=>{event.preventDefault();error.textContent='';try{
@@ -1894,6 +1985,7 @@ function accountInstallBanner(){
   el('span',{class:'account-install-banner-wave','aria-hidden':'true'}));
 }
 function renderAccountGate(message=''){
+ lastDeletedCustomer=null;customerDirectoryCache=null;
  realtimeBridge?.stop();realtimeBridge=null;
  companyCustomers=[];
  companyCustomersError='';

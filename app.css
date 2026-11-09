@@ -745,3 +745,34 @@ h1,h2,h3{letter-spacing:-.035em}
  .register-undo-button{width:100%}
  .register-tools{padding:12px;margin:12px 0}
 }
+
+
+/* Clienti V5: one-level personal restore, duplicate certainty and CSV change review. */
+.customer-undo-banner{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;
+ margin:0 0 14px;padding:14px;border:1px solid #9dd5ce;border-radius:13px;
+ background:#ecf9f6;color:#23564f}
+.customer-undo-banner>div{flex:1 1 190px;min-width:0}
+.customer-undo-banner strong{font-size:13px;line-height:1.4;overflow-wrap:anywhere}
+.customer-undo-banner p{font-size:11px;line-height:1.5;margin:4px 0 0}
+.customer-undo-action{min-height:44px;font-size:12px}
+.customer-duplicate-hint,.customer-linked-hint{display:flex;align-items:flex-start;gap:7px;
+ margin:10px 0 0;padding:9px 10px;border-radius:9px;line-height:1.5;
+ font-size:11px;font-weight:700;overflow-wrap:anywhere}
+.customer-duplicate-hint{background:#fff7e8;color:#87551e;border:1px solid #efdbb4}
+.customer-linked-hint{background:#eef9fb;color:#336c7d;border:1px solid #d6ebef}
+.customer-duplicate-hint .icon,.customer-linked-hint .icon{width:17px;height:17px;flex:none}
+.directory-card-actions:has(.directory-linked-personal){grid-template-columns:1fr 1fr}
+.directory-linked-personal{grid-column:1/-1;width:100%}
+.csv-preview-diff{max-height:min(50dvh,380px);overflow:auto;margin:16px 0;border:1px solid #dae8ee;border-radius:12px;padding:12px}
+.csv-preview-diff h3{font-size:14px;line-height:1.4;margin:0 0 10px;color:#16435a}
+.csv-change-list,.csv-change-card ul{list-style:none;margin:0;padding:0}
+.csv-change-list{display:grid;gap:10px}
+.csv-change-card{position:relative;border:1px solid #e0eaf0;padding:10px;border-radius:10px;background:#fbfdfe}
+.csv-change-card>strong{display:block;max-width:100%;padding-right:85px;font-size:12px;overflow-wrap:anywhere}
+.csv-change-status{position:absolute;top:9px;right:9px;padding:3px 6px;border-radius:6px;background:#e8f4f8;color:#12677c;font-size:10px;font-weight:700}
+.csv-change-card ul{margin-top:9px;display:grid;gap:7px}
+.csv-change-card ul li{display:grid;gap:3px;padding-top:7px;border-top:1px solid #e7eef1;font-size:11px;line-height:1.5;overflow-wrap:anywhere}
+.csv-change-card ul li b{font-size:11px;color:#335d70}
+.csv-change-card ul li span{font-size:11px;color:#557685}
+.csv-no-change{padding:12px;border-radius:10px;background:#f2f7f8;color:#567887;font-size:12px}
+@media(max-width:540px){.customer-undo-action{width:100%}}

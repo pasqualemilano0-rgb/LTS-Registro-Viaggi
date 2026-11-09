@@ -79,3 +79,26 @@ export function exportCustomerCsv(state) {
   const rows = [...state.customers].sort((a, b) => a.name.localeCompare(b.name, 'it'));
   return '\uFEFF' + [HEADER, ...rows.map(customer => [customer.name, customer.vat, customer.city, customer.address, customer.phone])].map(row => row.map(quote).join(';')).join('\r\n') + '\r\n';
 }
+
+/** Preview the EXACT final merge (including repeated rows in a CSV) before saving.
+ * Does not mutate existing customer records or insert anything into the archive. */
+export function previewCustomerCsvChanges(state,rows,maxDetails=8){
+ const preview=mergeCustomerCsv(state,rows);
+ const before=new Map(state.customers.map(record=>[record.name,record]));
+ const details=[],fields=['vat','city','address','phone'];
+ let changed=0;
+ for(const after of preview.state.customers){
+  const prior=before.get(after.name);
+  const changes=prior?fields.filter(field=>String(prior[field]??'')!==String(after[field]??'')):
+   fields.filter(field=>String(after[field]??'').trim());
+  if(!prior||changes.length){
+   changed++;
+   if(details.length<maxDetails)details.push({
+    name:after.name,type:prior?'updated':'added',
+    fields:changes.map(field=>({field,before:prior?.[field]??'',after:after[field]??''}))
+   });
+  }
+ }
+ return {count:preview.count,added:preview.added,updated:preview.updated,
+  unchanged:preview.count-preview.added-preview.updated,changed,details};
+}
