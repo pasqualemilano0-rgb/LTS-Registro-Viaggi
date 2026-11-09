@@ -67,7 +67,14 @@ test('personal customer picker is MFA-authored and requires explicit saved edit'
  assert.match(editor,/filterDriverCustomerCatalog\(sites,\{scope:'shared',query:input\.value\}\)/);
  assert.match(editor,/phone\.value='';vat\.value=''/);
  assert.match(editor,/isDuplicate\(site\.name\)/);
- assert.match(editor,/ratesAcknowledged&&!ratesAcknowledged\.checked/);
+ assert.match(editor,/ratesAcknowledged\.required=true/);
+ assert.match(editor,/confirmation\.hidden=false/);
+ assert.match(editor,/if\(companyPicker\?\.confirmation\)form\.append\(companyPicker\.confirmation\)/);
+ assert.match(editor,/MODIFICA NON ANCORA SALVATA/);
+ assert.match(editor,/records-company-jump/);
+ assert.doesNotMatch(editor,/if\(ratesAcknowledged&&!ratesAcknowledged\.checked\)/);
+ assert.match(styles,/#admin-records-panel \.records-private-rate-ack input\[type=checkbox\]/);
+ assert.match(styles,/width:22px;height:22px;min-width:22px;min-height:22px/);
  assert.match(editor,/account\.adminRecords\('mutate'/);
  assert.match(editor,/driverId:owner,expectedRevision/);
  assert.match(styles,/\.records-company-picker \.records-site-results/);
