@@ -65,9 +65,9 @@ test('driver admin editor prevents stale owner and unsaved form races',()=>{
   /Nessun altro archivio è stato aperto/
  ])assert.match(editor,pattern);
  assert.match(report,/lastView==='records'&&view!=='records'&&!records[.]canLeave\(\)/);
- assert.match(html,/admin[.]mjs[?]v=20261108-smart-v2/);
- assert.match(admin,/report[.]mjs[?]v=20261108-smart-v2/);
- assert.match(report,/driver-records[.]mjs[?]v=20261108-rc3-v1/);
+ assert.match(html,/admin[.]mjs[?]v=20261109-shared-trip-v1/);
+ assert.match(admin,/report[.]mjs[?]v=20261109-shared-trip-v1/);
+ assert.match(report,/driver-records[.]mjs[?]v=20261109-shared-trip-v1/);
 });
 test('onboarding changes broadcast only a private data-free roster hint',()=>{
  const sql=read('supabase/migrations/20261107161500_lts_private_admin_roster_realtime_notices.sql');
