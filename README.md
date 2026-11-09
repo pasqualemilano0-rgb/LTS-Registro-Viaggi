@@ -31,3 +31,11 @@ Per assistenza, utilizzare i riferimenti indicati nell'applicazione o nell'infor
 - **Trasparenza:** se il confronto con l'elenco condiviso non è disponibile, la dashboard non dichiara il cliente certificato.
 
 Il [piano completo per raggiungere il livello 10/10](./PIANO-LTS-10-10.md) distingue gli interventi già realizzati dai test su dispositivi reali e sui servizi protetti ancora necessari.
+
+## LTS Control Center — supporto gratuito
+
+- **Pannello di stato:** https://pasqualemilano0-rgb.github.io/LTS-Registro-Viaggi/status/
+- **Monitor pubblico:** [GitHub Actions](https://github.com/pasqualemilano0-rgb/LTS-Registro-Viaggi/actions/workflows/lts-uptime-monitor.yml). Verifica ogni ora sito, area amministratore (solo pagina di login), bundle JavaScript e preflight dell'API login.
+- Tutti i controlli sono di sola lettura; nessuna password, archivio clienti, autenticazione reale o dati degli autisti viene richiesto. Non viene usato il repository privato o un servizio esterno a pagamento.
+- I controlli GitHub programmati possono essere ritardati; il pannello mostra **non verificato** o **dati non recenti** quando mancano prove aggiornate. Una pagina raggiungibile non dimostra che login e salvataggi funzionino.
+- Per ricevere email sui workflow falliti, attivare le notifiche GitHub Actions nelle [impostazioni notifiche](https://github.com/settings/notifications). Il monitor non invia messaggi autonomamente.
