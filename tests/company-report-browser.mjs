@@ -259,6 +259,16 @@ try{
  await page.waitForFunction(()=>document.querySelector('#customer-overview-priced').textContent==='1');
  assert.equal(await page.locator('#customer-overview-total').textContent(),'3');
 
+ // Alphabetical roster: existing driver remains accessible by last-name initial.
+ await openAdminTab('management-tab');
+ await page.locator('#roster-letters button[data-letter="R"]').click();
+ assert.match(await page.locator('#roster-count').textContent(),/1 su 1 autisti/);
+ assert.match(await page.locator('#roster').textContent(),/Mario Rossi/);
+ assert.equal(await page.locator('#roster-letters button[data-letter="R"]').getAttribute('aria-pressed'),'true');
+ await page.locator('#roster-letters button[data-letter=""]').click();
+ assert.equal(await page.locator('#roster-letters button[data-letter=""]').getAttribute('aria-pressed'),'true');
+ await openAdminTab('overview-tab');
+
  // Smart Console: search across authorized data without changing active view.
  await page.waitForFunction(()=>document.querySelector('#report-count').textContent==='2');
  await page.locator('#smart-command-open').click();
