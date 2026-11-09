@@ -113,7 +113,7 @@ test('offline worker activates new cache and precaches auth code without caching
 });
 test('HTML entry points are identical and use the new cache buster',()=>{
   assert.equal(html,shell);
-  assert.match(html,/app[.]css[?]v=20261107-manual-shared-v1/);
+  assert.match(html,/app[.]css[?]v=20261109-trip-editor-v3/);
   assert.match(html,/app[.]mjs[?]v=20\d{6}-[a-z0-9-]+-v\d+/);
   assert.match(html,/<script type="module"/);
 });
@@ -744,7 +744,7 @@ test('dashboard Maps action reuses secure client import and keeps unsaved trip d
  const insert=app.slice(app.indexOf('function renderInsert('),app.indexOf('function citySuggestions('));
  assert.match(insert,/if\(!editingId\)form[.]append\(el\('section',\{class:'dashboard-maps-shortcut'/);
  assert.match(insert,/Aggiungi da Google Maps/);
- assert.match(insert,/\(\)=>\{collect\(\);mapsCustomerDialog\(\);\}/);
+ assert.match(insert,/\(\)=>\{collect\(\);keepEditorScratchpad\(\);mapsCustomerDialog\(\);\}/);
  assert.equal((app.match(/function mapsCustomerDialog\(/g)||[]).length,1);
  assert.equal((app.match(/await saveSharedMapsCustomer\(/g)||[]).length,1);
  assert.match(app,/mapsLinkForCompanySync\(\{existingCustomer:customer,proposal,enabled:sharedMapsEnabled\(\)\}\)/);
