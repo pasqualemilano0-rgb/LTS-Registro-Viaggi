@@ -88,6 +88,25 @@ try{
    pending:window.qaStore.getSyncInfo().pending};
  });
  assert.deepEqual(start,{revision:1,tripCount:0,pending:false});
+ // A partially typed trip survives a full PWA reload and is never sent to the server.
+ const localDraft={version:1,editingId:null,editingBaseline:null,draft:{
+  date:'2026-11-09',client:'CLIENTE BOZZA',city:'NAPOLI',
+  container:'',secondClient:'',secondCity:'',second:false,
+  note:'NOTE LOCALI',services:[],noteOpen:true,servicesOpen:false
+ }};
+ await page.evaluate(value=>window.qaStore.saveTripEditorDraft(value),localDraft);
+ assert.equal((await page.evaluate(()=>window.qaStore.readTripEditorDraft())).draft.client,'CLIENTE BOZZA');
+ await page.reload({waitUntil:'load'});
+ const afterReload=await page.evaluate(async()=>{
+  window.qaStore=await import('/LTS-Registro-Viaggi/client-store.mjs');
+  window.qaDomain=await import('/LTS-Registro-Viaggi/shared/domain.mjs');
+  await window.qaStore.activateAccountFromSession();
+  return window.qaStore.readTripEditorDraft();
+ });
+ assert.deepEqual(afterReload,localDraft,'The complete editor scratchpad must survive a reload');
+ assert.equal(requests,0,'Local drafts must not produce remote archive writes');
+ await page.evaluate(()=>window.qaStore.clearTripEditorDraft());
+ assert.equal(await page.evaluate(()=>window.qaStore.readTripEditorDraft()),null);
  await context.setOffline(true);
  const edited=await page.evaluate(async()=>{
   const store=window.qaStore,domain=window.qaDomain;
