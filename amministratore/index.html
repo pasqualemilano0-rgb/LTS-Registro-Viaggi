@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#006f89">
   <meta name="referrer" content="no-referrer">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src https://otrqynkscpbeyuvdlgpg.supabase.co wss://otrqynkscpbeyuvdlgpg.supabase.co; worker-src 'self'; manifest-src 'self'; base-uri 'none'; form-action 'self'; object-src 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src https://otrqynkscpbeyuvdlgpg.supabase.co wss://otrqynkscpbeyuvdlgpg.supabase.co https://api.github.com; worker-src 'self'; manifest-src 'self'; base-uri 'none'; form-action 'self'; object-src 'none'">
   <title>LTS · Dashboard amministratore</title>
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -121,6 +121,18 @@
           <a class="button outline" href="../privacy/">Informativa privacy</a>
         </div>
         <p id="security-result" role="status" aria-live="polite">Accesso al pannello protetto dal tuo account amministratore.</p>
+        <section id="admin-status-console" class="status-admin-card" aria-label="Stato dei servizi riservato all'amministratore">
+          <h2>LTS Stato · solo amministratore</h2>
+          <p>Diagnostica tecnica su richiesta, disponibile esclusivamente dopo il login amministratore e il secondo fattore.</p>
+          <button id="admin-status-refresh" class="button outline" type="button">Verifica stato dei servizi</button>
+          <p id="admin-status-result" role="status" aria-live="polite">Stato non caricato. Richiede sessione amministratore e MFA.</p>
+          <dl class="status-admin-metrics">
+            <div><dt>Monitor servizi</dt><dd id="admin-status-monitor">—</dd></div>
+            <div><dt>Ultimo rilascio</dt><dd id="admin-status-deploy">—</dd></div>
+            <div><dt>Ultimo controllo</dt><dd id="admin-status-time">—</dd></div>
+          </dl>
+          <p class="hint">La disponibilità HTTP non certifica salvataggi, login reali o autorizzazioni. Nessuna informazione riservata viene letta da GitHub.</p>
+        </section>
       </section>
       <div class="page-intro">
         <div><p class="eyebrow">CONTROLLO ACCESSI LTS</p><h1>Gestione autisti</h1>
