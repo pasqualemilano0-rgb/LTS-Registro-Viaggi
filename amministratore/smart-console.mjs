@@ -22,6 +22,13 @@ export function setupSmartConsole({
   detail=byId('smart-detail'),detailBody=byId('smart-detail-body'),
   detailActions=byId('smart-detail-actions'),detailSource=byId('smart-detail-source');
  let moved=[],lastFocus=null,mode='home',openState=false;
+ let rateDirty=false,rateSaving=false,rateAttempt=0;
+ const leaveAllowed=()=>{
+  if(mode!=='rate')return true;
+  if(rateSaving)return false; // Do not detach the live form while saving.
+  return !rateDirty||window.confirm('Ci sono modifiche alla tariffa non salvate. Uscire senza salvarle?');
+ };
+ const leave=callback=>{if(leaveAllowed())callback();};
  const allowed=()=>Boolean(authorized())&&navigator.onLine!==false;
  const isVisible=()=>openState&&!overlay.hidden;
 
@@ -39,6 +46,7 @@ export function setupSmartConsole({
   clearPrivateCode();
  }
  function close({focus=true,clearSearch=true}={}){
+  rateAttempt++;rateSaving=false;rateDirty=false;
   if(moved.length)restoreEmbedded();
   overlay.hidden=true;openState=false;mode='home';
   home.hidden=false;embedded.hidden=true;detail.hidden=true;back.hidden=true;
@@ -76,7 +84,7 @@ export function setupSmartConsole({
   first?.focus();
  }
  function showRateTask(site=null){
-  if(!allowed())return;
+  if(!allowed()||rateSaving)return;
   const section=byId('company-rates-editor');
   if(!section)return;
   const selected=String(byId('company-rate-client')?.value||'').trim();
@@ -86,6 +94,9 @@ export function setupSmartConsole({
     (selected.toLocaleUpperCase('it-IT')!==String(site.name).trim().toLocaleUpperCase('it-IT')||
      place.toLocaleUpperCase('it-IT')!==String(site.city).trim().toLocaleUpperCase('it-IT'))&&
      !window.confirm('C’è una tariffa non salvata. Sostituire la bozza con la nuova sede?'))return;
+  if(mode==='rate'&&!leaveAllowed())return;
+  const attempt=++rateAttempt;
+  rateDirty=false;
   restoreEmbedded();
   home.hidden=true;embedded.hidden=false;detail.hidden=true;back.hidden=false;
   mode='rate';heading.textContent=site?.name?'Tariffa della sede':'Gestisci tariffa';
@@ -94,10 +105,10 @@ export function setupSmartConsole({
   editorStatus.textContent='Verifica online dei dati aziendali…';
   back.focus();
   void prepareRateInline(site).then(ok=>{
-   if(!isVisible()||mode!=='rate')return;
+   if(attempt!==rateAttempt||!isVisible()||mode!=='rate')return;
    if(!ok)editorStatus.textContent='Impossibile verificare l’elenco completo. Riprovare online prima di salvare.';
   }).catch(()=>{
-   if(isVisible()&&mode==='rate')
+   if(attempt===rateAttempt&&isVisible()&&mode==='rate')
     editorStatus.textContent='Servizio non disponibile. Nessuna modifica è stata salvata.';
   });
  }
@@ -139,6 +150,7 @@ export function setupSmartConsole({
   back.focus();
  }
  function resetTask(){
+  rateAttempt++;rateSaving=false;rateDirty=false;
   if(moved.length)restoreEmbedded();
   detail.hidden=true;detailBody.replaceChildren();detailActions.replaceChildren();
   home.hidden=false;embedded.hidden=true;back.hidden=true;
@@ -268,12 +280,18 @@ export function setupSmartConsole({
    close({focus:false});if(authorized())openManualCustomer();
   }
  }
- trigger.addEventListener('click',()=>{if(isVisible())close();else open();});
+ trigger.addEventListener('click',()=>{if(isVisible())leave(()=>close());else open();});
  document.querySelectorAll('[data-smart-open]').forEach(button=>
   button.addEventListener('click',open));
- byId('smart-scrim').addEventListener('click',()=>close());
- closeButton.addEventListener('click',()=>close());
- back.addEventListener('click',resetTask);
+ byId('smart-scrim').addEventListener('click',()=>leave(()=>close()));
+ closeButton.addEventListener('click',()=>leave(()=>close()));
+ back.addEventListener('click',()=>leave(resetTask));
+ const rateForm=byId('company-rates-form');
+ rateForm.addEventListener('input',()=>{if(mode==='rate')rateDirty=true;});
+ rateForm.addEventListener('change',()=>{if(mode==='rate')rateDirty=true;});
+ window.addEventListener('lts-admin-company-rate-save-started',()=>{if(mode==='rate')rateSaving=true;});
+ window.addEventListener('lts-admin-company-rate-saved',()=>{rateDirty=false;});
+ window.addEventListener('lts-admin-company-rate-save-completed',()=>{rateSaving=false;});
  home.querySelectorAll('[data-smart-action]').forEach(button=>
   button.addEventListener('click',()=>action(button.dataset.smartAction)));
  search.addEventListener('input',renderSearch);
@@ -291,10 +309,10 @@ export function setupSmartConsole({
  document.addEventListener('keydown',event=>{
   if(!event.defaultPrevented&&(event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==='k'){
    if(!authorized())return;
-   event.preventDefault();if(isVisible())close();else open();return;
+   event.preventDefault();if(isVisible())leave(()=>close());else open();return;
   }
   if(!isVisible())return;
-  if(event.key==='Escape'){event.preventDefault();if(mode==='home')close();else resetTask();return;}
+  if(event.key==='Escape'){event.preventDefault();leave(()=>{if(mode==='home')close();else resetTask();});return;}
   if(event.key!=='Tab')return;
   const focusable=[...panel.querySelectorAll('button:not([disabled]):not([hidden]),input:not([disabled]):not([hidden]),select:not([disabled]):not([hidden]),textarea:not([disabled]):not([hidden]),a[href]')]
    .filter(node=>node.getClientRects().length>0);
