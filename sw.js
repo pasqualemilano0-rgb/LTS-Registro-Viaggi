@@ -5,6 +5,7 @@ const CORE = [
   "/LTS-Registro-Viaggi/account-access.mjs",
   "/LTS-Registro-Viaggi/app.css",
   "/LTS-Registro-Viaggi/assistant-compact.css",
+  "/LTS-Registro-Viaggi/assets/assistant-logistica-operator.svg",
   "/LTS-Registro-Viaggi/visual-theme.css",
   "/LTS-Registro-Viaggi/activation-feedback.css",
   "/LTS-Registro-Viaggi/truck-loader.css",
