@@ -3,7 +3,7 @@
  */
 const ADMIN_BASE = '/LTS-Registro-Viaggi/amministratore/';
 const ADMIN_CACHE_PREFIX = 'lts-admin-offline-shell-';
-const ADMIN_CACHE = ADMIN_CACHE_PREFIX + '20261108-pwa-v1';
+const ADMIN_CACHE = ADMIN_CACHE_PREFIX + '20261110-maps-approval-v1';
 const OFFLINE_PATH = ADMIN_BASE + 'offline.html';
 const STATIC_OFFLINE = [
   OFFLINE_PATH,
