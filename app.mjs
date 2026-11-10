@@ -112,7 +112,7 @@ function beginLtsRealtime(){
 
 let installPrompt = null;
 const standaloneMode = window.matchMedia('(display-mode: standalone)');
-const isInstalled = () => standaloneMode.matches || navigator.standalone === true;
+const isInstalled = () => standaloneMode.matches || navigator.standalone === true || /\bLTSAndroid\/\d+\b/u.test(navigator.userAgent || '');
 const isAppleMobile = () => /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 window.addEventListener('beforeinstallprompt',event=>{event.preventDefault();installPrompt=event;});
 function updateInstallButtons(){document.querySelectorAll('[data-install-trigger]').forEach(node=>node.hidden=isInstalled());}

@@ -80,6 +80,7 @@ const PORT_BASE = BASE + 'porti/';
 // not keep serving stale login controls after a secure release. Offline fallback
 // still uses only the current static cache; personal records are never cached.
 const NETWORK_FIRST_CODE = new Set([
+  BASE + 'push-client.mjs',
   BASE + 'app.css', BASE + 'assistant-compact.css', BASE + 'visual-theme.css',
   BASE + 'app.mjs', BASE + 'driver-session-guard.mjs', BASE + 'porti-access.mjs', BASE + 'account-access.mjs', BASE + 'driver-session-vault.mjs',
   BASE + 'runtime-config.mjs', BASE + 'client-store.mjs', BASE + 'realtime-client.mjs', BASE + 'porti/app.js',

@@ -7,6 +7,10 @@ function appleMobile(navigator) {
 
 export function detectPushEnvironment(environment = globalThis) {
   const navigator = environment.navigator;
+  if (/\bLTSAndroid\/\d+\b/u.test(navigator?.userAgent || '')) return {
+    supported: false, installRequired: false,
+    message: 'Nell’app Android gestisci i promemoria da ⋮ → Promemoria Android.',
+  };
   const installed = navigator?.standalone === true
     || environment.matchMedia?.('(display-mode: standalone)')?.matches === true;
   if (appleMobile(navigator) && !installed) return {
