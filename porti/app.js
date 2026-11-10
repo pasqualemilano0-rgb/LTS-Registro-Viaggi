@@ -789,7 +789,7 @@ async function renderTfgBooking(booking){
       let accessToken;
       try{accessToken=await getVerifiedAccessToken();}
       catch(error){
-        if(error?.offline===true)throw Error('LTS_BOOKING_OFFLINE');
+        if(error?.networkUnavailable===true||error?.offline===true)throw Error('LTS_BOOKING_AUTH_UNAVAILABLE');
         if(error?.status>=500)throw Error('LTS_BOOKING_AUTH_UNAVAILABLE');
         throw Error('LTS_BOOKING_LOGIN_REQUIRED');
       }
@@ -832,11 +832,13 @@ async function renderTfgBooking(booking){
     // navigator.onLine is only a browser hint: a failed API/auth request does not prove the device is offline.
     // Keep authentication, rate limits and backend failures distinct from confirmed offline errors.
     const offline=error?.message==='LTS_BOOKING_OFFLINE';
+    const authUnavailable=error?.message==='LTS_BOOKING_AUTH_UNAVAILABLE';
     openResults('Booking · TFG',denied?'ACCESSO LTS NECESSARIO':offline?'CONNESSIONE ASSENTE':
-      limited?'TROPPE RICHIESTE':'SERVIZIO NON DISPONIBILE','warn',
+      limited?'TROPPE RICHIESTE':authUnavailable?'VERIFICA ACCESSO NON DISPONIBILE':'SERVIZIO NON DISPONIBILE','warn',
       denied?'La sessione LTS non è valida o l’account non ha accesso. Verifica il login e l’Authenticator, poi riapri Porti.':
       offline?'Connettiti a Internet e verifica nuovamente l’accesso a LTS prima di cercare il booking.':
       limited?'Per proteggere il portale TFG, attendi almeno un minuto prima di riprovare. Se necessario usa il sito ufficiale.':
+      authUnavailable?'Il servizio di verifica della sessione LTS non risponde. Riprova tra poco; il programma navi può restare disponibile.':
       'Non è stato possibile verificare la risposta TFG. Puoi aprire direttamente il modulo ufficiale con il booking già inserito.');
   }finally{
     clearTimeout(timeoutId);
