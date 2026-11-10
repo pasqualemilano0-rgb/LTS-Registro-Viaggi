@@ -3,6 +3,7 @@ import { quickTripFromRoute } from '/LTS-Registro-Viaggi/shared/quick-trip.mjs';
 import {REGISTER_PAGE_SIZE,registerTripCounts,filterRegisterTrips,paginateRegisterTrips,stepRegisterMonth} from '/LTS-Registro-Viaggi/shared/register-explorer.mjs';
 import {TRIP_DRAFT_VERSION,tripDraftHasWork,possibleTripDuplicate,restoreTripEditorSnapshot} from '/LTS-Registro-Viaggi/shared/trip-editor-safety.mjs';
 import {unionStates,SyncConflictError} from '/LTS-Registro-Viaggi/shared/sync-merge.mjs';
+import {mustRevalidateOnReturn} from '/LTS-Registro-Viaggi/shared/foreground-resume.mjs';
 import {describeBackupConflict} from '/LTS-Registro-Viaggi/shared/backup-conflict-details.mjs';
 import * as store from '/LTS-Registro-Viaggi/client-store.mjs';
 import runtimeConfig from '/LTS-Registro-Viaggi/runtime-config.mjs';
@@ -2088,6 +2089,8 @@ window.addEventListener('lts-account-locked',()=>{
  renderAccountGate('Sessione non più autorizzata. Accedi nuovamente.');
 });
 let resumingVerification=false;
+let lastDriverVerifiedAt=0;
+let driverBackgroundAt=null;
 let resumeRetryTimer=null;
 let resumeFailureCount=0;
 function clearResumeRetry(){
@@ -2104,11 +2107,17 @@ async function verifyDriverOnResume(){
  if(document.hidden||resumingVerification||!store.usingAccount()||!accountAccess.hasSession())return;
  clearResumeRetry();
  resumingVerification=true;
- driverSessionShield.show('Verifica della sessione in corso…',{retryable:false});
+ // Resume in place. The archive is inert while the server checks it, but
+ // the user does not see the full-screen reconnect splash on every wake-up.
+ if(driverSessionShield.isVisible())
+  driverSessionShield.show('Verifica della sessione in corso…',{retryable:false});
+ else driverSessionShield.quiet();
  try{
   await accountAccess.verifySession();
   if(!accountAccess.isVerified())throw new Error('Sessione non verificata.');
   resumeFailureCount=0;
+  lastDriverVerifiedAt=Date.now();
+  driverBackgroundAt=null;
   clearResumeRetry();
   driverSessionShield.close();
   void refreshCompanyCustomers();
@@ -2132,10 +2141,22 @@ async function verifyDriverOnResume(){
   if(driverSessionShield.isVisible())scheduleResumeRetry();
  }
 }
+function resumeDriverWhenVisible(){
+ if(document.hidden || (!root.querySelector('.app-frame')&&!driverSessionShield.isVisible()))return;
+ const required=mustRevalidateOnReturn({
+  verified:accountAccess.isVerified(),hasSession:accountAccess.hasSession(),
+  sameOwner:store.usingAccount(),lastVerifiedAt:lastDriverVerifiedAt,
+  backgroundAt:driverBackgroundAt,blocked:driverSessionShield.isVisible()
+ });
+ driverBackgroundAt=null;
+ if(required)void verifyDriverOnResume();
+}
 document.addEventListener('visibilitychange',()=>{
- if(document.hidden)clearResumeRetry();
- else void verifyDriverOnResume();
+ if(document.hidden){driverBackgroundAt=Date.now();clearResumeRetry();}
+ else resumeDriverWhenVisible();
 });
+window.addEventListener('pagehide',()=>{driverBackgroundAt=Date.now();clearResumeRetry();});
+window.addEventListener('pageshow',event=>{if(event.persisted)resumeDriverWhenVisible();});
 window.addEventListener('online',()=>{
  if(driverSessionShield.isVisible())void verifyDriverOnResume();
 });
@@ -2237,6 +2258,7 @@ async function initialize(){
     }
   }else result=await store.loadState();
   state=D.validateState(result?.state||result);user=result?.user||null;
+  if(store.usingAccount()&&accountAccess.isVerified())lastDriverVerifiedAt=Date.now();
   const subscribe=store.subscribeStatus||store.onStatus;if(subscribe)subscribe(setStatus);
   if(!subscribed&&store.subscribeState){store.subscribeState(receiveState);subscribed=true;}
   if(result?.status)setStatus(result.status);
@@ -2283,7 +2305,7 @@ window.addEventListener('online',()=>{
 const hadAppWorkerAtStartup=Boolean(navigator.serviceWorker?.controller);
 let appWorkerChangePending=false,lastAppWorkerCheck=0;
 function safeAppUpdateReload(){
- if(resumingVerification||driverSessionShield.isVisible()||
+ if(resumingVerification||driverSessionShield.isVisible()||driverSessionShield.isQuiet()||
     root.querySelector('.account-connection-gate'))return false;
  if(!appWorkerChangePending||document.hidden||busy||tab==='insert'||editingId||
     store.getSyncInfo?.().pending||store.getSyncInfo?.().conflict||

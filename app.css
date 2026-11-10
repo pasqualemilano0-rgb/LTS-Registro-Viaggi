@@ -837,3 +837,12 @@ body.lts-driver-session-blocked dialog[open]{visibility:hidden!important;pointer
 .backup-conflict-select{display:block;width:100%;min-height:44px;margin-top:11px;border:1px solid #7aadb7;border-radius:10px;padding:8px;background:#fff;color:#1f4352;font-size:1rem}
 .backup-merge-preview{font-weight:800;color:#12566a}
 @media(max-width:420px){.backup-conflicts{max-height:42vh;padding-inline:0}.backup-conflict-item{padding:11px}}
+
+/* Silent driver resume: preserve the current page instead of a loading screen. */
+.lts-driver-resume-inline{
+ position:fixed;z-index:99998;left:50%;bottom:calc(96px + env(safe-area-inset-bottom));
+ transform:translateX(-50%);max-width:calc(100vw - 32px);
+ padding:9px 16px;border-radius:999px;border:1px solid #bbdbe1;
+ background:#f5fafbfd;color:#17657a;box-shadow:0 7px 20px #143e4930;
+ font-size:12px;font-weight:750;text-align:center;pointer-events:none;
+}

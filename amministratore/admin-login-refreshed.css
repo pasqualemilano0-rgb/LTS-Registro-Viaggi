@@ -121,3 +121,13 @@ body:has(#mfa-panel:not([hidden])) .topbar{
  .admin-resume-spinner{animation:none;border-top-color:#fff}
  #login-panel .stack input{transition:none}
 }
+
+/* No full-screen splash during normal mobile dashboard resume. */
+.admin-resume-inline[hidden]{display:none!important}
+.admin-resume-inline{
+ position:fixed;z-index:9998;bottom:calc(94px + env(safe-area-inset-bottom));
+ left:50%;transform:translateX(-50%);max-width:calc(100vw - 32px);
+ background:#f1fafb;color:#135e72;border:1px solid #b7d8df;
+ border-radius:999px;padding:9px 16px;font-weight:750;font-size:12px;
+ box-shadow:0 8px 20px #173c4c26;pointer-events:none;text-align:center;
+}

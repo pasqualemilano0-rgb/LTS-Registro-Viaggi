@@ -7,10 +7,25 @@ export function transientDriverSessionError(error){
 }
 export function createDriverSessionShield({document,root,onRetry}){
  if(!document?.body||!root||typeof onRetry!=='function')throw new TypeError('Guardia sessione non valida');
- let shield=null,description=null,retry=null,previousInert=false;
+ let shield=null,description=null,retry=null,previousInert=false,inline=null;
+ // Keep the already open page in place, but disallow edits during a slow
+ // foreground verification. A full-screen guard is reserved for real failure.
+ function quiet(){
+  if(shield||inline)return;
+  previousInert=Boolean(root.inert);
+  root.inert=true;
+  inline=document.createElement('div');
+  inline.id='lts-driver-resume-inline';
+  inline.className='lts-driver-resume-inline';
+  inline.setAttribute('role','status');
+  inline.textContent='Controllo connessione…';
+  document.body.append(inline);
+ }
+
  function show(message='Verifica sicura della sessione in corso…',{retryable=true}={}){
   if(!shield){
-   previousInert=Boolean(root.inert);
+   if(inline){inline.remove();inline=null;}
+   else previousInert=Boolean(root.inert);
    root.inert=true;
    document.body.classList.add('lts-driver-session-blocked');
    shield=document.createElement('section');
@@ -44,10 +59,12 @@ export function createDriverSessionShield({document,root,onRetry}){
   retry.disabled=!retryable;
  }
  function close(){
-  if(!shield)return;
-  shield.remove();shield=description=retry=null;
+  if(!shield&&!inline)return;
+  if(shield)shield.remove();
+  if(inline)inline.remove();
+  shield=description=retry=inline=null;
   document.body.classList.remove('lts-driver-session-blocked');
   root.inert=previousInert;
  }
- return {show,close,isVisible:()=>Boolean(shield)};
+ return {show,quiet,close,isVisible:()=>Boolean(shield),isQuiet:()=>Boolean(inline)};
 }

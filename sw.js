@@ -1,6 +1,6 @@
 const BASE = "/LTS-Registro-Viaggi/";
 const PREFIX = "lts-iphone-pages-0aa8d087d02b-";
-const CACHE = PREFIX + '20261110-guided-backup-v11';
+const CACHE = PREFIX + '20261110-seamless-resume-v12';
 const CORE = [
   "/LTS-Registro-Viaggi/account-access.mjs",
   "/LTS-Registro-Viaggi/app.css",
@@ -71,6 +71,7 @@ const CORE = [
   "/LTS-Registro-Viaggi/shared/register-explorer.mjs",
   "/LTS-Registro-Viaggi/shared/sync-merge.mjs",
   "/LTS-Registro-Viaggi/shared/backup-conflict-details.mjs",
+  "/LTS-Registro-Viaggi/shared/foreground-resume.mjs",
   "/LTS-Registro-Viaggi/shared/vendor/fflate.mjs",
   "/LTS-Registro-Viaggi/shell.html"
 ];
@@ -84,7 +85,7 @@ const NETWORK_FIRST_CODE = new Set([
   BASE + 'app.mjs', BASE + 'driver-session-guard.mjs', BASE + 'porti-access.mjs', BASE + 'account-access.mjs', BASE + 'driver-session-vault.mjs',
   BASE + 'runtime-config.mjs', BASE + 'client-store.mjs', BASE + 'realtime-client.mjs', BASE + 'porti/app.js',
   BASE + 'shared/trip-customer-choices.mjs', BASE + 'shared/trip-editor-safety.mjs', BASE + 'shared/register-explorer.mjs', BASE + 'shared/maps-company-routing.mjs',
-  BASE + 'shared/customer-site-matches.mjs', BASE + 'shared/backup-conflict-details.mjs', BASE + 'shared/sync-merge.mjs', BASE + 'shared-maps-client.mjs',
+  BASE + 'shared/customer-site-matches.mjs', BASE + 'shared/foreground-resume.mjs', BASE + 'shared/backup-conflict-details.mjs', BASE + 'shared/sync-merge.mjs', BASE + 'shared-maps-client.mjs',
   BASE + 'maps-reader-client.mjs',
   BASE + 'shared/company-fares.mjs', BASE + 'shared/company-extras.mjs', BASE + 'shared/domain.mjs'
 ]);

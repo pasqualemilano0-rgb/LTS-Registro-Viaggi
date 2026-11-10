@@ -88,6 +88,39 @@ test('Driver returns via retry, not password form; server denial stays protected
  assert.match(css,/body[.]lts-driver-session-blocked #app/);
  assert.match(css,/body[.]lts-driver-session-blocked dialog\[open\]/);
  assert.match(worker,/driver-session-guard[.]mjs/);
- assert.match(worker,/20261110-guided-backup-v11/);
- assert.match(html,/app[.]mjs[?]v=20261110-guided-backup-v11/);
+ assert.match(worker,/20261110-seamless-resume-v12/);
+ assert.match(html,/app[.]mjs[?]v=20261110-seamless-resume-v12/);
+});
+
+test('Short session checks preserve the driver form without rendering a full-screen guard',()=>{
+ const {document,body,classes}=fakeDocument();
+ const root={inert:false,secretDraft:'Una bozza ancora da salvare'};
+ const guard=createDriverSessionShield({document,root,onRetry:()=>{}});
+ guard.quiet();
+ assert.equal(guard.isVisible(),false);
+ assert.equal(guard.isQuiet(),true);
+ assert.equal(root.inert,true,'Pending server validation cannot edit the archive');
+ assert.equal(body.children.length,1);
+ assert.equal(body.children[0].id,'lts-driver-resume-inline');
+ assert.equal(classes.has('lts-driver-session-blocked'),false);
+ guard.close();
+ assert.equal(root.inert,false);
+ assert.equal(root.secretDraft,'Una bozza ancora da salvare');
+ assert.equal(body.children.length,0);
+ guard.quiet();
+ guard.show('Connessione interrotta',{retryable:true});
+ assert.equal(body.children.length,1,'Escalation must replace inline status, not stack overlays');
+ assert.equal(guard.isQuiet(),false);
+ assert.equal(guard.isVisible(),true);
+ guard.close();
+ assert.equal(root.inert,false);
+});
+test('Driver wake-up no longer opens full-screen shield before checking the session',()=>{
+ const app=read('app.mjs'),css=read('app.css');
+ assert.match(app,/if\(driverSessionShield[.]isVisible\(\)\)/);
+ assert.match(app,/else driverSessionShield[.]quiet\(\)/);
+ assert.match(app,/mustRevalidateOnReturn\(\{/);
+ assert.match(app,/lastDriverVerifiedAt=Date[.]now\(\)/);
+ assert.match(app,/window[.]addEventListener\('pageshow',event=>/);
+ assert.match(css,/lts-driver-resume-inline/);
 });
