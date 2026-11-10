@@ -1,3 +1,5 @@
+import {createLtsGuidedSnapshot} from '/LTS-Registro-Viaggi/copilota/lts-bridge.mjs';
+import {guidedCustomerSearch} from '/LTS-Registro-Viaggi/copilota/guided.mjs';
 import * as D from '/LTS-Registro-Viaggi/shared/domain.mjs';
 import { quickTripFromRoute } from '/LTS-Registro-Viaggi/shared/quick-trip.mjs';
 import {REGISTER_PAGE_SIZE,registerTripCounts,filterRegisterTrips,paginateRegisterTrips,stepRegisterMonth} from '/LTS-Registro-Viaggi/shared/register-explorer.mjs';
@@ -516,7 +518,36 @@ function companyCustomersPanel(){
  updateCompanyCustomersPanel(panel);
  return panel;
 }
+/** Read-only pilot panel; no writes and no duplicate trip submission path. */
+function renderAssistantLogisticaPilot(main){
+ if(!store.usingAccount()||!accountAccess.isVerified()||accountAccess.getRole()!=='driver')return;
+ const session=createLtsGuidedSnapshot({verified:accountAccess.isVerified(),accountActive:store.usingAccount(),
+  personalCustomers:state.customers,trips:state.trips,companyCustomers,
+  companyRates,companyRatesLoaded,draft});
+ if(!session.ready)return;
+ const panel=el('section',{class:'panel', 'aria-label':'ASSISTENTE LOGISTICA',style:'margin-bottom:12px;padding:14px'},
+  el('h2',{},'ASSISTENTE LOGISTICA'),
+  el('p',{},'Ricerca guidata nei dati disponibili. Il viaggio si salva nel modulo LTS qui sotto.'));
+ const query=el('input',{type:'search',placeholder:'Cerca cliente', 'aria-label':'Cerca cliente con ASSISTENTE LOGISTICA'});
+ const results=el('div',{'aria-live':'polite'});
+ query.addEventListener('input',()=>{
+  results.replaceChildren();
+  for(const customer of guidedCustomerSearch(session,query.value).results){
+   results.append(el('button',{type:'button',class:'secondary-button',on:{click:()=>{
+    query.value=customer.name;
+    results.replaceChildren();
+    toast('Cliente trovato: '+customer.name+'. Selezionalo nel modulo viaggio LTS.');
+   }}},customer.name+(customer.city?' · '+customer.city:'')));
+  }
+ });
+ panel.append(query,results,el('div',{style:'display:flex;gap:8px;flex-wrap:wrap;margin-top:10px'},
+  el('button',{type:'button',on:{click:()=>navigate('customers')}},'CLIENTI'),
+  el('button',{type:'button',on:{click:()=>navigate('tariffs')}},'TARIFFE'),
+  el('button',{type:'button',on:{click:()=>navigate('porti')}},'PORTI')));
+ main.append(panel);
+}
 function renderInsert(main){
+ renderAssistantLogisticaPilot(main);
  const amountContext=D.buildTripAmountContext(state);
  const estimateId=editingId||crypto.randomUUID();const estimateCreatedAt=new Date().toISOString();
  const layout=el('div',{class:'form-layout'});const form=el('form',{class:'panel form-panel',novalidate:true});
