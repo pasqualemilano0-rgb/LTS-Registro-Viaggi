@@ -821,3 +821,9 @@ body.lts-driver-session-blocked dialog[open]{visibility:hidden!important;pointer
 @media(prefers-reduced-motion:reduce){
  .lts-driver-session-shield *, .account-connection-gate *{animation:none!important;transition:none!important}
 }
+
+/* Recovered trip drafts: clear, accessible discard action. */
+.trip-recovery-actions{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:12px}
+.trip-recovery-actions .trip-recovery-notice{flex:1 1 210px;margin:0}
+.trip-recovery-actions .remove-button{flex:0 0 auto;min-height:42px;padding:9px 13px;border:1px solid #b64b4b;border-radius:11px;color:#9d2626;background:#fff;font-weight:700;cursor:pointer}
+@media(max-width:420px){.trip-recovery-actions .remove-button{width:100%}}
