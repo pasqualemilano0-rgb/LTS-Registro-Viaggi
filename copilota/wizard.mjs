@@ -14,3 +14,12 @@ $('prepare-request').addEventListener('click',()=>{try{const request=prepareCust
 $('confirm').addEventListener('click',()=>{$('done-message').textContent='Bozza confermata nella demo. Nessun viaggio reale è stato salvato.';show('done-step','Bozza pronta','La conferma operativa avverrà nell’app LTS.');});
 $('restart').addEventListener('click',()=>{chosen=null;$('container').value='';$('customer').value='';show('start','Cosa vuoi fare?','Ti aiuto a preparare il viaggio con pochi passaggi.');});
 show('start','Cosa vuoi fare?','Ti aiuto a preparare il viaggio con pochi passaggi.');
+
+// Guided shortcuts: no privileged data access in the isolated demo.
+$('customers-action').addEventListener('click',()=>{
+ $('feature-notice').textContent='Ricerca clienti dimostrativa: inserisci prima il container. I clienti reali saranno disponibili solo dopo la verifica della sessione LTS.';
+ show('container-step','Inserisci il container','Poi cerca il cliente senza domande aggiuntive.');
+});
+$('rates-action').addEventListener('click',()=>{
+ $('feature-notice').textContent='Le tariffe reali non sono disponibili nella demo. Verranno lette soltanto dai dati autorizzati dell’app LTS.';
+});
