@@ -1,5 +1,3 @@
-import {createLtsGuidedSnapshot} from '/LTS-Registro-Viaggi/copilota/lts-bridge.mjs';
-import {guidedCustomerSearch} from '/LTS-Registro-Viaggi/copilota/guided.mjs';
 import * as D from '/LTS-Registro-Viaggi/shared/domain.mjs';
 import { quickTripFromRoute } from '/LTS-Registro-Viaggi/shared/quick-trip.mjs';
 import {REGISTER_PAGE_SIZE,registerTripCounts,filterRegisterTrips,paginateRegisterTrips,stepRegisterMonth} from '/LTS-Registro-Viaggi/shared/register-explorer.mjs';
@@ -519,117 +517,8 @@ function companyCustomersPanel(){
  return panel;
 }
 /** Read-only pilot panel; no writes and no duplicate trip submission path. */
-function renderAssistantLogisticaPilot(main){
- if(!store.usingAccount()||!accountAccess.isVerified()||accountAccess.getRole()!=='driver')return;
- const liveCustomers=()=>combinedTripCustomerChoices({personal:state.customers,trips:state.trips,shared:companyCustomers});
- let step=0,selected=null,container='',selectedServices=[],servicesChosen=false;
- const toggle=el('button',{type:'button',class:'assistant-mini-toggle',
-  'aria-label':'Apri LTS Copilota','aria-expanded':'false',title:'LTS Copilota'},
-  el('img',{src:'/LTS-Registro-Viaggi/assets/assistant-logistica-operator.svg',alt:'',width:'40',height:'40','aria-hidden':'true'}),
-  el('span',{class:'assistant-mini-indicator','aria-hidden':'true'}));
- const panel=el('section',{class:'assistant-compact assistant-mini-panel lts-copilota',
-  'aria-label':'LTS Copilota - inserimento guidato',hidden:'hidden'});
- const content=el('div',{class:'lts-copilota-content'});
- const stepper=el('div',{class:'lts-copilota-stepper','aria-label':'Avanzamento inserimento viaggio'});
- const progress=el('p',{class:'lts-copilota-progress','aria-live':'polite'});
- const setOpen=open=>{panel.hidden=!open;toggle.setAttribute('aria-expanded',String(open));if(open)renderStep();};
- const button=(label,action,secondary=false)=>el('button',{type:'button',class:secondary?'lts-copilota-secondary':'lts-copilota-primary',on:{click:action}},label);
- const title=(heading,description)=>{content.append(el('h3',{},heading),el('p',{class:'lts-copilota-description'},description));};
- const renderStep=()=>{
-  content.replaceChildren();
-  progress.textContent=step===0?'Il tuo assistente per i viaggi':('Passaggio '+step+' di 4');
-  stepper.replaceChildren();
-  for(const [index,label] of ['Container','Cliente','Servizi','Riepilogo'].entries()){
-   const n=index+1;
-   stepper.append(el('span',{class:'lts-copilota-step'+(step===n?' is-active':step>n?' is-complete':''),'aria-current':step===n?'step':null},el('b',{},step>n?'✓':String(n)),el('small',{},label)));
-  }
-  if(step===0){
-   title('Nuovo viaggio','Compiliamo insieme il viaggio in quattro semplici passaggi, con i dati del tuo account.');
-   content.append(button('INSERISCI VIAGGIO',()=>{step=1;renderStep();}));
-   if(container||selected)content.append(button('Ricomincia da zero',()=>{container='';selected=null;selectedServices=[];servicesChosen=false;step=1;renderStep();},true));
-  }else if(step===1){
-   title('Inserisci il container','Il cliente verrà cercato nel passaggio successivo.');
-   const field=el('input',{type:'text',class:'lts-copilota-input',placeholder:'ABCD1234567',maxlength:'11','aria-label':'Numero container',value:container});
-   const error=el('p',{class:'lts-copilota-error',role:'alert'});
-   const duplicate=el('p',{class:'lts-copilota-hint','aria-live':'polite'});
-   const checkDuplicate=()=>{const value=field.value.toUpperCase().replace(/\\s/g,'');duplicate.textContent=value.length===11&&state.trips.some(trip=>String(trip.container||'').toUpperCase().replace(/\\s/g,'')===value)?'Attenzione: questo container risulta già presente nel registro. Controlla prima di procedere.':'';};
-   field.addEventListener('input',checkDuplicate);checkDuplicate();
-   content.append(el('label',{},'Numero container'),field,duplicate,error,
-    button('Continua',()=>{const value=field.value.trim().toUpperCase().replace(/\s/g,'');if(!/^[A-Z]{4}[0-9]{7}$/.test(value)){error.textContent='Inserisci 4 lettere e 7 cifre.';return;}container=value;step=2;renderStep();}),
-    button('Indietro',()=>{step=0;renderStep();},true));
-  }else if(step===2){
-   title('Seleziona il cliente','Cerca un cliente reale tra quelli disponibili nel tuo account.');
-   const field=el('input',{type:'search',class:'lts-copilota-input',placeholder:'Nome cliente…','aria-label':'Cerca cliente'});
-   const results=el('div',{class:'lts-copilota-results'});
-   const update=()=>{
-    results.replaceChildren();
-    const value=field.value.trim();
-    if(!value)return;
-    const choices=liveCustomers();
-    const matches=suggestTripCustomerChoices(choices,value,50);
-    const exact=filterTripCustomerChoices(choices,value,50);
-    if(!exact.length&&matches.length)results.append(el('p',{class:'lts-copilota-hint'},'Nessuna corrispondenza esatta. Forse cercavi:'));
-    if(!matches.length){results.append(el('p',{},companyCustomersLoaded?'Nessun cliente trovato nell’elenco attuale. Verifica il nome nella sezione Clienti.':'Nessun risultato locale. Il catalogo aziendale potrebbe essere ancora in sincronizzazione.'));return;}
-    for(const customer of matches)results.append(button(customer.name+(customer.city?' · '+customer.city:''),()=>{selected=customer;step=3;renderStep();},true));
-   };
-   field.addEventListener('input',update);
-   const refreshOnFocus=()=>update();field.addEventListener('focus',refreshOnFocus);
-   content.append(field,results,button('Indietro',()=>{step=1;renderStep();},true));
-  }else if(step===3){
-   title('Servizi extra','Seleziona uno o più servizi oppure Nessun servizio. Le tariffe sono quelle disponibili in LTS.');
-   const options=el('div',{class:'lts-copilota-service-options'});
-   const makeChoice=(key,label,checked)=>{
-    const input=el('input',{type:'checkbox',checked});
-    input.addEventListener('change',()=>{
-     if(key===null){if(input.checked){selectedServices=[];servicesChosen=true;}}
-     else{selectedServices=input.checked?[...selectedServices,key]:selectedServices.filter(item=>item!==key);servicesChosen=true;}
-     renderStep();
-    });
-    return el('label',{class:'lts-copilota-service-choice'},input,el('span',{},label));
-   };
-   options.append(makeChoice(null,'Nessun servizio',servicesChosen&&selectedServices.length===0));
-   for(const service of D.SERVICES){
-    const price=companyExtraSnapshot(companyExtraRates,companyExtrasLoaded,service.key);
-    const label=service.label+(price===null?' · Tariffa da verificare':' · '+D.formatMoney(price));
-    options.append(makeChoice(service.key,label,selectedServices.includes(service.key)));
-   }
-   const error=el('p',{class:'lts-copilota-error',role:'alert'});
-   content.append(options,error,button('Continua',()=>{if(!servicesChosen){error.textContent='Seleziona un servizio oppure Nessun servizio.';return;}step=4;renderStep();}),button('Indietro',()=>{step=2;renderStep();},true));
-  }else{
-   title('Riepilogo bozza','Controlla i dati. Nessun viaggio verrà salvato automaticamente.');
-   content.append(el('div',{class:'lts-copilota-review'},
-    el('p',{},'Container: '+container),el('p',{},'Cliente: '+selected.name),
-    el('p',{},'Destinazione: '+(selected.city||'Da completare nel modulo')),
-    el('p',{},'Servizi extra: '+(selectedServices.length?selectedServices.map(key=>D.SERVICES.find(s=>s.key===key)?.label||key).join(', '):'Nessun servizio'))),
-    button('USA I DATI NEL MODULO',()=>{
-     const fields=[['container',container],['client',selected.name],['city',selected.city||'']];
-     let updated=0;
-     for(const [name,value] of fields){
-      const input=main.querySelector('form [name="'+name+'"]');
-      if(!input)continue;
-      input.value=value;input.dispatchEvent(new Event('input',{bubbles:true}));
-      input.dispatchEvent(new Event('change',{bubbles:true}));updated++;
-     }
-     if(updated<2){toast('Impossibile compilare il modulo: controlla i campi.');return;}
-     const serviceInputs=[...main.querySelectorAll('form [name="service"]')];
-     if(serviceInputs.length!==D.SERVICES.length){toast('Servizi extra non disponibili nel modulo.');return;}
-     for(const input of serviceInputs){input.checked=selectedServices.includes(input.value);input.dispatchEvent(new Event('change',{bubbles:true}));}
-     setOpen(false);toast('Bozza trasferita: verifica i dati e salva dal modulo viaggio.');
-    }),button('Modifica servizi extra',()=>{step=3;renderStep();},true),button('Modifica cliente',()=>{step=2;renderStep();},true),
-    button('Modifica container',()=>{step=1;renderStep();},true));
-  }
- };
- panel.append(el('div',{class:'lts-copilota-header'},
-  el('img',{src:'/LTS-Registro-Viaggi/assets/assistant-logistica-operator.svg',alt:'',width:'42',height:'42'}),
-  el('div',{},el('strong',{},'LTS Copilota 2.0'),progress),
-  el('button',{type:'button',class:'assistant-chat-close','aria-label':'Chiudi LTS Copilota',on:{click:()=>setOpen(false)}},'×')),
-  stepper,content,
-  el('p',{class:'lts-copilota-footnote'},'I dati restano nel modulo LTS finché non confermi il salvataggio.'));
- toggle.addEventListener('click',()=>setOpen(panel.hidden));
- main.append(toggle,panel);
-}
 function renderInsert(main){
- renderAssistantLogisticaPilot(main);
+
  const amountContext=D.buildTripAmountContext(state);
  const estimateId=editingId||crypto.randomUUID();const estimateCreatedAt=new Date().toISOString();
  const layout=el('div',{class:'form-layout'});const form=el('form',{class:'panel form-panel',novalidate:true});
@@ -2128,37 +2017,59 @@ window.addEventListener('lts-account-locked',()=>{
  renderAccountGate('Sessione non più autorizzata. Accedi nuovamente.');
 });
 let resumingVerification=false;
+let resumeRetryTimer=null;
+let resumeFailureCount=0;
+function clearResumeRetry(){
+ if(resumeRetryTimer!==null){clearTimeout(resumeRetryTimer);resumeRetryTimer=null;}
+}
+function scheduleResumeRetry(){
+ clearResumeRetry();
+ if(document.hidden||!driverSessionShield.isVisible()||!store.usingAccount()||!accountAccess.hasSession())return;
+ // Retry with bounded backoff and jitter; do not force reload or clear local drafts.
+ const delay=Math.min(30000,2000*Math.pow(2,Math.min(resumeFailureCount,4)))+Math.floor(Math.random()*750);
+ resumeRetryTimer=setTimeout(()=>{resumeRetryTimer=null;void verifyDriverOnResume();},delay);
+}
 async function verifyDriverOnResume(){
  if(document.hidden||resumingVerification||!store.usingAccount()||!accountAccess.hasSession())return;
+ clearResumeRetry();
  resumingVerification=true;
- driverSessionShield.show('Controllo la sessione protetta…',{retryable:false});
+ driverSessionShield.show('Verifica della sessione in corso…',{retryable:false});
  try{
   await accountAccess.verifySession();
   if(!accountAccess.isVerified())throw new Error('Sessione non verificata.');
+  resumeFailureCount=0;
+  clearResumeRetry();
   driverSessionShield.close();
   void refreshCompanyCustomers();
   if(['insert','tariffs','customers'].includes(tab))void refreshCompanyRates();
  }catch(error){
   if(!accountAccess.hasSession()||!transientDriverSessionError(error)){
-   // Expired/revoked identities still fail closed and cannot see the archive.
+   clearResumeRetry();
+   resumeFailureCount=0;
    driverSessionShield.close();
    store.lockRevokedAccount();
    renderAccountGate('Sessione non più autorizzata. Accedi nuovamente.');
   }else{
-   // A timeout, flaky cellular connection, or server 5xx is NOT a logout.
-   // The full-screen mask keeps private records hidden until retry succeeds.
+   resumeFailureCount++;
    driverSessionShield.show(navigator.onLine===false||error?.offline
-    ?'Connessione assente o instabile. La sessione è conservata: riprova quando torna Internet.'
-    :'Servizio temporaneamente non raggiungibile. Nessuna password necessaria: riprova la verifica.',
+    ?'Rete non disponibile. La sessione è conservata; la riconnessione avverrà automaticamente.'
+    :'Verifica del server temporaneamente non riuscita. Nuovo tentativo automatico in corso; nessun nuovo accesso necessario.',
     {retryable:true});
   }
- }finally{resumingVerification=false;}
+ }finally{
+  resumingVerification=false;
+  if(driverSessionShield.isVisible())scheduleResumeRetry();
+ }
 }
 document.addEventListener('visibilitychange',()=>{
- if(!document.hidden)void verifyDriverOnResume();
+ if(document.hidden)clearResumeRetry();
+ else void verifyDriverOnResume();
 });
 window.addEventListener('online',()=>{
  if(driverSessionShield.isVisible())void verifyDriverOnResume();
+});
+window.addEventListener('offline',()=>{
+ if(driverSessionShield.isVisible())scheduleResumeRetry();
 });
 
 
