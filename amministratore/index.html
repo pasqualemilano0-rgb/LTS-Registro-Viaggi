@@ -22,7 +22,8 @@
   <link rel="stylesheet" href="./company-rates.css?v=20261107-manual-shared-v1">
   <link rel="stylesheet" href="./driver-records.css?v=20261109-customer-save-fix-v1">
   <link rel="stylesheet" href="../visual-theme.css?v=20261108-rc3-v1">
-  <script type="module" src="./admin.mjs?v=20261109-customer-save-fix-v1"></script>
+  <link rel="stylesheet" href="./admin-login-refreshed.css?v=20261110-resume-v1">
+  <script type="module" src="./admin.mjs?v=20261110-resume-v1"></script>
   <script type="module" src="./install-pwa.mjs?v=20261108-admin-pwa-v1"></script>
   <script type="module" src="./dashboard-mobile-nav.mjs?v=20261107-records-admin-v2"></script>
 </head>
@@ -41,22 +42,30 @@
   </header>
   <main class="container">
     <div id="notice" class="notice" role="status" aria-live="polite" hidden></div>
-    <section id="login-panel" class="login-wrap" aria-labelledby="login-title">
-      <div class="intro-icon" aria-hidden="true">▣</div>
-      <p class="eyebrow">ACCESSO AMMINISTRATORE</p>
-      <h1 id="login-title">Gestisci gli autisti in sicurezza</h1>
-      <p class="intro-copy">Accedi con il numero di telefono e la password del tuo account amministratore LTS.</p>
+    <section id="login-panel" class="login-wrap admin-login-modern" aria-labelledby="login-title">
+      <div class="admin-login-identity">
+        <span class="intro-icon" aria-hidden="true"><svg width="27" height="27" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="m9 12 2 2 4-4"/></svg></span>
+        <span class="admin-login-identity-label">LTS <small>CONTROL CENTER</small></span>
+        <span class="admin-login-secure"><span aria-hidden="true">●</span> Protetto</span>
+      </div>
+      <p class="eyebrow">AREA AMMINISTRATORE</p>
+      <h1 id="login-title">Bentornato nel pannello LTS</h1>
+      <p class="intro-copy">Accedi per gestire autisti, viaggi e attività aziendali in un unico spazio.</p>
       <form id="login-form" class="stack" autocomplete="on">
-        <label>Numero di cellulare <small>(+39 automatico)</small>
+        <label for="login-phone">Numero di cellulare <small>+39 automatico</small>
           <input id="login-phone" type="tel" inputmode="tel" autocomplete="username" placeholder="3XXXXXXXXX" maxlength="40" required>
         </label>
-        <label>Password
-          <input id="login-password" type="password" autocomplete="current-password" minlength="12" maxlength="128" required>
+        <label for="login-password">Password
+          <span class="admin-login-password-field">
+            <input id="login-password" type="password" autocomplete="current-password" minlength="12" maxlength="128" required>
+            <button id="login-password-toggle" type="button" aria-pressed="false" aria-label="Mostra password">Mostra</button>
+          </span>
         </label>
-        <button class="button primary" type="submit">Accedi al pannello</button>
+        <button class="button primary admin-login-submit" type="submit"><span class="admin-login-submit-label">Accedi al pannello</span><span aria-hidden="true">→</span></button>
       </form>
       <p id="login-error" class="error-message" role="alert" hidden></p>
-      <div class="login-footer"><button id="switch-account" class="text-button" type="button">Esci dalla sessione precedente</button><a href="../">Torna al registro</a></div>
+      <p class="admin-login-trust"><span aria-hidden="true">◈</span> Accesso protetto e verifica in due passaggi</p>
+      <div class="login-footer"><button id="switch-account" class="text-button" type="button" hidden>Esci dalla sessione precedente</button><a href="../">← Torna al Registro Viaggi</a></div>
     </section>
 
     <section id="mfa-panel" class="login-wrap" aria-labelledby="mfa-title" hidden>
@@ -635,6 +644,19 @@
       </section>
     </div>
   </main>
+  <div id="admin-resume-guard" class="admin-resume-guard" role="status" aria-live="polite" hidden>
+    <section class="admin-resume-card" aria-labelledby="admin-resume-title">
+      <div class="admin-resume-mark" aria-hidden="true">LTS</div>
+      <div id="admin-resume-spinner" class="admin-resume-spinner" aria-hidden="true"></div>
+      <h2 id="admin-resume-title">Verifico la sessione</h2>
+      <p id="admin-resume-message">Collegamento sicuro al pannello amministratore in corso.</p>
+      <div class="admin-resume-actions">
+        <button id="admin-resume-retry" class="button primary" type="button" hidden>Riprova la verifica</button>
+        <button id="admin-resume-exit" class="text-button" type="button" hidden>Esci dall'account</button>
+      </div>
+      <small>Le informazioni riservate rimangono nascoste fino alla verifica.</small>
+    </section>
+  </div>
   <div id="smart-overlay" class="smart-overlay" hidden>
     <button id="smart-scrim" class="smart-scrim" type="button" tabindex="-1" aria-label="Chiudi centro comandi"></button>
     <section id="smart-panel" class="smart-panel" role="dialog" aria-modal="true" aria-labelledby="smart-heading">
