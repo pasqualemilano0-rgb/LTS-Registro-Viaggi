@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
+import {runInNewContext} from 'node:vm';
 import {SERVICES} from '../shared/domain.mjs';
-import {setupCompanyExtras} from '../amministratore/company-extras.mjs';
 const read=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
 const microtask=()=>new Promise(resolve=>setTimeout(resolve,0));
 function element(tag='div'){
@@ -28,9 +28,20 @@ function fixture(){
    dashboard={hidden:false,dataset:{view:'rates'}};
  const ids={'company-extra-refresh':refresh,'company-extra-list':list,
   'company-extra-status':status,dashboard};
- const originalDocument=globalThis.document,originalWindow=globalThis.window;
- globalThis.document={getElementById:id=>ids[id],createElement:element};
- globalThis.window={confirm:()=>true};
+ // Evaluate the UI controller with a synthetic DOM. The production module
+ // imports a browser-only absolute path, which Node cannot resolve natively.
+ const source=read('amministratore/company-extras.mjs')
+  .replace(/^import [^\n]+\n/gm,'')
+  .replace('export function setupCompanyExtras','function setupCompanyExtras');
+ const setupCompanyExtras=runInNewContext(source+'\nsetupCompanyExtras',{
+  document:{getElementById:id=>ids[id],createElement:element},
+  window:{confirm:()=>true},SERVICES,
+  parseEuro:value=>{
+   const raw=String(value).trim().replace(',','.');
+   assert.match(raw,/^\d+(?:\.\d{1,2})?$/);
+   return Math.round(Number(raw)*100);
+  }
+ });
  let calls=0;
  const live=SERVICES.map((s,i)=>({serviceKey:s.key,cents:100*(i+1),revision:1}));
  const account={isVerified:()=>true,getRole:()=> 'admin',
@@ -49,7 +60,7 @@ function fixture(){
  function rowFor(key){return list.children.find(x=>x.dataset.service===key)}
  const api=setupCompanyExtras(account);
  return {api,list,status,live,rowFor,getCalls:()=>calls,
-  restore:()=>{globalThis.document=originalDocument;globalThis.window=originalWindow}};
+  restore:()=>{}};
 }
 test('saving one extra preserves another unsaved amount instead of erasing it',async()=>{
  const f=fixture();
