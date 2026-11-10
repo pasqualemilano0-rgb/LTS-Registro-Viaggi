@@ -305,7 +305,7 @@ body{background:linear-gradient(180deg,#f7fafb 0,#f2f7f9 310px,#f4f7fa 100%);col
  #dashboard>.admin-switch>.admin-nav-more>.admin-nav-more-toggle{
   min-height:58px;height:58px;margin:0;padding:6px 2px;
   display:flex;flex-direction:column;align-items:center;justify-content:center;
-  gap:3px;border-radius:9px;font-size:10.5px;line-height:1.05;
+  gap:3px;border-radius:9px;font-size:11px;line-height:1.08;
   color:#476674}
  #dashboard>.admin-switch>.admin-switch-button.selected{
   border-color:#bfe1de;background:#e8f8f4;color:#075e63;
