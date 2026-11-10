@@ -57,3 +57,30 @@ export function filterTripCustomerChoices(choices,query='',limit=12){
  return matches.slice(0,Math.max(0,Math.min(50,Number.isFinite(limit)?Math.trunc(limit):12)))
   .map(item=>item.row);
 }
+
+/** Optional typo-tolerant suggestions. Exact matches always retain priority. */
+export function suggestTripCustomerChoices(choices,query='',limit=12){
+ const exact=filterTripCustomerChoices(choices,query,limit);
+ const clean=value=>String(value??'').normalize('NFD').replace(/\p{M}/gu,'').toLocaleUpperCase('it-IT').replace(/[^\p{L}\p{N}]+/gu,' ').trim();
+ const needle=clean(query);
+ if(needle.length<3||exact.length>=limit)return exact;
+ const editDistance=(a,b)=>{
+  let previous=Array.from({length:b.length+1},(_,i)=>i);
+  for(let i=1;i<=a.length;i++){
+   const next=[i];
+   for(let j=1;j<=b.length;j++)next[j]=Math.min(next[j-1]+1,previous[j]+1,previous[j-1]+(a[i-1]===b[j-1]?0:1));
+   previous=next;
+  }
+  return previous[b.length];
+ };
+ const terms=needle.split(' ');
+ const extras=(Array.isArray(choices)?choices:[]).filter(row=>{
+  if(exact.includes(row))return false;
+  const words=clean(row?.name).split(' ');
+  return terms.every(term=>term.length>=3&&words.some(word=>{
+   const candidate=word.slice(0,Math.max(term.length-1,Math.min(word.length,term.length+1)));
+   return editDistance(term,candidate)<= (term.length>=6?2:1);
+  }));
+ });
+ return [...exact,...extras].slice(0,limit);
+}
