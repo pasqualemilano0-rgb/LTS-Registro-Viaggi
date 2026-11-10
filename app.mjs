@@ -2017,37 +2017,59 @@ window.addEventListener('lts-account-locked',()=>{
  renderAccountGate('Sessione non più autorizzata. Accedi nuovamente.');
 });
 let resumingVerification=false;
+let resumeRetryTimer=null;
+let resumeFailureCount=0;
+function clearResumeRetry(){
+ if(resumeRetryTimer!==null){clearTimeout(resumeRetryTimer);resumeRetryTimer=null;}
+}
+function scheduleResumeRetry(){
+ clearResumeRetry();
+ if(document.hidden||!driverSessionShield.isVisible()||!store.usingAccount()||!accountAccess.hasSession())return;
+ // Retry with bounded backoff and jitter; do not force reload or clear local drafts.
+ const delay=Math.min(30000,2000*Math.pow(2,Math.min(resumeFailureCount,4)))+Math.floor(Math.random()*750);
+ resumeRetryTimer=setTimeout(()=>{resumeRetryTimer=null;void verifyDriverOnResume();},delay);
+}
 async function verifyDriverOnResume(){
  if(document.hidden||resumingVerification||!store.usingAccount()||!accountAccess.hasSession())return;
+ clearResumeRetry();
  resumingVerification=true;
- driverSessionShield.show('Controllo la sessione protetta…',{retryable:false});
+ driverSessionShield.show('Verifica della sessione in corso…',{retryable:false});
  try{
   await accountAccess.verifySession();
   if(!accountAccess.isVerified())throw new Error('Sessione non verificata.');
+  resumeFailureCount=0;
+  clearResumeRetry();
   driverSessionShield.close();
   void refreshCompanyCustomers();
   if(['insert','tariffs','customers'].includes(tab))void refreshCompanyRates();
  }catch(error){
   if(!accountAccess.hasSession()||!transientDriverSessionError(error)){
-   // Expired/revoked identities still fail closed and cannot see the archive.
+   clearResumeRetry();
+   resumeFailureCount=0;
    driverSessionShield.close();
    store.lockRevokedAccount();
    renderAccountGate('Sessione non più autorizzata. Accedi nuovamente.');
   }else{
-   // A timeout, flaky cellular connection, or server 5xx is NOT a logout.
-   // The full-screen mask keeps private records hidden until retry succeeds.
+   resumeFailureCount++;
    driverSessionShield.show(navigator.onLine===false||error?.offline
-    ?'Connessione assente o instabile. La sessione è conservata: riprova quando torna Internet.'
-    :'Servizio temporaneamente non raggiungibile. Nessuna password necessaria: riprova la verifica.',
+    ?'Rete non disponibile. La sessione è conservata; la riconnessione avverrà automaticamente.'
+    :'Verifica del server temporaneamente non riuscita. Nuovo tentativo automatico in corso; nessun nuovo accesso necessario.',
     {retryable:true});
   }
- }finally{resumingVerification=false;}
+ }finally{
+  resumingVerification=false;
+  if(driverSessionShield.isVisible())scheduleResumeRetry();
+ }
 }
 document.addEventListener('visibilitychange',()=>{
- if(!document.hidden)void verifyDriverOnResume();
+ if(document.hidden)clearResumeRetry();
+ else void verifyDriverOnResume();
 });
 window.addEventListener('online',()=>{
  if(driverSessionShield.isVisible())void verifyDriverOnResume();
+});
+window.addEventListener('offline',()=>{
+ if(driverSessionShield.isVisible())scheduleResumeRetry();
 });
 
 
