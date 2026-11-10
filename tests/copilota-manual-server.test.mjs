@@ -1,0 +1,6 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {validatedManualProposal,submitManualProposal} from '../supabase/functions/lts-shared-maps/manual-approvals.mjs';
+const user='12345678-1234-4234-8234-123456789abc';
+test('manual proposal requires name and city, never a fabricated Maps URL',()=>{assert.deepEqual(validatedManualProposal({name:' Alfa  Srl ',city:' Napoli '}),{name:'Alfa Srl',city:'Napoli',address:''});assert.throws(()=>validatedManualProposal({name:'A',city:'Napoli'}));});
+test('server insert returns pending only on database confirmation',async()=>{const db={from:()=>({insert:()=>({select:()=>({maybeSingle:async()=>({data:{id:'req-1'},error:null})})})})};assert.deepEqual(await submitManualProposal(db,{name:'Alfa',city:'Napoli'},user),{pending:true,requestId:'req-1'});});
+test('database failures fail closed',async()=>{const db={from:()=>({insert:()=>({select:()=>({maybeSingle:async()=>({data:null,error:{code:'XX000'}})})})})};await assert.rejects(submitManualProposal(db,{name:'Alfa',city:'Napoli'},user),e=>e.status===503);});
+test('invalid user cannot submit',async()=>{await assert.rejects(submitManualProposal({}, {name:'Alfa',city:'Napoli'},'wrong'),e=>e.status===403);});
