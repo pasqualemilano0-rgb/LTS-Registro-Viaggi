@@ -316,7 +316,7 @@ test('LTS Porti fallback reads LTS public snapshots, not the old Booking reposit
  const lts='https://raw.githubusercontent.com/pasqualemilano0-rgb/LTS-Registro-Viaggi/main/porti/data/';
  assert.equal(port.split(lts).length-1,3);
  assert.ok(!port.includes('raw.githubusercontent.com/pasqualemilano0-rgb/container-booking-web-/'));
- assert.match(index,/porti-access[.]mjs[?]v=20261110-accetta-carico-v1/);
+ assert.match(index,/porti-access[.]mjs[?]v=20261110-porti-freshcode-v2/);
  const files=new Map(provenance.files.map(item=>[item.path,item]));
  assert.equal(files.get('app.js').sha256,'e13b15529d8cee5ba3bc330c1748b49492beb799dae818a523fa63ade66d4095');
  assert.equal(files.get('index.html').sha256,'e214deb437467b2e43ed62f39dcfff8e40008bb8c10116dd092ec3927a058d98');
@@ -920,7 +920,7 @@ test('Porti keeps the booking and vessel programs, without the two removed notic
  const portal=read('porti/index.html'),ui=read('porti/driver-ui.mjs');
  const appCss=read('app.css'),gate=read('porti-access.mjs'),sw=read('sw.js');
  assert.match(app,/function renderPorti\(main\)/);
- assert.match(app,/porti\/index[.]html[?]v=20261109-weekdays-porti-v1/);
+ assert.match(app,/porti\/index[.]html[?]v=20261110-porti-freshcode-v2/);
  assert.doesNotMatch(app,/Stato dei programmi navi|porti-source-overview|describePortSource/);
  assert.doesNotMatch(appCss,/\.porti-source-overview/);
  assert.doesNotMatch(portal,/Consulta solo a veicolo fermo|class="driver-notice"/);
