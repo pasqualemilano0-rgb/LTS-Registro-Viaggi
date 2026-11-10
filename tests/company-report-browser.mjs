@@ -293,6 +293,23 @@ try{
  await page.locator('#dashboard').waitFor({state:'visible'});
  assert.equal(await page.locator('#dashboard').getAttribute('data-view'),'overview','Protected overview should open after verified admin MFA');
  assert.equal(await page.locator('#console-overview').isVisible(),true);
+ const mobileLayout=await page.evaluate(()=>{
+  const rect=id=>document.getElementById(id).getBoundingClientRect();
+  return {
+   navHeight:document.querySelector('#dashboard>.admin-switch').getBoundingClientRect().height,
+   reviewTop:rect('maps-approvals').top,
+   kpiTop:document.querySelector('#report-panel>.report-kpis').getBoundingClientRect().top,
+   commandsTop:rect('console-overview').top,
+   commandsHeight:rect('console-overview').height,
+   viewport:window.innerWidth,documentWidth:document.documentElement.scrollWidth};
+ });
+ assert(mobileLayout.navHeight<=78,'Mobile navigation should be compact');
+ assert(mobileLayout.reviewTop<mobileLayout.kpiTop&&mobileLayout.kpiTop<mobileLayout.commandsTop,
+  'Approvals and synced KPIs must precede quick actions');
+ assert(mobileLayout.commandsHeight<225,'Quick actions cannot take over the mobile dashboard');
+ assert(mobileLayout.documentWidth<=mobileLayout.viewport+2,
+  'Unified mobile dashboard must not cause horizontal document overflow');
+ assert.equal(await page.locator('#workspace-title').textContent(),'Panoramica operativa');
  await page.waitForFunction(()=>document.querySelector('#customer-overview-priced').textContent==='1');
  assert.equal(await page.locator('#customer-overview-total').textContent(),'3');
 
@@ -940,6 +957,9 @@ try{
  assert(navBox&&contentBox&&navBox.x+navBox.width<contentBox.x,
   'Professional left sidebar must be beside the admin content');
  assert.equal(await nav.evaluate(e=>getComputedStyle(e).position),'sticky');
+ const workspaceBox=await desktop.locator('#workspace-bar').boundingBox();
+ assert(workspaceBox&&workspaceBox.x>navBox.x+navBox.width&&workspaceBox.y<=contentBox.y,
+  'Desktop section header must be above the content and beside sidebar');
  assert.equal(await desktop.locator('.admin-nav-brand').isVisible(),true);
  assert.equal(await nav.locator('button').count(),9);
  assert.equal(await desktop.locator('#dashboard').getAttribute('data-view'),'overview');
