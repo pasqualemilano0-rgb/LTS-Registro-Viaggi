@@ -33,7 +33,7 @@ const companyView=setupReport(account);
 const adminStatus=setupAdminStatus(account);
 const smartConsole=setupSmartConsole({
  authorized:()=>account.isVerified()&&account.getRole()==='admin'&&
-  !dashboard.hidden&&byId('mfa-panel').hidden,
+  !dashboard.hidden&&byId('mfa-panel').hidden&&byId('admin-resume-guard').hidden,
  getDrivers:()=>drivers,
  getReport:()=>companyView.peek(),
  getCustomers:()=>companyView.peekCustomers(),
@@ -72,6 +72,33 @@ function inform(message,bad=false){
  const node=byId('notice');node.textContent=message;node.hidden=!message;node.classList.toggle('danger',bad);
 }
 function setError(node,message){node.textContent=message||'';node.hidden=!message;}
+// Keep the same protected dashboard and its unsaved forms in memory while
+// a resumed mobile connection is verified. No cached data can be interacted with.
+function showResumeGuard(message='Verifica sicura della sessione in corso…',failed=false){
+ const guard=byId('admin-resume-guard');
+ guard.hidden=false;guard.dataset.failed=String(failed);
+ byId('admin-resume-title').textContent=failed?'Verifica temporaneamente non disponibile':'Verifico la sessione';
+ byId('admin-resume-message').textContent=message;
+ byId('admin-resume-retry').hidden=!failed;
+ byId('admin-resume-exit').hidden=!failed;
+ dashboard.inert=true;
+ adminRealtime?.stop();
+}
+function hideResumeGuard(){
+ byId('admin-resume-guard').hidden=true;
+ dashboard.inert=false;
+}
+function setPasswordVisibility(visible){
+ const password=byId('login-password'),button=byId('login-password-toggle');
+ password.type=visible?'text':'password';
+ button.textContent=visible?'Nascondi':'Mostra';
+ button.setAttribute('aria-pressed',String(visible));
+ button.setAttribute('aria-label',visible?'Nascondi password':'Mostra password');
+}
+function transientAdminError(error){
+ return account.hasSession()&&account.getRole()==='admin'&&
+  ![401,403].includes(error?.status);
+}
 function make(tag,className='',text=''){
  const node=document.createElement(tag);
  if(className)node.className=className;
@@ -92,6 +119,7 @@ function clearMfa(){
  setError(byId('mfa-error'),'');
 }
 function showMfaPanel(setup=false,resumed=false,purpose='primary'){
+ hideResumeGuard();
  smartConsole.reset();byId('smart-command-open').hidden=true;
  adminRealtime?.stop();
  if(!setup)clearMfa();
@@ -144,6 +172,9 @@ async function loadBackupFactors(){
  }catch(error){byId('mfa-backup-status').textContent=errorText(error,'Stato backup non disponibile. Riprova online.');}
 }
 function lock(message='Accedi come amministratore per continuare.'){
+ hideResumeGuard();
+ setPasswordVisibility(false);
+ byId('switch-account').hidden=!account.hasSession();
  adminStatus.reset();
  selectedInitial='';
  byId('search').value='';byId('status-filter').value='all';
@@ -164,6 +195,8 @@ function lock(message='Accedi come amministratore per continuare.'){
  inform(message,Boolean(message));
 }
 function showDashboard(status={}){
+ hideResumeGuard();
+ byId('switch-account').hidden=true;
  const previousPosition=readAdminPosition();
  companyView.reset();clearMfa();byId('mfa-panel').hidden=true;
  byId('mfa-warning').hidden=status.mfa_enrolled===true;
@@ -178,6 +211,10 @@ function showDashboard(status={}){
 }
 async function authenticate(){
  if(!account.hasSession()){lock('');return;}
+ if(account.getRole()==='admin'&&dashboard.hidden&&byId('mfa-panel').hidden){
+  loginPanel.hidden=true;
+  showResumeGuard('Ripristino sicuro del pannello in corso…');
+ }
  try{
    const status=await account.verifySession();
    if(account.getRole()!=='admin'){
@@ -203,7 +240,9 @@ async function authenticate(){
      loadBackupFactors():Promise.resolve()]);
    restoreAdminPosition(previousPosition);
  }catch(error){
-   lock(errorText(error,'Verifica dell’account non riuscita. Riprova con Internet attivo.'));
+   if(transientAdminError(error))
+    showResumeGuard('La connessione non ha completato la verifica. La sessione rimane conservata: riprova quando sei online.',true);
+   else lock(errorText(error,'Verifica dell’account non riuscita. Riprova con Internet attivo.'));
  }
 }
 let driverRequest=0;
@@ -377,6 +416,8 @@ async function handleSubmit(event,action,ids){
  }catch(error){inform(errorText(error,'Richiesta non riuscita.'),true);}
  finally{busy=false;button.disabled=false;}
 }
+byId('login-password-toggle').addEventListener('click',()=>setPasswordVisibility(
+ byId('login-password').type==='password'));
 byId('login-form').addEventListener('submit',async event=>{
  event.preventDefault();
  const button=event.currentTarget.querySelector('[type=submit]');
@@ -384,6 +425,7 @@ byId('login-form').addEventListener('submit',async event=>{
  button.disabled=true;setError(loginError,'');inform('');
  const password=byId('login-password').value;
  byId('login-password').value='';
+ setPasswordVisibility(false);
  try{
    if(account.hasSession())account.signOut();
    await account.login(byId('login-phone').value.trim(),password);
@@ -490,21 +532,23 @@ byId('copy-secret').addEventListener('click',async()=>{
 });
 window.addEventListener('lts-account-locked',()=>lock('Sessione non più autorizzata.'));
 window.addEventListener('offline',()=>{
- // An offline MFA tab contains no privileged records and must not lose its QR.
+ // An offline mobile wake-up must not erase a still-valid admin session.
  if(!byId('mfa-panel').hidden){
-   setError(byId('mfa-error'),'Connessione assente. Torna online prima di confermare il codice.');
-   return;
+  setError(byId('mfa-error'),'Connessione assente. Torna online prima di confermare il codice.');
+  return;
  }
- lock('Connessione assente: gestione autisti bloccata fino alla verifica online.');
+ if(!dashboard.hidden){
+  showResumeGuard('Connessione assente. La sessione rimane in memoria; riproverò quando torna la rete.',true);
+ }else if(account.hasSession()&&account.getRole()==='admin'){
+  showResumeGuard('Connessione assente. Riprova quando la rete sarà disponibile.',true);
+ }else inform('Connessione assente. Il login richiede Internet.',true);
 });
 async function verifyDashboardOnResume(){
- if(resumingDashboard||dashboard.hidden)return;
+ if(resumingDashboard||dashboard.hidden||document.hidden)return;
  resumingDashboard=true;
  const owner=account.getAccountId(),view=dashboard.dataset.view;
  const saved=readAdminPosition();
- // Hide private content without collapsing layout while authorization is
- // rechecked. Collapsing the dashboard would reset mobile scroll position.
- dashboard.style.visibility='hidden';
+ showResumeGuard();
  try{
   const status=await account.verifySession();
   if(account.getRole()!=='admin'||!account.isVerified()||
@@ -513,8 +557,8 @@ async function verifyDashboardOnResume(){
   if(status.mfa_enrolled&&!status.mfa_verified){
    showMfaPanel();await loadLoginFactors();return;
   }
-  // Do NOT call authenticate()/showDashboard()/companyView.open() here:
-  // those reset the selected tab, reports and the scroll position.
+  // Revalidate without recreating any tab, edit form, report or scroll state.
+  hideResumeGuard();
   adminRealtime?.resume();
   if(dashboard.dataset.view===view){
    restoreAdminPosition(saved);
@@ -522,15 +566,23 @@ async function verifyDashboardOnResume(){
    else companyView.refreshActive();
   }
  }catch(error){
-  lock(errorText(error,'Verifica amministratore non riuscita. Riprova online.'));
- }finally{
-  dashboard.style.visibility='';
-  resumingDashboard=false;
- }
+  if(!transientAdminError(error)||account.getAccountId()!==owner){
+   lock(errorText(error,'Sessione amministratore scaduta o revocata.'));
+  }else{
+   showResumeGuard('Verifica non completata. Non hai perso l’accesso: il pannello resta protetto e puoi riprovare.',true);
+  }
+ }finally{resumingDashboard=false;}
 }
 function resumeWhenSafe(){
- if(document.hidden){rememberAdminPosition();return;}
- if(!account.hasSession())return;
+ if(document.hidden){
+  rememberAdminPosition();
+  if(!dashboard.hidden)showResumeGuard('La sessione verrà verificata alla riapertura.');
+  return;
+ }
+ if(!account.hasSession()){
+  if(!dashboard.hidden)lock('Sessione terminata. Accedi nuovamente.');
+  return;
+ }
  if(!byId('mfa-panel').hidden)return;
  if(!dashboard.hidden){void verifyDashboardOnResume();return;}
  void authenticate();
@@ -539,19 +591,28 @@ function resumeWhenSafe(){
 // month/driver, scroll, MFA workflow or an unsaved tariff form.
 setInterval(()=>{
  if(dashboard.hidden||document.hidden||navigator.onLine===false||
-    !account.isVerified()||account.getRole()!=='admin'||resumingDashboard)return;
+    !byId('admin-resume-guard').hidden||!account.isVerified()||account.getRole()!=='admin'||resumingDashboard)return;
  if(dashboard.dataset.view==='drivers'){
   if(document.activeElement?.matches?.('input:not([type=hidden]),textarea,select'))return;
   void loadDrivers({silent:true});
  }else companyView.refreshActive();
 },10000);
-window.addEventListener('pagehide',rememberAdminPosition);
+byId('admin-resume-retry').addEventListener('click',()=>{
+ if(!account.hasSession()){lock('Sessione non disponibile. Accedi nuovamente.');return;}
+ if(!dashboard.hidden)void verifyDashboardOnResume();
+ else void authenticate();
+});
+byId('admin-resume-exit').addEventListener('click',()=>{
+ void account.logout().catch(()=>{});
+ lock('Hai chiuso la sessione amministratore.');
+});
+window.addEventListener('pagehide',()=>{rememberAdminPosition();if(!dashboard.hidden)showResumeGuard();});
 window.addEventListener('pageshow',event=>{if(event.persisted)resumeWhenSafe();});
-window.addEventListener('online',()=>adminRealtime?.resume());
-window.addEventListener('focus',()=>adminRealtime?.resume());
-window.addEventListener('offline',()=>adminRealtime?.resume());
+window.addEventListener('online',()=>{if(byId('admin-resume-guard').hidden)adminRealtime?.resume();});
+window.addEventListener('focus',()=>{if(byId('admin-resume-guard').hidden)adminRealtime?.resume();});
+window.addEventListener('offline',()=>adminRealtime?.stop());
 window.addEventListener('online',resumeWhenSafe);
-document.addEventListener('visibilitychange',()=>adminRealtime?.resume());
+document.addEventListener('visibilitychange',()=>{if(document.hidden)adminRealtime?.stop();});
 document.addEventListener('visibilitychange',resumeWhenSafe);
 /** Do not activate the administrator login inside an external site frame. */
 function denyEmbeddedAdmin(){
@@ -560,4 +621,10 @@ function denyEmbeddedAdmin(){
  document.querySelector('main')?.replaceChildren(make('p','notice','Per sicurezza, apri il pannello LTS direttamente nel browser.'));
  return true;
 }
-if(!denyEmbeddedAdmin())authenticate();
+if(!denyEmbeddedAdmin()){
+ if(account.hasSession()&&account.getRole()==='admin'){
+  loginPanel.hidden=true;
+  showResumeGuard('Ripristino del pannello amministratore in corso…');
+ }
+ void authenticate();
+}
