@@ -1036,7 +1036,8 @@ function renderTariffs(main){
  const refresh=el('button',{type:'button',class:'secondary-button',on:{click:async()=>{
   refresh.disabled=true;companyStatus.textContent='Aggiornamento tariffe in corso…';
   try{
-   await Promise.all([store.syncPending(),refreshCompanyRates({quiet:false})]);
+   const [,confirmed]=await Promise.all([store.syncPending(),refreshCompanyRates({quiet:false})]);
+   if(!confirmed)throw new Error('Sincronizzazione delle tariffe non confermata: riprova.');
    companyStatus.textContent=companyRates.length?'Trasferte aziendali aggiornate.':'Nessuna trasferta aziendale ancora configurata.';
    toast(companyRates.length?'Tariffe aziendali sincronizzate.':'Il listino aziendale è ancora vuoto.');
   }catch(error){
@@ -1086,7 +1087,9 @@ function renderExtraRates(main){
  const status=el('p',{class:'field-hint'});
  const update=el('button',{type:'button',class:'secondary-button',on:{click:async()=>{
   update.disabled=true;status.textContent='Aggiornamento degli extra aziendali…';
-  try{await refreshCompanyRates({quiet:false});show();}
+  try{const confirmed=await refreshCompanyRates({quiet:false});
+   if(!confirmed)throw new Error('Aggiornamento degli extra non confermato: riprova.');
+   show();}
   catch(error){status.textContent=error.message||'Aggiornamento non disponibile.';}
   finally{update.disabled=false;}
  }}},icon('refresh'),'Aggiorna servizi extra');
