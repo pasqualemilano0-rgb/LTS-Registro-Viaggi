@@ -527,7 +527,8 @@ function renderAssistantLogisticaPilot(main){
  if(!session.ready)return;
  const toggle=el('button',{type:'button',class:'assistant-mini-toggle',
   'aria-label':'Apri Assistente Logistica','aria-expanded':'false',title:'Assistente Logistica'},
-  el('span',{'aria-hidden':'true'},'✦'));
+  el('img',{src:'/LTS-Registro-Viaggi/assets/assistant-logistica-operator.svg',alt:'',width:'40',height:'40','aria-hidden':'true'}),
+  el('span',{class:'assistant-mini-indicator','aria-hidden':'true'}));
  const panel=el('section',{class:'assistant-compact assistant-mini-panel',
   'aria-label':'ASSISTENTE LOGISTICA',hidden:'hidden'},
   el('div',{class:'assistant-compact-heading'},
