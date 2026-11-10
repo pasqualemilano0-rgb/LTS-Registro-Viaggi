@@ -40,3 +40,25 @@
 .assistant-chat-composer{display:flex;gap:7px;align-items:center}
 .assistant-chat-composer .assistant-compact-search{min-width:0;flex:1}
 .assistant-chat-send{min-height:44px;padding:0 12px;border:0;border-radius:11px;background:#007c8d;color:#fff;font:inherit;font-weight:700;cursor:pointer}
+
+
+/* LTS Copilota: guided flow, matching the LTS teal palette. */
+.lts-copilota{position:fixed;z-index:1200;inset:clamp(12px,3vh,32px) 12px calc(76px + env(safe-area-inset-bottom,0px));width:auto;max-width:580px;max-height:none;margin:auto;overflow-y:auto;background:#fff;border:1px solid #d9e8eb;border-radius:28px;padding:24px;box-shadow:0 18px 65px rgba(0,45,59,.26);display:flex;flex-direction:column;gap:22px}
+.lts-copilota[hidden]{display:none!important}
+.lts-copilota-header{display:flex;align-items:center;gap:12px;padding-bottom:20px;border-bottom:1px solid #e2eaed}
+.lts-copilota-header strong{font-size:23px;color:#153441}
+.lts-copilota-progress{font-size:12px!important;color:#667d84;margin:4px 0 0!important}
+.lts-copilota-content{display:flex;flex-direction:column;gap:16px;flex:1;min-height:0}
+.lts-copilota-content h3{font-size:24px;color:#153441;margin:0}
+.lts-copilota-description{font-size:17px;line-height:1.5;color:#607781;margin:0 0 12px}
+.lts-copilota-content label{font-weight:700;color:#193846}
+.lts-copilota-input{width:100%;box-sizing:border-box;min-height:54px;border:1px solid #c9d9de;border-radius:14px;padding:12px 15px;font:inherit;background:#fff;color:#183642}
+.lts-copilota-input:focus{outline:3px solid #77c4d3;outline-offset:2px}
+.lts-copilota-primary,.lts-copilota-secondary{width:100%;min-height:52px;border-radius:13px;font:inherit;font-weight:700;cursor:pointer;padding:12px}
+.lts-copilota-primary{background:#007b91;color:white;border:0}
+.lts-copilota-secondary{background:#f0f7f9;color:#006b7e;border:1px solid #c5dfe5}
+.lts-copilota-results{display:flex;flex-direction:column;gap:8px;max-height:32vh;overflow-y:auto}
+.lts-copilota-review{background:#edf4f7;padding:16px;border-radius:16px;color:#183642}
+.lts-copilota-review p{margin:5px 0}
+.lts-copilota-error{color:#b91c1c;margin:0}
+.lts-copilota-footnote{border-top:1px solid #e2eaed;padding-top:14px;font-size:12px;color:#657b82;margin-top:auto}
