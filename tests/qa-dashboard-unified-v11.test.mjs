@@ -31,11 +31,25 @@ test('Home commands are real buttons, approval stays on top and all ten sections
 });
 test('Design file is versioned, mobile-first, touch accessible, and not privileged',()=>{
  const html=read('amministratore/index.html'),css=read('amministratore/dashboard-unified-v11.css');
- assert.match(html,/dashboard-unified-v11\.css\?v=20261110-unified-v1/);
+ assert.match(html,/dashboard-unified-v11\.css\?v=20261110-rates-visibility-v2/);
  assert.match(html,/admin\.mjs\?v=20261110-unified-v11/);
  assert.match(read('amministratore/admin.mjs'),/report\.mjs\?v=20261110-unified-v11/);
  assert.match(css,/@media\(max-width:1029px\)/);
  assert.match(css,/@media\(max-width:680px\)/);
  assert.match(css,/@media\(prefers-reduced-motion:reduce\)/);
  assert.doesNotMatch(css,/https?:\/\/|@import|javascript:|service_role|sb_secret_/i);
+});
+
+
+test('Tariff editor appears ONLY in Tariffe and its heading remains legible',()=>{
+ const css=read('amministratore/dashboard-unified-v11.css');
+ const old=read('amministratore/company-rates.css');
+ assert.match(old,/#company-rates\{display:none\}/);
+ assert.match(css,/#dashboard:not\(\[data-view="rates"\]\) #company-rates\{display:none!important\}/);
+ assert.match(css,/#dashboard\[data-view="rates"\] #company-rates\{display:grid/);
+ assert.doesNotMatch(css,/#dashboard #company-rates\{display:grid/);
+ assert.match(css,/#dashboard\[data-view="rates"\] #company-rates \.company-rates-heading h1\{\s*color:#173849/);
+ assert.match(css,/#dashboard\[data-view="rates"\] #report-panel > #maps-approvals\{\s*display:block!important/);
+ const page=read('amministratore/index.html');
+ assert.match(page,/sedi Google Maps proposte dagli autisti richiedono approvazione e tariffa/);
 });

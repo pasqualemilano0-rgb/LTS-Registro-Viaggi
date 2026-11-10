@@ -24,7 +24,7 @@
   <link rel="stylesheet" href="../visual-theme.css?v=20261108-rc3-v1">
   <link rel="stylesheet" href="./admin-login-refreshed.css?v=20261110-resume-v1">
   <link rel="stylesheet" href="./control-center-v10.css?v=20261110-maps-approval-v1">
-  <link rel="stylesheet" href="./dashboard-unified-v11.css?v=20261110-unified-v1">
+  <link rel="stylesheet" href="./dashboard-unified-v11.css?v=20261110-rates-visibility-v2">
   <script type="module" src="./admin.mjs?v=20261110-unified-v11"></script>
   <script type="module" src="./install-pwa.mjs?v=20261108-admin-pwa-v1"></script>
   <script type="module" src="./dashboard-mobile-nav.mjs?v=20261107-records-admin-v2"></script>
@@ -303,10 +303,10 @@
             </div>
             <button type="button" class="button outline" id="company-rates-refresh">Aggiorna elenco</button>
           </header>
-          <p class="company-rates-guide">Puoi aggiungere clienti manualmente oppure da Google Maps: entrambi saranno disponibili a tutti gli autisti nella lista condivisa. La tariffa è facoltativa e si applica solo ai nuovi viaggi; quelli già registrati non vengono ricalcolati.</p>
+          <p class="company-rates-guide">Le sedi Google Maps proposte dagli autisti richiedono approvazione e tariffa prima di entrare nell’elenco condiviso. I clienti inseriti direttamente dall’amministratore possono essere condivisi anche senza tariffa. I viaggi già registrati non vengono modificati.</p>
           <section id="company-maps-add" class="company-rates-editor" aria-labelledby="company-maps-title">
             <h2 id="company-maps-title">Aggiungi cliente da Google Maps</h2>
-            <p class="company-rates-note">Copia il link condiviso di una sede Google Maps. LTS controlla i dati e i possibili doppioni prima di aggiungerla all’elenco di tutti gli autisti.</p>
+            <p class="company-rates-note">Qui l’amministratore può aggiungere direttamente una sede. I link proposti dagli autisti vengono invece esaminati nel Centro notifiche e condivisi solo dopo l’approvazione con tariffa.</p>
             <form id="company-maps-form" autocomplete="off">
               <div class="company-maps-link-row">
                 <label for="company-maps-url">Link Google Maps
