@@ -68,7 +68,9 @@ test('driver app always verifies backend identity before cached trips and retain
  assert.match(authSource,/lts-driver-refresh-lock/);
  assert.match(authSource,/void enqueueVault\(\(\)=>clearDriverToken\(\)\)/);
  assert.match(authSource,/next[.]role==='driver'/);
- assert.match(appSource,/Serve Internet per verificare la sessione salvata/);
+ assert.match(appSource,/renderFirstBootConnectionGate/);
+ assert.match(appSource,/retrySavedDriverSession/);
+ assert.match(appSource,/driverSessionShield[.]show/);
 });
 
 test('first login survives browser restart; disabled driver cannot restore; offline token remains for retry',async()=>{
