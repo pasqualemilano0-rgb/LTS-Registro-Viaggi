@@ -1,0 +1,11 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {createGuidedSession,guidedCustomerSearch,guidedTripDecision} from '../copilota/guided.mjs';
+const sample=()=>createGuidedSession({verified:true,customers:[{name:'Alfa',city:'Napoli'},{name:'Alfa',city:'Caserta'},{name:'Beta',city:'Nola'}],tariffs:[{client:'Alfa',city:'Napoli',cents:18500}]});
+test('unverified context stays locked and reveals no customers',()=>{const s=createGuidedSession({verified:false,customers:[{name:'Secret'}]});assert.deepEqual(s.actions,['ports']);assert.deepEqual(guidedCustomerSearch(s,'Secret').results,[]);assert.equal(guidedTripDecision(s,{container:'MSCU1234567',customer:'Secret'}).status,'locked');});
+test('search uses existing LTS customer matching',()=>{const s=sample();assert.deepEqual(guidedCustomerSearch(s,'Al').results.map(x=>x.city),['Caserta','Napoli']);});
+test('container is validated before customer request',()=>{assert.equal(guidedTripDecision(sample(),{container:'invalid',customer:'Missing'}).status,'invalid_container');});
+test('missing customer creates unsent proposal, never persists',()=>{const d=guidedTripDecision(sample(),{container:'mscu1234567',customer:'Missing'});assert.equal(d.status,'approval_required');assert.equal(d.proposal.status,'not_sent');});
+test('multiple sites require explicit choice',()=>{const d=guidedTripDecision(sample(),{container:'MSCU1234567',customer:'Alfa'});assert.equal(d.status,'choose_destination');assert.deepEqual(d.options,['Napoli','Caserta']);});
+test('authorized tariff is shown only for matching destination',()=>{const s=sample();const a=guidedTripDecision(s,{container:'MSCU1234567',customer:'Alfa',city:'Napoli'});assert.equal(a.status,'ready_for_review');assert.equal(a.rate.cents,18500);const b=guidedTripDecision(s,{container:'MSCU1234567',customer:'Alfa',city:'Caserta'});assert.equal(b.status,'tariff_pending');assert.equal(b.rate,null);});
+test('unlisted site cannot be selected',()=>{const d=guidedTripDecision(sample(),{container:'MSCU1234567',customer:'Alfa',city:'Roma'});assert.equal(d.status,'choose_destination');});
