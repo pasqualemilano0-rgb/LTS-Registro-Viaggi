@@ -229,3 +229,16 @@
 }
 .records-save-toast.is-error{background:#fff1ed;color:#963e24;border-color:#d99c89}
 .records-save-toast[hidden]{display:none!important}
+
+/* Existing private customer collision: explain and navigate, never overwrite. */
+#admin-records-panel .records-existing-duplicate{
+ padding:14px;margin-top:12px;border:1px solid #dfaa85;border-radius:13px;
+ background:#fff7ed;color:#78421d;display:grid;gap:12px;
+}
+#admin-records-panel .records-existing-duplicate[hidden]{display:none!important}
+#admin-records-panel .records-existing-duplicate-info{
+ margin:0;line-height:1.5;font-size:14px;overflow-wrap:anywhere
+}
+#admin-records-panel .records-existing-duplicate-action{
+ min-height:44px;width:100%;white-space:normal;text-align:center
+}

@@ -214,7 +214,7 @@ function sitePicker(form,{title,client,city,fare,keepFare=false}){
  * directory entry. This edits ONLY that private record on explicit submit:
  * it does not migrate old trips, delete records or create shared customers.
  */
-function personalCompanyPicker(form,{name,city,address,phone,vat,isDuplicate,linkedRates=0,linkedTrips=0}){
+function personalCompanyPicker(form,{name,city,address,phone,vat,isDuplicate,getDuplicate,openDuplicate,linkedRates=0,linkedTrips=0}){
  const panel=make('section','records-site-picker records-company-picker');
  panel.setAttribute('aria-label','Sostituisci con cliente aziendale');
  panel.append(make('h4','records-site-heading','Sostituisci con cliente aziendale'));
@@ -263,12 +263,19 @@ function personalCompanyPicker(form,{name,city,address,phone,vat,isDuplicate,lin
  const chosen=make('p','records-site-chosen');chosen.hidden=true;
  const hint=make('p','records-site-hint','In attesa del catalogo condiviso.');
  hint.setAttribute('role','status');hint.setAttribute('aria-live','polite');
+ const duplicatePanel=make('div','records-existing-duplicate');
+ duplicatePanel.hidden=true;duplicatePanel.setAttribute('role','group');
+ duplicatePanel.setAttribute('aria-label','Cliente personale già registrato');
+ const duplicateInfo=make('p','records-existing-duplicate-info');
+ const duplicateAction=make('button','button outline records-existing-duplicate-action','Apri cliente già presente');
+ duplicateAction.type='button';
+ duplicatePanel.append(duplicateInfo,duplicateAction);
  const jump=make('button','button outline records-company-jump','Vai al salvataggio ↓');
  jump.type='button';jump.hidden=true;
- panel.append(label,count,results,chosen,hint,jump);
+ panel.append(label,count,results,chosen,hint,duplicatePanel,jump);
  form.append(panel);
  const controller=new AbortController();
- let ready=false,sites=[],shown=[],active=-1;
+ let ready=false,sites=[],shown=[],active=-1,duplicateCustomer=null;
  function close(){
   results.hidden=true;input.setAttribute('aria-expanded','false');
   input.removeAttribute('aria-activedescendant');active=-1;
@@ -281,9 +288,20 @@ function personalCompanyPicker(form,{name,city,address,phone,vat,isDuplicate,lin
    hint.classList.add('records-site-warning');return;
   }
   if(isDuplicate(site.name)){
-   hint.textContent='Un altro cliente personale ha già questo nome. Verifica i duplicati prima di sostituirlo.';
+   const existing=getDuplicate?.(site.name)||null;
+   duplicateCustomer=existing;
+   duplicatePanel.hidden=!existing;
+   if(existing){
+    duplicateInfo.textContent='Il cliente personale «'+existing.name+'» è già registrato'+
+     (existing.city?' a '+existing.city:'')+
+     (existing.address?' · '+existing.address:'')+
+     '. Apri la scheda esistente per verificarla. La scheda che stai modificando, i viaggi e le tariffe restano invariati.';
+   }
+   hint.textContent='Un altro cliente personale ha già il nome «'+site.name+
+    '». Puoi aprire la scheda esistente senza creare duplicati.';
    hint.classList.add('records-site-warning');return;
   }
+  duplicatePanel.hidden=true;duplicateCustomer=null;
   name.value=site.name;city.value=site.city;
   address.value=site.address||'';
   phone.value='';vat.value='';
@@ -351,6 +369,10 @@ function personalCompanyPicker(form,{name,city,address,phone,vat,isDuplicate,lin
    (!mapsAvailable||!tariffsAvailable?' Alcune fonti non sono disponibili.':''):
    'Elenco aziendale non disponibile: nessuna sostituzione automatica possibile.';
  }
+ duplicateAction.addEventListener('click',()=>{
+  if(!duplicateCustomer)return;
+  openDuplicate?.(duplicateCustomer);
+ },{signal:controller.signal});
  jump.addEventListener('click',()=>{
   const target=form.elements.namedItem('reason');
   target?.scrollIntoView({block:'center',behavior:'smooth'});
@@ -375,6 +397,7 @@ function personalCompanyPicker(form,{name,city,address,phone,vat,isDuplicate,lin
    chosen.hidden=true;
    if(field===name||field===city){
     if(tripConfirmation){updateTrips.checked=false;tripConfirmation.hidden=true;}
+    duplicatePanel.hidden=true;duplicateCustomer=null;
    }
   },{signal:controller.signal});
  }
@@ -839,6 +862,12 @@ export function setupDriverRecords(account){
     companyPicker=personalCompanyPicker(form,{name,city,address,phone,vat,
      isDuplicate:next=>state.customers.some(row=>row.id!==item.id&&
       normalizeSearch(row.name)===normalizeSearch(next)),
+     getDuplicate:next=>state.customers.find(row=>row.id!==item.id&&
+      normalizeSearch(row.name)===normalizeSearch(next))||null,
+     openDuplicate:existing=>{
+      const current=state.customers.find(row=>row.id===existing.id);
+      if(current)openEditor(current); // Existing dirty-form guard runs before navigation.
+     },
      linkedRates:state.tariffs.filter(row=>row.customerId===item.id).length,
      linkedTrips:linkedCustomerTripCount(state,item)});
     form.insertBefore(companyPicker.panel,name.parentElement);
