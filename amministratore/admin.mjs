@@ -559,7 +559,8 @@ async function verifyDashboardOnResume(){
   }
   // Revalidate without recreating any tab, edit form, report or scroll state.
   hideResumeGuard();
-  adminRealtime?.resume();
+  // stop() shuts down the socket; start() is needed after revalidation.
+  adminRealtime?.start();
   if(dashboard.dataset.view===view){
    restoreAdminPosition(saved);
    if(view==='drivers')void loadDrivers({silent:true});
@@ -608,7 +609,7 @@ byId('admin-resume-exit').addEventListener('click',()=>{
 });
 window.addEventListener('pagehide',()=>{rememberAdminPosition();if(!dashboard.hidden)showResumeGuard();});
 window.addEventListener('pageshow',event=>{if(event.persisted)resumeWhenSafe();});
-window.addEventListener('online',()=>{if(byId('admin-resume-guard').hidden)adminRealtime?.resume();});
+window.addEventListener('online',()=>{if(byId('admin-resume-guard').hidden)adminRealtime?.start();});
 window.addEventListener('focus',()=>{if(byId('admin-resume-guard').hidden)adminRealtime?.resume();});
 window.addEventListener('offline',()=>adminRealtime?.stop());
 window.addEventListener('online',resumeWhenSafe);
