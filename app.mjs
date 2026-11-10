@@ -2,7 +2,8 @@ import * as D from '/LTS-Registro-Viaggi/shared/domain.mjs';
 import { quickTripFromRoute } from '/LTS-Registro-Viaggi/shared/quick-trip.mjs';
 import {REGISTER_PAGE_SIZE,registerTripCounts,filterRegisterTrips,paginateRegisterTrips,stepRegisterMonth} from '/LTS-Registro-Viaggi/shared/register-explorer.mjs';
 import {TRIP_DRAFT_VERSION,tripDraftHasWork,possibleTripDuplicate,restoreTripEditorSnapshot} from '/LTS-Registro-Viaggi/shared/trip-editor-safety.mjs';
-import {unionStates} from '/LTS-Registro-Viaggi/shared/sync-merge.mjs';
+import {unionStates,SyncConflictError} from '/LTS-Registro-Viaggi/shared/sync-merge.mjs';
+import {describeBackupConflict} from '/LTS-Registro-Viaggi/shared/backup-conflict-details.mjs';
 import * as store from '/LTS-Registro-Viaggi/client-store.mjs';
 import runtimeConfig from '/LTS-Registro-Viaggi/runtime-config.mjs';
 import * as accountAccess from '/LTS-Registro-Viaggi/account-access.mjs';
@@ -1462,27 +1463,64 @@ async function importFile(file){
     throw new Error('Accedi con le tue credenziali prima di importare un backup.');
   const previous=D.validateState(state);
   const originalFingerprint=JSON.stringify(previous);
-  let preview;
+  let preview=null,conflicts=[];
   try{preview=unionStates(previous,imported,{prefer:null});}
-  catch{
-    throw new Error('Il backup contiene dati in conflitto con il tuo registro. Nessun dato è stato modificato. Conserva entrambi i backup: serve una risoluzione guidata, non una sostituzione.');
+  catch(err){
+    if(!(err instanceof SyncConflictError)||!Array.isArray(err.paths)||!err.paths.length)
+      throw new Error('Non è possibile costruire un’unione sicura: '+(err.message||'archivio non compatibile')+'. Le copie originali restano intatte.');
+    conflicts=[...new Set(err.paths)];
   }
-  const summary=data=>`${data.trips.length} viaggi, ${data.customers.length} clienti, ${data.tariffs.length} tariffe`;
-  const {dialog,body}=modal('Unisci backup senza perdere dati',{subtitle:'I dati del file vengono aggiunti al tuo account. I dati già presenti non saranno sostituiti e il file originale resterà intatto.'});
-  body.append(el('p',{class:'field-hint'},'Registro attuale: '+summary(previous)),
-    el('p',{class:'field-hint'},'Backup scelto: '+summary(imported)),
-    el('p',{class:'field-hint'},'Dopo l’unione: '+summary(preview)));
+  const details=conflicts.map(path=>{
+    const info=describeBackupConflict(path,previous,imported);
+    if(!info)throw new Error('Differenza non riconosciuta: '+path+'. Nessun dato è stato modificato. Conserva i backup e richiedi assistenza.');
+    return {path,...info};
+  });
+  const summary=data=>data.trips.length+' viaggi, '+data.customers.length+' clienti, '+data.tariffs.length+' tariffe';
+  const {dialog,body}=modal(conflicts.length?'Risolvi conflitti del backup':'Unisci backup senza perdere dati',
+    {subtitle:conflicts.length?'Scegli quale valore conservare per ogni differenza. Nessun viaggio verrà eliminato automaticamente.':'I dati del file vengono aggiunti al tuo account. I dati già presenti non saranno sostituiti e il file originale resterà intatto.'});
   const error=el('p',{class:'form-error',role:'alert'});
+  const choices=Object.create(null);
+  const after=el('p',{class:'field-hint backup-merge-preview'},
+    preview?'Dopo l’unione: '+summary(preview):'Dopo l’unione: risolvi prima tutte le differenze.');
+  body.append(el('p',{class:'field-hint'},'Registro attuale: '+summary(previous)),
+    el('p',{class:'field-hint'},'Backup scelto: '+summary(imported)),after);
+  const selects=[];
+  if(details.length){
+    body.append(el('p',{class:'info-note'},'Tutti i dati attuali e quelli del backup sono mostrati per il confronto. Scegli per ogni riga: il salvataggio sarà possibile solo quando tutte le differenze saranno risolte.'));
+    const conflictsList=el('div',{class:'backup-conflicts','aria-label':'Differenze tra registro e backup'});
+    for(const item of details){
+      const field=el('div',{class:'backup-conflict-item'});
+      field.append(el('strong',{},item.title),
+        el('p',{},el('b',{},'Registro attuale: '),item.current),
+        el('p',{},el('b',{},'Backup: '),item.backup));
+      const input=el('select',{class:'backup-conflict-select','aria-label':'Scelta per '+item.title});
+      input.append(el('option',{value:''},'Seleziona cosa conservare'),
+        el('option',{value:'remote'},'Mantieni valore del registro attuale'),
+        el('option',{value:'local'},'Usa valore del backup'));
+      if(item.allowBoth)input.append(el('option',{value:'both'},'Conserva entrambi: sono due viaggi diversi'));
+      input.addEventListener('change',()=>{
+        if(input.value)choices[item.path]=input.value;else delete choices[item.path];
+        refreshPreview();
+      });
+      selects.push(input);
+      field.append(input);
+      if(item.allowBoth)field.append(el('p',{class:'field-hint'},'Conserva entrambi solo se data, cliente o percorso identificano viaggi realmente distinti. Altrimenti rischi doppie tariffe.'));
+      conflictsList.append(field);
+    }
+    body.append(conflictsList);
+  }
   const acknowledge=el('input',{type:'checkbox','aria-label':'Ho verificato e conservato il backup attuale'});
+  let backupStarted=false;
   const confirm=button('Unisci i due registri','primary',async()=>{
     if(!acknowledge.checked||!backupStarted){error.textContent='Prima scarica e conserva il backup del registro attuale.';return;}
-    if(!window.confirm('Confermi che il backup appartiene al tuo account? I dati attuali verranno mantenuti.'))return;
+    if(selects.some(input=>!input.value)){error.textContent='Completa tutte le scelte prima di continuare.';return;}
+    if(!window.confirm('Confermi che il backup appartiene al tuo account e hai controllato tutte le differenze? I dati attuali e la copia ZIP originale resteranno conservati.'))return;
     confirm.disabled=true;error.textContent='';
     try{
       await accountAccess.verifySession();
       if(JSON.stringify(D.validateState(state))!==originalFingerprint)
         throw new Error('Il registro è cambiato durante l’anteprima. Riapri Importa backup per evitare di perdere modifiche.');
-      const combined=unionStates(D.validateState(state),imported,{prefer:null});
+      const combined=unionStates(D.validateState(state),imported,{prefer:null,choices});
       await persist(combined);
       draft=newDraft();draftBaselineDate=draft.date;editingId=null;editingBaseline=null;
       month=state.trips.length?D.sortTrips(state.trips)[0].date.slice(0,7):today().slice(0,7);
@@ -1491,22 +1529,37 @@ async function importFile(file){
       if(!state.profile.firstName||!state.profile.lastName)openProfile(true);
     }catch(e){error.textContent=e.message||'Unione non riuscita: i dati precedenti sono conservati.';confirm.disabled=false;}
   });
-  let backupStarted=false;
+  const refreshPreview=()=>{
+    const missing=selects.filter(input=>!input.value).length;
+    if(missing){
+      preview=null;after.textContent='Dopo l’unione: '+missing+' scelte ancora da completare.';error.textContent='';
+    }else{
+      try{
+        preview=unionStates(previous,imported,{prefer:null,choices});
+        after.textContent='Dopo l’unione: '+summary(preview);
+        error.textContent='';
+      }catch(e){
+        preview=null;after.textContent='L’unione non è ancora sicura.';
+        error.textContent=e.message||'Controlla le scelte.';
+      }
+    }
+    confirm.disabled=!(preview&&acknowledge.checked&&backupStarted);
+  };
   confirm.disabled=true;
   const backupButton=button('1. Scarica backup del registro attuale','secondary',()=>{
     try{
-      downloadBlob(new Blob([D.exportBackup(previous)],{type:'application/json'}),`LTS-Backup-Prima-Unione-${today()}.json`);
+      downloadBlob(new Blob([D.exportBackup(previous)],{type:'application/json'}),'LTS-Backup-Prima-Unione-'+today()+'.json');
       backupStarted=true;
-      confirm.disabled=!acknowledge.checked;
+      refreshPreview();
       error.textContent='Controlla che il backup sia stato salvato sul telefono prima di procedere.';
     }catch(e){error.textContent=e.message||'Impossibile esportare il registro attuale.';}
   },'download');
-  acknowledge.addEventListener('change',()=>{confirm.disabled=!(acknowledge.checked&&backupStarted);});
+  acknowledge.addEventListener('change',refreshPreview);
   body.append(error,backupButton,
     el('label',{class:'export-reminders'},acknowledge,
       el('span',{},'Ho controllato che il backup del registro attuale sia salvato e conservo anche il file da importare.')),
-    confirm,
-    button('Annulla','text',()=>dialog.close()));
+    confirm,button('Annulla','text',()=>dialog.close()));
+  refreshPreview();
  }catch(err){toast(err.message||'Il backup non può essere letto.',true);}
 }
 async function startInstall(){
