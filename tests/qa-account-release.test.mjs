@@ -993,3 +993,23 @@ test('admin wake-up guard preserves unsaved forms on mobile network failure and 
  assert.doesNotMatch(access,/localStorage[.]setItem\(SESSION_KEY/);
  assert.match(access,/Only drivers get a durable device session/);
 });
+
+test('admin login and MFA confirmation reuse the just-verified server response',()=>{
+ const admin=read('amministratore/admin.mjs');
+ const access=read('account-access.mjs');
+ const html=read('amministratore/index.html');
+ assert.match(admin,/function immediatelyVerifiedAdminStatus\(status\)/);
+ assert.match(admin,/account[.]getAccountId\(\)==='account:'\+status[.]user_id/);
+ assert.match(admin,/account[.]hasSession\(\)&&account[.]getRole\(\)==='admin'/);
+ assert.match(admin,/!status[.]mfa_verified\|\|account[.]isVerified\(\)/);
+ assert.match(admin,/const status=statusFromCompletedVerification\|\|await account[.]verifySession\(\)/);
+ assert.match(admin,/const verifiedLogin=await account[.]login\(/);
+ assert.match(admin,/await authenticate\(verifiedLogin\)/);
+ assert.match(admin,/const verifiedMfa=await account[.]verifyAdminTotp\(code,selected\)/);
+ assert.match(admin,/await authenticate\(verifiedMfa\)/);
+ assert.match(admin,/Promise[.]allSettled\(\[loadDrivers\(\),/);
+ assert.match(access,/const status=await verifySession\(\);[\s\S]*Only drivers get a durable device session/);
+ assert.match(access,/saveSession\(result\);\s*const status=await verifySession\(\)/);
+ assert.match(html,/admin[.]mjs\?v=20261110-fast-login-v4/);
+ assert.doesNotMatch(admin,/sessionStorage|localStorage|innerHTML/);
+});
