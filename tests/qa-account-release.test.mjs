@@ -473,7 +473,7 @@ test('MFA enrollment requires the latest QR and a correctly synchronized device 
  assert.match(html,/Data e ora automatiche/);
  assert.match(html,/fuso orario automatico/);
  assert.match(html,/codice basato sull'ora/);
- assert.match(html,/admin[.]mjs[?]v=20261110-duplicate-guard-v2/);
+ assert.match(html,/admin[.]mjs[?]v=20261110-seamless-resume-v3/);
 });
 
 test('Authenticator app switching preserves the existing enrollment instead of regenerating QR',()=>{
