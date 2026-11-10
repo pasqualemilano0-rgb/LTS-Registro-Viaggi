@@ -1,6 +1,6 @@
 const BASE = "/LTS-Registro-Viaggi/";
 const PREFIX = "lts-iphone-pages-0aa8d087d02b-";
-const CACHE = PREFIX + '20261110-maps-approval-v1';
+const CACHE = PREFIX + '20261110-driver-resume-v1';
 const CORE = [
   "/LTS-Registro-Viaggi/account-access.mjs",
   "/LTS-Registro-Viaggi/app.css",
@@ -28,6 +28,7 @@ const CORE = [
   "/LTS-Registro-Viaggi/shared/maps-company-routing.mjs",
   "/LTS-Registro-Viaggi/shared/customer-site-matches.mjs",
   "/LTS-Registro-Viaggi/driver-session-vault.mjs",
+  "/LTS-Registro-Viaggi/driver-session-guard.mjs",
   "/LTS-Registro-Viaggi/index.html",
   "/LTS-Registro-Viaggi/manifest.webmanifest",
   "/LTS-Registro-Viaggi/porti-access.mjs",
@@ -78,7 +79,7 @@ const PORT_BASE = BASE + 'porti/';
 // still uses only the current static cache; personal records are never cached.
 const NETWORK_FIRST_CODE = new Set([
   BASE + 'app.css', BASE + 'visual-theme.css',
-  BASE + 'app.mjs', BASE + 'porti-access.mjs', BASE + 'account-access.mjs', BASE + 'driver-session-vault.mjs',
+  BASE + 'app.mjs', BASE + 'driver-session-guard.mjs', BASE + 'porti-access.mjs', BASE + 'account-access.mjs', BASE + 'driver-session-vault.mjs',
   BASE + 'runtime-config.mjs', BASE + 'client-store.mjs', BASE + 'realtime-client.mjs', BASE + 'porti/app.js',
   BASE + 'shared/trip-customer-choices.mjs', BASE + 'shared/trip-editor-safety.mjs', BASE + 'shared/register-explorer.mjs', BASE + 'shared/maps-company-routing.mjs',
   BASE + 'shared/customer-site-matches.mjs', BASE + 'shared-maps-client.mjs',
