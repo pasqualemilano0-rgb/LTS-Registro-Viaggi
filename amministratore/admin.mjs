@@ -234,14 +234,28 @@ function showDashboard(status={}){
  void mapsApprovals.load();
  return previousPosition;
 }
-async function authenticate(){
+// Only accept a server-confirmed response returned by the SAME in-flight login
+// or MFA verification. Startup and account restoration always call the server.
+function immediatelyVerifiedAdminStatus(status){
+ return status&&status.role==='admin'&&typeof status.user_id==='string'&&
+  status.user_id.length>0&&account.hasSession()&&account.getRole()==='admin'&&
+  account.getAccountId()==='account:'+status.user_id&&
+  typeof status.mfa_enrolled==='boolean'&&typeof status.mfa_verified==='boolean'&&
+  (status.mfa_enrolled||!status.mfa_verified)&&
+  (!status.mfa_verified||account.isVerified()) ? status : null;
+}
+async function authenticate(freshStatus=null){
  if(!account.hasSession()){lock('');return;}
- if(account.getRole()==='admin'&&dashboard.hidden&&byId('mfa-panel').hidden){
+ // A verified login or MFA response is already an online session check:
+ // do not request a duplicate network round trip before showing the next step.
+ const statusFromCompletedVerification=immediatelyVerifiedAdminStatus(freshStatus);
+ if(!statusFromCompletedVerification&&account.getRole()==='admin'&&
+    dashboard.hidden&&byId('mfa-panel').hidden){
   loginPanel.hidden=true;
   showResumeGuard('Ripristino sicuro del pannello in corso…');
  }
  try{
-   const status=await account.verifySession();
+   const status=statusFromCompletedVerification||await account.verifySession();
    if(account.getRole()!=='admin'){
      account.signOut();
      lock('Questo account non è autorizzato come amministratore.');
@@ -261,9 +275,10 @@ async function authenticate(){
    }
    if(pending)account.forgetPendingAdminMfa();
    const previousPosition=showDashboard(status);
-   await Promise.all([loadDrivers(),status.mfa_enrolled&&status.mfa_verified?
-     loadBackupFactors():Promise.resolve()]);
-   restoreAdminPosition(previousPosition);
+   // Dashboard is available immediately after server authentication; roster,
+   // backup-factor labels and reports load independently in the background.
+   void Promise.allSettled([loadDrivers(),status.mfa_enrolled&&status.mfa_verified?
+     loadBackupFactors():Promise.resolve()]).then(()=>restoreAdminPosition(previousPosition));
  }catch(error){
    if(transientAdminError(error))
     showResumeGuard('La connessione non ha completato la verifica. La sessione rimane conservata: riprova quando sei online.',true);
@@ -453,9 +468,9 @@ byId('login-form').addEventListener('submit',async event=>{
  setPasswordVisibility(false);
  try{
    if(account.hasSession())account.signOut();
-   await account.login(byId('login-phone').value.trim(),password);
+   const verifiedLogin=await account.login(byId('login-phone').value.trim(),password);
    if(account.getRole()!=='admin'){account.signOut();throw new Error('Permesso amministratore non presente.');}
-   await authenticate();
+   await authenticate(verifiedLogin);
  }catch(error){lock('');setError(loginError,errorText(error,'Accesso non riuscito.'));}
  finally{button.disabled=false;}
 });
@@ -494,9 +509,9 @@ byId('mfa-verify-form').addEventListener('submit',async event=>{
  try{
    const code=byId('mfa-code').value.trim();
    const selected=mfaFactorId||byId('mfa-factor-choice').value||null;
-   await account.verifyAdminTotp(code,selected);
+   const verifiedMfa=await account.verifyAdminTotp(code,selected);
    clearMfa();
-   await authenticate();
+   await authenticate(verifiedMfa);
  }catch(error){byId('mfa-code').value='';setError(byId('mfa-error'),
    errorText(error,'Codice non verificato. Riprova.'));}
  finally{button.disabled=false;}

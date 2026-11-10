@@ -353,7 +353,7 @@ test('dedicated admin console loads only verified administrative transport',asyn
  const css=readFileSync(new URL('../amministratore/admin.css',import.meta.url),'utf8');
  const model=await import('../amministratore/model.mjs');
  assert.match(adminHtml,/Content-Security-Policy/);
- assert.match(adminHtml,/src="\.\/admin[.]mjs\?v=20261110-seamless-resume-v3"/);
+ assert.match(adminHtml,/src="\.\/admin[.]mjs\?v=20261110-fast-login-v4"/);
  assert.match(adminJs,/import \* as account from '\.\.\/account-access[.]mjs\?v=20261107-realtime-v1'/);
  assert.match(adminJs,/await account[.]verifySession\(\)/);
  assert.match(adminJs,/account[.]getRole\(\)!=='admin'/);
@@ -452,7 +452,7 @@ test('TOTP admin flow uses verified backend session and never exposes secret in 
  assert.match(html,/id="mfa-warning"/);
  assert.match(html,/pattern="\[0-9\]\{6\}"/);
  assert.match(html,/img-src 'self' data:/);
- assert.match(html,/admin\.mjs\?v=20261110-seamless-resume-v3/);
+ assert.match(html,/admin\.mjs\?v=20261110-fast-login-v4/);
  assert.match(html,/admin\.css\?v=20261109-alpha-v1/);
  assert.match(admin,/account\.enrollAdminTotp/);
  assert.match(admin,/account\.verifyAdminTotp/);
@@ -473,7 +473,7 @@ test('MFA enrollment requires the latest QR and a correctly synchronized device 
  assert.match(html,/Data e ora automatiche/);
  assert.match(html,/fuso orario automatico/);
  assert.match(html,/codice basato sull'ora/);
- assert.match(html,/admin[.]mjs[?]v=20261110-seamless-resume-v3/);
+ assert.match(html,/admin[.]mjs[?]v=20261110-fast-login-v4/);
 });
 
 test('Authenticator app switching preserves the existing enrollment instead of regenerating QR',()=>{
@@ -992,4 +992,24 @@ test('admin wake-up guard preserves unsaved forms on mobile network failure and 
  assert.match(access,/sessionStorage[.]setItem\(SESSION_KEY/);
  assert.doesNotMatch(access,/localStorage[.]setItem\(SESSION_KEY/);
  assert.match(access,/Only drivers get a durable device session/);
+});
+
+test('admin login and MFA confirmation reuse the just-verified server response',()=>{
+ const admin=read('amministratore/admin.mjs');
+ const access=read('account-access.mjs');
+ const html=read('amministratore/index.html');
+ assert.match(admin,/function immediatelyVerifiedAdminStatus\(status\)/);
+ assert.match(admin,/account[.]getAccountId\(\)==='account:'\+status[.]user_id/);
+ assert.match(admin,/account[.]hasSession\(\)&&account[.]getRole\(\)==='admin'/);
+ assert.match(admin,/!status[.]mfa_verified\|\|account[.]isVerified\(\)/);
+ assert.match(admin,/const status=statusFromCompletedVerification\|\|await account[.]verifySession\(\)/);
+ assert.match(admin,/const verifiedLogin=await account[.]login\(/);
+ assert.match(admin,/await authenticate\(verifiedLogin\)/);
+ assert.match(admin,/const verifiedMfa=await account[.]verifyAdminTotp\(code,selected\)/);
+ assert.match(admin,/await authenticate\(verifiedMfa\)/);
+ assert.match(admin,/Promise[.]allSettled\(\[loadDrivers\(\),/);
+ assert.match(access,/const status=await verifySession\(\);[\s\S]*Only drivers get a durable device session/);
+ assert.match(access,/saveSession\(result\);\s*const status=await verifySession\(\)/);
+ assert.match(html,/admin[.]mjs\?v=20261110-fast-login-v4/);
+ assert.doesNotMatch(admin,/sessionStorage|localStorage|innerHTML/);
 });

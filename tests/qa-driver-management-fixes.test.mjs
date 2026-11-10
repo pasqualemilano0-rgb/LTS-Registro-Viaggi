@@ -65,7 +65,7 @@ test('driver admin editor prevents stale owner and unsaved form races',()=>{
   /Nessun altro archivio è stato aperto/
  ])assert.match(editor,pattern);
  assert.match(report,/lastView==='records'&&view!=='records'&&!records[.]canLeave\(\)/);
- assert.match(html,/admin[.]mjs[?]v=20261110-seamless-resume-v3/);
+ assert.match(html,/admin[.]mjs[?]v=20261110-fast-login-v4/);
  assert.match(admin,/report[.]mjs[?]v=20261110-duplicate-guard-v2/);
  assert.match(report,/driver-records[.]mjs[?]v=20261110-duplicate-guard-v2/);
 });
