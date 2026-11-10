@@ -88,3 +88,46 @@ test('a private extra price update never changes saved extra snapshots',()=>{
  assert.equal(next.trips[0].extraCents.adr,1250);
  assert.equal(JSON.stringify(next.trips[0]),before);
 });
+
+test('editing a saved trip preserves both pickup snapshots and selected extras',()=>{
+ let catalog=upsertTariff(emptyState(),{client:'CLIENTE A',city:'ROMA',cents:7600});
+ catalog=upsertTariff(catalog,{client:'CLIENTE B',city:'NAPOLI',cents:5000});
+ catalog=upsertExtraRates(catalog,{...catalog.extraRates,adr:1250,pernotto:200});
+ const fields={date:'2026-09-19',client:'CLIENTE A',city:'ROMA',
+  container:'REEFER',secondClient:'CLIENTE B',secondCity:'NAPOLI',
+  services:['adr'],note:'PRIMA NOTA'};
+ const saved=createTrip(fields,catalog);
+ assert.deepEqual([saved.fareCents,saved.secondFareCents,saved.extraCents.adr],[7600,5000,1250]);
+ let changed=upsertTariff(catalog,{client:'CLIENTE A',city:'ROMA',cents:9000});
+ changed=upsertTariff(changed,{client:'CLIENTE B',city:'NAPOLI',cents:6500});
+ changed=upsertExtraRates(changed,{...changed.extraRates,adr:2100,pernotto:750});
+ const revised=createTrip({...fields,note:'NOTA CORRETTA',
+  services:['adr','pernotto']},changed,saved);
+ assert.equal(revised.fareCents,7600);
+ assert.equal(revised.secondFareCents,5000);
+ assert.equal(revised.extraCents.adr,1250);
+ assert.equal(revised.extraCents.pernotto,750,'New service uses currently configured rate');
+ assert.equal(revised.id,saved.id);
+ assert.equal(revised.createdAt,saved.createdAt);
+ assert.equal(revised.note,'NOTA CORRETTA');
+ const future=createTrip({...fields,services:['adr','pernotto']},changed);
+ assert.equal(future.fareCents,9000);
+ assert.equal(future.secondFareCents,6500);
+ assert.equal(future.extraCents.adr,2100);
+});
+test('a previously unpriced saved trip must remain unpriced when its route is unchanged',()=>{
+ const state=emptyState();
+ const input={date:'2026-09-19',client:'CLIENTE NON CONFIGURATO',city:'BARI',
+   container:'BILICO',services:['adr']};
+ const old=createTrip(input,state);
+ assert.equal(old.fareCents,null);
+ assert.equal(old.extraCents.adr,null);
+ const newer=upsertTariff(upsertExtraRates(state,{...state.extraRates,adr:2400}),
+  {client:input.client,city:input.city,cents:7700});
+ const edited=createTrip(input,newer,old);
+ assert.equal(edited.fareCents,null);
+ assert.equal(edited.extraCents.adr,null);
+ const newTrip=createTrip(input,newer);
+ assert.equal(newTrip.fareCents,7700);
+ assert.equal(newTrip.extraCents.adr,2400);
+});
