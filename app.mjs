@@ -596,27 +596,46 @@ function renderAssistantLogisticaPilot(main){
    const error=el('p',{class:'lts-copilota-error',role:'alert'});
    content.append(options,error,button('Continua',()=>{if(!servicesChosen){error.textContent='Seleziona un servizio oppure Nessun servizio.';return;}step=4;renderStep();}),button('Indietro',()=>{step=2;renderStep();},true));
   }else{
-   title('Riepilogo bozza','Controlla i dati. Nessun viaggio verrà salvato automaticamente.');
-   content.append(el('div',{class:'lts-copilota-review'},
-    el('p',{},'Container: '+container),el('p',{},'Cliente: '+selected.name),
-    el('p',{},'Destinazione: '+(selected.city||'Da completare nel modulo')),
-    el('p',{},'Servizi extra: '+(selectedServices.length?selectedServices.map(key=>D.SERVICES.find(s=>s.key===key)?.label||key).join(', '):'Nessun servizio'))),
-    button('USA I DATI NEL MODULO',()=>{
-     const fields=[['container',container],['client',selected.name],['city',selected.city||'']];
-     let updated=0;
-     for(const [name,value] of fields){
-      const input=main.querySelector('form [name="'+name+'"]');
-      if(!input)continue;
-      input.value=value;input.dispatchEvent(new Event('input',{bubbles:true}));
-      input.dispatchEvent(new Event('change',{bubbles:true}));updated++;
-     }
-     if(updated<2){toast('Impossibile compilare il modulo: controlla i campi.');return;}
-     const serviceInputs=[...main.querySelectorAll('form [name="service"]')];
-     if(serviceInputs.length!==D.SERVICES.length){toast('Servizi extra non disponibili nel modulo.');return;}
-     for(const input of serviceInputs){input.checked=selectedServices.includes(input.value);input.dispatchEvent(new Event('change',{bubbles:true}));}
-     setOpen(false);toast('Bozza trasferita: verifica i dati e salva dal modulo viaggio.');
-    }),button('Modifica servizi extra',()=>{step=3;renderStep();},true),button('Modifica cliente',()=>{step=2;renderStep();},true),
-    button('Modifica container',()=>{step=1;renderStep();},true));
+   title('Riepilogo bozza','Verifica i dati prima di trasferirli. Il viaggio non viene salvato automaticamente.');
+   const review=el('dl',{class:'lts-copilota-review'},
+    el('div',{},el('dt',{},'Container'),el('dd',{},container)),
+    el('div',{},el('dt',{},'Cliente'),el('dd',{},selected.name)),
+    el('div',{},el('dt',{},'Destinazione'),el('dd',{},selected.city||'Da completare nel modulo')),
+    el('div',{},el('dt',{},'Servizi extra'),el('dd',{},selectedServices.length?selectedServices.map(key=>D.SERVICES.find(s=>s.key===key)?.label||key).join(', '):'Nessun servizio')));
+   const feedback=el('p',{class:'lts-copilota-transfer-feedback',role:'status','aria-live':'polite'});
+   const transfer=button('USA I DATI NEL MODULO',()=>{
+    const fields=[['container',container],['client',selected.name],['city',selected.city||'']];
+    const targets=fields.map(([name,value])=>({name,value,input:main.querySelector('form [name="'+name+'"]')}));
+    const serviceInputs=[...main.querySelectorAll('form [name="service"]')];
+    if(targets.some(({name,input})=>name!=='city'&&!input)||serviceInputs.length!==D.SERVICES.length){
+     feedback.textContent='Modulo incompleto: impossibile trasferire tutti i dati. Riprova dopo aver riaperto Inserisci viaggio.';
+     return;
+    }
+    for(const {input,value} of targets){
+     if(!input)continue;
+     input.value=value;
+     input.dispatchEvent(new Event('input',{bubbles:true}));
+     input.dispatchEvent(new Event('change',{bubbles:true}));
+    }
+    for(const input of serviceInputs){
+     input.checked=selectedServices.includes(input.value);
+     input.dispatchEvent(new Event('change',{bubbles:true}));
+    }
+    const fieldsMatch=targets.every(({input,value})=>!input||input.value===value);
+    const servicesMatch=serviceInputs.every(input=>input.checked===selectedServices.includes(input.value));
+    if(!fieldsMatch||!servicesMatch){
+     feedback.textContent='Attenzione: alcuni dati non risultano trasferiti. Controlla il modulo prima di salvare.';
+     return;
+    }
+    feedback.textContent='Dati trasferiti e verificati nel modulo. Controllali e premi Salva viaggio.';
+    toast('Dati trasferiti e verificati. Controlla il modulo e salva il viaggio.');
+    setOpen(false);
+   });
+   const edit=el('div',{class:'lts-copilota-review-actions'},
+    button('Servizi extra',()=>{step=3;renderStep();},true),
+    button('Cliente',()=>{step=2;renderStep();},true),
+    button('Container',()=>{step=1;renderStep();},true));
+   content.append(review,transfer,feedback,el('p',{class:'lts-copilota-edit-label'},'Modifica rapidamente'),edit);
   }
  };
  panel.append(el('div',{class:'lts-copilota-header'},
