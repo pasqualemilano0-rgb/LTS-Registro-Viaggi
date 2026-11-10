@@ -5,6 +5,7 @@ import {STATUS_LABELS,driverSummary,filterDrivers,driverInitial} from './model.m
 import {setupReport} from './report.mjs?v=20261109-customer-save-fix-v1';
 import {setupSmartConsole} from './smart-console.mjs?v=20261108-smart-v2';
 import {setupAdminStatus} from './admin-status.mjs';
+import {setupMapsApprovals} from './maps-approvals.mjs?v=20261110-approval-v1';
 import {rememberPosition,readPosition,clearPosition} from './admin-position.mjs';
 
 const byId=id=>document.getElementById(id);
@@ -30,6 +31,7 @@ function restoreAdminPosition(saved){
  }));
 }
 const companyView=setupReport(account);
+const mapsApprovals=setupMapsApprovals(account,{onApproved:()=>companyView.refreshActive()});
 const adminStatus=setupAdminStatus(account);
 const smartConsole=setupSmartConsole({
  authorized:()=>account.isVerified()&&account.getRole()==='admin'&&
@@ -176,6 +178,7 @@ function lock(message='Accedi come amministratore per continuare.'){
  setPasswordVisibility(false);
  byId('switch-account').hidden=!account.hasSession();
  adminStatus.reset();
+ mapsApprovals.reset();
  selectedInitial='';
  byId('search').value='';byId('status-filter').value='all';
  smartConsole.reset();byId('smart-command-open').hidden=true;
@@ -207,6 +210,7 @@ function showDashboard(status={}){
  companyView.open(previousPosition?.view||
   (status.mfa_enrolled===true&&status.mfa_verified===true?'overview':'security'));
  startAdminRealtime();
+ void mapsApprovals.load();
  return previousPosition;
 }
 async function authenticate(){
@@ -561,6 +565,7 @@ async function verifyDashboardOnResume(){
   hideResumeGuard();
   // stop() shuts down the socket; start() is needed after revalidation.
   adminRealtime?.start();
+  void mapsApprovals.load({silent:true});
   if(dashboard.dataset.view===view){
    restoreAdminPosition(saved);
    if(view==='drivers')void loadDrivers({silent:true});
@@ -598,6 +603,13 @@ setInterval(()=>{
   void loadDrivers({silent:true});
  }else companyView.refreshActive();
 },10000);
+// Review queue does not interrupt unsaved tariff forms.
+setInterval(()=>{
+ if(!dashboard.hidden&&!document.hidden&&navigator.onLine!==false&&
+   byId('admin-resume-guard').hidden&&account.isVerified()&&
+   account.getRole()==='admin'&&!resumingDashboard)
+  void mapsApprovals.load({silent:true});
+},25000);
 byId('admin-resume-retry').addEventListener('click',()=>{
  if(!account.hasSession()){lock('Sessione non disponibile. Accedi nuovamente.');return;}
  if(!dashboard.hidden)void verifyDashboardOnResume();
