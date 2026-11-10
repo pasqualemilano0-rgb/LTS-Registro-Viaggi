@@ -6,7 +6,7 @@ import {lookupTfgBooking} from './tfg_booking.mjs?v=20261102-v63';
 import {getVerifiedAccessToken} from '../account-access.mjs';
 import {lookupConatecoBooking,matchConatecoBookingToSchedule,matchConatecoVesselToForecast} from './conateco_booking.mjs?v=20261102-v64';
 import {matchTfgVoyage,isTfgFeedFresh,evaluateTfgSchedule} from './tfg_schedule.mjs?v=20261102-v62';
-import {evaluateConateco,isConatecoRecent} from './conateco_rules.mjs?v=20261110-accetta-carico-v1';
+import {evaluateConateco,isConatecoRecent} from './conateco_rules.mjs?v=20261110-porti-freshcode-v2';
 import {selectConatecoFleet,isDepartedConateco} from './conateco_fleet.mjs?v=20261101-v50';
 
 const urls = Object.freeze({
