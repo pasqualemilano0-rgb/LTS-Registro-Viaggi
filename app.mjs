@@ -524,7 +524,25 @@ function renderInsert(main){
  const layout=el('div',{class:'form-layout'});const form=el('form',{class:'panel form-panel',novalidate:true});
  const error=el('div',{class:'form-error',role:'alert'});
  form.append(error);
- if(tripDraftRecoveryMessage){form.append(el('p',{class:'trip-recovery-notice',role:'status'},tripDraftRecoveryMessage));tripDraftRecoveryMessage='';}
+ const hasCurrentDraft=tripDraftHasWork(draft,editingId,draftBaselineDate);
+ if(tripDraftRecoveryMessage||hasCurrentDraft){
+  const notice=tripDraftRecoveryMessage;
+  const banner=el('div',{class:'trip-recovery-actions'});
+  if(notice)banner.append(el('p',{class:'trip-recovery-notice',role:'status'},notice));
+  if(hasCurrentDraft)banner.append(el('button',{type:'button',class:'remove-button',on:{click:()=>{
+   if(busy){toast('Attendi il completamento del salvataggio.',true);return;}
+   confirmAction('Annullare la bozza?','Eliminerai soltanto i dati non salvati del modulo, anche dalla memoria del dispositivo. I viaggi già registrati resteranno invariati.',async()=>{
+    // Clear persistent scratchpad first: a storage error must not silently discard work.
+    await store.clearTripEditorDraft();
+    editingId=null;editingBaseline=null;draft=newDraft();draftBaselineDate=draft.date;
+    tripDraftRecoveryMessage='';
+    render();
+    toast('Bozza annullata. Puoi iniziare un nuovo viaggio.');
+   },'Elimina bozza');
+  }}},'Annulla bozza'));
+  form.append(banner);
+  tripDraftRecoveryMessage='';
+ }
  if(editingId)form.append(el('div',{class:'editing-banner'},'Stai modificando un viaggio',el('button',{type:'button',class:'remove-button',on:{click:()=>confirmAction('Annullare la modifica?',
   'Le modifiche non ancora salvate saranno eliminate. Il viaggio già registrato non verrà cambiato.',
   async()=>{editingId=null;editingBaseline=null;draft=newDraft();draftBaselineDate=draft.date;await saveEditorScratchpad();render();},'Scarta la bozza')}},'Annulla')));
