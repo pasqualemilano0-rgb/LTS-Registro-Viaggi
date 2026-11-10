@@ -67,3 +67,10 @@
 .lts-copilota-service-choice{display:flex;align-items:center;gap:12px;padding:13px;border:1px solid #c9dfe4;border-radius:13px;background:#f4fafb;color:#153e49;font-size:15px;font-weight:600;cursor:pointer}
 .lts-copilota-service-choice:has(input:checked){border-color:#007b91;background:#e0f3f6}
 .lts-copilota-service-choice input{width:21px;height:21px;flex:none;accent-color:#007b91}
+
+/* Keep wizard actions and review reachable on short mobile screens. */
+.lts-copilota{box-sizing:border-box;min-height:0;overflow:hidden;gap:12px}
+.lts-copilota-header{flex-shrink:0;padding-bottom:14px}
+.lts-copilota-content{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:4px 3px 14px;scrollbar-gutter:stable}
+.lts-copilota-footnote{flex-shrink:0;margin-top:0;padding-top:10px;background:#fff}
+@media(max-height:740px){.lts-copilota{top:8px;bottom:calc(70px + env(safe-area-inset-bottom,0px));padding:16px;gap:8px}.lts-copilota-content{gap:12px}.lts-copilota-content h3{font-size:21px}.lts-copilota-description{font-size:15px;margin-bottom:4px}}
