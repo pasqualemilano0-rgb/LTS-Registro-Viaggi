@@ -76,6 +76,6 @@ export function evaluateConateco(row,feed,now=new Date()){
     reason:'Il termine per la consegna del carico è passato.'};
   if(!validDate(row.eta))return{kind:'unknown',label:'ETA DA VERIFICARE',
     reason:'La data prevista della nave è assente o non valida.'};
-  return{kind:'good',label:'NAVE IN ACCETTAZIONE',
+  return{kind:'good',label:'ACCETTA CARICO',
     reason:'Accettazione segnalata per la nave e cut-off futuro nella copia pubblica. Il singolo booking e l’ingresso non sono autorizzati dall’app.'};
 }
