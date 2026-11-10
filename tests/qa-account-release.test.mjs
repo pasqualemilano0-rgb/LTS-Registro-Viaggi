@@ -781,7 +781,8 @@ test('embedded access cannot display register or admin credential inputs',()=>{
  assert.match(app,/root[.]replaceChildren/);
  assert.match(admin,/function denyEmbeddedAdmin\(\)/);
  assert.match(admin,/field[.]value='';field[.]disabled=true/);
- assert.match(admin,/if\(!denyEmbeddedAdmin\(\)\)authenticate\(\)/);
+ assert.match(admin,/if\(!denyEmbeddedAdmin\(\)\)\{/);
+ assert.match(admin,/void authenticate\(\)/);
  assert.match(html,/visual-theme[.]css[?]v=20\d{6}-[a-z0-9-]+-v\d+/);
  assert.match(sw,/const CACHE = PREFIX \+ '20\d{6}-[a-z0-9-]+-v\d+'/);
  assert.doesNotMatch(app,/frame-ancestors.*<meta/i);
