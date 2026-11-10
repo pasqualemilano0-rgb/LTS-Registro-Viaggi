@@ -16,7 +16,7 @@ import {companyFareSnapshot} from '/LTS-Registro-Viaggi/shared/company-fares.mjs
 import {companyExtraSnapshot} from '/LTS-Registro-Viaggi/shared/company-extras.mjs';
 import {mapsLinkForCompanySync,filterSharedCustomers} from '/LTS-Registro-Viaggi/shared/maps-company-routing.mjs';
 import {dedupedCustomerDirectory,matchingSharedCustomer,canonicalPersonalCustomer} from '/LTS-Registro-Viaggi/shared/customer-site-matches.mjs';
-import {combinedTripCustomerChoices,filterTripCustomerChoices} from '/LTS-Registro-Viaggi/shared/trip-customer-choices.mjs';
+import {combinedTripCustomerChoices,filterTripCustomerChoices,suggestTripCustomerChoices} from '/LTS-Registro-Viaggi/shared/trip-customer-choices.mjs';
 import { appendPushSettings } from '/LTS-Registro-Viaggi/push-client.mjs';
 import { parseCustomerCsv, mergeCustomerCsv, exportCustomerCsv, MAX_CUSTOMER_CSV_BYTES } from '/LTS-Registro-Viaggi/shared/customer-csv.mjs';
 import {restoreDeletedPersonalCustomer,customerCsvChanges} from '/LTS-Registro-Viaggi/shared/customer-quality.mjs';
@@ -540,11 +540,15 @@ function renderAssistantLogisticaPilot(main){
   if(step===0){
    title('Cosa vuoi fare?','Ti aiuto a preparare un viaggio in pochi passaggi, utilizzando i clienti disponibili nel tuo account.');
    content.append(button('INSERISCI VIAGGIO',()=>{step=1;renderStep();}));
+   if(container||selected)content.append(button('Ricomincia da zero',()=>{container='';selected=null;selectedServices=[];servicesChosen=false;step=1;renderStep();},true));
   }else if(step===1){
    title('Inserisci il container','Il cliente verrà cercato nel passaggio successivo.');
    const field=el('input',{type:'text',class:'lts-copilota-input',placeholder:'ABCD1234567',maxlength:'11','aria-label':'Numero container',value:container});
    const error=el('p',{class:'lts-copilota-error',role:'alert'});
-   content.append(el('label',{},'Numero container'),field,error,
+   const duplicate=el('p',{class:'lts-copilota-hint','aria-live':'polite'});
+   const checkDuplicate=()=>{const value=field.value.toUpperCase().replace(/\\s/g,'');duplicate.textContent=value.length===11&&state.trips.some(trip=>String(trip.container||'').toUpperCase().replace(/\\s/g,'')===value)?'Attenzione: questo container risulta già presente nel registro. Controlla prima di procedere.':'';};
+   field.addEventListener('input',checkDuplicate);checkDuplicate();
+   content.append(el('label',{},'Numero container'),field,duplicate,error,
     button('Continua',()=>{const value=field.value.trim().toUpperCase().replace(/\s/g,'');if(!/^[A-Z]{4}[0-9]{7}$/.test(value)){error.textContent='Inserisci 4 lettere e 7 cifre.';return;}container=value;step=2;renderStep();}),
     button('Indietro',()=>{step=0;renderStep();},true));
   }else if(step===2){
@@ -555,7 +559,10 @@ function renderAssistantLogisticaPilot(main){
     results.replaceChildren();
     const value=field.value.trim();
     if(!value)return;
-    const matches=filterTripCustomerChoices(liveCustomers(),value,50);
+    const choices=liveCustomers();
+    const matches=suggestTripCustomerChoices(choices,value,50);
+    const exact=filterTripCustomerChoices(choices,value,50);
+    if(!exact.length&&matches.length)results.append(el('p',{class:'lts-copilota-hint'},'Nessuna corrispondenza esatta. Forse cercavi:'));
     if(!matches.length){results.append(el('p',{},companyCustomersLoaded?'Nessun cliente trovato nell’elenco attuale. Verifica il nome nella sezione Clienti.':'Nessun risultato locale. Il catalogo aziendale potrebbe essere ancora in sincronizzazione.'));return;}
     for(const customer of matches)results.append(button(customer.name+(customer.city?' · '+customer.city:''),()=>{selected=customer;step=3;renderStep();},true));
    };
