@@ -351,12 +351,23 @@ try{
  assert.equal(await page.locator('#roster-letters button[data-letter="R"]').getAttribute('aria-pressed'),'true');
  await page.locator('#roster-letters button[data-letter=""]').click();
  assert.equal(await page.locator('#roster-letters button[data-letter=""]').getAttribute('aria-pressed'),'true');
- // Simulate mobile background/foreground while network validation temporarily fails.
+ // A quick Android app switch must not display a reconnect overlay.
  await page.locator('#search').fill('ROSSI');
  await page.evaluate(async()=>{
   const account=await import('/account-access.mjs?v=20261107-realtime-v1');
   account.mockSetVerifyMode('offline');
   document.dispatchEvent(new Event('visibilitychange'));
+ });
+ assert.equal(await page.locator('#admin-resume-guard').isVisible(),false,
+  'A short return keeps the previous dashboard, without a new session splash');
+ // Simulate returning after the bounded foreground trust window has elapsed.
+ // This must STILL verify the account, and a real outage must block actions.
+ await page.evaluate(()=>{
+  const clock=Date.now;
+  try{
+   Date.now=()=>clock()+70000;
+   document.dispatchEvent(new Event('visibilitychange'));
+  }finally{Date.now=clock;}
  });
  await page.waitForFunction(()=>{
   const guard=document.querySelector('#admin-resume-guard');
