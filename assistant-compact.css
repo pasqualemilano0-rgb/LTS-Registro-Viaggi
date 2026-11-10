@@ -19,3 +19,8 @@
 .assistant-mini-toggle:focus-visible{outline:3px solid #007a88;outline-offset:2px}
 .assistant-mini-toggle[aria-expanded="true"]{background:#007a88;color:#fff}
 .assistant-mini-panel[hidden]{display:none!important}
+
+.assistant-mini-toggle{position:relative;width:54px;height:54px;min-width:54px;min-height:54px;padding:4px;border-radius:17px;border:1px solid #8ccbd9;background:#f1fbfd;box-shadow:0 2px 9px rgba(0,80,110,.12)}
+.assistant-mini-toggle img{display:block;width:44px;height:44px;object-fit:contain;border-radius:12px}
+.assistant-mini-toggle[aria-expanded="true"]{background:#d9f2f7;border-color:#087f9e}
+.assistant-mini-indicator{position:absolute;right:-3px;bottom:-3px;width:11px;height:11px;border:2px solid white;border-radius:50%;background:#00b887}
