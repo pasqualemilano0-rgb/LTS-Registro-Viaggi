@@ -2,8 +2,8 @@
  * A Maps link and a tariff are optional; sharing must succeed before pricing.
  * Existing tariffs are never silently overwritten.
  */
-import {saveSharedManualCustomer,saveSharedPricedCustomer} from '../shared-maps-client.mjs';
-import {parseEuro,matchingRate} from './company-maps-registration.mjs?v=20261107-maps-extras-v1';
+import {saveSharedManualCustomer,saveSharedPricedCustomer} from '../shared-maps-client.mjs?v=20261110-atomic-v1';
+import {parseEuro,matchingRate} from './company-maps-registration.mjs?v=20261110-atomic-v1';
 
 const get=id=>document.getElementById(id);
 export function setupCompanyManual(account,{onSaved=async()=>{}}={}){
