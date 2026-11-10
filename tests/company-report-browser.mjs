@@ -15,7 +15,15 @@ export const hasSession=()=>true;
 export const isVerified=()=>true;
 export const getRole=()=> 'admin';
 export const getAccountId=()=> 'account:33333333-3333-4333-8333-333333333333';
-export const verifySession=async()=>({mfa_enrolled:true,mfa_verified:true});
+let mockVerifyMode='ok';
+export const mockSetVerifyMode=value=>{mockVerifyMode=value;};
+export const verifySession=async()=>{
+ if(mockVerifyMode==='offline'){
+  const error=new Error('Rete mobile temporaneamente non disponibile.');
+  error.offline=true;throw error;
+ }
+ return {mfa_enrolled:true,mfa_verified:true};
+};
 export const listAdminMfaFactors=async()=>[{label:'Principale',id:'a'}];
 export const manageDrivers=async(action)=>action==='list'?{drivers:[
  {id:'11111111-1111-4111-8111-111111111111',
@@ -294,6 +302,35 @@ try{
  assert.equal(await page.locator('#roster-letters button[data-letter="R"]').getAttribute('aria-pressed'),'true');
  await page.locator('#roster-letters button[data-letter=""]').click();
  assert.equal(await page.locator('#roster-letters button[data-letter=""]').getAttribute('aria-pressed'),'true');
+ // Simulate mobile background/foreground while network validation temporarily fails.
+ await page.locator('#search').fill('ROSSI');
+ await page.evaluate(async()=>{
+  const account=await import('/account-access.mjs?v=20261107-realtime-v1');
+  account.mockSetVerifyMode('offline');
+  document.dispatchEvent(new Event('visibilitychange'));
+ });
+ await page.waitForFunction(()=>{
+  const guard=document.querySelector('#admin-resume-guard');
+  return !guard.hidden&&guard.dataset.failed==='true';
+ });
+ assert.equal(await page.locator('#dashboard').evaluate(el=>el.hidden),false);
+ assert.equal(await page.locator('#dashboard').evaluate(el=>el.inert),true,
+  'Sensitive content stays blocked during connection errors');
+ assert.notEqual(await page.locator('#dashboard').evaluate(el=>el.style.visibility),'hidden',
+  'No white screen during a resumed admin security check');
+ assert.equal(await page.locator('#dashboard').getAttribute('data-view'),'drivers');
+ assert.equal(await page.locator('#search').inputValue(),'ROSSI',
+  'The current filter/edit state must survive mobile network loss');
+ assert.equal(await page.locator('#admin-resume-guard').isVisible(),true);
+ await page.evaluate(async()=>{
+  const account=await import('/account-access.mjs?v=20261107-realtime-v1');
+  account.mockSetVerifyMode('ok');
+ });
+ await page.locator('#admin-resume-retry').click();
+ await page.waitForFunction(()=>document.querySelector('#admin-resume-guard').hidden);
+ assert.equal(await page.locator('#dashboard').evaluate(el=>el.inert),false);
+ assert.equal(await page.locator('#search').inputValue(),'ROSSI');
+ await page.locator('#search').fill('');
  await openAdminTab('overview-tab');
 
  // Smart Console: search across authorized data without changing active view.
@@ -877,6 +914,14 @@ try{
  assert.equal(await page.locator('#report-amount-chart .report-bar-row').count(),0);
  assert.equal(await page.locator('#pro-records .pro-record').count(),0);
  assert.equal(await page.locator('#pro-export-pdf').isDisabled(),true);
+ assert.equal(await page.locator('#login-panel').isVisible(),true);
+ await page.locator('#login-password').fill('example-password-for-visibility');
+ assert.equal(await page.locator('#login-password').getAttribute('type'),'password');
+ await page.locator('#login-password-toggle').click();
+ assert.equal(await page.locator('#login-password').getAttribute('type'),'text');
+ assert.equal(await page.locator('#login-password-toggle').getAttribute('aria-pressed'),'true');
+ await page.locator('#login-password-toggle').click();
+ assert.equal(await page.locator('#login-password').getAttribute('type'),'password');
  assert.equal(errors.length,0,'No JavaScript errors: '+errors.join(';'));
  // Data source remains read-only, notes never render as HTML, and no horizontal page scroll on mobile.
  assert.equal(await page.locator('#report-month').inputValue(),'2026-11');
