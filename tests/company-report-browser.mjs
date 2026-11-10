@@ -957,6 +957,16 @@ try{
   assert.equal(await page.locator('.customer-directory-site').count(),2);
   assert.equal(await page.locator('.customer-directory-maps').count(),0);
   await page.locator('#customer-overview-filter').selectOption('all');
+  // A manually entered customer WITH a price must commit both together.
+  await openAdminTab('rates-tab');
+  await page.locator('#company-manual-name').fill('CLIENTE QA CON TARIFFA');
+  await page.locator('#company-manual-city').fill('BARI');
+  await page.locator('#company-manual-amount').fill('17,20');
+  await page.locator('#company-manual-save').click();
+  await page.waitForFunction(()=>document.querySelector('#company-manual-status').textContent.includes('Tariffa aziendale salvata'));
+  await page.waitForFunction(()=>document.querySelector('#company-rates-count').textContent.includes('4 tariffe aziendali'));
+  assert.match(await page.locator('#company-rates-list').textContent(),/CLIENTE QA CON TARIFFA/);
+  assert.match(await page.locator('#company-rates-list').textContent(),/17,20/);
   await openAdminTab('security-tab');
  await page.locator('#security-check').click();
  await page.waitForFunction(()=>document.querySelector('#security-result').textContent.includes('MFA confermata'));
