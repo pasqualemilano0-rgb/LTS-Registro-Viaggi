@@ -547,7 +547,7 @@ function renderAssistantLogisticaPilot(main){
    const field=el('input',{type:'text',class:'lts-copilota-input',placeholder:'ABCD1234567',maxlength:'11','aria-label':'Numero container',value:container});
    const error=el('p',{class:'lts-copilota-error',role:'alert'});
    content.append(el('label',{},'Numero container'),field,error,
-    button('Continua',()=>{const value=field.value.trim().toUpperCase().replace(/\\s/g,'');if(!/^[A-Z]{4}[0-9]{7}$/.test(value)){error.textContent='Inserisci 4 lettere e 7 cifre.';return;}container=value;step=2;renderStep();}),
+    button('Continua',()=>{const value=field.value.trim().toUpperCase().replace(/\s/g,'');if(!/^[A-Z]{4}[0-9]{7}$/.test(value)){error.textContent='Inserisci 4 lettere e 7 cifre.';return;}container=value;step=2;renderStep();}),
     button('Indietro',()=>{step=0;renderStep();},true));
    field.focus();
   }else if(step===2){
