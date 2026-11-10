@@ -549,7 +549,6 @@ function renderAssistantLogisticaPilot(main){
    content.append(el('label',{},'Numero container'),field,error,
     button('Continua',()=>{const value=field.value.trim().toUpperCase().replace(/\s/g,'');if(!/^[A-Z]{4}[0-9]{7}$/.test(value)){error.textContent='Inserisci 4 lettere e 7 cifre.';return;}container=value;step=2;renderStep();}),
     button('Indietro',()=>{step=0;renderStep();},true));
-   field.focus();
   }else if(step===2){
    title('Seleziona il cliente','Cerca un cliente reale tra quelli disponibili nel tuo account.');
    const field=el('input',{type:'search',class:'lts-copilota-input',placeholder:'Nome cliente…','aria-label':'Cerca cliente'});
@@ -564,7 +563,6 @@ function renderAssistantLogisticaPilot(main){
    };
    field.addEventListener('input',update);
    content.append(field,results,button('Indietro',()=>{step=1;renderStep();},true));
-   field.focus();
   }else{
    title('Riepilogo bozza','Controlla i dati. Nessun viaggio verrà salvato automaticamente.');
    content.append(el('div',{class:'lts-copilota-review'},
