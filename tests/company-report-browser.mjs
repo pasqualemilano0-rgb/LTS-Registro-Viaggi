@@ -484,9 +484,17 @@ try{
  assert.equal(await page.locator('#company-rate-client').inputValue(),'CLIENTE GAMMA');
  assert.equal(await page.locator('#company-rate-city').inputValue(),'ROMA');
  await page.waitForFunction(()=>document.querySelector('#company-sites-count').textContent.includes('2 ancora da tariffare'));
+ // An unfinished tariff form must not disappear when the admin changes tabs.
+ page.once('dialog',dialog=>dialog.dismiss());
+ await page.locator('#overview-tab').click();
+ assert.equal(await page.locator('#company-rates').isVisible(),true,
+  'Dismissing the discard confirmation keeps the tariff editor open');
+ assert.equal(await page.locator('#company-rate-client').inputValue(),'CLIENTE GAMMA',
+  'The unfinished customer selection must be preserved');
+ page.once('dialog',dialog=>dialog.accept());
  await page.locator('#overview-tab').click();
  assert.equal(await page.locator('#company-rates').isVisible(),false,
-  'Returning Home hides the tariff editor again');
+  'Confirming that unsaved tariff edits may be discarded returns Home');
  await page.waitForFunction(()=>document.querySelector('#customer-overview-priced').textContent==='1');
  assert.equal(await page.locator('#report-panel').isVisible(),true);
  assert.equal(await page.locator('#management-panel').isVisible(),false);
