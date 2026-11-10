@@ -13,3 +13,9 @@
 .assistant-compact-result small{color:#607e86;font-size:12px;white-space:nowrap}
 .assistant-compact-empty{margin:9px 2px 2px;color:#647e85;font-size:12px;line-height:1.5}
 @media(max-width:390px){.assistant-compact{padding:12px}.assistant-compact-heading strong{font-size:14px}}
+
+/* Collapsed by default: only a small icon occupies the trip screen. */
+.assistant-mini-toggle{display:grid;place-items:center;width:44px;height:44px;min-width:44px;min-height:44px;margin:0 0 8px auto;padding:0;border:1px solid #c6e2e7;border-radius:14px;background:#e8f6f7;color:#007a88;box-shadow:0 2px 8px rgba(0,75,88,.08);font-size:24px;line-height:1;cursor:pointer}
+.assistant-mini-toggle:focus-visible{outline:3px solid #007a88;outline-offset:2px}
+.assistant-mini-toggle[aria-expanded="true"]{background:#007a88;color:#fff}
+.assistant-mini-panel[hidden]{display:none!important}
