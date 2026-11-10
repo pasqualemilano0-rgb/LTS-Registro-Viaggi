@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
+import {evaluateConateco} from '../porti/conateco_rules.mjs';
 import {readFileSync} from 'node:fs';
 import {fileURLToPath} from 'node:url';
 import {dirname, resolve} from 'node:path';
@@ -94,11 +95,11 @@ test('Original maintenance notice remains a one-line rollback',()=>{
 });
 
 test('Protected Pages entry and current PWA cache are required for reopening',()=>{
- assert.match(page,/src="\.\.\/porti-access\.mjs\?v=20261109-porti-sunday-v1"/);
+ assert.match(page,/src="\.\.\/porti-access\.mjs\?v=20261110-accetta-carico-v1"/);
  assert.match(page,/<body hidden>/);
  assert.doesNotMatch(page,/<script(?![^>]*porti-access)[^>]*>/g);
  assert.match(access,/}else if\(!sameOriginParent\(\)\)\{/);
- assert.match(sw,/const CACHE = PREFIX \+ '20261109-porti-sunday-v1'/);
+ assert.match(sw,/const CACHE = PREFIX \+ '20\d{6}-[a-z0-9-]+-v\d+'/);
  assert.match(sw,/BASE \+ 'porti\/app\.js'/);
  assert.match(sw,/if \(NETWORK_FIRST_CODE\.has\(url\.pathname\)\)/);
 });
@@ -135,4 +136,27 @@ test('The parent LTS app keeps Register usable and blocks Porti iframe on Sunday
  assert.match(access,/timeZone:'Europe\/Rome',weekday:'short'/);
  assert.match(access,/if\(isPortiSundayInRome\(\)\)\{/);
  assert.match(app,/porti\/index\.html\?v=20261109-weekdays-porti-v1/);
+});
+
+test('CO.NA.TE.CO. shows ACCETTA CARICO only when acceptance is actually confirmed',()=>{
+ const now=new Date('2026-11-10T08:00:00Z');
+ const row={
+   category:'PREVISTE',vessel:'JOLLY BLUE',voyage:'371',
+   vessel_status:'PRE',acceptance_flag:'1',acceptance_icon:'ACCETTA_CARICO',
+   stop_cargo:'NO',opening:'2026-11-10 07:00',
+   closing:'2026-11-12 18:00',eta:'2026-11-12 00:00'
+ };
+ const feed={rows:[row],acquired_at:now.toISOString()};
+ const ok=evaluateConateco(row,feed,now);
+ assert.equal(ok.kind,'good');
+ assert.equal(ok.label,'ACCETTA CARICO');
+ assert.match(ok.reason,/singolo booking/,'Vessel status is not a booking authorization');
+ assert.equal(evaluateConateco({...row,stop_cargo:'SI'},feed,now).label,'CARICO BLOCCATO');
+ assert.equal(evaluateConateco({...row,closing:'2026-11-09 18:00'},feed,now).label,'CUT-OFF SCADUTO');
+ assert.equal(evaluateConateco(row,{...feed,refresh_failed:true},now).kind,'unknown');
+ assert.equal(evaluateConateco(row,{...feed,acquired_at:'2026-11-09T00:00:00Z'},now).label,'DATI DA AGGIORNARE');
+ const porti=readFileSync(resolve(ROOT,'porti/app.js'),'utf8');
+ assert.match(porti,/badge\(verdict\.label,verdict\.kind\)/);
+ assert.match(porti,/conateco_rules\.mjs\?v=20261110-accetta-carico-v1/);
+ assert.match(access,/porti\/app\.js\?v=20261110-accetta-carico-v1/);
 });

@@ -316,7 +316,7 @@ test('LTS Porti fallback reads LTS public snapshots, not the old Booking reposit
  const lts='https://raw.githubusercontent.com/pasqualemilano0-rgb/LTS-Registro-Viaggi/main/porti/data/';
  assert.equal(port.split(lts).length-1,3);
  assert.ok(!port.includes('raw.githubusercontent.com/pasqualemilano0-rgb/container-booking-web-/'));
- assert.match(index,/porti-access[.]mjs[?]v=20261109-porti-sunday-v1/);
+ assert.match(index,/porti-access[.]mjs[?]v=20261110-accetta-carico-v1/);
  const files=new Map(provenance.files.map(item=>[item.path,item]));
  assert.equal(files.get('app.js').sha256,'e13b15529d8cee5ba3bc330c1748b49492beb799dae818a523fa63ade66d4095');
  assert.equal(files.get('index.html').sha256,'e214deb437467b2e43ed62f39dcfff8e40008bb8c10116dd092ec3927a058d98');
