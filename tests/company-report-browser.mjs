@@ -222,14 +222,14 @@ export const companyInsights=async({month,driverId=null,compareDriverId=null,fro
 };
 `;
 const mockSharedMaps=String.raw`
-let rows=[
+const rows=globalThis.__ltsMockSharedRows??(globalThis.__ltsMockSharedRows=[
  {name:'CLIENTE ALFA',city:'NAPOLI',address:'VIA TEST 1, NAPOLI',
   mapsUrl:'https://maps.app.goo.gl/exampleA',source:'google_maps_link',operationalNotes:''},
  {name:'CLIENTE BETA',city:'SALERNO',address:'VIA TEST 2, SALERNO',
   mapsUrl:'https://maps.app.goo.gl/exampleB',source:'google_maps_link',operationalNotes:''},
  {name:'CLIENTE GAMMA',city:'ROMA',address:'INDIRIZZO STRADALE DA CONFERMARE',
   mapsUrl:'https://maps.app.goo.gl/exampleC',source:'google_maps_link',operationalNotes:''}
-];
+]);
 export const sharedMapsCustomers=async()=>structuredClone(rows);
 export const saveSharedMapsCustomer=async(mapsUrl,site)=>{
  const known=rows.find(row=>row.mapsUrl===mapsUrl);
