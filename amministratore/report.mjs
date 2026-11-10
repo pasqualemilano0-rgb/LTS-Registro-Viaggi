@@ -206,6 +206,14 @@ export function setupReport(account){
   el('admin-records-panel').hidden=current[0]!=='records';
   el('dashboard').dataset.view=current[0];
   document.title='LTS · '+current[2];
+  // The workspace heading mirrors the active authorized view, without altering its data.
+  const workspaceTitle=el('workspace-title'),workspaceDescription=el('workspace-description');
+  if(workspaceTitle&&workspaceDescription){
+   workspaceTitle.textContent=current[0]==='overview'?'Panoramica operativa':
+    current[0]==='rates'?'Clienti e tariffe':
+    current[0]==='records'?'Archivi e modifiche':current[2];
+   workspaceDescription.textContent=current[3];
+  }
   for(const item of views){
    const button=el(item[1]),chosen=item[0]===current[0];
    button.setAttribute('aria-pressed',String(chosen));
