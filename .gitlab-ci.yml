@@ -1,0 +1,27 @@
+# Optional GitLab CI for a GitHub-to-GitLab mirror. No production deployment.
+stages:
+  - verify
+
+.node_rules: &node_rules
+  - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+  - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+  - when: never
+
+javascript_regression:
+  stage: verify
+  image: node:22-bookworm
+  timeout: 15m
+  rules: *node_rules
+  script:
+    - find . -type f -name '*.mjs' ! -path './node_modules/*' -print0 | xargs -0 -n 1 node --check
+    - node --check sw.js
+    - node --test tests/*.test.mjs
+    - node --test tests/qa-no-auto-publish.test.mjs
+
+python_regression:
+  stage: verify
+  image: python:3.12-slim
+  timeout: 15m
+  rules: *node_rules
+  script:
+    - python -m unittest discover -s tests -p 'test_*.py' -v
