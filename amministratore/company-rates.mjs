@@ -3,7 +3,7 @@
 import {tariffLinkedCustomerSites,customerSiteRateKey,hasUsableAddress} from './customer-overview-model.mjs?v=20261107-client-tariff-sync-v2';
 import {setupCompanyMaps} from './company-maps-registration.mjs?v=20261107-maps-extras-v1';
 import {setupCompanyManual} from './company-manual-registration.mjs?v=20261107-manual-shared-v1';
-import {saveSharedManualCustomer} from '../shared-maps-client.mjs';
+import {saveSharedPricedCustomer} from '../shared-maps-client.mjs';
 
 const get=id=>document.getElementById(id);
 const node=(tag,cls,value)=>{const n=document.createElement(tag);if(cls)n.className=cls;n.textContent=String(value??'');return n;};
@@ -215,7 +215,7 @@ export function setupCompanyRates(account){
   let payload;
   try{
    const name=clean(client.value),place=clean(city.value),cents=toCents(amount.value);
-   if(name.length<2||name.length>500||place.length<1||place.length>500)
+   if(name.length<2||name.length>500||place.length<2||place.length>500)
     throw new Error('Inserisci cliente e località validi.');
    if(!editing&&rows.some(rate=>clean(rate.client)===name&&clean(rate.city)===place))
     throw new Error('Questa sede ha già una tariffa aziendale. Usa Modifica nell’elenco.');
@@ -224,22 +224,20 @@ export function setupCompanyRates(account){
   }catch(e){feedback(e.message,true);return;}
   busy=true;submit.disabled=true;refresh.disabled=true;
   window.dispatchEvent(new Event('lts-admin-company-rate-save-started'));
-  feedback('Condivisione cliente e salvataggio della tariffa in corso…');
-  let sharedSaved=false;
+  feedback('Salvataggio atomico di cliente e tariffa in corso…');
   try{
-   if(!editing){
-    // New tariffs must also appear in the shared company customer list.
-    await saveSharedManualCustomer({name:payload.client,city:payload.city});
-    sharedSaved=true;
-   }
-   await account.companyTariffs('save',payload);
+   if(editing)await account.companyTariffs('save',payload);
+   else await saveSharedPricedCustomer({
+    source:'manual',name:payload.client,city:payload.city,cents:payload.cents,
+    expectedRevision:0
+   });
    clearForm();
    window.dispatchEvent(new Event('lts-admin-company-rate-saved'));
    await load();
    if(authorized()&&ratesLoaded)
     feedback('Tariffa salvata e disponibile per tutti gli autisti al prossimo aggiornamento online. Gli importi storici restano invariati.');
-  }catch(e){feedback((sharedSaved?'Cliente condiviso, ma la tariffa non è stata salvata. ':
-    'Salvataggio non completato. ')+(e?.message||'Riprova.'),true);}
+  }catch(e){feedback('Salvataggio non completato: nessuna nuova coppia cliente/tariffa pubblicata. '+
+    (e?.message||'Riprova.'),true);}
   finally{
    busy=false;submit.disabled=!ratesLoaded;if(authorized())refresh.disabled=false;
    window.dispatchEvent(new Event('lts-admin-company-rate-save-completed'));
