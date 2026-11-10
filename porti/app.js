@@ -1039,7 +1039,7 @@ function renderPickerOptions(){
 }
 async function refreshSctPicker(force=false){
   const requestId=++sctRequestId;
-  if(navigator.onLine===false){markOfflineTerminal('sct');return;}
+  // Try the actual endpoint: navigator.onLine may be false on working mobile connections.
   const previous=sctCache?.rows?.length?sctCache:null;
   ++sctDetailSeq;
   // Reconciliation by voyage ID is not available for the SCT feed: never
@@ -1243,7 +1243,7 @@ function renderTfgFleet() {
 async function refreshTfgShips(force=false) {
   const current=++tfgRequest;
   if(selectedPort!=='napoli')return;
-  if(navigator.onLine===false){markOfflineTerminal('tfg');return;}
+  // Try the actual endpoint: navigator.onLine may be false on working mobile connections.
   const previous=tfgFeed?.rows?.length?tfgFeed:null;
   tfgAlert.dataset.state=previous?'warning':'loading';
   tfgAlert.textContent=previous
@@ -1448,7 +1448,7 @@ function renderCntFleet(){
 async function refreshCntShips(force=false){
   const seq=++cntRequest;
   if(selectedPort!=='napoli')return;
-  if(navigator.onLine===false){markOfflineTerminal('cnt');return;}
+  // Try the actual endpoint: navigator.onLine may be false on working mobile connections.
   const previous=cntFeed?.rows?.length?cntFeed:null;
   cntAlert.dataset.state=previous?'warning':'loading';
   cntAlert.textContent=previous
@@ -1593,7 +1593,7 @@ function autoRefreshActiveTerminal(force=false){
   if(document.hidden)return;
   const term=selectedPort==='salerno'?'sct':
     (document.querySelector('input[name="napoli-terminal"]:checked')?.value==='tfg'?'tfg':'cnt');
-  if(navigator.onLine===false){markOfflineTerminal(term);return;}
+  // Try the actual endpoint: navigator.onLine may be false on working mobile connections.
   const now=Date.now();
   if(!force && now-autoLastRead[term]<45000)return;
   autoLastRead[term]=now;
