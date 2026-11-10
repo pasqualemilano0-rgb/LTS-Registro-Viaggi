@@ -157,15 +157,24 @@ export function mergeStates(baseInput, localInput, remoteInput, { prefer = null 
  * for conflicting catalogue/profile values. Journeys with distinct IDs are preserved;
  * different records with the same global journey ID require an explicit choice.
  */
-export function mergeLinkedStates(localInput, remoteInput, { prefer = null } = {}) {
-  if (![null, 'local', 'remote'].includes(prefer)) throw new Error('Scelta di unione non valida.');
+export function mergeLinkedStates(localInput, remoteInput, { prefer = null, choices = null } = {}) {
+  if (![null, 'local', 'remote'].includes(prefer) || (choices !== null && (typeof choices !== 'object' || Array.isArray(choices))))
+    throw new Error('Scelta di unione non valida.');
   const local = validateState(localInput), remote = validateState(remoteInput), conflicts = [];
+  // A backup import can resolve each disagreement separately, never globally.
+  const decision = path => {
+    const value = choices !== null && Object.hasOwn(choices, path) ? choices[path] : prefer;
+    if (![null, 'local', 'remote', 'both'].includes(value)) throw new Error('Scelta di unione non valida.');
+    return value;
+  };
   const choose = (left, right, path) => {
     if (equal(left, right)) return clone(right);
     if (left === '' || left === null || left === undefined) return clone(right);
     if (right === '' || right === null || right === undefined) return clone(left);
-    if (prefer === 'local') return clone(left);
-    if (prefer === 'remote') return clone(right);
+    const selected = decision(path);
+    if (selected === 'local') return clone(left);
+    if (selected === 'remote') return clone(right);
+    if (selected === 'both') throw new Error('Conservare entrambi è consentito solo per viaggi distinti.');
     conflicts.push(path); return clone(right);
   };
   const profile = Object.fromEntries(['firstName', 'lastName'].map(key => [key, choose(local.profile[key], remote.profile[key], `profile.${key}`)]));
@@ -210,9 +219,21 @@ export function mergeLinkedStates(localInput, remoteInput, { prefer = null } = {
       trips[index].createdAt = row.createdAt < trips[index].createdAt ? row.createdAt : trips[index].createdAt;
       trips[index].updatedAt = row.updatedAt > trips[index].updatedAt ? row.updatedAt : trips[index].updatedAt;
     } else if (index !== undefined) {
-      // The same global ID denotes the same journey. Duplicating it would
-      // duplicate fares: an explicit initial-association choice selects one row.
-      trips[index] = choose(row, trips[index], `trips[${row.id}]`);
+      const path = `trips[${row.id}]`;
+      if (decision(path) === 'both') {
+        // Numeric Android IDs may be independent local counters. Keep both
+        // only after the person explicitly confirms they are distinct journeys.
+        // Never duplicate a journey with the same date/container/client/route.
+        const old = trips[index];
+        if (['date', 'container', 'client', 'city'].every(key => row[key] === old[key]))
+          throw new Error('I due viaggi hanno stessa data, container, cliente e località: scegli quale versione conservare.');
+        const id = freshId(row.id, tripIds);
+        trips.push({ ...row, id });
+      } else {
+        // Two versions of one journey remain a single row unless explicitly
+        // identified as different journeys by the user.
+        trips[index] = choose(row, trips[index], path);
+      }
     } else {
       tripIds.add(row.id); tripById.set(row.id, trips.length); trips.push({ ...row });
     }
