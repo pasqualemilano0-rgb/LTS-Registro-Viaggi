@@ -4,6 +4,7 @@
 import {checkLtsSession} from './lts-session.mjs';
 import {requireAdminMfa} from './lts-admin-mfa.mjs';
 import {confirmedMapsCustomer,customerIdentityKey} from './confirmed-record.mjs';
+import {submitMapsProposal,mapsApprovalList,decideMapsApproval} from './maps-approvals.mjs';
 const ORIGIN='https://pasqualemilano0-rgb.github.io';
 const BEARER=/^Bearer ([A-Za-z0-9._-]{50,4096})$/;
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -91,6 +92,14 @@ export async function handleSharedMapsCustomers(req,{getClients}={}){
   if(!clients?.public||!clients?.admin)throw {status:503};
   const {userId,role}=await authorize(req,clients);
   const db=clients.admin;
+  if(input.action==='approval-list'){
+   if(role!=='admin')throw {status:403};
+   return json({requests:await mapsApprovalList(db)},200,origin);
+  }
+  if(input.action==='approval-decide'){
+   if(role!=='admin')throw {status:403};
+   return json(await decideMapsApproval(db,input,userId),200,origin);
+  }
   if(input.action==='list'){
    const [maps,manual,fares]=await Promise.all([
     db.from('lts_shared_maps_customers')
@@ -172,6 +181,8 @@ export async function handleSharedMapsCustomers(req,{getClients}={}){
     .select('id,name,city,address,maps_url,notes').eq('maps_url',parsed.mapsUrl).maybeSingle();
    if(linkError)throw {status:503};
    if(existingLink){
+    // Drivers cannot change an existing shared site without administrator review.
+    if(role==='driver')return json({customer:projection(existingLink),created:false},200,origin);
     // Upgrade a placeholder-only address when a driver supplies a real street,
     // but preserve curated notes and already-present street information.
     const placeholder=/INDIRIZZO STRADALE DA CONFERMARE|INDIRIZZO DA CONFERMARE/i;
@@ -187,6 +198,11 @@ export async function handleSharedMapsCustomers(req,{getClients}={}){
     }else return json({customer:projection(existingLink),created:false},200,origin);
    }
 
+   if(role==='driver'){
+    // The submission is NOT listed among company customers until approved
+    // with a fare in one database transaction by an MFA-verified administrator.
+    return json(await submitMapsProposal(db,parsed,siteKey,userId),202,origin);
+   }
    const identity=await customerIdentityKey(parsed);
    const {data:inserted,error}=await db.from('lts_shared_maps_customers')
     .insert({identity_key:identity,name:parsed.name,city:parsed.city,
@@ -206,10 +222,10 @@ export async function handleSharedMapsCustomers(req,{getClients}={}){
   }
   throw {status:400,error:'Operazione non riconosciuta.'};
  }catch(error){
-  const status=[400,401,403,405,413,415,422,428,429,503].includes(error?.status)?error.status:503;
+  const status=[400,401,403,405,409,413,415,422,428,429,503].includes(error?.status)?error.status:503;
   const fallback={400:'Richiesta non valida.',401:'Accedi al tuo account.',403:'Accesso non autorizzato.',
    413:'Link troppo lungo.',422:'Il link Maps non contiene dati sufficienti.',
-   428:'Verifica amministratore MFA necessaria.',429:'Troppe richieste.',
+   428:'Verifica amministratore MFA necessaria.',409:'La richiesta è già stata elaborata.',429:'Troppe richieste.',
    503:'Registro clienti condiviso momentaneamente non disponibile.'};
   return json({error:error?.error||fallback[status]||'Errore di salvataggio.'},status,origin);
  }
