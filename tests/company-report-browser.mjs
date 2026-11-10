@@ -32,6 +32,7 @@ export const manageDrivers=async(action)=>action==='list'?{drivers:[
 ]}:action==='issue'?{code:'A'.repeat(43)}:{};
 let mockRates=[{id:'1',client:'CLIENTE ALFA',city:'NAPOLI',cents:15000,revision:1,
  updatedAt:'2026-11-06T12:00:00Z'}];
+globalThis.__mockCompanyRates=mockRates;
 let mockExtras=['facchinaggioBilico','facchinaggioReefer','reefer','adr',
  'pernotto','sabatoPorto','sabatoTrasferta','preOrario'].map(serviceKey=>({
  serviceKey,cents:serviceKey==='preOrario'?0:null,revision:1,updatedAt:new Date().toISOString()
@@ -249,6 +250,29 @@ export const saveSharedManualCustomer=async site=>{
   mapsUrl:'',source:'manual',operationalNotes:site.notes||''};
  rows.push(created);
  return {customer:structuredClone(created),created:true};
+};
+export const saveSharedPricedCustomer=async({source='manual',name,city,address='',
+ notes='',mapsUrl='',cents,expectedRevision=0}={})=>{
+ const rateList=globalThis.__mockCompanyRates;
+ if(!Array.isArray(rateList))throw Error('Tariffario mock non pronto');
+ if(!Number.isSafeInteger(cents))throw Error('Importo non valido');
+ const existingRate=rateList.find(row=>row.client===name&&row.city===city);
+ if(existingRate&&existingRate.cents!==cents&&existingRate.revision!==expectedRevision)
+  throw Error('Tariffa cambiata: aggiorna.');
+ if(!existingRate&&expectedRevision>0)throw Error('Tariffa cambiata: aggiorna.');
+ const existingCustomer=rows.find(row=>row.name===name&&row.city===city);
+ const customer=existingCustomer||{name,city,address,mapsUrl:source==='maps'?mapsUrl:'',
+  source:source==='maps'?'google_maps_link':'manual',operationalNotes:notes};
+ if(!existingCustomer)rows.push(customer);
+ if(existingRate&&existingRate.cents!==cents){
+  existingRate.cents=cents;existingRate.revision++;
+ }else if(!existingRate){
+  rateList.push({id:'rate'+rateList.length,client:name,city,cents,revision:1,
+   updatedAt:new Date().toISOString()});
+ }
+ return {customer:structuredClone(customer),created:!existingCustomer,
+  rateChanged:!existingRate||existingRate.cents!==cents,
+  tariff:structuredClone(rateList.find(x=>x.client===name&&x.city===city))};
 };
 export const pendingMapsApprovals=async()=>[];
 export const decideMapsApproval=async()=>{throw new Error('Nessuna richiesta di prova.');};
