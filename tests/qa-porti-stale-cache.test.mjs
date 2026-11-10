@@ -87,7 +87,7 @@ test('published import chain is fully versioned and displays consistent list/det
  assert.doesNotMatch(rules,/NAVE IN ACCETTAZIONE/);
  assert.match(port,/side\.append\(badge\(verdict\.label,verdict\.kind\)/);
  assert.match(port,/results\.append\(deliveryPanel[\s\S]*?badge\(verdict\.label,verdict\.kind\)/);
- assert.match(worker,/20261110-assistant-chat-v4/);
+ assert.match(worker,/20261110-no-assistant-v5/);
  assert.match(worker,/const isPortCode = isPort &&/);
  assert.match(worker,/NETWORK_FIRST_CODE\.has\(url\.pathname\) \|\| isPortCode/);
  assert.match(worker,/if \(isPort && \(url\.pathname\.startsWith\(PORT_BASE \+ 'data\/'\)/);
