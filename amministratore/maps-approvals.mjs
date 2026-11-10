@@ -101,7 +101,7 @@ export function setupMapsApprovals(account,{onApproved=()=>{}}={}){
   }
  }
  async function load({silent=false,force=false}={}){
-  if(!authorized()||busy)return false;
+  if(!authorized()||(busy&&!force))return false;
   if(!force&&silent&&panel.contains(document.activeElement)&&
    document.activeElement?.matches('input'))return false;
   const seq=++generation,owner=account.getAccountId();
