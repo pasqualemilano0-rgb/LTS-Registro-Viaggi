@@ -829,7 +829,9 @@ async function renderTfgBooking(booking){
     if(requestId!==bookingLookupSeq||selectedPort!=='napoli'||currentBookingTerminal()!=='tfg')return;
     const limited=error?.message==='TFG_RATE_LIMITED';
     const denied=['LTS_BOOKING_LOGIN_REQUIRED','LTS_BOOKING_ACCESS_DENIED'].includes(error?.message);
-    const offline=error?.message==='LTS_BOOKING_OFFLINE'||navigator.onLine===false;
+    // navigator.onLine is only a browser hint: a failed API/auth request does not prove the device is offline.
+    // Keep authentication, rate limits and backend failures distinct from confirmed offline errors.
+    const offline=error?.message==='LTS_BOOKING_OFFLINE';
     openResults('Booking · TFG',denied?'ACCESSO LTS NECESSARIO':offline?'CONNESSIONE ASSENTE':
       limited?'TROPPE RICHIESTE':'SERVIZIO NON DISPONIBILE','warn',
       denied?'La sessione LTS non è valida o l’account non ha accesso. Verifica il login e l’Authenticator, poi riapri Porti.':
