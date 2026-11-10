@@ -1,5 +1,5 @@
 /** In-app notification center for Maps proposals. Auth/MFA enforced by Edge Function. */
-import {pendingMapsApprovals,decideMapsApproval} from '../shared-maps-client.mjs';
+import {pendingMapsApprovals,decideMapsApproval} from '../shared-maps-client.mjs?v=20261110-maps-approval-v1';
 const byId=id=>document.getElementById(id);
 const money=c=>new Intl.NumberFormat('it-IT',{style:'currency',currency:'EUR'}).format(c/100);
 function parseCents(value){
