@@ -24,6 +24,7 @@
   <link rel="stylesheet" href="../visual-theme.css?v=20261108-rc3-v1">
   <link rel="stylesheet" href="./admin-login-refreshed.css?v=20261110-resume-v1">
   <link rel="stylesheet" href="./control-center-v10.css?v=20261110-maps-approval-v1">
+  <link rel="stylesheet" href="./dashboard-unified-v11.css?v=20261110-unified-v1">
   <script type="module" src="./admin.mjs?v=20261110-maps-approval-v1"></script>
   <script type="module" src="./install-pwa.mjs?v=20261108-admin-pwa-v1"></script>
   <script type="module" src="./dashboard-mobile-nav.mjs?v=20261107-records-admin-v2"></script>
@@ -120,6 +121,19 @@
         </details>
         <div class="admin-nav-help"><span class="admin-nav-help-dot" aria-hidden="true"></span><span>Ambiente protetto<small>Sessione amministratore MFA</small></span></div>
       </nav>
+      <header id="workspace-bar" class="workspace-bar" aria-labelledby="workspace-title">
+        <div class="workspace-copy">
+          <p class="workspace-kicker"><span class="workspace-mark" aria-hidden="true"></span> LTS / CENTRO OPERATIVO</p>
+          <h1 id="workspace-title">Panoramica operativa</h1>
+          <p id="workspace-description">Attività aziendale, viaggi e richieste da verificare.</p>
+        </div>
+        <div class="workspace-tools">
+          <span class="workspace-verified"><span aria-hidden="true"></span> Area riservata</span>
+          <button type="button" class="workspace-search" data-smart-open aria-label="Apri ricerca e comandi rapidi">
+            <span aria-hidden="true">⌕</span> Cerca o agisci
+          </button>
+        </div>
+      </header>
       <div id="management-panel">
       <section id="security-console" class="surface console-security" aria-labelledby="security-title">
         <p class="eyebrow">PROTEZIONE DELL'AREA AZIENDALE</p>
@@ -400,20 +414,21 @@
         <section id="console-overview" class="console-overview surface" aria-labelledby="console-overview-title">
           <div>
             <p class="eyebrow">LTS CONTROL CENTER</p>
-            <h2 id="console-overview-title">Centro operativo LTS</h2>
-            <p>Controlla l'andamento del mese, individua le registrazioni da verificare e apri le aree operative. I risultati provengono solo dagli archivi sincronizzati.</p>
+            <h2 id="console-overview-title">Tutto sotto controllo.</h2>
+            <p>Gestisci le attività quotidiane da un unico punto, senza perdere la schermata corrente.</p>
           </div>
           <div class="console-shortcuts" aria-label="Accesso rapido alle sezioni">
-            <button type="button" data-smart-open>Centro comandi intelligente <span aria-hidden="true">✦</span></button>
-            <button type="button" data-open-section="drivers">Gestisci autisti <span aria-hidden="true">›</span></button>
-            <button type="button" data-open-section="trips">Consulta viaggi <span aria-hidden="true">›</span></button>
-            <button type="button" data-open-section="records">Modifica inserimenti autisti <span aria-hidden="true">›</span></button>
-            <button type="button" data-open-private-customers>Modifica clienti personali <span aria-hidden="true">›</span></button>
-            <button type="button" data-open-maps>Aggiungi cliente Google Maps <span aria-hidden="true">›</span></button>
-            <button type="button" data-open-section="rates">Tariffe e servizi extra <span aria-hidden="true">›</span></button>
-            <button type="button" data-open-section="alerts">Controlla anomalie <span aria-hidden="true">›</span></button>
-            <button type="button" data-open-section="exports">Esporta report <span aria-hidden="true">›</span></button>
+            <button type="button" data-smart-open>Cerca e agisci <span aria-hidden="true">✦</span></button>
+            <button type="button" data-open-section="drivers">Autisti <span aria-hidden="true">›</span></button>
+            <button type="button" data-open-section="trips">Viaggi <span aria-hidden="true">›</span></button>
+            <button type="button" data-open-section="records">Archivi autisti <span aria-hidden="true">›</span></button>
+            <button type="button" data-open-private-customers>Clienti personali <span aria-hidden="true">›</span></button>
+            <button type="button" data-open-maps>Nuovo cliente Maps <span aria-hidden="true">›</span></button>
+            <button type="button" data-open-section="rates">Tariffe e servizi <span aria-hidden="true">›</span></button>
+            <button type="button" data-open-section="alerts">Anomalie <span aria-hidden="true">›</span></button>
+            <button type="button" data-open-section="exports">Report ed export <span aria-hidden="true">›</span></button>
           </div>
+          <p class="console-swipe-hint" aria-hidden="true">Scorri per vedere altre azioni <span>→</span></p>
         </section>
         <header class="report-hero">
           <div class="report-hero-main">
