@@ -524,7 +524,7 @@ function renderAssistantLogisticaPilot(main){
  const session=createLtsGuidedSnapshot({verified:accountAccess.isVerified(),accountActive:store.usingAccount(),
   personalCustomers:state.customers,trips:state.trips,companyCustomers,companyRates,companyRatesLoaded,draft});
  if(!session.ready)return;
- let step=0,selected=null,container='';
+ let step=0,selected=null,container='',selectedServices=[],servicesChosen=false;
  const toggle=el('button',{type:'button',class:'assistant-mini-toggle',
   'aria-label':'Apri LTS Copilota','aria-expanded':'false',title:'LTS Copilota'},
   el('img',{src:'/LTS-Registro-Viaggi/assets/assistant-logistica-operator.svg',alt:'',width:'40',height:'40','aria-hidden':'true'}),
@@ -538,7 +538,7 @@ function renderAssistantLogisticaPilot(main){
  const title=(heading,description)=>{content.append(el('h3',{},heading),el('p',{class:'lts-copilota-description'},description));};
  const renderStep=()=>{
   content.replaceChildren();
-  progress.textContent=step===0?'LTS · Inserimento guidato':('Passaggio '+step+' di 3');
+  progress.textContent=step===0?'LTS · Inserimento guidato':('Passaggio '+step+' di 4');
   if(step===0){
    title('Cosa vuoi fare?','Ti aiuto a preparare un viaggio in pochi passaggi, utilizzando i clienti disponibili nel tuo account.');
    content.append(button('INSERISCI VIAGGIO',()=>{step=1;renderStep();}));
@@ -563,11 +563,27 @@ function renderAssistantLogisticaPilot(main){
    };
    field.addEventListener('input',update);
    content.append(field,results,button('Indietro',()=>{step=1;renderStep();},true));
+  }else if(step===3){
+   title('Servizi extra','Seleziona uno o più servizi oppure scegli Nessun servizio.');
+   const options=el('div',{class:'lts-copilota-service-options'});
+   const none=el('label',{class:'lts-copilota-service-choice'},el('input',{type:'checkbox',checked:servicesChosen&&selectedServices.length===0,'aria-label':'Nessun servizio',on:{change:event=>{if(event.target.checked){selectedServices=[];servicesChosen=true;renderStep();}}}),el('span',{},'Nessun servizio'));
+   options.append(none);
+   for(const service of D.SERVICES){
+    const price=companyExtraSnapshot(companyExtraRates,companyExtrasLoaded,service.key);
+    const label=service.label+(price===null?' · Tariffa da verificare':' · '+D.formatMoney(price));
+    options.append(el('label',{class:'lts-copilota-service-choice'},el('input',{type:'checkbox',value:service.key,checked:selectedServices.includes(service.key),on:{change:event=>{
+     selectedServices=event.target.checked?[...selectedServices,service.key]:selectedServices.filter(key=>key!==service.key);
+     servicesChosen=true;renderStep();
+    }}),el('span',{},label)));
+   }
+   const error=el('p',{class:'lts-copilota-error',role:'alert'});
+   content.append(options,error,button('Continua',()=>{if(!servicesChosen){error.textContent='Seleziona un servizio oppure Nessun servizio.';return;}step=4;renderStep();}),button('Indietro',()=>{step=2;renderStep();},true));
   }else{
    title('Riepilogo bozza','Controlla i dati. Nessun viaggio verrà salvato automaticamente.');
    content.append(el('div',{class:'lts-copilota-review'},
     el('p',{},'Container: '+container),el('p',{},'Cliente: '+selected.name),
-    el('p',{},'Destinazione: '+(selected.city||'Da completare nel modulo'))),
+    el('p',{},'Destinazione: '+(selected.city||'Da completare nel modulo')),
+    el('p',{},'Servizi extra: '+(selectedServices.length?selectedServices.map(key=>D.SERVICES.find(service=>service.key===key)?.label||key).join(', '):'Nessun servizio'))),
     button('USA I DATI NEL MODULO',()=>{
      const fields=[['container',container],['client',selected.name],['city',selected.city||'']];
      let updated=0;
@@ -578,8 +594,11 @@ function renderAssistantLogisticaPilot(main){
       input.dispatchEvent(new Event('change',{bubbles:true}));updated++;
      }
      if(updated<2){toast('Impossibile compilare il modulo: controlla i campi.');return;}
+     const serviceInputs=[...main.querySelectorAll('form [name="service"]')];
+     if(serviceInputs.length!==D.SERVICES.length){toast('Servizi extra non disponibili nel modulo: riprova.');return;}
+     for(const input of serviceInputs){input.checked=selectedServices.includes(input.value);input.dispatchEvent(new Event('change',{bubbles:true}));}
      setOpen(false);toast('Bozza trasferita: verifica i dati e salva dal modulo viaggio.');
-    }),button('Modifica cliente',()=>{step=2;renderStep();},true),
+    }),button('Modifica servizi extra',()=>{step=3;renderStep();},true),button('Modifica cliente',()=>{step=2;renderStep();},true),
     button('Modifica container',()=>{step=1;renderStep();},true));
   }
  };
