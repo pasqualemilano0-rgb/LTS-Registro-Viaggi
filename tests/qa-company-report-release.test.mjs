@@ -147,7 +147,7 @@ test('panoramica clienti apre la tariffa della sede Google Maps senza duplicare 
  assert.match(editor,/await account[.]companyTariffs\('save',payload\)/);
  assert.match(editor,/sharedMapsCustomers\(\)/);
  assert.match(editor,/ratesLoaded/);
- assert.match(html,/Clienti Google Maps da tariffare/);
+ assert.match(html,/Clienti e sedi senza tariffa/);
  assert.match(html,/id="company-sites-list"/);
  assert.match(html,/id="company-rate-client-options"/);
  assert.doesNotMatch(editor,/saveSharedMapsCustomer|state[.]customers|localStorage|innerHTML/);
