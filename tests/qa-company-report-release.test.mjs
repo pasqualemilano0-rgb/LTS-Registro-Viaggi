@@ -14,7 +14,7 @@ test('dashboard accessibile solo dal pannello admin, CSP e versioni coerenti',()
    'pro-city','pro-container','pro-compare-driver','pro-alerts','pro-alert-count',
    'pro-export-pdf','pro-export-xlsx','pro-records'])
    assert.match(html,new RegExp('id="'+id+'"'));
- assert.match(html,/admin\.mjs\?v=20261110-tariffe-bugfix-v1/);
+ assert.match(html,/admin\.mjs\?v=20261110-atomic-v1/);
  assert.match(html,/admin\.css\?v=20261109-alpha-v1/);
  assert.match(js,/account-access\.mjs\?v=20261107-realtime-v1/);
  assert.match(js,/setupReport\(account\)/);
@@ -26,7 +26,7 @@ test('dashboard accessibile solo dal pannello admin, CSP e versioni coerenti',()
  assert.match(report,/function driverProfile\(/);
  assert.match(report,/function driverDirectory\(/);
  assert.match(report,/function renderAmountChart\(/);
- assert.match(js,/report\.mjs\?v=20261110-tariffe-bugfix-v1/);
+ assert.match(js,/report\.mjs\?v=20261110-atomic-v1/);
  assert.match(report,/setupInsights\(account\)/);
  const advanced=read('amministratore/report-insights.mjs');
  const exportsModule=read('amministratore/report-export.mjs');
@@ -147,7 +147,7 @@ test('panoramica clienti apre la tariffa della sede Google Maps senza duplicare 
  assert.match(editor,/await account[.]companyTariffs\('save',payload\)/);
  assert.match(editor,/sharedMapsCustomers\(\)/);
  assert.match(editor,/ratesLoaded/);
- assert.match(html,/Clienti Google Maps da tariffare/);
+ assert.match(html,/Clienti e sedi senza tariffa/);
  assert.match(html,/id="company-sites-list"/);
  assert.match(html,/id="company-rate-client-options"/);
  assert.doesNotMatch(editor,/saveSharedMapsCustomer|state[.]customers|localStorage|innerHTML/);
@@ -170,10 +170,10 @@ test('admin can register Google Maps sites with a company tariff and edit audite
  assert.match(rates,/setupCompanyMaps\(account/);
  assert.match(maps,/readMapsCustomer\(link\)/);
  assert.match(maps,/sharedMapsCustomers\(\)/);
- assert.match(maps,/saveSharedMapsCustomer\(proposal[.]mapsUrl/);
- assert.match(maps,/account[.]companyTariffs\('save'/);
- assert.match(maps,/expectedRevision:current[.]revision/);
- assert.match(maps,/matchingSite\(sites,proposal\)/);
+ assert.match(maps,/await saveSharedPricedCustomer\(\{/);
+ assert.match(maps,/expectedRevision:rate[?][.]revision[?][?]0/);
+ assert.doesNotMatch(maps,/await account[.]companyTariffs\('save'/);
+ assert.match(maps,/matchingSite\(siteResult,proposal\)/);
  assert.match(extras,/account[.]companyTariffs\('list'/);
  assert.match(extras,/account[.]companyTariffs\('extra-save'/);
  assert.match(extras,/expectedRevision:shown[.]revision/);
@@ -232,9 +232,9 @@ test('manual company customer onboarding joins the shared catalog and keeps fare
  assert.match(html,/data-open-manual/);
  assert.match(html,/value="manual"/);
  assert.match(rates,/setupCompanyManual\(account/);
- assert.match(rates,/saveSharedManualCustomer\(\{name:payload[.]client,city:payload[.]city\}\)/);
+ assert.match(rates,/await saveSharedPricedCustomer\(\{/);
  assert.match(report,/companyRates[.]focusManual\(\)/);
- assert.match(manual,/saveSharedManualCustomer\(customer\)/);
+ assert.match(manual,/saveSharedPricedCustomer\(\{source:'manual'/);
  assert.match(manual,/matchingRate\(response[.]tariffs,customer\)/);
  assert.match(backend,/input[.]action==='save-manual'/);
  assert.match(backend,/role!=='admin'/);

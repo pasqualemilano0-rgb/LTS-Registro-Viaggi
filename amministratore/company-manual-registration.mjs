@@ -2,8 +2,8 @@
  * A Maps link and a tariff are optional; sharing must succeed before pricing.
  * Existing tariffs are never silently overwritten.
  */
-import {saveSharedManualCustomer} from '../shared-maps-client.mjs';
-import {parseEuro,matchingRate} from './company-maps-registration.mjs?v=20261107-maps-extras-v1';
+import {saveSharedManualCustomer,saveSharedPricedCustomer} from '../shared-maps-client.mjs?v=20261110-atomic-v1';
+import {parseEuro,matchingRate} from './company-maps-registration.mjs?v=20261110-atomic-v1';
 
 const get=id=>document.getElementById(id);
 export function setupCompanyManual(account,{onSaved=async()=>{}}={}){
@@ -46,16 +46,16 @@ export function setupCompanyManual(account,{onSaved=async()=>{}}={}){
    if(cents!==null&&existing&&existing.cents!==cents)
     throw new Error('È già presente una tariffa diversa per questo cliente e località. Modificala dal tariffario, senza sovrascriverla qui.');
    if(owner!==account.getAccountId()||!authorized())throw new Error('Sessione amministratore cambiata.');
-   const result=await saveSharedManualCustomer(customer);
+   // When a price is requested the database publishes customer and price
+   // atomically. A conflict leaves neither half-written.
+   const result=cents===null
+    ?await saveSharedManualCustomer(customer)
+    :await saveSharedPricedCustomer({source:'manual',...customer,cents,
+      expectedRevision:existing?.revision??0});
    shared=true;created=result.created;
+   rateSaved=cents!==null&&result.rateChanged;
    if(owner!==account.getAccountId()||!authorized())
-    throw new Error('Cliente condiviso, ma la sessione è cambiata: controlla la tariffa.');
-   if(cents!==null&&!existing){
-    await account.companyTariffs('save',{
-     client:result.customer.name,city:result.customer.city,cents
-    });
-    rateSaved=true;
-   }
+    throw new Error('Sessione cambiata dopo il salvataggio: verifica l’elenco prima di riprovare.');
    if(request===seq&&authorized()){
     form.reset();
     inform((created?'Cliente manuale aggiunto all’elenco condiviso.':
@@ -69,8 +69,8 @@ export function setupCompanyManual(account,{onSaved=async()=>{}}={}){
    }
   }catch(error){
    if(request===seq&&authorized())inform(
-    (shared&&!rateSaved&&cents!==null
-     ?'Cliente già condiviso, ma il salvataggio della tariffa non è riuscito. ':
+    (shared?'Salvataggio confermato: verifica l’elenco e la sessione. ':
+      cents!==null?'Né il cliente né la tariffa sono stati pubblicati. ':
       'Salvataggio non completato. ')+
     (error?.message||'Riprova dopo aver aggiornato.'),true);
   }finally{

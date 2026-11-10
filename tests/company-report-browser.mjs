@@ -32,6 +32,7 @@ export const manageDrivers=async(action)=>action==='list'?{drivers:[
 ]}:action==='issue'?{code:'A'.repeat(43)}:{};
 let mockRates=[{id:'1',client:'CLIENTE ALFA',city:'NAPOLI',cents:15000,revision:1,
  updatedAt:'2026-11-06T12:00:00Z'}];
+globalThis.__mockCompanyRates=mockRates;
 let mockExtras=['facchinaggioBilico','facchinaggioReefer','reefer','adr',
  'pernotto','sabatoPorto','sabatoTrasferta','preOrario'].map(serviceKey=>({
  serviceKey,cents:serviceKey==='preOrario'?0:null,revision:1,updatedAt:new Date().toISOString()
@@ -221,14 +222,14 @@ export const companyInsights=async({month,driverId=null,compareDriverId=null,fro
 };
 `;
 const mockSharedMaps=String.raw`
-let rows=[
+const rows=globalThis.__ltsMockSharedRows??(globalThis.__ltsMockSharedRows=[
  {name:'CLIENTE ALFA',city:'NAPOLI',address:'VIA TEST 1, NAPOLI',
   mapsUrl:'https://maps.app.goo.gl/exampleA',source:'google_maps_link',operationalNotes:''},
  {name:'CLIENTE BETA',city:'SALERNO',address:'VIA TEST 2, SALERNO',
   mapsUrl:'https://maps.app.goo.gl/exampleB',source:'google_maps_link',operationalNotes:''},
  {name:'CLIENTE GAMMA',city:'ROMA',address:'INDIRIZZO STRADALE DA CONFERMARE',
   mapsUrl:'https://maps.app.goo.gl/exampleC',source:'google_maps_link',operationalNotes:''}
-];
+]);
 export const sharedMapsCustomers=async()=>structuredClone(rows);
 export const saveSharedMapsCustomer=async(mapsUrl,site)=>{
  const known=rows.find(row=>row.mapsUrl===mapsUrl);
@@ -249,6 +250,30 @@ export const saveSharedManualCustomer=async site=>{
   mapsUrl:'',source:'manual',operationalNotes:site.notes||''};
  rows.push(created);
  return {customer:structuredClone(created),created:true};
+};
+export const saveSharedPricedCustomer=async({source='manual',name,city,address='',
+ notes='',mapsUrl='',cents,expectedRevision=0}={})=>{
+ const rateList=globalThis.__mockCompanyRates;
+ if(!Array.isArray(rateList))throw Error('Tariffario mock non pronto');
+ if(!Number.isSafeInteger(cents))throw Error('Importo non valido');
+ const existingRate=rateList.find(row=>row.client===name&&row.city===city);
+ if(existingRate&&existingRate.cents!==cents&&existingRate.revision!==expectedRevision)
+  throw Error('Tariffa cambiata: aggiorna.');
+ if(!existingRate&&expectedRevision>0)throw Error('Tariffa cambiata: aggiorna.');
+ const changed=!existingRate||existingRate.cents!==cents;
+ const existingCustomer=rows.find(row=>row.name===name&&row.city===city);
+ const customer=existingCustomer||{name,city,address,mapsUrl:source==='maps'?mapsUrl:'',
+  source:source==='maps'?'google_maps_link':'manual',operationalNotes:notes};
+ if(!existingCustomer)rows.push(customer);
+ if(existingRate&&existingRate.cents!==cents){
+  existingRate.cents=cents;existingRate.revision++;
+ }else if(!existingRate){
+  rateList.push({id:'rate'+rateList.length,client:name,city,cents,revision:1,
+   updatedAt:new Date().toISOString()});
+ }
+ return {customer:structuredClone(customer),created:!existingCustomer,
+  rateChanged:changed,
+  tariff:structuredClone(rateList.find(x=>x.client===name&&x.city===city))};
 };
 export const pendingMapsApprovals=async()=>[];
 export const decideMapsApproval=async()=>{throw new Error('Nessuna richiesta di prova.');};
@@ -911,7 +936,7 @@ try{
  assert.equal(await page.locator('#company-maps-name').textContent(),'CLIENTE DELTA');
  await page.locator('#company-maps-amount').fill('95,50');
  await page.locator('#company-maps-save').click();
- await page.waitForFunction(()=>document.querySelector('#company-maps-status').textContent.includes('Cliente Google Maps aggiunto'));
+ await page.waitForFunction(()=>document.querySelector('#company-maps-status').textContent.includes('Cliente Google Maps e tariffa salvati insieme'));
  await page.waitForFunction(()=>document.querySelector('#company-rates-count').textContent.includes('3 tariffe aziendali'));
  // Already-linked Maps shortlink: review first, then update only its placeholder.
  await openAdminTab('overview-tab');
@@ -932,6 +957,16 @@ try{
   assert.equal(await page.locator('.customer-directory-site').count(),2);
   assert.equal(await page.locator('.customer-directory-maps').count(),0);
   await page.locator('#customer-overview-filter').selectOption('all');
+  // A manually entered customer WITH a price must commit both together.
+  await openAdminTab('rates-tab');
+  await page.locator('#company-manual-name').fill('CLIENTE QA CON TARIFFA');
+  await page.locator('#company-manual-city').fill('BARI');
+  await page.locator('#company-manual-amount').fill('17,20');
+  await page.locator('#company-manual-save').click();
+  await page.waitForFunction(()=>document.querySelector('#company-manual-status').textContent.includes('Tariffa aziendale salvata'));
+  await page.waitForFunction(()=>document.querySelector('#company-rates-count').textContent.includes('4 tariffe aziendali'));
+  assert.match(await page.locator('#company-rates-list').textContent(),/CLIENTE QA CON TARIFFA/);
+  assert.match(await page.locator('#company-rates-list').textContent(),/17,20/);
   await openAdminTab('security-tab');
  await page.locator('#security-check').click();
  await page.waitForFunction(()=>document.querySelector('#security-result').textContent.includes('MFA confermata'));

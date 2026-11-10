@@ -65,8 +65,8 @@ test('dashboard offers shared custom customer and optional fare without touching
  assert.match(html,/value="manual"/);
  assert.match(editor,/saveSharedManualCustomer\(customer\)/);
  assert.match(editor,/matchingRate\(response[.]tariffs,customer\)/);
- assert.match(editor,/companyTariffs\('save'/);
- assert.match(tariff,/saveSharedManualCustomer\(\{name:payload[.]client,city:payload[.]city\}\)/);
+ assert.match(editor,/saveSharedPricedCustomer\(\{source:'manual'/);
+ assert.match(tariff,/else await saveSharedPricedCustomer\(\{/);
  assert.match(tariff,/focusManual\(\)/);
  assert.match(overview,/if\(row[.]mapsUrl\)/);
  assert.match(driver,/if\(shared&&customer[.]mapsUrl\)/);

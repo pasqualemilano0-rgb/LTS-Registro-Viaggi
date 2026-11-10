@@ -1,9 +1,9 @@
 /** Protected company tariff editor, linked to the shared Google Maps site catalog.
  * Customer records remain read-only. No driver archive or historical trip is rewritten. */
 import {tariffLinkedCustomerSites,customerSiteRateKey,hasUsableAddress} from './customer-overview-model.mjs?v=20261107-client-tariff-sync-v2';
-import {setupCompanyMaps} from './company-maps-registration.mjs?v=20261107-maps-extras-v1';
-import {setupCompanyManual} from './company-manual-registration.mjs?v=20261107-manual-shared-v1';
-import {saveSharedManualCustomer} from '../shared-maps-client.mjs';
+import {setupCompanyMaps} from './company-maps-registration.mjs?v=20261110-atomic-v1';
+import {setupCompanyManual} from './company-manual-registration.mjs?v=20261110-atomic-v1';
+import {saveSharedPricedCustomer} from '../shared-maps-client.mjs?v=20261110-atomic-v1';
 
 const get=id=>document.getElementById(id);
 const node=(tag,cls,value)=>{const n=document.createElement(tag);if(cls)n.className=cls;n.textContent=String(value??'');return n;};
@@ -120,11 +120,11 @@ export function setupCompanyRates(account){
   const coverage=tariffLinkedCustomerSites(sites,rows,search.value);
   const missing=coverage.sites.filter(site=>!site.hasRate);
   sitesCount.textContent=coverage.priced+' sedi con tariffa · '+coverage.unpriced+
-   ' ancora da tariffare su '+coverage.total+' sedi Google Maps'+
+   ' ancora da tariffare su '+coverage.total+' clienti e sedi aziendali'+
    (search.value.trim()?' · '+missing.length+' corrispondenze senza tariffa':'');
   if(!missing.length)sitesList.append(node('p','company-sites-empty',
    search.value.trim()?'Nessuna sede senza tariffa corrisponde alla ricerca.':
-   coverage.unpriced?'Cerca una sede diversa.':'Tutte le sedi Google Maps hanno un importo aziendale.'));
+   coverage.unpriced?'Cerca una sede diversa.':'Tutti i clienti e le sedi hanno un importo aziendale.'));
   const shown=sitesExpanded?missing:missing.slice(0,10);
   for(const site of shown){
    const item=document.createElement('article');item.className='company-site-row';
@@ -132,7 +132,8 @@ export function setupCompanyRates(account){
    identity.append(node('strong','company-site-name',site.name),
     node('span','company-site-city',site.city));
    if(hasUsableAddress(site.address))identity.append(node('small','company-site-address',site.address));
-   else identity.append(node('small','company-site-address is-missing','Via non ancora confermata'));
+   else identity.append(node('small','company-site-address is-missing',site.source==='manual'
+    ?'Indirizzo facoltativo':'Indirizzo Google Maps da confermare'));
    const action=document.createElement('button');
    action.type='button';action.className='button outline company-site-price';
    action.textContent='Imposta tariffa';action.disabled=!ratesLoaded;
@@ -168,7 +169,7 @@ export function setupCompanyRates(account){
   }
   const [rateResult,customerResult]=await Promise.allSettled([
    account.companyTariffs('list'),
-   import('../shared-maps-client.mjs').then(module=>module.sharedMapsCustomers())
+   import('../shared-maps-client.mjs?v=20261110-atomic-v1').then(module=>module.sharedMapsCustomers())
   ]);
   if(seq!==generation||!authorized())return false;
   const validRates=rateResult.status==='fulfilled'&&Array.isArray(rateResult.value?.tariffs);
@@ -215,7 +216,7 @@ export function setupCompanyRates(account){
   let payload;
   try{
    const name=clean(client.value),place=clean(city.value),cents=toCents(amount.value);
-   if(name.length<2||name.length>500||place.length<1||place.length>500)
+   if(name.length<2||name.length>500||place.length<2||place.length>500)
     throw new Error('Inserisci cliente e località validi.');
    if(!editing&&rows.some(rate=>clean(rate.client)===name&&clean(rate.city)===place))
     throw new Error('Questa sede ha già una tariffa aziendale. Usa Modifica nell’elenco.');
@@ -224,22 +225,20 @@ export function setupCompanyRates(account){
   }catch(e){feedback(e.message,true);return;}
   busy=true;submit.disabled=true;refresh.disabled=true;
   window.dispatchEvent(new Event('lts-admin-company-rate-save-started'));
-  feedback('Condivisione cliente e salvataggio della tariffa in corso…');
-  let sharedSaved=false;
+  feedback('Salvataggio atomico di cliente e tariffa in corso…');
   try{
-   if(!editing){
-    // New tariffs must also appear in the shared company customer list.
-    await saveSharedManualCustomer({name:payload.client,city:payload.city});
-    sharedSaved=true;
-   }
-   await account.companyTariffs('save',payload);
+   if(editing)await account.companyTariffs('save',payload);
+   else await saveSharedPricedCustomer({
+    source:'manual',name:payload.client,city:payload.city,cents:payload.cents,
+    expectedRevision:0
+   });
    clearForm();
    window.dispatchEvent(new Event('lts-admin-company-rate-saved'));
    await load();
    if(authorized()&&ratesLoaded)
     feedback('Tariffa salvata e disponibile per tutti gli autisti al prossimo aggiornamento online. Gli importi storici restano invariati.');
-  }catch(e){feedback((sharedSaved?'Cliente condiviso, ma la tariffa non è stata salvata. ':
-    'Salvataggio non completato. ')+(e?.message||'Riprova.'),true);}
+  }catch(e){feedback('Salvataggio non completato: nessuna nuova coppia cliente/tariffa pubblicata. '+
+    (e?.message||'Riprova.'),true);}
   finally{
    busy=false;submit.disabled=!ratesLoaded;if(authorized())refresh.disabled=false;
    window.dispatchEvent(new Event('lts-admin-company-rate-save-completed'));

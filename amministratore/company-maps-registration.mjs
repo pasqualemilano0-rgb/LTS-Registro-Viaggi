@@ -3,7 +3,7 @@
  * Customer and fare use separate APIs: report partial success if pricing fails.
  */
 import {readMapsCustomer} from '../maps-reader-client.mjs';
-import {sharedMapsCustomers,saveSharedMapsCustomer} from '../shared-maps-client.mjs';
+import {sharedMapsCustomers,saveSharedPricedCustomer} from '../shared-maps-client.mjs?v=20261110-atomic-v1';
 import {customerSiteRateKey} from './customer-overview-model.mjs?v=20261107-client-tariff-sync-v2';
 
 const byId=id=>document.getElementById(id);
@@ -43,25 +43,25 @@ export function setupCompanyMaps(account,{onSaved=async()=>{}}={}){
   city=byId('company-maps-city'),address=byId('company-maps-address'),
   warning=byId('company-maps-warning'),amount=byId('company-maps-amount'),
   status=byId('company-maps-status'),duplicate=byId('company-maps-duplicate');
- let selected=null,existing=null,rate=null,seq=0,busy=false,partial=null;
+ let selected=null,existing=null,rate=null,seq=0,busy=false;
  const authorized=()=>account.isVerified()&&account.getRole()==='admin'&&
   !byId('dashboard').hidden&&byId('dashboard').dataset.view==='rates';
  function feedback(message,error=false){
   status.textContent=message;status.dataset.error=String(error);
  }
  function reset(){
-  seq++;selected=null;existing=null;rate=null;partial=null;
+  seq++;selected=null;existing=null;rate=null;
   form.reset();preview.hidden=true;read.disabled=busy;url.disabled=busy;save.disabled=true;
   warning.textContent='';duplicate.textContent='';feedback('Incolla un link Google Maps per iniziare.');
  }
  function invalidate(){
-  seq++;selected=null;existing=null;rate=null;partial=null;
+  seq++;selected=null;existing=null;rate=null;
   preview.hidden=true;save.disabled=true;duplicate.textContent='';
   feedback('Link modificato: premi Leggi Google Maps per verificare la sede.');
  }
  async function inspect(){
   if(busy||!authorized())return;
-  const token=++seq;selected=null;existing=null;rate=null;partial=null;
+  const token=++seq;selected=null;existing=null;rate=null;
   preview.hidden=true;save.disabled=true;read.disabled=true;
   const link=url.value.trim();
   if(!link){read.disabled=false;feedback('Inserisci il link Google Maps.',true);return;}
@@ -103,47 +103,31 @@ export function setupCompanyMaps(account,{onSaved=async()=>{}}={}){
    '. Sostituire '+euro(rate.cents)+' € con '+euro(cents)+' € per i nuovi viaggi?'))return;
   busy=true;save.disabled=true;read.disabled=true;url.disabled=true;
   const proposal=selected,accountId=account.getAccountId(),saveToken=seq;
+  let confirmed=null;
   try{
-   // Re-read the live registry before deciding whether the customer exists.
-   // The server is the final authority for duplicate checks under concurrency.
-   const sites=await sharedMapsCustomers();
-   const known=matchingSite(sites,proposal);
-   const customer=known||(
-    await saveSharedMapsCustomer(proposal.mapsUrl,{
-     name:proposal.name,city:proposal.city,address:proposal.address
-    })
-   ).customer;
-   partial=customer;
-   // Finish both requested server writes even if the admin navigates away.
-   // Never use a different account's session for the second operation.
+   // The Edge endpoint revalidates MFA and writes the site AND price together.
+   // On error neither is published; existing prices require optimistic revision.
+   confirmed=await saveSharedPricedCustomer({
+    source:'maps',mapsUrl:proposal.mapsUrl,name:proposal.name,
+    city:proposal.city,address:proposal.address,cents,
+    expectedRevision:rate?.revision??0
+   });
    if(account.getAccountId()!==accountId)
-    throw new Error('Account cambiato: verifica il cliente e completa la tariffa.');
-   const live=await account.companyTariffs('list');
-   if(!Array.isArray(live?.tariffs))throw new Error('Tariffario aziendale non disponibile.');
-   const current=matchingRate(live.tariffs,customer);
-   if(current?.cents!==cents){
-    // Avoid silently replacing a tariff changed since preview.
-    if((rate?.id||null)!==(current?.id||null)||
-       (rate&&current&&rate.revision!==current.revision))
-     throw new Error('La tariffa è cambiata durante la verifica. Cliente conservato: aggiorna e ricontrolla il listino.');
-    await account.companyTariffs('save',{
-     client:customer.name,city:customer.city,cents,
-     ...(current?{id:current.id,expectedRevision:current.revision}:{})
-    });
-   }
-   if(account.getAccountId()!==accountId)
-    throw new Error('Account cambiato: verifica lo stato del salvataggio.');
-   if(saveToken===seq&&authorized())feedback(known?'Cliente già presente: tariffa verificata e salvata.':
-    'Cliente Google Maps aggiunto e tariffa salvata nel listino aziendale. Disponibile agli autisti al prossimo aggiornamento online.');
+    throw new Error('Sessione cambiata dopo il salvataggio: aggiorna il tariffario prima di riprovare.');
+   if(saveToken===seq&&authorized())feedback(confirmed.created
+    ?'Cliente Google Maps e tariffa salvati insieme. Disponibili agli autisti al prossimo aggiornamento.'
+    :'Sede già presente: tariffa verificata o aggiornata senza duplicati.');
    if(saveToken===seq){
-    form.reset();selected=null;partial=null;rate=null;existing=null;preview.hidden=true;
+    form.reset();selected=null;rate=null;existing=null;preview.hidden=true;
    }
-   try{await onSaved(customer);}
-   catch{feedback('Cliente e tariffa salvati sul server. Aggiornamento dell’elenco non riuscito: premi Aggiorna elenco.',true);}
+   try{await onSaved(confirmed.customer);}
+   catch{if(saveToken===seq&&authorized())feedback(
+    'Cliente e tariffa salvati. Aggiornamento elenco non riuscito: premi Aggiorna elenco.',true);}
   }catch(error){
-   if(saveToken===seq&&authorized())feedback((partial
-    ?'Cliente presente nell’elenco condiviso, ma la tariffa NON è stata confermata. '
-    :'Salvataggio non completato. ')+(error?.message||'Riprova dopo aver aggiornato.'),true);
+   if(saveToken===seq&&authorized())feedback(
+    (confirmed?'Salvataggio già confermato: verifica la sessione e aggiorna l’elenco. ':
+     'Cliente e tariffa NON pubblicati. ')+
+    (error?.message||'Rileggi la sede prima di riprovare.'),true);
   }finally{
    busy=false;read.disabled=false;url.disabled=false;
    if(saveToken===seq)save.disabled=!selected;
