@@ -936,7 +936,7 @@ try{
  assert.equal(await page.locator('#company-maps-name').textContent(),'CLIENTE DELTA');
  await page.locator('#company-maps-amount').fill('95,50');
  await page.locator('#company-maps-save').click();
- await page.waitForFunction(()=>document.querySelector('#company-maps-status').textContent.includes('Cliente Google Maps aggiunto'));
+ await page.waitForFunction(()=>document.querySelector('#company-maps-status').textContent.includes('Cliente Google Maps e tariffa salvati insieme'));
  await page.waitForFunction(()=>document.querySelector('#company-rates-count').textContent.includes('3 tariffe aziendali'));
  // Already-linked Maps shortlink: review first, then update only its placeholder.
  await openAdminTab('overview-tab');
