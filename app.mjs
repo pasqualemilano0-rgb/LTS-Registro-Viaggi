@@ -536,7 +536,17 @@ function renderAssistantLogisticaPilot(main){
    results.append(el('button',{type:'button',class:'secondary-button',on:{click:()=>{
     query.value=customer.name;
     results.replaceChildren();
-    toast('Cliente trovato: '+customer.name+'. Selezionalo nel modulo viaggio LTS.');
+    // Fill the existing form rather than creating a second trip-saving path.
+    const clientInput=main.querySelector('form [name="client"]');
+    const cityInput=main.querySelector('form [name="city"]');
+    if(!clientInput||!cityInput){toast('Modulo viaggio non disponibile.',true);return;}
+    clientInput.value=customer.name;
+    cityInput.value=customer.city||'';
+    for(const input of [clientInput,cityInput]){
+     input.dispatchEvent(new Event('input',{bubbles:true}));
+     input.dispatchEvent(new Event('change',{bubbles:true}));
+    }
+    toast('Cliente selezionato nel viaggio. Completa e salva dal modulo LTS.');
    }}},customer.name+(customer.city?' · '+customer.city:'')));
   }
  });
