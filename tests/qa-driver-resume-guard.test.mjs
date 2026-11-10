@@ -89,5 +89,5 @@ test('Driver returns via retry, not password form; server denial stays protected
  assert.match(css,/body[.]lts-driver-session-blocked dialog\[open\]/);
  assert.match(worker,/driver-session-guard[.]mjs/);
  assert.match(worker,/20261110-assistant-chat-v4/);
- assert.match(html,/app[.]mjs[?]v=20261110-tariffe-bugfix-v1/);
+ assert.match(html,/app[.]mjs[?]v=20261110-assistant-chat-v4/);
 });
