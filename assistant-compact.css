@@ -106,3 +106,16 @@
 .lts-copilota-service-choice:has(input:checked){background:#e3f9ee;border-color:#5bc69a}
 @media(min-width:580px){.lts-copilota-header{margin:-24px -24px 0;padding:20px 24px}}
 @media(max-height:620px){.lts-copilota-stepper{padding:2px 0 5px}.lts-copilota-step b{width:25px;height:25px}.lts-copilota-header{padding-top:10px;padding-bottom:10px}}
+
+/* Copilota review: compact details and all three edit actions visible together. */
+.lts-copilota-review{display:grid;gap:0;padding:7px 13px;margin:0;border-radius:13px}
+.lts-copilota-review>div{display:grid;grid-template-columns:minmax(80px,32%) minmax(0,1fr);gap:10px;align-items:start;padding:9px 0;border-bottom:1px solid #d5e5e9}
+.lts-copilota-review>div:last-child{border-bottom:0}
+.lts-copilota-review dt{font-size:12px;font-weight:700;color:#57717a}
+.lts-copilota-review dd{margin:0;font-size:14px;font-weight:650;color:#143744;overflow-wrap:anywhere}
+.lts-copilota-edit-label{margin:0;font-size:12px;font-weight:700;color:#54747d}
+.lts-copilota-review-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.lts-copilota-review-actions .lts-copilota-secondary{min-height:42px;font-size:12px;padding:8px 4px;line-height:1.2}
+.lts-copilota-transfer-feedback{margin:0;font-size:13px;line-height:1.35;color:#075d69}
+.lts-copilota-transfer-feedback:empty{display:none}
+@media(max-width:360px){.lts-copilota-review>div{grid-template-columns:1fr;gap:2px;padding:7px 0}.lts-copilota-review-actions .lts-copilota-secondary{font-size:11px}}
