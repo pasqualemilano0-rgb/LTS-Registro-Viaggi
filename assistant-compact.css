@@ -83,3 +83,5 @@
 .lts-copilota-content .lts-copilota-description{margin-bottom:4px}
 .lts-copilota-footnote{font-size:11px;line-height:1.35}
 @media(max-width:420px){.lts-copilota{padding:16px;gap:9px}.lts-copilota-header strong{font-size:21px}.lts-copilota-content h3{font-size:22px}.lts-copilota-description{font-size:15px}}
+
+.lts-copilota-hint{padding:10px 12px;margin:0;border-radius:10px;background:#eaf5f8;color:#185669;font-size:13px;line-height:1.45}
