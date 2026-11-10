@@ -536,7 +536,13 @@ function renderAssistantLogisticaPilot(main){
    results.append(el('button',{type:'button',class:'secondary-button',on:{click:()=>{
     query.value=customer.name;
     results.replaceChildren();
-    toast('Cliente trovato: '+customer.name+'. Selezionalo nel modulo viaggio LTS.');
+    // Reuse the existing LTS editor state and save path; never submit a trip here.
+    collect();
+    draft.client=customer.name;
+    draft.city=customer.city||'';
+    keepEditorScratchpad();
+    render();
+    toast('Cliente selezionato nel viaggio. Completa e salva dal modulo LTS.');
    }}},customer.name+(customer.city?' · '+customer.city:'')));
   }
  });
