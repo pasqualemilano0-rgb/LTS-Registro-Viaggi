@@ -1,0 +1,15 @@
+/* ASSISTENTE LOGISTICA — compact mobile-first integration */
+.assistant-compact{margin:0 0 12px;padding:13px 16px 14px;background:#fff;border:1px solid #d9e7eb;border-radius:18px;box-shadow:0 3px 14px rgba(12,66,78,.045)}
+.assistant-compact-heading{display:flex;align-items:center;gap:10px;margin-bottom:11px}
+.assistant-compact-symbol{width:34px;height:34px;border-radius:11px;background:#e4f4f6;color:#007b8b;display:grid;place-items:center;font-size:21px;flex:none}
+.assistant-compact-heading strong{display:block;color:#143e49;font-size:15px;font-weight:750;line-height:1.2}
+.assistant-compact-heading p{margin:3px 0 0;color:#637e87;font-size:12px;line-height:1.35}
+.assistant-compact-search{display:block;width:100%;box-sizing:border-box;min-height:44px;border:1px solid #c9dce0;border-radius:12px;background:#f6fafb;padding:10px 13px;font:inherit;font-size:14px;color:#173d47;outline-offset:2px}
+.assistant-compact-search:focus{border-color:#007b8b;outline:2px solid #b5e3e8}
+.assistant-compact-results:empty{display:none}
+.assistant-compact-results{margin-top:8px;max-height:235px;overflow:auto}
+.assistant-compact-result{width:100%;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 8px;background:#fff;border:0;border-bottom:1px solid #e7eff1;color:#173d47;text-align:left;font:inherit;font-size:14px;cursor:pointer}
+.assistant-compact-result:focus-visible{outline:2px solid #007b8b;outline-offset:-2px}
+.assistant-compact-result small{color:#607e86;font-size:12px;white-space:nowrap}
+.assistant-compact-empty{margin:9px 2px 2px;color:#647e85;font-size:12px;line-height:1.5}
+@media(max-width:390px){.assistant-compact{padding:12px}.assistant-compact-heading strong{font-size:14px}}
