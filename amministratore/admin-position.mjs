@@ -2,7 +2,7 @@
  * Keeps no input values, driver/customer data, password, invitation or MFA code.
  */
 const KEY='lts-admin-position-v1';
-const VIEWS=new Set(['overview','drivers','trips','analysis','alerts','exports','security']);
+const VIEWS=new Set(['overview','drivers','trips','records','rates','analysis','alerts','exports','security']);
 const TTL=30*60*1000;
 export function rememberPosition(owner,view,x,y,at=Date.now()){
  if(typeof owner!=='string'||!/^account:[0-9a-f-]{36}$/i.test(owner)||!VIEWS.has(view))return false;

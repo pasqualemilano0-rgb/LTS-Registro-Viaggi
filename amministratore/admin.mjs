@@ -2,11 +2,11 @@ import * as account from '../account-access.mjs?v=20261107-realtime-v1';
 import realtimeConfig from '../runtime-config.mjs';
 import {createLtsRealtime} from '../realtime-client.mjs?v=20261107-roster-realtime-v1';
 import {STATUS_LABELS,driverSummary,filterDrivers,driverInitial} from './model.mjs?v=20261109-alpha-v1';
-import {setupReport} from './report.mjs?v=20261110-atomic-v1';
+import {setupReport} from './report.mjs?v=20261110-audit-v1';
 import {setupSmartConsole} from './smart-console.mjs?v=20261108-smart-v2';
 import {setupAdminStatus} from './admin-status.mjs';
 import {setupMapsApprovals} from './maps-approvals.mjs?v=20261110-approval-v1';
-import {rememberPosition,readPosition,clearPosition} from './admin-position.mjs';
+import {rememberPosition,readPosition,clearPosition} from './admin-position.mjs?v=20261110-audit-v1';
 
 const byId=id=>document.getElementById(id);
 const loginPanel=byId('login-panel'), dashboard=byId('dashboard');

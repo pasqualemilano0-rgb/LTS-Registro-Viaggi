@@ -2,6 +2,7 @@
 import {setupInsights} from './report-insights.mjs?v=20261104-company-v3';
 import {setupCustomerOverview} from './customer-overview.mjs?v=20261108-smart-v1';
 import {setupCompanyRates} from './company-rates.mjs?v=20261110-atomic-v1';
+import {hasUnsubmittedTariffDraft} from './tariff-draft-guard.mjs?v=20261110-audit-v1';
 import {setupDriverRecords} from './driver-records.mjs?v=20261109-customer-save-fix-v1';
 import {setupCompanyExtras} from './company-extras.mjs?v=20261110-tariffe-bugfix-v1';
 const el=id=>document.getElementById(id);
@@ -243,6 +244,8 @@ export function setupReport(account){
   const lastView=el('dashboard').dataset.view;
   // Never navigate away from an unsaved private-customer/trip form.
   if(lastView==='records'&&view!=='records'&&!records.canLeave())return;
+  if(lastView==='rates'&&view!=='rates'&&hasUnsubmittedTariffDraft(document)&&
+     !window.confirm('Ci sono modifiche alle tariffe non ancora salvate. Uscire e scartarle?'))return;
   const wasReport=!report.hidden,showReport=!['drivers','security','records'].includes(view);
   if(view!=='overview')companyDirectory.reset();
   if(view!=='rates'){companyRates.reset();companyExtras.reset();}
