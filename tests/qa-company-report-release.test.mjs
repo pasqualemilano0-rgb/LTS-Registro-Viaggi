@@ -280,8 +280,8 @@ test('driver trip picker searches Maps, manual company tariffs and personal driv
  assert.doesNotMatch(source,/document[.]createElement\('select'\)/);
  assert.match(css,/records-site-results\[hidden\]/);
  assert.match(css,/records-site-option-address/);
- assert.match(html,/driver-records[.]css[?]v=20261110-unified-v11/);
- assert.match(report,/driver-records[.]mjs[?]v=20261110-unified-v11/);
+ assert.match(html,/driver-records[.]css[?]v=20261109-customer-save-fix-v1/);
+ assert.match(report,/driver-records[.]mjs[?]v=20261109-customer-save-fix-v1/);
  assert.doesNotMatch([source,css].join('\n'),/innerHTML|SUPABASE_SERVICE_ROLE_KEY|sb_secret_/);
 });
 
