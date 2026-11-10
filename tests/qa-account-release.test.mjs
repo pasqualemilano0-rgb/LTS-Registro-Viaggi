@@ -265,7 +265,7 @@ test('credentials are mandatory and pre-registration data stays recoverable',()=
 test('external file import cannot replace account data silently',()=>{
  const source=app;
  assert.ok(source.includes("unionStates(previous,imported,{prefer:null})"));
- assert.ok(source.includes("unionStates(D.validateState(state),imported,{prefer:null})"));
+ assert.ok(source.includes("unionStates(D.validateState(state),imported,{prefer:null,choices})"));
  assert.ok(source.includes('Scarica backup del registro attuale'));
  assert.ok(source.includes('Unisci i due registri'));
  assert.ok(source.includes("await accountAccess.verifySession()"));
