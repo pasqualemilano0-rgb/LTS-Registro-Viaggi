@@ -158,14 +158,22 @@ export function createTrip(input, state, existing = null) {
   const sameSecond = existing && normalizeText(existing.secondClient) === trip.secondClient && normalizeText(existing.secondCity) === trip.secondCity;
   const extraCents = emptyExtraRates();
   for (const service of trip.services) {
-    const retained = existing?.services?.includes(service) ? existing.extraCents?.[service] ?? null : null;
-    extraCents[service] = checkCents(state.extraRates[service] ?? retained, 'Extra', true);
+    // Editing an already-selected service preserves the stored snapshot,
+    // even when the historic price was explicitly unconfigured (null).
+    const unchanged = Boolean(existing?.services?.includes(service));
+    const price = unchanged ? existing.extraCents?.[service] ?? null
+      : state.extraRates[service];
+    extraCents[service] = checkCents(price, 'Extra', true);
   }
   return {
     ...trip,
     id: id(existing?.id ?? input.id ?? newId()),
-    fareCents: checkCents(findTariff(state, trip.client, trip.city)?.cents ?? (sameFirst ? existing.fareCents : null), 'Trasferta', true),
-    secondFareCents: trip.secondCity ? checkCents(findTariff(state, trip.secondClient, trip.secondCity)?.cents ?? (sameSecond ? existing.secondFareCents : null), 'Seconda trasferta', true) : null,
+    // A change in the company/private catalog never silently reprices an
+    // unchanged pickup when an already saved trip is edited.
+    fareCents: checkCents(sameFirst ? existing.fareCents :
+      findTariff(state, trip.client, trip.city)?.cents ?? null, 'Trasferta', true),
+    secondFareCents: trip.secondCity ? checkCents(sameSecond ? existing.secondFareCents :
+      findTariff(state, trip.secondClient, trip.secondCity)?.cents ?? null, 'Seconda trasferta', true) : null,
     sumPickupFares: Boolean(trip.secondCity),
     extraCents,
     createdAt: timestamp(existing?.createdAt, now),
