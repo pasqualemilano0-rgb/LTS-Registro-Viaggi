@@ -27,6 +27,8 @@ export function setupMapsApprovals(account,{onApproved=()=>{}}={}){
  }
  function updateBadge(){
   const n=loaded?requests.length:0;
+  panel.dataset.empty=String(loaded&&n===0);
+  panel.dataset.pending=String(loaded&&n>0);
   count.textContent=loaded?String(n):'—';
   badge.textContent=n>0?(n>99?'99+':String(n)):'';
   badge.hidden=n===0;

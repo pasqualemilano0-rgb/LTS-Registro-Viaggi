@@ -1,0 +1,411 @@
+/* LTS Control Center v11: a unified, dense, readable administration workspace.
+ * Only presentation: auth, MFA, route ownership, offline behavior and APIs are unchanged.
+ * Loaded after all previous visual styles to preserve the original functional modules.
+ */
+:root {
+  --cc11-ink:#142c3c;
+  --cc11-muted:#5b7280;
+  --cc11-slate:#102b40;
+  --cc11-teal:#087d79;
+  --cc11-green:#008979;
+  --cc11-bg:#f3f7f9;
+  --cc11-line:#dce7ed;
+  --cc11-hover:#eaf7f6;
+  --cc11-shadow:0 5px 22px rgba(27,61,81,.045);
+}
+html{background:var(--cc11-bg)}
+body{background:linear-gradient(180deg,#f7fafb 0,#f2f7f9 310px,#f4f7fa 100%);color:var(--cc11-ink)}
+.topbar{min-height:66px;padding:9px clamp(14px,2.1vw,30px);box-shadow:none;border-bottom:1px solid #e1e9ed}
+.topbar .brand{gap:9px;min-width:0}
+.topbar .brand img{width:41px;height:41px;object-fit:contain}
+.topbar .brand strong{font-size:20px;color:#143245;line-height:1.1}
+.topbar .brand small{font-size:11px;letter-spacing:.01em;color:#627c89}
+.topbar .top-actions{gap:8px}
+.topbar .top-actions .button{min-height:39px;padding:8px 12px;border-radius:11px}
+.topbar #smart-command-open{background:#eaf7f5;border-color:#b5dcda;color:#11655f}
+.topbar #logout{background:#fff;color:#315464}
+.container{width:100%;max-width:1660px;padding:clamp(12px,1.6vw,22px) clamp(12px,2.2vw,32px) 80px}
+#dashboard{min-width:0;--dash-line:var(--cc11-line);--dash-ink:var(--cc11-ink);--dash-muted:var(--cc11-muted)}
+#dashboard [hidden]{display:none!important}
+#dashboard button,#dashboard a,#dashboard input,#dashboard select{touch-action:manipulation}
+#dashboard button:focus-visible,#dashboard a:focus-visible,
+#dashboard input:focus-visible,#dashboard select:focus-visible,
+#dashboard summary:focus-visible{outline:3px solid #1bafa4;outline-offset:2px}
+#dashboard .surface,#dashboard .stat,#dashboard .company-rates-editor,
+#dashboard .company-rates-catalog,#dashboard .records-hero,
+#dashboard .records-worklist,#dashboard .records-editor,
+#dashboard .status-admin-card,#dashboard .customer-directory-kpi,
+#dashboard .records-count,#dashboard .pro-trend-panel{
+ background:#fff;border:1px solid var(--cc11-line);
+ border-radius:16px;box-shadow:var(--cc11-shadow)}
+#dashboard .surface,#dashboard .company-rates-editor{padding:clamp(15px,1.8vw,24px)}
+#dashboard .surface h2,#dashboard .surface h3,#dashboard .company-rates-editor h2,
+#dashboard .records-hero h1,#dashboard .page-intro h1{
+ color:#152f40;line-height:1.23;letter-spacing:-.028em}
+#dashboard .surface h2,#dashboard .company-rates-editor h2{font-size:clamp(18px,2vw,23px)}
+#dashboard .eyebrow{font-size:10px;font-weight:850;letter-spacing:.1em;color:#057c7d}
+#dashboard .hint,#dashboard .footnote,#dashboard .records-note,
+#dashboard .company-rates-note,#dashboard .company-rates-guide,
+#dashboard .company-rates-status,#dashboard .report-source,
+#dashboard .report-warning,#dashboard .report-status,
+#dashboard .customer-directory-heading p:not(.eyebrow){
+ line-height:1.53;color:var(--cc11-muted)}
+#dashboard .button{min-height:40px;border-radius:10px;font-weight:750;box-shadow:none}
+#dashboard .button.primary{background:#087d79;border:1px solid #087d79;color:#fff;box-shadow:none}
+#dashboard .button.primary:hover{background:#075d60}
+#dashboard .button.outline{background:#fff;border-color:#cbdde5;color:#1e5363}
+#dashboard .button.outline:hover{background:var(--cc11-hover);border-color:#9dcfca}
+#dashboard input:not([type=checkbox]),#dashboard select,#dashboard textarea{
+ min-height:42px;background:#fcfefe;border:1px solid #cbdce4;color:#1d4052;
+ border-radius:10px;box-shadow:none}
+#dashboard input:focus,#dashboard select:focus,#dashboard textarea:focus{
+ border-color:#18a098;background:#fff}
+#dashboard .stat-grid{gap:11px}
+#dashboard .stat{padding:16px 17px}
+#dashboard .stat:before{height:3px;background:#20ab9c}
+#dashboard .stat span{color:#5b7180;font-size:12px;line-height:1.35}
+#dashboard .stat strong{font-variant-numeric:tabular-nums;letter-spacing:-.04em;color:#123245}
+#dashboard .main-grid{gap:14px}
+#dashboard .main-grid .side-column{gap:14px}
+#dashboard .driver-row,#dashboard .report-person-card,
+#dashboard .company-rate-row,#dashboard .company-site-row,
+#dashboard .customer-directory-row,#dashboard .pro-alert-item,
+#dashboard .pro-record,#dashboard .records-list article{
+ border:1px solid #e0eaee;border-radius:13px;background:#fcfefe;box-shadow:none}
+#dashboard .driver-row:hover,#dashboard .report-person-card:hover,
+#dashboard .company-rate-row:hover{border-color:#9ad3cc;background:#f8fdfc}
+#dashboard .report-filter-panel,#dashboard .pro-trend-panel,#dashboard .pro-alerts-panel{
+ padding:clamp(15px,1.8vw,23px)}
+#dashboard .report-filters,#dashboard .pro-filters,
+#dashboard .records-controls,#dashboard .company-rates-fields{gap:10px}
+#dashboard .report-filters label,#dashboard .records-controls label,
+#dashboard .company-rates-fields label{font-size:12px;font-weight:730;color:#446474}
+#dashboard .records-page,#dashboard #report-panel,#dashboard #management-panel{min-width:0}
+#dashboard #report-panel>*,#dashboard #management-panel>*{min-width:0}
+#dashboard .records-hero{padding:clamp(17px,2.3vw,28px);background:linear-gradient(120deg,#fff,#f3f9fa)}
+#dashboard .records-hero h1{font-size:clamp(24px,2.8vw,32px);margin:5px 0 7px}
+#dashboard .records-hero p{font-size:13px;line-height:1.5;color:#5c7480}
+#dashboard .records-counts{gap:10px}
+#dashboard .records-count{padding:13px 14px}
+#dashboard .records-count strong{color:#11374c;font-variant-numeric:tabular-nums}
+#dashboard .records-tabs{gap:7px}
+#dashboard .records-tabs button{border-radius:11px;min-height:40px}
+#dashboard .records-controls,#dashboard .records-head{align-items:end}
+#dashboard .records-worklist{padding:16px}
+#dashboard .company-rates-heading{background:linear-gradient(120deg,#fff,#f0f8f8);
+ border:1px solid var(--cc11-line);border-radius:16px;
+ padding:clamp(18px,2vw,27px);gap:14px}
+#dashboard .company-rates-heading h1{font-size:clamp(24px,3vw,32px);letter-spacing:-.035em}
+#dashboard .company-rates-heading p{color:#59727f;line-height:1.48}
+#dashboard #company-rates{display:grid;gap:13px}
+#dashboard #company-rates>*{min-width:0}
+#dashboard #company-rates .company-rates-editor,
+#dashboard #company-rates .company-rates-catalog{margin-top:0}
+#dashboard .company-rates-editor form{min-width:0}
+#dashboard .company-rates-catalog{padding:clamp(15px,2vw,23px)}
+#dashboard .company-rates-catalog-head{gap:10px}
+#dashboard #company-rates-search{min-width:0}
+#dashboard .company-rates-actions{gap:9px}
+#dashboard .company-maps-link-row{gap:9px}
+#dashboard .customer-overview .customer-directory-kpi{
+ border-color:#e0e9ed;box-shadow:none}
+#dashboard .customer-directory-heading{gap:14px}
+#dashboard .customer-directory-kpis{gap:9px}
+#dashboard .customer-directory-kpi strong{font-variant-numeric:tabular-nums}
+#dashboard #pro-insights{gap:13px}
+#dashboard .pro-compare-grid{gap:12px}
+#dashboard .pro-variation,#dashboard .pro-comparison,
+#dashboard .pro-breakdowns>.surface{border-color:var(--cc11-line)}
+#dashboard .pro-trend-panel h3,#dashboard .pro-alerts-panel h3{font-size:19px}
+#dashboard .report-graphs{gap:12px}
+#dashboard .report-graph-card,#dashboard .report-directory,
+#dashboard .report-register{padding:18px}
+#dashboard .report-bar-progress{border-radius:99px}
+#dashboard .report-table-scroll{overflow-x:auto;border-radius:11px}
+#dashboard .report-table{border-collapse:separate;border-spacing:0}
+#dashboard .report-table th{background:#edf5f7;color:#385a6c;font-size:12px}
+#dashboard .report-table td{color:#284757;font-size:13px}
+#dashboard .console-security{background:#fff}
+#dashboard .status-admin-card{box-shadow:none}
+#dashboard .console-security-actions{gap:9px}
+#dashboard .report-sync-pill{box-shadow:none}
+
+/* One shared, live section heading for the whole application. */
+#dashboard .workspace-bar{min-width:0;display:flex;align-items:center;
+ justify-content:space-between;gap:16px;padding:6px 2px 11px;
+ border-bottom:1px solid #e1e9ed;background:transparent}
+#dashboard .workspace-copy{min-width:0}
+#dashboard .workspace-kicker{display:flex;align-items:center;gap:7px;
+ margin:0 0 5px;font-size:10px;line-height:1.2;font-weight:850;
+ letter-spacing:.12em;color:#087f7c}
+#dashboard .workspace-mark{width:8px;height:8px;flex:none;border-radius:3px;background:#07a494}
+#dashboard .workspace-bar h1{font-size:clamp(24px,2.7vw,34px);font-weight:850;letter-spacing:-.043em;
+ line-height:1.15;margin:0;color:#102d3e}
+#dashboard .workspace-bar p:not(.workspace-kicker){font-size:12px;line-height:1.45;
+ color:#617784;margin:6px 0 0;max-width:74ch}
+#dashboard .workspace-tools{flex:none;display:flex;align-items:center;gap:9px}
+#dashboard .workspace-verified{display:inline-flex;align-items:center;gap:6px;
+ color:#496878;font-size:11px;font-weight:700;white-space:nowrap}
+#dashboard .workspace-verified span{width:7px;height:7px;border-radius:50%;
+ background:#22b294}
+#dashboard .workspace-search{border:1px solid #c7dde3;border-radius:10px;
+ padding:10px 13px;min-height:40px;background:#fff;color:#1b5162;
+ font-size:12px;font-weight:780;white-space:nowrap;
+ box-shadow:0 2px 10px #0d3c4908}
+#dashboard .workspace-search span{font-size:19px;margin-right:4px;vertical-align:-1px}
+#dashboard .workspace-search:hover{background:#f0faf9;border-color:#8ecfc8}
+
+/* Consistent desktop sidebar, with scroll for small laptop screens. */
+@media(min-width:1030px){
+ #dashboard{display:grid;grid-template-columns:228px minmax(0,1fr);
+  grid-template-rows:auto minmax(0,1fr);align-items:start;
+  column-gap:21px;row-gap:15px}
+ #dashboard>.admin-switch{grid-column:1;grid-row:1 / span 2;
+  position:sticky;top:12px;max-height:calc(100dvh - 24px);overflow-y:auto;
+  min-height:min(85dvh,800px);padding:16px 11px;
+  background:#122f43;border:1px solid #23465a;
+  border-radius:17px;box-shadow:0 10px 25px #12384a1f}
+ #dashboard>.admin-switch:after{display:none}
+ #dashboard>.workspace-bar{grid-column:2;grid-row:1}
+ #dashboard>#management-panel,#dashboard>#report-panel,
+ #dashboard>#admin-records-panel{grid-column:2;grid-row:2}
+ #dashboard .admin-nav-brand{margin:3px 9px 17px}
+ #dashboard .admin-nav-name,#dashboard .admin-nav-name small{color:#fff}
+ #dashboard .admin-nav-caption{margin:0 13px 8px;color:#a7c5d0}
+ #dashboard>.admin-switch .admin-switch-button{
+  min-height:46px;margin:1px 0;padding:10px 12px;
+  font-size:12px;gap:12px;border:1px solid transparent;
+  color:#d7e9ec;background:transparent;border-radius:10px}
+ #dashboard>.admin-switch .admin-switch-button.selected{
+  color:#0f5360;background:#e7f7f4;border-color:#b5dfd9;
+  box-shadow:inset 3px 0 #00a494}
+ #dashboard>.admin-switch .admin-switch-button:not(.selected):hover{
+  background:#ffffff18;color:#fff}
+ #dashboard .admin-nav-help{margin-top:auto;padding:13px 8px 3px}
+}
+
+/* Home: first show actionable customer approvals, then real synced KPIs.
+   The quick actions are a horizontal, touch-friendly ribbon (not nine huge tiles). */
+#dashboard[data-view="overview"] #report-panel{
+ display:flex;flex-direction:column;gap:12px}
+#dashboard[data-view="overview"] #report-panel>#maps-approvals{order:1}
+#dashboard[data-view="overview"] #report-panel>.report-kpis{order:2}
+#dashboard[data-view="overview"] #report-panel>#console-overview{order:3}
+#dashboard[data-view="overview"] #report-panel>.report-hero{order:4}
+#dashboard[data-view="overview"] #report-panel>.report-filter-panel{order:5}
+#dashboard[data-view="overview"] #report-panel>#pro-insights{order:6}
+#dashboard[data-view="overview"] #report-panel>.report-kpis{
+ display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+#dashboard[data-view="overview"] #report-panel .report-kpi{
+ padding:14px 15px;min-height:111px;border-radius:14px;
+ background:#fff!important;border:1px solid #dce7e9;box-shadow:none}
+#dashboard[data-view="overview"] #report-panel .report-kpi::before{
+ top:0;left:0;width:100%;height:3px;background:#12a598;border-radius:0}
+#dashboard[data-view="overview"] #report-panel .report-kpi:after{display:none}
+#dashboard[data-view="overview"] #report-panel .report-kpi:nth-child(4)::before{background:#e5a54a}
+#dashboard[data-view="overview"] #report-panel .report-kpi span{
+ margin-top:5px;font-size:12px;font-weight:720;color:#466775}
+#dashboard[data-view="overview"] #report-panel .report-kpi strong{
+ font-size:clamp(22px,2.5vw,31px);margin:7px 0 1px;line-height:1.06;color:#173e51}
+#dashboard[data-view="overview"] #report-panel .report-kpi small{
+ font-size:11px;line-height:1.35;color:#687f8a;margin-top:5px}
+#dashboard[data-view="overview"] #console-overview{
+ order:3;display:flex!important;flex-direction:column!important;
+ align-items:stretch!important;gap:12px!important;
+ margin:0!important;min-height:0!important;
+ padding:17px 18px 13px!important;border-radius:17px!important;
+ background:linear-gradient(115deg,#102f43 0%,#164d59 70%,#126969 100%)!important;
+ border:1px solid #2a5f67!important;box-shadow:none!important}
+#dashboard[data-view="overview"] #console-overview:before{
+ width:140px;height:140px;border-width:32px;top:-65px;right:-50px}
+#dashboard[data-view="overview"] #console-overview .eyebrow{
+ color:#9de1d2;letter-spacing:.12em;font-size:10px}
+#dashboard[data-view="overview"] #console-overview h2{
+ color:#fff!important;font-size:21px!important;line-height:1.15!important;
+ margin:2px 0 0!important;letter-spacing:-.035em}
+#dashboard[data-view="overview"] #console-overview p:not(.eyebrow){
+ color:#d7e9ed!important;font-size:12px!important;line-height:1.35!important;
+ margin:4px 0 0!important;max-width:none}
+#dashboard[data-view="overview"] .console-shortcuts{
+ display:flex!important;flex-direction:row;flex-wrap:nowrap!important;
+ width:100%!important;min-width:0!important;max-width:none!important;
+ gap:8px!important;overflow-x:auto;overflow-y:hidden;
+ padding:2px 3px 9px;scroll-snap-type:x proximity;scrollbar-width:thin;
+ scrollbar-color:#79b3b6 transparent}
+#dashboard[data-view="overview"] .console-shortcuts button{
+ flex:0 0 160px!important;min-width:0!important;min-height:47px!important;
+ max-width:none!important;padding:9px 12px!important;
+ border:1px solid #88b8ba60!important;border-radius:11px!important;
+ background:#ffffff16!important;color:#f5ffff!important;
+ box-shadow:none!important;text-align:left;font-size:12px!important;
+ line-height:1.25!important;font-weight:750;
+ scroll-snap-align:start;white-space:normal}
+#dashboard[data-view="overview"] .console-shortcuts button:hover{
+ background:#ffffff2b!important;border-color:#c8efdf90!important}
+#dashboard[data-view="overview"] .console-shortcuts button span{color:#a8ebd9!important;font-size:18px}
+#dashboard[data-view="overview"] .console-swipe-hint{
+ display:none;margin:0!important;color:#d3e8e8;font-size:10px;letter-spacing:.02em}
+#dashboard[data-view="overview"] #report-panel .report-hero{
+ padding:13px 16px!important;min-height:0!important;margin:0!important;
+ align-items:center!important;border-radius:14px!important;gap:12px;
+ border-color:#dee9ed!important;box-shadow:none!important}
+#dashboard[data-view="overview"] #report-panel .report-hero-main{display:none}
+#dashboard[data-view="overview"] #report-panel .report-hero-action{
+ display:flex;flex-wrap:wrap;gap:8px;align-items:center;width:100%;padding:0!important;
+ border:0!important}
+#dashboard[data-view="overview"] #report-panel .report-hero-action>span{
+ font-size:11px;color:#536f7b}
+#dashboard[data-view="overview"] #report-panel .report-hero-action>strong{font-size:16px;color:#173a4e}
+#dashboard[data-view="overview"] #report-panel .report-refresh-button{
+ background:#e8f5f4;color:#0f6265;border:1px solid #bcded9;
+ min-height:37px;border-radius:9px;padding:7px 11px;font-size:12px}
+#dashboard[data-view="overview"] #report-panel .report-filter-panel{
+ padding:16px!important;border-radius:14px!important}
+#dashboard[data-view="overview"] #report-panel .report-filter-heading h2{font-size:17px}
+#dashboard[data-view="overview"] #pro-insights .pro-trend-panel,
+#dashboard[data-view="overview"] #pro-insights .pro-variation{border-radius:15px}
+#dashboard #maps-approvals{
+ border-radius:15px;border:1px solid #d5e6e6;padding:16px 19px;
+ background:#fff;box-shadow:none;min-width:0}
+#dashboard #maps-approvals[data-pending="true"]{
+ border-color:#eacb9f;border-left:4px solid #d28e31;
+ background:linear-gradient(110deg,#fffefa,#fff)}
+#dashboard .maps-approvals-head{align-items:center;gap:11px}
+#dashboard .maps-approvals-head h2{
+ display:flex;align-items:center;flex-wrap:wrap;gap:10px;
+ font-size:clamp(17px,1.9vw,21px);color:#1a4052;margin:4px 0 5px}
+#dashboard .maps-approvals-head .eyebrow{color:#0d8580}
+#dashboard .maps-approvals-head p:not(.eyebrow){font-size:12px;line-height:1.45;color:#627985}
+#dashboard #maps-approvals-refresh{min-height:38px;white-space:nowrap;font-size:12px}
+#dashboard .maps-approval-counter{min-width:27px;height:27px;font-size:13px;
+ border-radius:8px;background:#e3f3f0;color:#08736b}
+#dashboard #maps-approvals[data-pending="true"] .maps-approval-counter{
+ color:#89581f;background:#fff0d8}
+#dashboard .maps-approvals-status{margin-top:8px;font-size:12px}
+#dashboard .maps-approvals-list{margin-top:9px}
+#dashboard #maps-approvals[data-empty="true"]{padding:12px 16px}
+#dashboard #maps-approvals[data-empty="true"] .maps-approvals-head p:not(.eyebrow),
+#dashboard #maps-approvals[data-empty="true"] .maps-approval-empty{display:none}
+#dashboard #maps-approvals[data-empty="true"] .maps-approvals-head h2{font-size:17px;margin:1px 0 2px}
+#dashboard #maps-approvals[data-empty="true"] .maps-approvals-status{margin:3px 0 0}
+#dashboard #maps-approvals[data-empty="true"] .maps-approvals-list{display:none}
+#dashboard .maps-approval-card{box-shadow:none}
+#dashboard .maps-approval-controls{gap:9px}
+
+/* Mobile and tablet: small topbar, sticky 5-icon navigation, dense cards. */
+@media(max-width:1029px){
+ #dashboard{display:block}
+ #dashboard>.admin-switch{position:sticky;top:0;z-index:70;
+  display:grid;grid-template-columns:repeat(5,minmax(0,1fr));
+  padding:5px;gap:4px;margin:0 0 10px;min-height:0;
+  border:1px solid #d4e4e8;border-radius:13px;
+  background:rgba(249,252,252,.96);box-shadow:0 5px 19px #17374c12;
+  backdrop-filter:blur(12px)}
+ #dashboard>.admin-switch>.admin-switch-button,
+ #dashboard>.admin-switch>.admin-nav-more>.admin-nav-more-toggle{
+  min-height:58px;height:58px;margin:0;padding:6px 2px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:3px;border-radius:9px;font-size:11px;line-height:1.08;
+  color:#476674}
+ #dashboard>.admin-switch>.admin-switch-button.selected{
+  border-color:#bfe1de;background:#e8f8f4;color:#075e63;
+  box-shadow:none}
+ #dashboard>.admin-switch>.admin-nav-more.has-active-section>.admin-nav-more-toggle,
+ #dashboard>.admin-switch>.admin-nav-more[open]>.admin-nav-more-toggle{
+  background:#e8f8f4;color:#075e63;border-color:#bfe1de;box-shadow:none}
+ #dashboard>.admin-switch .admin-nav-icon{width:21px;height:21px;font-size:19px}
+ #dashboard .admin-nav-svg{width:20px;height:20px}
+ #dashboard>.admin-switch>.admin-nav-more>.admin-nav-more-items{
+  border:1px solid #d7e5ea;border-radius:13px;padding:7px;
+  box-shadow:0 15px 34px #143b5126;background:#fff}
+ #dashboard>.admin-switch>.admin-nav-more .admin-nav-more-items .admin-switch-button{
+  border-radius:9px;min-height:48px;padding:10px 11px;font-size:12px}
+ #dashboard>.workspace-bar{margin:0 0 11px;padding:3px 1px 11px}
+ #dashboard .workspace-bar h1{font-size:clamp(21px,3.5vw,27px)}
+ #dashboard .workspace-bar p:not(.workspace-kicker){font-size:11px;margin-top:4px}
+ #dashboard .workspace-search{padding:8px 10px}
+ #dashboard .workspace-verified{display:none}
+ #dashboard[data-view="overview"] #report-panel>.report-kpis{
+  grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+ #dashboard[data-view="overview"] #report-panel .report-kpi{
+  min-height:100px;padding:13px 14px}
+ #dashboard[data-view="overview"] #report-panel .report-kpi strong{
+  font-size:clamp(23px,4.6vw,29px)}
+ #dashboard[data-view="overview"] #console-overview{
+  padding:13px 14px 10px!important;gap:9px!important}
+ #dashboard[data-view="overview"] #console-overview h2{font-size:19px!important}
+ #dashboard[data-view="overview"] #console-overview p:not(.eyebrow){font-size:11px!important}
+ #dashboard[data-view="overview"] .console-shortcuts{gap:7px!important;padding-bottom:7px}
+ #dashboard[data-view="overview"] .console-shortcuts button{
+  flex-basis:144px!important;min-height:45px!important;font-size:11px!important;
+  padding:9px 11px!important}
+ #dashboard[data-view="overview"] .console-swipe-hint{
+  display:block!important;font-size:10px!important;color:#d0e6e6!important;margin:0!important}
+ #dashboard #maps-approvals{padding:13px}
+ #dashboard #maps-approvals-refresh{flex:none;width:auto}
+ #dashboard .company-rates-heading,#dashboard .records-hero{padding:16px}
+ #dashboard .stat-grid{gap:8px}
+ #dashboard .stat{padding:13px}
+ #dashboard .records-counts{gap:8px}
+ #dashboard .records-count{padding:12px}
+ #dashboard .report-graphs{gap:10px}
+ #dashboard .company-rates-editor{padding:15px}
+ #dashboard .customer-directory-kpis{gap:8px}
+}
+@media(max-width:680px){
+ .topbar{min-height:60px;padding:8px 12px}
+ .topbar .brand img{width:35px;height:35px}
+ .topbar .brand strong{font-size:18px}
+ .topbar .brand small{font-size:10px}
+ .topbar .top-actions{gap:6px}
+ .topbar .top-actions .button{padding:8px 10px;min-height:36px;font-size:12px}
+ .container{padding:11px 11px 74px}
+ #dashboard>.workspace-bar{gap:8px}
+ #dashboard .workspace-bar h1{font-size:22px}
+ #dashboard .workspace-bar p:not(.workspace-kicker){font-size:11px}
+ #dashboard .workspace-search{font-size:0;min-width:38px;min-height:38px;padding:7px}
+ #dashboard .workspace-search span{font-size:22px;margin:0}
+ #dashboard .page-intro h1,#dashboard .company-rates-heading h1{font-size:25px}
+ #dashboard .records-hero h1{font-size:24px}
+ #dashboard .stat-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ #dashboard .report-filters{grid-template-columns:1fr}
+ #dashboard .company-rates-heading{align-items:stretch;flex-wrap:wrap}
+ #dashboard .company-rates-heading .button{width:100%}
+ #dashboard .records-controls{flex-wrap:wrap}
+ #dashboard .records-controls>*{min-width:0}
+ #dashboard .company-rates-catalog-head{flex-wrap:wrap}
+ #dashboard #company-rates-search{width:100%}
+ #dashboard #maps-approvals .maps-approvals-head{flex-wrap:wrap;align-items:center}
+ #dashboard #maps-approvals .maps-approvals-head .button{width:100%}
+ #dashboard #maps-approvals[data-empty="true"] .maps-approvals-head{
+  flex-direction:row;justify-content:space-between;flex-wrap:nowrap}
+ #dashboard #maps-approvals[data-empty="true"] .maps-approvals-head .button{
+  width:auto;min-width:0;white-space:nowrap;padding:7px 9px;min-height:35px}
+ #dashboard #maps-approvals[data-empty="true"] .maps-approvals-head .eyebrow{font-size:9px}
+ #dashboard #maps-approvals[data-empty="true"] .maps-approvals-head h2{font-size:15px}
+ #dashboard #maps-approvals .maps-approval-controls{grid-template-columns:1fr 1fr}
+ #dashboard #maps-approvals .maps-approval-controls label{grid-column:1/-1}
+ #dashboard #maps-approvals .maps-approval-controls .button{min-width:0}
+ #dashboard .records-head{flex-wrap:wrap}
+ #dashboard .report-table-scroll{margin-inline:-2px}
+ #dashboard .pro-trend-months{overflow-x:auto}
+ #dashboard .customer-directory-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:370px){
+ .topbar #smart-command-open{font-size:0;padding:8px;min-width:36px}
+ .topbar #smart-command-open::first-letter{font-size:15px}
+ #dashboard[data-view="overview"] #report-panel .report-kpi{
+  min-height:94px;padding:11px}
+ #dashboard[data-view="overview"] #report-panel .report-kpi strong{font-size:22px}
+ #dashboard #maps-approvals[data-empty="true"] .maps-approvals-head h2{font-size:14px}
+}
+@media(prefers-reduced-motion:reduce){
+ #dashboard *,#dashboard *::before,#dashboard *::after{transition:none!important;scroll-behavior:auto!important}
+}
+@media print{
+ #dashboard>.workspace-bar{display:none!important}
+ #dashboard[data-view="overview"] #console-overview{background:#fff!important;color:#111!important}
+ #dashboard[data-view="overview"] #console-overview h2,
+ #dashboard[data-view="overview"] #console-overview p{color:#111!important}
+ #dashboard[data-view="overview"] .console-shortcuts{overflow:visible;flex-wrap:wrap!important}
+}
