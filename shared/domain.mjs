@@ -397,19 +397,13 @@ export function reconcileTripTariffs(state) {
  return validateState(state);
 }
 
-/** Changed extra rates update selected snapshots across all months; daily allocation is derived. */
+/** Changing the private extra-rate catalog never reprices recorded journeys.
+ * Every saved trip carries immutable fare and extra snapshots; edits to a
+ * historical journey must be explicit, reviewed and separately audited.
+ */
 export function upsertExtraRates(state, input) {
-  const extraRates = normalizeRates(input, 'Tariffe extra');
-  const changed = SERVICES.filter(service => state.extraRates[service.key] !== extraRates[service.key]).map(service => service.key);
-  const now = new Date().toISOString();
-  const trips = state.trips.map(trip => {
-    const extraCents = { ...trip.extraCents };
-    for (const service of changed) {
-      if (trip.services.includes(service)) extraCents[service] = extraRates[service];
-    }
-    return updateTripFields(trip, { extraCents }, now);
-  });
-  return validateState({ ...state, extraRates, trips });
+ const extraRates = normalizeRates(input, 'Tariffe extra');
+ return validateState({ ...state, extraRates });
 }
 
 /** Customer name corrections stay aligned with tariff entries and both pickups. */
@@ -451,11 +445,8 @@ export function upsertTariff(state, input) {
   const tariff = { id: tariffId, customerId: customer.id, client, city, cents };
   const tariffs = state.tariffs.some(item => item.id === tariffId) ? state.tariffs.map(item => item.id === tariffId ? tariff : item) : [...state.tariffs, tariff];
   const now = new Date().toISOString();
-  const trips = state.trips.map(trip => updateTripFields(trip, {
-    fareCents: normalizeText(trip.client) === client && normalizeText(trip.city) === city ? cents : trip.fareCents,
-    secondFareCents: trip.secondCity && normalizeText(trip.secondClient) === client && normalizeText(trip.secondCity) === city ? cents : trip.secondFareCents,
-  }, now));
-  return validateState({ ...state, customers, tariffs, trips });
+  // Existing trip snapshots must remain unchanged when a base tariff changes.
+  return validateState({ ...state, customers, tariffs });
 }
 
 /** Save a customer and only its edited tariff rows as one immutable operation. */
