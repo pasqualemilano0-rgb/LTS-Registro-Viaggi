@@ -530,15 +530,21 @@ function renderAssistantLogisticaPilot(main){
  const panel=el('section',{class:'assistant-compact assistant-mini-panel lts-copilota',
   'aria-label':'LTS Copilota - inserimento guidato',hidden:'hidden'});
  const content=el('div',{class:'lts-copilota-content'});
+ const stepper=el('div',{class:'lts-copilota-stepper','aria-label':'Avanzamento inserimento viaggio'});
  const progress=el('p',{class:'lts-copilota-progress','aria-live':'polite'});
  const setOpen=open=>{panel.hidden=!open;toggle.setAttribute('aria-expanded',String(open));if(open)renderStep();};
  const button=(label,action,secondary=false)=>el('button',{type:'button',class:secondary?'lts-copilota-secondary':'lts-copilota-primary',on:{click:action}},label);
  const title=(heading,description)=>{content.append(el('h3',{},heading),el('p',{class:'lts-copilota-description'},description));};
  const renderStep=()=>{
   content.replaceChildren();
-  progress.textContent=step===0?'LTS · Inserimento guidato':('Passaggio '+step+' di 4');
+  progress.textContent=step===0?'Il tuo assistente per i viaggi':('Passaggio '+step+' di 4');
+  stepper.replaceChildren();
+  for(const [index,label] of ['Container','Cliente','Servizi','Riepilogo'].entries()){
+   const n=index+1;
+   stepper.append(el('span',{class:'lts-copilota-step'+(step===n?' is-active':step>n?' is-complete':''),'aria-current':step===n?'step':null},el('b',{},step>n?'✓':String(n)),el('small',{},label)));
+  }
   if(step===0){
-   title('Cosa vuoi fare?','Ti aiuto a preparare un viaggio in pochi passaggi, utilizzando i clienti disponibili nel tuo account.');
+   title('Nuovo viaggio','Compiliamo insieme il viaggio in quattro semplici passaggi, con i dati del tuo account.');
    content.append(button('INSERISCI VIAGGIO',()=>{step=1;renderStep();}));
    if(container||selected)content.append(button('Ricomincia da zero',()=>{container='';selected=null;selectedServices=[];servicesChosen=false;step=1;renderStep();},true));
   }else if(step===1){
@@ -570,7 +576,7 @@ function renderAssistantLogisticaPilot(main){
    const refreshOnFocus=()=>update();field.addEventListener('focus',refreshOnFocus);
    content.append(field,results,button('Indietro',()=>{step=1;renderStep();},true));
   }else if(step===3){
-   title('Servizi extra','Seleziona uno o più servizi oppure Nessun servizio.');
+   title('Servizi extra','Seleziona uno o più servizi oppure Nessun servizio. Le tariffe sono quelle disponibili in LTS.');
    const options=el('div',{class:'lts-copilota-service-options'});
    const makeChoice=(key,label,checked)=>{
     const input=el('input',{type:'checkbox',checked});
@@ -615,9 +621,9 @@ function renderAssistantLogisticaPilot(main){
  };
  panel.append(el('div',{class:'lts-copilota-header'},
   el('img',{src:'/LTS-Registro-Viaggi/assets/assistant-logistica-operator.svg',alt:'',width:'42',height:'42'}),
-  el('div',{},el('strong',{},'LTS Copilota'),progress),
+  el('div',{},el('strong',{},'LTS Copilota 2.0'),progress),
   el('button',{type:'button',class:'assistant-chat-close','aria-label':'Chiudi LTS Copilota',on:{click:()=>setOpen(false)}},'×')),
-  content,
+  stepper,content,
   el('p',{class:'lts-copilota-footnote'},'I dati restano nel modulo LTS finché non confermi il salvataggio.'));
  toggle.addEventListener('click',()=>setOpen(panel.hidden));
  main.append(toggle,panel);

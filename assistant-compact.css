@@ -85,3 +85,24 @@
 @media(max-width:420px){.lts-copilota{padding:16px;gap:9px}.lts-copilota-header strong{font-size:21px}.lts-copilota-content h3{font-size:22px}.lts-copilota-description{font-size:15px}}
 
 .lts-copilota-hint{padding:10px 12px;margin:0;border-radius:10px;background:#eaf5f8;color:#185669;font-size:13px;line-height:1.45}
+
+/* Copilota 2.0: guided mobile design, with accessible four-stage progress. */
+.lts-copilota{background:linear-gradient(180deg,#f3fcfe 0%,#fff 36%);border-radius:23px;border-color:#c6e5eb;box-shadow:0 22px 65px rgba(0,39,65,.25)}
+.lts-copilota-header{background:linear-gradient(120deg,#053c59,#007c93);margin:-16px -16px 0;padding:15px 16px;border-radius:22px 22px 0 0;border:0;color:#fff}
+.lts-copilota-header strong{color:#fff;font-size:21px}
+.lts-copilota-header .lts-copilota-progress{color:#c4f4fa}
+.lts-copilota-header .assistant-chat-close{color:#fff;border:1px solid #a5dbe4;background:#07536b}
+.lts-copilota-stepper{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;padding:7px 0 11px;border-bottom:1px solid #d8edf0}
+.lts-copilota-step{display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center;color:#6c858d;min-width:0}
+.lts-copilota-step b{display:grid;place-items:center;width:30px;height:30px;border-radius:50%;background:#e5eff2;border:1px solid #c7dce1;font-size:14px}
+.lts-copilota-step small{font-size:10px;line-height:1.25;font-weight:700}
+.lts-copilota-step.is-active{color:#006f87}
+.lts-copilota-step.is-active b{background:#007e96;color:#fff;border-color:#007e96;box-shadow:0 0 0 3px #d6f4f9}
+.lts-copilota-step.is-complete{color:#15754e}
+.lts-copilota-step.is-complete b{background:#16875c;color:#fff;border-color:#16875c}
+.lts-copilota-content h3{font-size:23px}
+.lts-copilota-primary{background:linear-gradient(110deg,#00a5b8,#00628b);box-shadow:0 5px 12px rgba(0,106,137,.16)}
+.lts-copilota-secondary{background:#fff}
+.lts-copilota-service-choice:has(input:checked){background:#e3f9ee;border-color:#5bc69a}
+@media(min-width:580px){.lts-copilota-header{margin:-24px -24px 0;padding:20px 24px}}
+@media(max-height:620px){.lts-copilota-stepper{padding:2px 0 5px}.lts-copilota-step b{width:25px;height:25px}.lts-copilota-header{padding-top:10px;padding-bottom:10px}}
