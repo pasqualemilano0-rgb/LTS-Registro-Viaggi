@@ -132,10 +132,7 @@ function revoke(){
  if(typeof window!=='undefined')window.dispatchEvent(new Event('lts-account-locked'));
 }
 async function api(which,body,bearer=null){
- if(navigator.onLine===false){
-   const e=new Error('Connessione assente. I dati salvati sul telefono restano conservati.');
-   e.offline=true;throw e;
- }
+ // Do not trust mobile navigator.onLine: probe the actual account endpoint.
  const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),15000);
  try{
   let result;
@@ -145,8 +142,11 @@ async function api(which,body,bearer=null){
      headers:{Accept:'application/json','Content-Type':'application/json',
        ...(bearer?{Authorization:'Bearer '+bearer}:{})},
      body:JSON.stringify(body)});
-  }catch{
-   const e=new Error('Connessione con il servizio account non riuscita.');e.offline=true;throw e;
+  }catch(error){
+   const e=new Error(error?.name==='AbortError'?'Tempo scaduto per il servizio account.':'Connessione con il servizio account non riuscita.');
+   e.networkUnavailable=true;
+   e.timeout=error?.name==='AbortError';
+   throw e;
   }
   const type=result.headers.get('content-type')||'';
   if(!type.includes('application/json')){
