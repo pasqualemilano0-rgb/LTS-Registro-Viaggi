@@ -80,3 +80,18 @@ test('personal customer picker is MFA-authored and requires explicit saved edit'
  assert.match(styles,/\.records-company-picker \.records-site-results/);
  assert.doesNotMatch(editor,/innerHTML|SUPABASE_SERVICE_ROLE_KEY|sb_secret_/);
 });
+
+test('matching an existing personal customer shows a safe action instead of overwriting',()=>{
+ const editor=read('amministratore/driver-records.mjs');
+ const styles=read('amministratore/driver-records.css');
+ assert.match(editor,/getDuplicate:next=>state[.]customers[.]find/);
+ assert.match(editor,/openDuplicate:existing=>/);
+ assert.match(editor,/openEditor\(current\)/);
+ assert.match(editor,/isDuplicate\(site[.]name\)/);
+ assert.match(editor,/duplicatePanel[.]hidden=!existing/);
+ assert.match(editor,/duplicateInfo[.]textContent=/);
+ assert.match(editor,/Apri cliente già presente/);
+ assert.match(editor,/I viaggi e le tariffe restano invariati|i viaggi e le tariffe restano invariati/);
+ assert.match(styles,/records-existing-duplicate\[hidden\]\{display:none!important\}/);
+ assert.doesNotMatch(editor,/await account[.]adminRecords\('mutate',[\s\S]*?operation:'merge'/);
+});
