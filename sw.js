@@ -1,9 +1,10 @@
 const BASE = "/LTS-Registro-Viaggi/";
 const PREFIX = "lts-iphone-pages-0aa8d087d02b-";
-const CACHE = PREFIX + '20261110-audit-domain-v1';
+const CACHE = PREFIX + '20261110-assistant-compact-v1';
 const CORE = [
   "/LTS-Registro-Viaggi/account-access.mjs",
   "/LTS-Registro-Viaggi/app.css",
+  "/LTS-Registro-Viaggi/assistant-compact.css",
   "/LTS-Registro-Viaggi/visual-theme.css",
   "/LTS-Registro-Viaggi/activation-feedback.css",
   "/LTS-Registro-Viaggi/truck-loader.css",

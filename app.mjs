@@ -525,18 +525,19 @@ function renderAssistantLogisticaPilot(main){
   personalCustomers:state.customers,trips:state.trips,companyCustomers,
   companyRates,companyRatesLoaded,draft});
  if(!session.ready)return;
- const panel=el('section',{class:'panel', 'aria-label':'ASSISTENTE LOGISTICA',style:'margin-bottom:12px;padding:14px'},
-  el('h2',{},'ASSISTENTE LOGISTICA'),
-  el('p',{},'Ricerca guidata nei dati disponibili. Il viaggio si salva nel modulo LTS qui sotto.'));
- const query=el('input',{type:'search',placeholder:'Cerca cliente', 'aria-label':'Cerca cliente con ASSISTENTE LOGISTICA'});
- const results=el('div',{'aria-live':'polite'});
+ const panel=el('section',{class:'assistant-compact','aria-label':'ASSISTENTE LOGISTICA'},
+  el('div',{class:'assistant-compact-heading'},
+   el('span',{class:'assistant-compact-symbol','aria-hidden':'true'},'✦'),
+   el('div',{},el('strong',{},'Assistente Logistica'),el('p',{},'Trova il cliente e compila il viaggio'))));
+ const query=el('input',{type:'search',class:'assistant-compact-search',placeholder:'Cerca cliente o località…',
+  'aria-label':'Cerca cliente con Assistente Logistica',autocomplete:'off'});
+ const results=el('div',{class:'assistant-compact-results','aria-live':'polite'});
  query.addEventListener('input',()=>{
   results.replaceChildren();
-  for(const customer of guidedCustomerSearch(session,query.value).results){
-   results.append(el('button',{type:'button',class:'secondary-button',on:{click:()=>{
-    query.value=customer.name;
-    results.replaceChildren();
-    // Fill the existing form rather than creating a second trip-saving path.
+  if(!query.value.trim())return;
+  const matches=guidedCustomerSearch(session,query.value).results;
+  for(const customer of matches){
+   results.append(el('button',{type:'button',class:'assistant-compact-result',on:{click:()=>{
     const clientInput=main.querySelector('form [name="client"]');
     const cityInput=main.querySelector('form [name="city"]');
     if(!clientInput||!cityInput){toast('Modulo viaggio non disponibile.',true);return;}
@@ -546,14 +547,14 @@ function renderAssistantLogisticaPilot(main){
      input.dispatchEvent(new Event('input',{bubbles:true}));
      input.dispatchEvent(new Event('change',{bubbles:true}));
     }
-    toast('Cliente selezionato nel viaggio. Completa e salva dal modulo LTS.');
-   }}},customer.name+(customer.city?' · '+customer.city:'')));
+    query.value=customer.name;
+    results.replaceChildren();
+    toast('Cliente inserito nel viaggio.');
+   }}},el('span',{},customer.name),el('small',{},customer.city||'')));
   }
+  if(!matches.length)results.append(el('p',{class:'assistant-compact-empty'},'Nessun cliente trovato. Usa “Aggiungi da Google Maps” qui sotto.'));
  });
- panel.append(query,results,el('div',{style:'display:flex;gap:8px;flex-wrap:wrap;margin-top:10px'},
-  el('button',{type:'button',on:{click:()=>navigate('customers')}},'CLIENTI'),
-  el('button',{type:'button',on:{click:()=>navigate('tariffs')}},'TARIFFE'),
-  el('button',{type:'button',on:{click:()=>navigate('porti')}},'PORTI')));
+ panel.append(query,results);
  main.append(panel);
 }
 function renderInsert(main){
