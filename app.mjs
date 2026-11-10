@@ -521,9 +521,7 @@ function companyCustomersPanel(){
 /** Read-only pilot panel; no writes and no duplicate trip submission path. */
 function renderAssistantLogisticaPilot(main){
  if(!store.usingAccount()||!accountAccess.isVerified()||accountAccess.getRole()!=='driver')return;
- const session=createLtsGuidedSnapshot({verified:accountAccess.isVerified(),accountActive:store.usingAccount(),
-  personalCustomers:state.customers,trips:state.trips,companyCustomers,companyRates,companyRatesLoaded,draft});
- if(!session.ready)return;
+ const liveCustomers=()=>combinedTripCustomerChoices({personal:state.customers,trips:state.trips,shared:companyCustomers});
  let step=0,selected=null,container='';
  const toggle=el('button',{type:'button',class:'assistant-mini-toggle',
   'aria-label':'Apri LTS Copilota','aria-expanded':'false',title:'LTS Copilota'},
@@ -557,11 +555,12 @@ function renderAssistantLogisticaPilot(main){
     results.replaceChildren();
     const value=field.value.trim();
     if(!value)return;
-    const matches=guidedCustomerSearch(session,value).results;
-    if(!matches.length){results.append(el('p',{},'Nessun cliente trovato. Verifica il nome nella sezione Clienti.'));return;}
+    const matches=filterTripCustomerChoices(liveCustomers(),value,50);
+    if(!matches.length){results.append(el('p',{},companyCustomersLoaded?'Nessun cliente trovato nell’elenco attuale. Verifica il nome nella sezione Clienti.':'Nessun risultato locale. Il catalogo aziendale potrebbe essere ancora in sincronizzazione.'));return;}
     for(const customer of matches)results.append(button(customer.name+(customer.city?' · '+customer.city:''),()=>{selected=customer;step=3;renderStep();},true));
    };
    field.addEventListener('input',update);
+   const refreshOnFocus=()=>update();field.addEventListener('focus',refreshOnFocus);
    content.append(field,results,button('Indietro',()=>{step=1;renderStep();},true));
   }else{
    title('Riepilogo bozza','Controlla i dati. Nessun viaggio verrà salvato automaticamente.');
