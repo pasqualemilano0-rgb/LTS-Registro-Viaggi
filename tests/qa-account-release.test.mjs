@@ -976,7 +976,7 @@ test('admin wake-up guard preserves unsaved forms on mobile network failure and 
  assert.match(page,/id="admin-resume-guard"/);
  assert.match(page,/id="admin-resume-retry"/);
  assert.match(page,/id="login-password-toggle"/);
- assert.match(page,/admin-login-refreshed[.]css[?]v=20261110-maps-approval-v1/);
+ assert.match(page,/admin-login-refreshed[.]css[?]v=20261110-resume-v1/);
  assert.match(css,/admin-resume-guard/);
  assert.match(css,/admin-login-modern/);
  assert.match(admin,/function showResumeGuard\(/);
