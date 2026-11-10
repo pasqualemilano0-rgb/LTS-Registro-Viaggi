@@ -3,7 +3,7 @@
  * Customer and fare use separate APIs: report partial success if pricing fails.
  */
 import {readMapsCustomer} from '../maps-reader-client.mjs';
-import {sharedMapsCustomers,saveSharedPricedCustomer} from '../shared-maps-client.mjs';
+import {sharedMapsCustomers,saveSharedPricedCustomer} from '../shared-maps-client.mjs?v=20261110-atomic-v1';
 import {customerSiteRateKey} from './customer-overview-model.mjs?v=20261107-client-tariff-sync-v2';
 
 const byId=id=>document.getElementById(id);
