@@ -109,7 +109,7 @@ test('offline worker activates new cache and precaches auth code without caching
 });
 test('HTML entry points are identical and use the new cache buster',()=>{
   assert.equal(html,shell);
-  assert.match(html,/app[.]css[?]v=20261109-porti-sunday-v1/);
+  assert.match(html,/app[.]css[?]v=20261110-driver-resume-v1/);
   assert.match(html,/app[.]mjs[?]v=20\d{6}-[a-z0-9-]+-v\d+/);
   assert.match(html,/<script type="module"/);
 });
@@ -819,7 +819,7 @@ test('complete LTS Scania photo stays still while only the progress bar moves',(
 });
 test('Scania photo waits 2.5 seconds before showing login or personal register',async()=>{
  const start=app.indexOf('const MIN_INITIAL_SPLASH_MS=2500;');
- const end=app.indexOf('\nasync function initialize(){',start);
+ const end=app.indexOf('\nfunction renderSavedSessionConnectionGate(',start);
  assert.ok(start>=0&&end>start,'boot duration logic must be present');
  const code=app.slice(start,end)+'\nreturn {finishInitialTruckLoading,renderFirstBootGate};';
  const trial=async({now=0,connected=true,withLoader=true}={})=>{
@@ -840,7 +840,7 @@ test('Scania photo waits 2.5 seconds before showing login or personal register',
  assert.deepEqual(await trial({now:6900}),{first:true,second:true,timers:[],shown:['Accesso autisti']});
  assert.deepEqual(await trial({connected:false}),{first:false,second:false,timers:[2500],shown:[]});
  assert.deepEqual(await trial({withLoader:false}),{first:true,second:true,timers:[],shown:['Accesso autisti']});
- assert.match(app,/catch\(error\)\{\s*await renderFirstBootGate\(error[.]offline/);
+ assert.match(app,/if\(transientDriverSessionError\(error\)\)\{\s*await renderFirstBootConnectionGate/);
  assert.match(app,/if\(!accountAccess[.]hasSession\(\)\)\{\s*await renderFirstBootGate\(\);return;/);
  assert.match(app,/if\(!\(await finishInitialTruckLoading\(\)\)\)return;\s*render\(\)/);
  assert.match(sw,/const CACHE = PREFIX \+ '20\d{6}-[a-z0-9-]+-v\d+'/);

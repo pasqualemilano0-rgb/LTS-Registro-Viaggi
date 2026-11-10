@@ -6,6 +6,7 @@ import {unionStates} from '/LTS-Registro-Viaggi/shared/sync-merge.mjs';
 import * as store from '/LTS-Registro-Viaggi/client-store.mjs';
 import runtimeConfig from '/LTS-Registro-Viaggi/runtime-config.mjs';
 import * as accountAccess from '/LTS-Registro-Viaggi/account-access.mjs';
+import {createDriverSessionShield,transientDriverSessionError} from '/LTS-Registro-Viaggi/driver-session-guard.mjs';
 import {createLtsRealtime} from '/LTS-Registro-Viaggi/realtime-client.mjs';
 import {sharedMapsEnabled,sharedMapsCustomers,saveSharedMapsCustomer} from '/LTS-Registro-Viaggi/shared-maps-client.mjs?v=20261110-maps-approval-v1';
 import {readMapsCustomer} from '/LTS-Registro-Viaggi/maps-reader-client.mjs';
@@ -2000,21 +2001,48 @@ function renderAccountGate(message=''){
         el('p',{},'I dati precedenti restano sul dispositivo. Dopo l’accesso potrai eseguire un backup e recuperarli nel tuo account.'))));
   root.replaceChildren(gate);
 }
-window.addEventListener('lts-account-locked',()=>{
-  store.lockRevokedAccount();
-  renderAccountGate('Sessione non più autorizzata. Accedi nuovamente.');
+// Keep the existing authenticated register and unsaved form in memory during
+// recoverable connectivity problems; mask it until the backend verifies again.
+const driverSessionShield=createDriverSessionShield({
+ document,root,onRetry:()=>{void verifyDriverOnResume();}
 });
-// A suspended driver's open tab must not keep showing an authenticated record
-// after returning from background. Fail closed if online verification fails.
+window.addEventListener('lts-account-locked',()=>{
+ driverSessionShield.close();
+ store.lockRevokedAccount();
+ renderAccountGate('Sessione non più autorizzata. Accedi nuovamente.');
+});
 let resumingVerification=false;
-document.addEventListener('visibilitychange',async()=>{
+async function verifyDriverOnResume(){
  if(document.hidden||resumingVerification||!store.usingAccount()||!accountAccess.hasSession())return;
  resumingVerification=true;
- try{await accountAccess.verifySession();void refreshCompanyCustomers();if(['insert','tariffs','customers'].includes(tab))void refreshCompanyRates();}
- catch{
+ driverSessionShield.show('Controllo la sessione protetta…',{retryable:false});
+ try{
+  await accountAccess.verifySession();
+  if(!accountAccess.isVerified())throw new Error('Sessione non verificata.');
+  driverSessionShield.close();
+  void refreshCompanyCustomers();
+  if(['insert','tariffs','customers'].includes(tab))void refreshCompanyRates();
+ }catch(error){
+  if(!accountAccess.hasSession()||!transientDriverSessionError(error)){
+   // Expired/revoked identities still fail closed and cannot see the archive.
+   driverSessionShield.close();
    store.lockRevokedAccount();
-   renderAccountGate('Impossibile verificare la sessione. Riprova con Internet attivo.');
+   renderAccountGate('Sessione non più autorizzata. Accedi nuovamente.');
+  }else{
+   // A timeout, flaky cellular connection, or server 5xx is NOT a logout.
+   // The full-screen mask keeps private records hidden until retry succeeds.
+   driverSessionShield.show(navigator.onLine===false||error?.offline
+    ?'Connessione assente o instabile. La sessione è conservata: riprova quando torna Internet.'
+    :'Servizio temporaneamente non raggiungibile. Nessuna password necessaria: riprova la verifica.',
+    {retryable:true});
+  }
  }finally{resumingVerification=false;}
+}
+document.addEventListener('visibilitychange',()=>{
+ if(!document.hidden)void verifyDriverOnResume();
+});
+window.addEventListener('online',()=>{
+ if(driverSessionShield.isVisible())void verifyDriverOnResume();
 });
 
 
@@ -2049,6 +2077,36 @@ async function renderFirstBootGate(message=''){
  if(root.querySelector('.photo-splash') && !(await finishInitialTruckLoading()))return;
  renderAccountGate(message);
 }
+// A saved refresh credential remains usable after a temporary network outage.
+// Do not replace that state with a password form simply because boot was offline.
+function renderSavedSessionConnectionGate(message){
+ driverSessionShield.close();
+ const box=el('section',{class:'boot account-connection-gate',role:'status',
+  'aria-label':'Accesso autista in attesa della rete'},
+  el('div',{class:'account-connection-card'},
+   el('img',{src:'/LTS-Registro-Viaggi/assets/lts-logo.png',alt:'LTS'}),
+   el('p',{class:'account-connection-kicker'},'REGISTRO VIAGGI'),
+   el('h1',{},'Accesso salvato'),
+   el('p',{class:'account-connection-message'},message),
+   el('p',{class:'account-connection-note'},
+    'La tua sessione non è stata cancellata. Per proteggere i dati, il registro si riapre soltanto dopo la verifica online.'),
+   button('Riprova connessione','primary',()=>{void retrySavedDriverSession();},'refresh')));
+ root.replaceChildren(box);
+}
+async function renderFirstBootConnectionGate(message){
+ if(root.querySelector('.photo-splash')&&!(await finishInitialTruckLoading()))return;
+ renderSavedSessionConnectionGate(message);
+}
+let savedSessionRetryRunning=false;
+async function retrySavedDriverSession(){
+ if(savedSessionRetryRunning)return;
+ savedSessionRetryRunning=true;
+ try{await initialize();}finally{savedSessionRetryRunning=false;}
+}
+window.addEventListener('online',()=>{
+ if(!document.hidden&&root.querySelector('.account-connection-gate'))
+  void retrySavedDriverSession();
+});
 
 async function initialize(){
  try{
@@ -2057,9 +2115,11 @@ async function initialize(){
     if(!accountAccess.hasSession()){
       try{await accountAccess.restoreDriverSession();}
       catch(error){
-        await renderFirstBootGate(error.offline
-          ?'Serve Internet per verificare la sessione salvata. Riprova quando torna la connessione.'
-          :error.message||'Accesso automatico non riuscito.');
+        if(transientDriverSessionError(error)){
+          await renderFirstBootConnectionGate('Connessione temporaneamente non disponibile. Riprenderemo l’accesso con la sessione già salvata.');
+        }else{
+          await renderFirstBootGate(error.message||'Accesso automatico non riuscito.');
+        }
         return;
       }
       if(!accountAccess.hasSession()){
@@ -2070,9 +2130,11 @@ async function initialize(){
       result=await store.activateAccountFromSession();
     }catch(error){
       // Never unlock an old local account archive without live verification.
-      await renderFirstBootGate(error.offline
-        ?'Per riaprire un archivio protetto dopo il riavvio serve Internet. I dati offline precedenti restano conservati.'
-        :error.message||'Accesso account non verificato.');
+      if(accountAccess.hasSession()&&transientDriverSessionError(error))
+        await renderFirstBootConnectionGate(
+          'La verifica del server non è riuscita. La sessione e i viaggi locali restano conservati.');
+      else
+        await renderFirstBootGate(error.message||'Accesso account non verificato.');
       return;
     }
   }else result=await store.loadState();
@@ -2123,6 +2185,8 @@ window.addEventListener('online',()=>{
 const hadAppWorkerAtStartup=Boolean(navigator.serviceWorker?.controller);
 let appWorkerChangePending=false,lastAppWorkerCheck=0;
 function safeAppUpdateReload(){
+ if(resumingVerification||driverSessionShield.isVisible()||
+    root.querySelector('.account-connection-gate'))return false;
  if(!appWorkerChangePending||document.hidden||busy||tab==='insert'||editingId||
     store.getSyncInfo?.().pending||store.getSyncInfo?.().conflict||
     document.querySelector('dialog[open]')||
