@@ -130,6 +130,42 @@ export async function handleSharedMapsCustomers(req,{getClients}={}){
    customers.sort((a,b)=>a.name.localeCompare(b.name,'it')||a.city.localeCompare(b.city,'it'));
    return json({customers},200,origin);
   }
+  if(input.action==='save-priced'){
+   // One service_role-only SQL RPC publishes the customer AND price in
+   // the same PostgreSQL transaction. Any conflict rolls both back.
+   if(role!=='admin')throw {status:403,error:'Solo un amministratore verificato può pubblicare una tariffa.'};
+   if(!Number.isSafeInteger(input.cents)||input.cents<0||input.cents>99999999)
+    throw {status:422,error:'Inserisci una tariffa valida.'};
+   if(input.expectedRevision!==undefined&&
+      (!Number.isSafeInteger(input.expectedRevision)||input.expectedRevision<0))
+    throw {status:422,error:'Revisione tariffa non valida.'};
+   let source,name,city,address='',notes='',mapsUrl='';
+   if(input.source==='maps'){
+    let parsed;
+    try{parsed=confirmedMapsCustomer(input);}
+    catch(e){throw {status:422,error:e.message};}
+    source='maps';name=parsed.name;city=parsed.city;
+    address=parsed.address;mapsUrl=parsed.mapsUrl;
+   }else if(input.source==='manual'){
+    source='manual';
+    name=manualField(input.name,'Nome cliente',2,500);
+    city=manualField(input.city,'Località',2,500);
+    address=manualField(input.address??'','Indirizzo',0,1000);
+    notes=manualField(input.notes??'','Note operative',0,1500);
+   }else throw {status:422,error:'Origine cliente non valida.'};
+   const {data,error}=await db.rpc('lts_company_register_priced_customer',{
+    p_admin_id:userId,p_source:source,p_name:name,p_city:city,
+    p_address:address,p_notes:notes,p_maps_url:mapsUrl,
+    p_cents:input.cents,p_expected_revision:input.expectedRevision??null
+   });
+   if(error)throw {status:['P0001','23505'].includes(error.code)?409:503,
+    error:['P0001','23505'].includes(error.code)?
+     error.message:'Impossibile salvare cliente e tariffa. Nessuna modifica parziale.'};
+   if(!data||typeof data.created!=='boolean'||typeof data.rateChanged!=='boolean'||
+      !data.customer||!data.tariff||!Number.isSafeInteger(data.tariff.cents))
+    throw {status:503,error:'Conferma transazione non valida: ricarica il tariffario.'};
+   return json(data,data.created?201:200,origin);
+  }
   if(input.action==='save-manual'){
    if(role!=='admin')throw {status:403,error:'Solo l’amministratore può aggiungere clienti condivisi manualmente.'};
    const name=manualField(input.name,'Nome cliente',2,500);
