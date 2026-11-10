@@ -84,6 +84,8 @@ test('first login survives browser restart; disabled driver cannot restore; offl
  const base='https://otrqynkscpbeyuvdlgpg.supabase.co/functions/v1/';
  globalThis.fetch=async(url,request)=>{
   assert.ok(url.startsWith(base));
+  // An actual failed request, not only an unreliable browser connectivity hint.
+  if(navigator.onLine===false)throw new TypeError('Network unavailable');
   const data=JSON.parse(request.body);
   if(data.action==='login')return new Response(JSON.stringify({
    user_id:ID,role:'driver',access_token:'a'.repeat(100),
@@ -136,7 +138,7 @@ test('first login survives browser restart; disabled driver cannot restore; offl
  await vault.writeDriverToken({user_id:ID,role:'driver',refresh_token:'refresh-test-offline'});
  navigator.onLine=false;
  const offline=await loaded();
- await assert.rejects(offline.restoreDriverSession(),e=>e.offline===true);
+ await assert.rejects(offline.restoreDriverSession(),e=>e.networkUnavailable===true);
  assert.equal(offline.isVerified(),false);
  assert.equal((await vault.readDriverToken()).refresh_token,'refresh-test-offline');
  navigator.onLine=true;
