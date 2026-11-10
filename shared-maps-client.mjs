@@ -91,6 +91,29 @@ export async function saveSharedManualCustomer(customer){
  return {customer:validCustomer(result.customer),created:result.created};
 }
 
+/** Atomic admin operation: customer and fare are committed together or neither is.
+ * No legacy two-request fallback: fail closed if the server is not upgraded. */
+export async function saveSharedPricedCustomer({source='manual',name,city,address='',
+ notes='',mapsUrl='',cents,expectedRevision}={}){
+ if(!['manual','maps'].includes(source)||
+    !Number.isSafeInteger(cents)||cents<0||cents>99999999||
+    typeof name!=='string'||name.trim().length<2||name.length>500||
+    typeof city!=='string'||city.trim().length<2||city.length>500)
+  throw new Error('Controlla cliente, località e tariffa.');
+ if(expectedRevision!==undefined&&(!Number.isSafeInteger(expectedRevision)||
+   expectedRevision<0))throw new Error('Versione tariffa non valida.');
+ const payload={action:'save-priced',source,name,city,address,notes,cents,
+   ...(source==='maps'?{url:mapsUrl}:{}),
+   ...(expectedRevision===undefined?{}:{expectedRevision})};
+ const result=await post(payload);
+ if(typeof result?.created!=='boolean'||typeof result?.rateChanged!=='boolean'||
+    !result.tariff||!Number.isSafeInteger(result.tariff.cents)||
+    result.tariff.cents!==cents)
+  throw new Error('Cliente e tariffa non confermati: aggiorna prima di riprovare.');
+ return {created:result.created,rateChanged:result.rateChanged,
+  customer:validCustomer(result.customer),tariff:result.tariff};
+}
+
 /** Read-only review queue; server verifies administrator role and MFA. */
 export async function pendingMapsApprovals(){
  const result=await post({action:'approval-list'});
