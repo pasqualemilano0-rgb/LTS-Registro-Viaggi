@@ -10,10 +10,15 @@ export async function submitMapsProposal(db,parsed,siteKey,userId){
  if(!saved.error&&saved.data?.id)return {pending:true,requestId:saved.data.id};
  if(saved.error?.code!=='23505')throw {status:503};
  // Concurrent identical proposal is the same request, never a new company row.
- const matched=await db.from('lts_maps_approval_requests').select('id')
-  .eq('status','pending').or('site_key.eq.'+siteKey+',maps_url.eq.'+parsed.mapsUrl).limit(1);
- if(matched.error||!matched.data?.[0]?.id)throw {status:409,error:'Richiesta già elaborata: aggiorna l’elenco.'};
- return {pending:true,requestId:matched.data[0].id};
+ const bySite=await db.from('lts_maps_approval_requests').select('id')
+  .eq('status','pending').eq('site_key',siteKey).maybeSingle();
+ if(bySite.error)throw {status:503};
+ if(bySite.data?.id)return {pending:true,requestId:bySite.data.id};
+ const byLink=await db.from('lts_maps_approval_requests').select('id')
+  .eq('status','pending').eq('maps_url',parsed.mapsUrl).maybeSingle();
+ if(byLink.error)throw {status:503};
+ if(byLink.data?.id)return {pending:true,requestId:byLink.data.id};
+ throw {status:409,error:'Richiesta già elaborata: aggiorna l’elenco.'};
 }
 export async function mapsApprovalList(db){
  const {data,error}=await db.from('lts_maps_approval_requests')
