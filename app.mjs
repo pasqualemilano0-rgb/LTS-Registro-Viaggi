@@ -1,5 +1,3 @@
-import {createLtsGuidedSnapshot} from '/LTS-Registro-Viaggi/copilota/lts-bridge.mjs';
-import {guidedCustomerSearch} from '/LTS-Registro-Viaggi/copilota/guided.mjs';
 import * as D from '/LTS-Registro-Viaggi/shared/domain.mjs';
 import { quickTripFromRoute } from '/LTS-Registro-Viaggi/shared/quick-trip.mjs';
 import {REGISTER_PAGE_SIZE,registerTripCounts,filterRegisterTrips,paginateRegisterTrips,stepRegisterMonth} from '/LTS-Registro-Viaggi/shared/register-explorer.mjs';
@@ -519,71 +517,7 @@ function companyCustomersPanel(){
  return panel;
 }
 /** Read-only pilot panel; no writes and no duplicate trip submission path. */
-function renderAssistantLogisticaPilot(main){
- if(!store.usingAccount()||!accountAccess.isVerified()||accountAccess.getRole()!=='driver')return;
- const session=createLtsGuidedSnapshot({verified:accountAccess.isVerified(),accountActive:store.usingAccount(),
-  personalCustomers:state.customers,trips:state.trips,companyCustomers,
-  companyRates,companyRatesLoaded,draft});
- if(!session.ready)return;
- const toggle=el('button',{type:'button',class:'assistant-mini-toggle',
-  'aria-label':'Apri Assistente Logistica','aria-expanded':'false',title:'Assistente Logistica'},
-  el('img',{src:'/LTS-Registro-Viaggi/assets/assistant-logistica-operator.svg',alt:'',width:'40',height:'40','aria-hidden':'true'}),
-  el('span',{class:'assistant-mini-indicator','aria-hidden':'true'}));
-
- const panel=el('section',{class:'assistant-compact assistant-mini-panel assistant-chat',
-  'aria-label':'Chat Assistente Logistica',hidden:'hidden'});
- const heading=el('div',{class:'assistant-compact-heading'},
-  el('img',{src:'/LTS-Registro-Viaggi/assets/assistant-logistica-operator.svg',alt:'',width:'38',height:'38','aria-hidden':'true'}),
-  el('div',{},el('strong',{},'Assistente Logistica'),el('p',{},'Ricerca guidata clienti')),
-  el('button',{type:'button',class:'assistant-chat-close','aria-label':'Chiudi chat',on:{click:()=>setOpen(false)}},'×'));
- const transcript=el('div',{class:'assistant-chat-messages',role:'log','aria-live':'polite'});
- const query=el('input',{type:'search',class:'assistant-compact-search',placeholder:'Scrivi cliente o località…',
-  'aria-label':'Messaggio per Assistente Logistica',autocomplete:'off'});
- const results=el('div',{class:'assistant-compact-results'});
- const send=el('button',{type:'submit',class:'assistant-chat-send'},'Invia');
- const composer=el('form',{class:'assistant-chat-composer'},query,send);
- const message=(who,value)=>{const bubble=el('p',{class:'assistant-chat-bubble assistant-chat-'+who},value);transcript.append(bubble);transcript.scrollTop=transcript.scrollHeight;};
- message('assistant','Ciao! Posso cercare un cliente o una località e aiutarti a compilare il viaggio. Scrivi cosa cerchi.');
- const setOpen=(open)=>{
-  panel.hidden=!open;
-  toggle.setAttribute('aria-expanded',String(open));
-  toggle.setAttribute('aria-label',open?'Chiudi Assistente Logistica':'Apri Assistente Logistica');
-  if(open)query.focus();
- };
- toggle.addEventListener('click',()=>setOpen(panel.hidden));
- composer.addEventListener('submit',(event)=>{
-  event.preventDefault();
-  const value=query.value.trim();
-  if(!value)return;
-  message('user',value);
-  results.replaceChildren();
-  const matches=guidedCustomerSearch(session,value).results;
-  if(!matches.length){message('assistant','Non ho trovato clienti corrispondenti. Puoi aggiungerne uno con Google Maps dal modulo qui sotto.');query.value='';return;}
-  message('assistant','Ho trovato '+matches.length+' risultati. Tocca il cliente da inserire nel viaggio:');
-  for(const customer of matches){
-   results.append(el('button',{type:'button',class:'assistant-compact-result',on:{click:()=>{
-    const clientInput=main.querySelector('form [name="client"]');
-    const cityInput=main.querySelector('form [name="city"]');
-    if(!clientInput||!cityInput){message('assistant','Non riesco a trovare i campi del viaggio.');return;}
-    clientInput.value=customer.name;
-    cityInput.value=customer.city||'';
-    for(const input of [clientInput,cityInput]){
-     input.dispatchEvent(new Event('input',{bubbles:true}));
-     input.dispatchEvent(new Event('change',{bubbles:true}));
-    }
-    message('assistant','Ho inserito '+customer.name+' nel modulo viaggio.');
-    results.replaceChildren();
-    query.value='';
-    toast('Cliente inserito nel viaggio.');
-   }}},el('span',{},customer.name),el('small',{},customer.city||'')));
-  }
-  query.value='';
- });
- panel.append(heading,transcript,results,composer);
- main.append(toggle,panel);
-}
 function renderInsert(main){
- renderAssistantLogisticaPilot(main);
  const amountContext=D.buildTripAmountContext(state);
  const estimateId=editingId||crypto.randomUUID();const estimateCreatedAt=new Date().toISOString();
  const layout=el('div',{class:'form-layout'});const form=el('form',{class:'panel form-panel',novalidate:true});
