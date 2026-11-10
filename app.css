@@ -827,3 +827,13 @@ body.lts-driver-session-blocked dialog[open]{visibility:hidden!important;pointer
 .trip-recovery-actions .trip-recovery-notice{flex:1 1 210px;margin:0}
 .trip-recovery-actions .remove-button{flex:0 0 auto;min-height:42px;padding:9px 13px;border:1px solid #b64b4b;border-radius:11px;color:#9d2626;background:#fff;font-weight:700;cursor:pointer}
 @media(max-width:420px){.trip-recovery-actions .remove-button{width:100%}}
+
+/* Guided backup restore: legible independent choices on narrow phones. */
+.backup-conflicts{display:grid;gap:12px;max-height:min(46vh,460px);overflow-y:auto;overscroll-behavior:contain;padding:4px 6px 8px;margin:12px 0}
+.backup-conflict-item{border:1px solid #b5d5dc;background:#f4fafb;border-radius:13px;padding:13px;overflow-wrap:anywhere}
+.backup-conflict-item strong{display:block;font-weight:800;color:#12566a;margin-bottom:8px}
+.backup-conflict-item p{margin:6px 0;font-size:.9rem;line-height:1.45}
+.backup-conflict-item b{font-weight:750;color:#254e5c}
+.backup-conflict-select{display:block;width:100%;min-height:44px;margin-top:11px;border:1px solid #7aadb7;border-radius:10px;padding:8px;background:#fff;color:#1f4352;font-size:1rem}
+.backup-merge-preview{font-weight:800;color:#12566a}
+@media(max-width:420px){.backup-conflicts{max-height:42vh;padding-inline:0}.backup-conflict-item{padding:11px}}
