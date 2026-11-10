@@ -1,0 +1,123 @@
+/* LTS Control Center 10 · Mobile-first command dashboard.
+   Visual-only enhancements: no authentication/session/archive changes. */
+:root{
+ --lts-10-ink:#102b42;--lts-10-mid:#406075;--lts-10-accent:#087e80;
+ --lts-10-border:#dce8ee;--lts-10-soft:#f4f9fb;
+ --lts-10-shadow:0 14px 42px rgba(13,45,66,.075);
+}
+body{background:linear-gradient(180deg,#f6fafc 0,#edf4f7 56%,#f4f8fa 100%)}
+.topbar{background:rgba(255,255,255,.97);border-bottom:1px solid #d9e7ee}
+#dashboard{--dash-ink:#102d42;--dash-muted:#526d7b;--dash-line:#dce8ec;min-width:0;gap:clamp(12px,2vw,22px)}
+#dashboard h1,#dashboard h2,#dashboard h3{letter-spacing:-.035em}
+#dashboard .surface,#dashboard .stat,#dashboard .company-rates-editor,
+#dashboard .records-hero,#dashboard .report-kpi{
+ border-radius:20px;border-color:#dce9ee;
+ box-shadow:0 10px 28px rgba(15,58,81,.055);
+}
+#dashboard .surface{background:#fff}
+#dashboard button{touch-action:manipulation}
+#dashboard .button.primary{background:linear-gradient(115deg,#096e85,#009b89);
+ border:1px solid #0a8b8e;box-shadow:0 5px 15px rgba(4,136,140,.13)}
+#dashboard .button.outline{background:#fff;border-color:#cbdfe6;color:#1c5369}
+#dashboard .button:focus-visible,#dashboard a:focus-visible,#dashboard input:focus-visible{
+ outline:3px solid #18b4a7;outline-offset:2px}
+#dashboard input,#dashboard select{min-height:44px;border-radius:11px}
+#dashboard .eyebrow{font-size:11px;font-weight:850;letter-spacing:.12em;color:#117e85}
+#dashboard .admin-switch-button{position:relative}
+#dashboard .approval-nav-count{position:absolute;right:4px;top:3px;display:inline-flex;align-items:center;
+ justify-content:center;min-width:23px;height:23px;padding:0 5px;border-radius:999px;
+ background:#db4b3b;color:white;font-size:11px;font-weight:900;line-height:1;
+ box-shadow:0 2px 8px #8e3d3440}
+#dashboard .approval-nav-count[hidden]{display:none!important}
+#dashboard #rates-tab[data-needs-review="true"]::after{
+ content:"";width:7px;height:7px;background:#f59f51;border-radius:50%;margin-left:4px;
+ box-shadow:0 0 0 3px #f59f5138}
+#dashboard .report-kpi strong,#dashboard .stat strong{font-variant-numeric:tabular-nums}
+#dashboard .report-kpi{position:relative;overflow:hidden}
+#dashboard .report-kpi:after{content:"";position:absolute;right:-40px;bottom:-56px;
+ width:125px;height:125px;border-radius:50%;background:#dff5f34d;pointer-events:none}
+#dashboard .report-filter-panel{border-color:#dce8ee}
+#dashboard .records-controls,#dashboard .company-rates-catalog-head{gap:13px}
+#dashboard .company-rate-row,#dashboard .report-person-card,#dashboard .driver-row{
+ border-radius:14px;transition:box-shadow .18s,border-color .18s,transform .18s}
+#dashboard .company-rate-row:hover,#dashboard .report-person-card:hover,
+#dashboard .driver-row:hover{border-color:#8ed1d0;box-shadow:0 8px 25px #1c657619}
+#dashboard #report-panel{min-width:0}
+#dashboard #maps-approvals{display:none}
+#dashboard[data-view="overview"] #maps-approvals,
+#dashboard[data-view="rates"] #maps-approvals{display:block}
+#dashboard[data-view="overview"] #maps-approvals{order:2}
+#dashboard[data-view="overview"] #report-panel .report-hero{order:3}
+#dashboard[data-view="overview"] #report-panel .report-kpis{order:4}
+#dashboard[data-view="overview"] #report-panel .report-filter-panel{order:5}
+#dashboard[data-view="overview"] #pro-insights{order:6}
+#dashboard .maps-approvals{background:linear-gradient(145deg,#fff,#f7fcfc);
+ padding:clamp(17px,2.3vw,27px);border:1px solid #d4e7e7;min-width:0}
+.maps-approvals-head{display:flex;align-items:flex-start;justify-content:space-between;gap:15px}
+.maps-approvals-head h2{margin:5px 0 7px;color:#14384a;font-size:clamp(20px,2.4vw,27px)}
+.maps-approvals-head p:not(.eyebrow){font-size:13px;line-height:1.5;color:#5a7480;max-width:63ch;margin:0}
+.maps-approvals-head .button{flex:none;min-height:43px}
+.maps-approval-counter{font-size:14px;font-weight:850;display:inline-flex;align-items:center;
+ justify-content:center;min-width:30px;height:30px;padding:0 8px;border-radius:11px;
+ background:#e0f4f0;color:#075f61;vertical-align:middle}
+.maps-approvals-status{font-size:12px;color:#517580;margin:15px 0 0;line-height:1.5}
+.maps-approvals-status[data-error="true"]{color:#9d3932;font-weight:700}
+.maps-approvals-list{display:grid;gap:11px;margin-top:13px;min-width:0}
+.maps-approval-empty{padding:18px;border:1px dashed #c5dcde;border-radius:13px;
+ background:#f8fcfc;color:#5f7a85;font-size:13px;line-height:1.5;margin:0}
+.maps-approval-card{min-width:0;border:1px solid #d8e8e8;border-radius:16px;
+ background:#fff;padding:16px;box-shadow:0 6px 16px #1a5f6d0a}
+.maps-approval-identity{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.maps-approval-identity strong{color:#143344;font-size:16px;overflow-wrap:anywhere}
+.maps-approval-identity span{font-size:12px;font-weight:750;color:#057e81;
+ background:#e9f6f5;border-radius:30px;padding:4px 9px}
+.maps-approval-address{font-size:13px;font-weight:620;color:#38596a;margin:8px 0 4px;overflow-wrap:anywhere}
+.maps-approval-origin{font-size:12px;color:#6a7f8e;margin:0 0 9px;overflow-wrap:anywhere}
+.maps-approval-link{font-size:12px;font-weight:750;color:#087c8c;overflow-wrap:anywhere}
+.maps-approval-controls{display:grid;grid-template-columns:minmax(150px,1fr) auto auto;
+ gap:9px;align-items:end;margin-top:15px}
+.maps-approval-controls label{font-size:12px;font-weight:750;color:#385b69;display:grid;gap:6px}
+.maps-approval-controls input{width:100%;min-width:0;background:#f9fcfd}
+.maps-approval-controls .button{min-height:44px;white-space:nowrap}
+@media(min-width:1030px){
+ #dashboard{grid-template-columns:247px minmax(0,1fr);align-items:start}
+ #dashboard>.admin-switch{background:linear-gradient(170deg,#102f48,#104e61 65%,#0e6a6f);
+  border:1px solid #245a68;box-shadow:0 15px 35px #102e4533;
+  border-radius:22px;position:sticky;top:14px;min-height:calc(100dvh - 132px)}
+ #dashboard .admin-nav-brand{color:#fff}
+ #dashboard .admin-nav-name,#dashboard .admin-nav-name small{color:#f3fcff}
+ #dashboard .admin-nav-caption{color:#9fc9d1}
+ #dashboard>.admin-switch .admin-switch-button{color:#d7eff2;border:1px solid transparent}
+ #dashboard>.admin-switch .admin-switch-button.selected{color:#0b5362;background:#effbfa;
+  border-color:#c5efea;box-shadow:inset 3px 0 #17b0a4,0 4px 15px #09293835}
+ #dashboard>.admin-switch .admin-switch-button:not(.selected):hover{background:#ffffff18;color:#fff}
+ #dashboard .admin-nav-help{color:#d2edf1}
+ #dashboard .admin-nav-help small{color:#adced7}
+}
+@media(max-width:1029px){
+ #dashboard>.admin-switch{background:rgba(239,248,249,.98);border:1px solid #d1e7e9;
+  box-shadow:0 9px 22px rgba(20,69,79,.075)}
+ #dashboard .admin-switch-button.selected{background:white}
+ #dashboard[data-view="overview"] #console-overview{background:linear-gradient(125deg,#102d48,#115468 61%,#067d77)!important}
+ #dashboard[data-view="overview"] #report-panel{gap:12px}
+ #dashboard .surface{border-radius:16px}
+}
+@media(max-width:700px){
+ .maps-approvals-head{flex-wrap:wrap}
+ .maps-approvals-head .button{width:100%}
+ .maps-approval-controls{grid-template-columns:1fr 1fr}
+ .maps-approval-controls label{grid-column:1/-1}
+ .maps-approval-controls .button{min-height:46px;white-space:normal;padding:10px 7px;font-size:12px}
+ #dashboard .maps-approvals{padding:15px}
+ #dashboard .maps-approval-card{padding:13px}
+ #dashboard[data-view="overview"] #report-panel .report-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+ #dashboard .approval-nav-count{top:1px;right:0;min-width:19px;height:19px;font-size:10px}
+}
+@media(max-width:360px){
+ .maps-approval-controls{grid-template-columns:1fr}
+ .maps-approval-controls label{grid-column:auto}
+}
+@media(prefers-reduced-motion:reduce){
+ #dashboard .company-rate-row,#dashboard .report-person-card,#dashboard .driver-row{transition:none}
+}
+@media print{#maps-approvals,#approval-nav-count{display:none!important}}
