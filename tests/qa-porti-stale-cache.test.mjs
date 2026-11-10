@@ -56,7 +56,7 @@ test('an existing cached stale acceptance label never overrides fresh CO.NA.TE.C
  assert.equal(result.body,newCode);
  assert.doesNotMatch(result.body,/NAVE IN ACCETTAZIONE/);
  assert.deepEqual(h.fetches.map(x=>x.cache),['reload']);
- assert.equal(await h.cacheEntries.get(rulesPath).text(),newCode,
+ assert.equal(await h.cacheEntries.get(rulesPath).clone().text(),newCode,
   'SW cache is refreshed after fetching the latest port logic');
  h.setOnline(false);
  const offline=await h.load(rulesPath+'?v=offline');
