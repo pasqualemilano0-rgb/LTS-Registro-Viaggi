@@ -65,7 +65,7 @@ test('driver admin editor prevents stale owner and unsaved form races',()=>{
   /Nessun altro archivio è stato aperto/
  ])assert.match(editor,pattern);
  assert.match(report,/lastView==='records'&&view!=='records'&&!records[.]canLeave\(\)/);
- assert.match(html,/admin[.]mjs[?]v=20261110-resume-v1/);
+ assert.match(html,/admin[.]mjs[?]v=20261110-maps-approval-v1/);
  assert.match(admin,/report[.]mjs[?]v=20261109-customer-save-fix-v1/);
  assert.match(report,/driver-records[.]mjs[?]v=20261109-customer-save-fix-v1/);
 });
