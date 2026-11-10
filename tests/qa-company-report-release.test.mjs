@@ -14,7 +14,7 @@ test('dashboard accessibile solo dal pannello admin, CSP e versioni coerenti',()
    'pro-city','pro-container','pro-compare-driver','pro-alerts','pro-alert-count',
    'pro-export-pdf','pro-export-xlsx','pro-records'])
    assert.match(html,new RegExp('id="'+id+'"'));
- assert.match(html,/admin\.mjs\?v=20261109-customer-save-fix-v1/);
+ assert.match(html,/admin\.mjs\?v=20261110-resume-v1/);
  assert.match(html,/admin\.css\?v=20261109-alpha-v1/);
  assert.match(js,/account-access\.mjs\?v=20261107-realtime-v1/);
  assert.match(js,/setupReport\(account\)/);
