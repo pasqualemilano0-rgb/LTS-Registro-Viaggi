@@ -525,10 +525,21 @@ function renderAssistantLogisticaPilot(main){
   personalCustomers:state.customers,trips:state.trips,companyCustomers,
   companyRates,companyRatesLoaded,draft});
  if(!session.ready)return;
- const panel=el('section',{class:'assistant-compact','aria-label':'ASSISTENTE LOGISTICA'},
+ const toggle=el('button',{type:'button',class:'assistant-mini-toggle',
+  'aria-label':'Apri Assistente Logistica','aria-expanded':'false',title:'Assistente Logistica'},
+  el('span',{'aria-hidden':'true'},'✦'));
+ const panel=el('section',{class:'assistant-compact assistant-mini-panel',
+  'aria-label':'ASSISTENTE LOGISTICA',hidden:'hidden'},
   el('div',{class:'assistant-compact-heading'},
    el('span',{class:'assistant-compact-symbol','aria-hidden':'true'},'✦'),
-   el('div',{},el('strong',{},'Assistente Logistica'),el('p',{},'Trova il cliente e compila il viaggio'))));
+   el('div',{},el('strong',{},'Assistente Logistica'),el('p',{},'Cerca un cliente per il viaggio'))));
+ toggle.addEventListener('click',()=>{
+  const opened=panel.hasAttribute('hidden');
+  if(opened)panel.removeAttribute('hidden');else panel.setAttribute('hidden','');
+  toggle.setAttribute('aria-expanded',String(opened));
+  toggle.setAttribute('aria-label',opened?'Chiudi Assistente Logistica':'Apri Assistente Logistica');
+  if(opened)query.focus();
+ });
  const query=el('input',{type:'search',class:'assistant-compact-search',placeholder:'Cerca cliente o località…',
   'aria-label':'Cerca cliente con Assistente Logistica',autocomplete:'off'});
  const results=el('div',{class:'assistant-compact-results','aria-live':'polite'});
@@ -555,7 +566,7 @@ function renderAssistantLogisticaPilot(main){
   if(!matches.length)results.append(el('p',{class:'assistant-compact-empty'},'Nessun cliente trovato. Usa “Aggiungi da Google Maps” qui sotto.'));
  });
  panel.append(query,results);
- main.append(panel);
+ main.append(toggle,panel);
 }
 function renderInsert(main){
  renderAssistantLogisticaPilot(main);
