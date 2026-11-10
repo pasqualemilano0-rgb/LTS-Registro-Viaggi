@@ -260,6 +260,7 @@ export const saveSharedPricedCustomer=async({source='manual',name,city,address='
  if(existingRate&&existingRate.cents!==cents&&existingRate.revision!==expectedRevision)
   throw Error('Tariffa cambiata: aggiorna.');
  if(!existingRate&&expectedRevision>0)throw Error('Tariffa cambiata: aggiorna.');
+ const changed=!existingRate||existingRate.cents!==cents;
  const existingCustomer=rows.find(row=>row.name===name&&row.city===city);
  const customer=existingCustomer||{name,city,address,mapsUrl:source==='maps'?mapsUrl:'',
   source:source==='maps'?'google_maps_link':'manual',operationalNotes:notes};
@@ -271,7 +272,7 @@ export const saveSharedPricedCustomer=async({source='manual',name,city,address='
    updatedAt:new Date().toISOString()});
  }
  return {customer:structuredClone(customer),created:!existingCustomer,
-  rateChanged:!existingRate||existingRate.cents!==cents,
+  rateChanged:changed,
   tariff:structuredClone(rateList.find(x=>x.client===name&&x.city===city))};
 };
 export const pendingMapsApprovals=async()=>[];
