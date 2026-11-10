@@ -27,7 +27,7 @@ export function guidedTripDecision(session,{container,customer,city}={}){
 }
 
 /** Local, deterministic ranking; no customer is fabricated or submitted. */
-const clean=value=>String(value??'').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'')
+const clean=value=>String(value??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'')
  .toLocaleLowerCase('it-IT').replace(/[^a-z0-9]+/g,' ').trim();
 const distance=(a,b)=>{
  const previous=Array.from({length:b.length+1},(_,i)=>i);
@@ -63,10 +63,10 @@ export function smartCustomerSearch(choices,query,limit=12){
 /** Extract supported intent only. Unknown requests never trigger actions. */
 export function interpretGuidedMessage(value){
  const text=String(value??'').trim().slice(0,240);
- const container=text.toUpperCase().match(/\\b[A-Z]{4}\\s?\\d{7}\\b/)?.[0]?.replace(/\\s/g,'')||null;
- const customer=text.replace(/^(?:inserisci|aggiungi|crea|registra)\\s+(?:un\\s+)?viaggio\\s*(?:per|cliente|di)?\\s*/i,'')
-  .replace(/^(?:cerca|trova|cliente|localita|località)\\s*(?:cliente|di|per)?\\s*/i,'')
-  .replace(/\\b[A-Z]{4}\\s?\\d{7}\\b/gi,'').trim();
- const trip=/^(?:inserisci|aggiungi|crea|registra)\\s+(?:un\\s+)?viaggio\\b/i.test(text);
+ const container=text.toUpperCase().match(/\b[A-Z]{4}\s?\d{7}\b/)?.[0]?.replace(/\s/g,'')||null;
+ const customer=text.replace(/^(?:inserisci|aggiungi|crea|registra)\s+(?:un\s+)?viaggio\s*(?:per|cliente|di)?\s*/i,'')
+  .replace(/^(?:cerca|trova|cliente|localita|località)\s*(?:cliente|di|per)?\s*/i,'')
+  .replace(/\b[A-Z]{4}\s?\d{7}\b/gi,'').trim();
+ const trip=/^(?:inserisci|aggiungi|crea|registra)\s+(?:un\s+)?viaggio\b/i.test(text);
  return {intent:trip?'trip':'customer_search',customer,container};
 }
