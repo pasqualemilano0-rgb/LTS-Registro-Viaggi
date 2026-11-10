@@ -1,5 +1,5 @@
 import {createLtsGuidedSnapshot} from '/LTS-Registro-Viaggi/copilota/lts-bridge.mjs';
-import {guidedCustomerSearch} from '/LTS-Registro-Viaggi/copilota/guided.mjs';
+import {guidedCustomerSearch,interpretGuidedMessage} from '/LTS-Registro-Viaggi/copilota/guided.mjs';
 import * as D from '/LTS-Registro-Viaggi/shared/domain.mjs';
 import { quickTripFromRoute } from '/LTS-Registro-Viaggi/shared/quick-trip.mjs';
 import {REGISTER_PAGE_SIZE,registerTripCounts,filterRegisterTrips,paginateRegisterTrips,stepRegisterMonth} from '/LTS-Registro-Viaggi/shared/register-explorer.mjs';
@@ -557,8 +557,11 @@ function renderAssistantLogisticaPilot(main){
   if(!value)return;
   message('user',value);
   results.replaceChildren();
-  const matches=guidedCustomerSearch(session,value).results;
-  if(!matches.length){message('assistant','Non ho trovato clienti corrispondenti. Puoi aggiungerne uno con Google Maps dal modulo qui sotto.');query.value='';return;}
+  const intent=interpretGuidedMessage(value);
+  if(intent.container){const containerInput=main.querySelector('form [name="container"]');if(containerInput){containerInput.value=intent.container;containerInput.dispatchEvent(new Event('input',{bubbles:true}));containerInput.dispatchEvent(new Event('change',{bubbles:true}));}}
+  if(intent.intent==='trip')message('assistant',intent.container?'Ho riportato il container nel modulo. Seleziona il cliente e verifica tutti i dati prima di salvare.':'Per il viaggio serve anche la sigla del container. Prima selezioniamo il cliente.');
+  const matches=guidedCustomerSearch(session,intent.customer||value).results;
+  if(!matches.length){message('assistant','Non trovo questo cliente nei dati disponibili. Prova con una parte del nome o controlla la sezione Clienti. Non creerò clienti o viaggi senza conferma.');query.value='';return;}
   message('assistant','Ho trovato '+matches.length+' risultati. Tocca il cliente da inserire nel viaggio:');
   for(const customer of matches){
    results.append(el('button',{type:'button',class:'assistant-compact-result',on:{click:()=>{
