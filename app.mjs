@@ -522,64 +522,76 @@ function companyCustomersPanel(){
 function renderAssistantLogisticaPilot(main){
  if(!store.usingAccount()||!accountAccess.isVerified()||accountAccess.getRole()!=='driver')return;
  const session=createLtsGuidedSnapshot({verified:accountAccess.isVerified(),accountActive:store.usingAccount(),
-  personalCustomers:state.customers,trips:state.trips,companyCustomers,
-  companyRates,companyRatesLoaded,draft});
+  personalCustomers:state.customers,trips:state.trips,companyCustomers,companyRates,companyRatesLoaded,draft});
  if(!session.ready)return;
+ let step=0,selected=null,container='';
  const toggle=el('button',{type:'button',class:'assistant-mini-toggle',
-  'aria-label':'Apri Assistente Logistica','aria-expanded':'false',title:'Assistente Logistica'},
+  'aria-label':'Apri LTS Copilota','aria-expanded':'false',title:'LTS Copilota'},
   el('img',{src:'/LTS-Registro-Viaggi/assets/assistant-logistica-operator.svg',alt:'',width:'40',height:'40','aria-hidden':'true'}),
   el('span',{class:'assistant-mini-indicator','aria-hidden':'true'}));
-
- const panel=el('section',{class:'assistant-compact assistant-mini-panel assistant-chat',
-  'aria-label':'Chat Assistente Logistica',hidden:'hidden'});
- const heading=el('div',{class:'assistant-compact-heading'},
-  el('img',{src:'/LTS-Registro-Viaggi/assets/assistant-logistica-operator.svg',alt:'',width:'38',height:'38','aria-hidden':'true'}),
-  el('div',{},el('strong',{},'Assistente Logistica'),el('p',{},'Ricerca guidata clienti')),
-  el('button',{type:'button',class:'assistant-chat-close','aria-label':'Chiudi chat',on:{click:()=>setOpen(false)}},'×'));
- const transcript=el('div',{class:'assistant-chat-messages',role:'log','aria-live':'polite'});
- const query=el('input',{type:'search',class:'assistant-compact-search',placeholder:'Scrivi cliente o località…',
-  'aria-label':'Messaggio per Assistente Logistica',autocomplete:'off'});
- const results=el('div',{class:'assistant-compact-results'});
- const send=el('button',{type:'submit',class:'assistant-chat-send'},'Invia');
- const composer=el('form',{class:'assistant-chat-composer'},query,send);
- const message=(who,value)=>{const bubble=el('p',{class:'assistant-chat-bubble assistant-chat-'+who},value);transcript.append(bubble);transcript.scrollTop=transcript.scrollHeight;};
- message('assistant','Ciao! Posso cercare un cliente o una località e aiutarti a compilare il viaggio. Scrivi cosa cerchi.');
- const setOpen=(open)=>{
-  panel.hidden=!open;
-  toggle.setAttribute('aria-expanded',String(open));
-  toggle.setAttribute('aria-label',open?'Chiudi Assistente Logistica':'Apri Assistente Logistica');
-  if(open)query.focus();
- };
- toggle.addEventListener('click',()=>setOpen(panel.hidden));
- composer.addEventListener('submit',(event)=>{
-  event.preventDefault();
-  const value=query.value.trim();
-  if(!value)return;
-  message('user',value);
-  results.replaceChildren();
-  const matches=guidedCustomerSearch(session,value).results;
-  if(!matches.length){message('assistant','Non ho trovato clienti corrispondenti. Puoi aggiungerne uno con Google Maps dal modulo qui sotto.');query.value='';return;}
-  message('assistant','Ho trovato '+matches.length+' risultati. Tocca il cliente da inserire nel viaggio:');
-  for(const customer of matches){
-   results.append(el('button',{type:'button',class:'assistant-compact-result',on:{click:()=>{
-    const clientInput=main.querySelector('form [name="client"]');
-    const cityInput=main.querySelector('form [name="city"]');
-    if(!clientInput||!cityInput){message('assistant','Non riesco a trovare i campi del viaggio.');return;}
-    clientInput.value=customer.name;
-    cityInput.value=customer.city||'';
-    for(const input of [clientInput,cityInput]){
-     input.dispatchEvent(new Event('input',{bubbles:true}));
-     input.dispatchEvent(new Event('change',{bubbles:true}));
-    }
-    message('assistant','Ho inserito '+customer.name+' nel modulo viaggio.');
+ const panel=el('section',{class:'assistant-compact assistant-mini-panel lts-copilota',
+  'aria-label':'LTS Copilota - inserimento guidato',hidden:'hidden'});
+ const content=el('div',{class:'lts-copilota-content'});
+ const progress=el('p',{class:'lts-copilota-progress','aria-live':'polite'});
+ const setOpen=open=>{panel.hidden=!open;toggle.setAttribute('aria-expanded',String(open));if(open)renderStep();};
+ const button=(label,action,secondary=false)=>el('button',{type:'button',class:secondary?'lts-copilota-secondary':'lts-copilota-primary',on:{click:action}},label);
+ const title=(heading,description)=>{content.append(el('h3',{},heading),el('p',{class:'lts-copilota-description'},description));};
+ const renderStep=()=>{
+  content.replaceChildren();
+  progress.textContent=step===0?'LTS · Inserimento guidato':('Passaggio '+step+' di 3');
+  if(step===0){
+   title('Cosa vuoi fare?','Ti aiuto a preparare un viaggio in pochi passaggi, utilizzando i clienti disponibili nel tuo account.');
+   content.append(button('INSERISCI VIAGGIO',()=>{step=1;renderStep();}));
+  }else if(step===1){
+   title('Inserisci il container','Il cliente verrà cercato nel passaggio successivo.');
+   const field=el('input',{type:'text',class:'lts-copilota-input',placeholder:'ABCD1234567',maxlength:'11','aria-label':'Numero container',value:container});
+   const error=el('p',{class:'lts-copilota-error',role:'alert'});
+   content.append(el('label',{},'Numero container'),field,error,
+    button('Continua',()=>{const value=field.value.trim().toUpperCase().replace(/\s/g,'');if(!/^[A-Z]{4}[0-9]{7}$/.test(value)){error.textContent='Inserisci 4 lettere e 7 cifre.';return;}container=value;step=2;renderStep();}),
+    button('Indietro',()=>{step=0;renderStep();},true));
+   field.focus();
+  }else if(step===2){
+   title('Seleziona il cliente','Cerca un cliente reale tra quelli disponibili nel tuo account.');
+   const field=el('input',{type:'search',class:'lts-copilota-input',placeholder:'Nome cliente…','aria-label':'Cerca cliente'});
+   const results=el('div',{class:'lts-copilota-results'});
+   const update=()=>{
     results.replaceChildren();
-    query.value='';
-    toast('Cliente inserito nel viaggio.');
-   }}},el('span',{},customer.name),el('small',{},customer.city||'')));
+    const value=field.value.trim();
+    if(!value)return;
+    const matches=guidedCustomerSearch(session,value).results;
+    if(!matches.length){results.append(el('p',{},'Nessun cliente trovato. Verifica il nome nella sezione Clienti.'));return;}
+    for(const customer of matches)results.append(button(customer.name+(customer.city?' · '+customer.city:''),()=>{selected=customer;step=3;renderStep();},true));
+   };
+   field.addEventListener('input',update);
+   content.append(field,results,button('Indietro',()=>{step=1;renderStep();},true));
+   field.focus();
+  }else{
+   title('Riepilogo bozza','Controlla i dati. Nessun viaggio verrà salvato automaticamente.');
+   content.append(el('div',{class:'lts-copilota-review'},
+    el('p',{},'Container: '+container),el('p',{},'Cliente: '+selected.name),
+    el('p',{},'Destinazione: '+(selected.city||'Da completare nel modulo'))),
+    button('USA I DATI NEL MODULO',()=>{
+     const fields=[['container',container],['client',selected.name],['city',selected.city||'']];
+     let updated=0;
+     for(const [name,value] of fields){
+      const input=main.querySelector('form [name="'+name+'"]');
+      if(!input)continue;
+      input.value=value;input.dispatchEvent(new Event('input',{bubbles:true}));
+      input.dispatchEvent(new Event('change',{bubbles:true}));updated++;
+     }
+     if(updated<2){toast('Impossibile compilare il modulo: controlla i campi.');return;}
+     setOpen(false);toast('Bozza trasferita: verifica i dati e salva dal modulo viaggio.');
+    }),button('Modifica cliente',()=>{step=2;renderStep();},true),
+    button('Modifica container',()=>{step=1;renderStep();},true));
   }
-  query.value='';
- });
- panel.append(heading,transcript,results,composer);
+ };
+ panel.append(el('div',{class:'lts-copilota-header'},
+  el('img',{src:'/LTS-Registro-Viaggi/assets/assistant-logistica-operator.svg',alt:'',width:'42',height:'42'}),
+  el('div',{},el('strong',{},'LTS Copilota'),progress),
+  el('button',{type:'button',class:'assistant-chat-close','aria-label':'Chiudi LTS Copilota',on:{click:()=>setOpen(false)}},'×')),
+  content,
+  el('p',{class:'lts-copilota-footnote'},'I dati restano nel modulo LTS finché non confermi il salvataggio.'));
+ toggle.addEventListener('click',()=>setOpen(panel.hidden));
  main.append(toggle,panel);
 }
 function renderInsert(main){
