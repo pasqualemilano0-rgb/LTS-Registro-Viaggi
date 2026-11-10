@@ -95,13 +95,13 @@ test('Original maintenance notice remains a one-line rollback',()=>{
 });
 
 test('Protected Pages entry and current PWA cache are required for reopening',()=>{
- assert.match(page,/src="\.\.\/porti-access\.mjs\?v=20261110-accetta-carico-v1"/);
+ assert.match(page,/src="\.\.\/porti-access\.mjs\?v=20261110-porti-freshcode-v2"/);
  assert.match(page,/<body hidden>/);
  assert.doesNotMatch(page,/<script(?![^>]*porti-access)[^>]*>/g);
  assert.match(access,/}else if\(!sameOriginParent\(\)\)\{/);
  assert.match(sw,/const CACHE = PREFIX \+ '20\d{6}-[a-z0-9-]+-v\d+'/);
  assert.match(sw,/BASE \+ 'porti\/app\.js'/);
- assert.match(sw,/if \(NETWORK_FIRST_CODE\.has\(url\.pathname\)\)/);
+ assert.match(sw,/if \(NETWORK_FIRST_CODE\.has\(url\.pathname\) \|\| isPortCode\)/);
 });
 
 test('Porti is suspended on Italian Sundays, never starting Booking modules',()=>{
@@ -135,7 +135,7 @@ test('The parent LTS app keeps Register usable and blocks Porti iframe on Sunday
  assert.match(app,/setInterval\(syncPortiSundayState,60_000\)/);
  assert.match(access,/timeZone:'Europe\/Rome',weekday:'short'/);
  assert.match(access,/if\(isPortiSundayInRome\(\)\)\{/);
- assert.match(app,/porti\/index\.html\?v=20261109-weekdays-porti-v1/);
+ assert.match(app,/porti\/index\.html\?v=20261110-porti-freshcode-v2/);
 });
 
 test('CO.NA.TE.CO. shows ACCETTA CARICO only when acceptance is actually confirmed',()=>{
@@ -157,6 +157,6 @@ test('CO.NA.TE.CO. shows ACCETTA CARICO only when acceptance is actually confirm
  assert.equal(evaluateConateco(row,{...feed,acquired_at:'2026-11-09T00:00:00Z'},now).label,'DATI DA AGGIORNARE');
  const porti=readFileSync(resolve(ROOT,'porti/app.js'),'utf8');
  assert.match(porti,/badge\(verdict\.label,verdict\.kind\)/);
- assert.match(porti,/conateco_rules\.mjs\?v=20261110-accetta-carico-v1/);
- assert.match(access,/porti\/app\.js\?v=20261110-accetta-carico-v1/);
+ assert.match(porti,/conateco_rules\.mjs\?v=20261110-porti-freshcode-v2/);
+ assert.match(access,/porti\/app\.js\?v=20261110-porti-freshcode-v2/);
 });

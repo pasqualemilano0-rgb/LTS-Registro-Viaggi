@@ -74,7 +74,7 @@ if(MAINTENANCE_ENABLED){
   if(isPortiSundayInRome()){clearTimeout(timeout);showMaintenance('sunday');return;}
   authorized=true;clearTimeout(timeout);
   try{
-   await import('./porti/app.js?v=20261110-accetta-carico-v1');
+   await import('./porti/app.js?v=20261110-porti-freshcode-v2');
    await import('./porti/driver-ui.mjs?v=20261031-v44');
    document.body.hidden=false;
   }catch{

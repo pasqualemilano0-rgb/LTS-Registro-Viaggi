@@ -31,4 +31,5 @@ jobs:
         run: |
           node --check porti-access.mjs
           node --test tests/test_porti_maintenance.mjs
+          node --test tests/qa-porti-stale-cache.test.mjs
           node --test tests/qa-account-release.test.mjs tests/driver-session-vault.test.mjs tests/leaked-password-protection.test.mjs

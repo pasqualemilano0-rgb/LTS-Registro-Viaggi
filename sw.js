@@ -1,6 +1,6 @@
 const BASE = "/LTS-Registro-Viaggi/";
 const PREFIX = "lts-iphone-pages-0aa8d087d02b-";
-const CACHE = PREFIX + '20261110-driver-resume-v1';
+const CACHE = PREFIX + '20261110-porti-freshcode-v2';
 const CORE = [
   "/LTS-Registro-Viaggi/account-access.mjs",
   "/LTS-Registro-Viaggi/app.css",
@@ -112,7 +112,9 @@ self.addEventListener('fetch', event => {
   const isPort = url.pathname === PORT_BASE.slice(0, -1) || url.pathname.startsWith(PORT_BASE);
   if (isPort && (url.pathname.startsWith(PORT_BASE + 'data/') || url.pathname.endsWith('.json'))) return;
   if (request.mode === 'navigate') {
-    event.respondWith(fetch(request).catch(async () => {
+    // An old browser HTTP cache may hold Porti/index.html and its original import URLs.
+    // Always revalidate the Porti document when connected, retaining offline fallback.
+    event.respondWith(fetch(request, { cache: isPort ? 'reload' : 'default' }).catch(async () => {
       if (isPort) {
         const page = await caches.match(PORT_BASE + 'index.html', { ignoreVary: true });
         if (!page) return Response.error();
@@ -125,7 +127,12 @@ self.addEventListener('fetch', event => {
     return;
   }
   if (CORE.includes(url.pathname)) {
-    if (NETWORK_FIRST_CODE.has(url.pathname)) {
+    // Porti modules were previously cache-first, so versioned import URLs could
+    // still receive old CO.NA.TE.CO. evaluation code from Cache Storage.
+    // Load all Porti scripts and styles network-first, ignoring HTTP cache.
+    // Only use the new precache when offline; never cache live terminal JSON.
+    const isPortCode = isPort && /\.(?:mjs|js|css)$/.test(url.pathname);
+    if (NETWORK_FIRST_CODE.has(url.pathname) || isPortCode) {
       event.respondWith((async () => {
         try {
           const fresh = await fetch(request, { cache: 'reload' });

@@ -294,7 +294,7 @@ function renderPorti(main){
   );
   return;
  }
- const url=(runtimeConfig.basePath??'/')+'porti/index.html?v=20261109-weekdays-porti-v1';
+ const url=(runtimeConfig.basePath??'/')+'porti/index.html?v=20261110-porti-freshcode-v2';
  portiFrame=el('iframe',{class:'porti-frame',src:url,title:'Porti e booking',referrerpolicy:'no-referrer'});
  main.append(el('div',{class:'porti-heading'},el('h1',{},'Porti')),portiFrame);
 }
