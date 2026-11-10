@@ -353,7 +353,7 @@ test('dedicated admin console loads only verified administrative transport',asyn
  const css=readFileSync(new URL('../amministratore/admin.css',import.meta.url),'utf8');
  const model=await import('../amministratore/model.mjs');
  assert.match(adminHtml,/Content-Security-Policy/);
- assert.match(adminHtml,/src="\.\/admin[.]mjs\?v=20261109-customer-save-fix-v1"/);
+ assert.match(adminHtml,/src="\.\/admin[.]mjs\?v=20261110-resume-v1"/);
  assert.match(adminJs,/import \* as account from '\.\.\/account-access[.]mjs\?v=20261107-realtime-v1'/);
  assert.match(adminJs,/await account[.]verifySession\(\)/);
  assert.match(adminJs,/account[.]getRole\(\)!=='admin'/);
@@ -452,7 +452,7 @@ test('TOTP admin flow uses verified backend session and never exposes secret in 
  assert.match(html,/id="mfa-warning"/);
  assert.match(html,/pattern="\[0-9\]\{6\}"/);
  assert.match(html,/img-src 'self' data:/);
- assert.match(html,/admin\.mjs\?v=20261109-customer-save-fix-v1/);
+ assert.match(html,/admin\.mjs\?v=20261110-resume-v1/);
  assert.match(html,/admin\.css\?v=20261109-alpha-v1/);
  assert.match(admin,/account\.enrollAdminTotp/);
  assert.match(admin,/account\.verifyAdminTotp/);
@@ -473,7 +473,7 @@ test('MFA enrollment requires the latest QR and a correctly synchronized device 
  assert.match(html,/Data e ora automatiche/);
  assert.match(html,/fuso orario automatico/);
  assert.match(html,/codice basato sull'ora/);
- assert.match(html,/admin[.]mjs[?]v=20261109-customer-save-fix-v1/);
+ assert.match(html,/admin[.]mjs[?]v=20261110-resume-v1/);
 });
 
 test('Authenticator app switching preserves the existing enrollment instead of regenerating QR',()=>{
@@ -781,7 +781,8 @@ test('embedded access cannot display register or admin credential inputs',()=>{
  assert.match(app,/root[.]replaceChildren/);
  assert.match(admin,/function denyEmbeddedAdmin\(\)/);
  assert.match(admin,/field[.]value='';field[.]disabled=true/);
- assert.match(admin,/if\(!denyEmbeddedAdmin\(\)\)authenticate\(\)/);
+ assert.match(admin,/if\(!denyEmbeddedAdmin\(\)\)\{/);
+ assert.match(admin,/void authenticate\(\)/);
  assert.match(html,/visual-theme[.]css[?]v=20\d{6}-[a-z0-9-]+-v\d+/);
  assert.match(sw,/const CACHE = PREFIX \+ '20\d{6}-[a-z0-9-]+-v\d+'/);
  assert.doesNotMatch(app,/frame-ancestors.*<meta/i);
@@ -966,4 +967,29 @@ test('Smart Console V2 keeps context inside its authorized drawer and never writ
 
 test('unrelated EFFE.ERRE package is not shipped with LTS',()=>{
  assert.equal(existsSync(new URL('../effeerre/',import.meta.url)),false);
+});
+
+test('admin wake-up guard preserves unsaved forms on mobile network failure and never caches admin refresh tokens',()=>{
+ const admin=read('amministratore/admin.mjs'),page=read('amministratore/index.html');
+ const css=read('amministratore/admin-login-refreshed.css');
+ const access=read('account-access.mjs');
+ assert.match(page,/id="admin-resume-guard"/);
+ assert.match(page,/id="admin-resume-retry"/);
+ assert.match(page,/id="login-password-toggle"/);
+ assert.match(page,/admin-login-refreshed[.]css[?]v=20261110-resume-v1/);
+ assert.match(css,/admin-resume-guard/);
+ assert.match(css,/admin-login-modern/);
+ assert.match(admin,/function showResumeGuard\(/);
+ assert.match(admin,/dashboard[.]inert=true/);
+ assert.match(admin,/function hideResumeGuard\(/);
+ assert.match(admin,/dashboard[.]inert=false/);
+ assert.match(admin,/async function verifyDashboardOnResume\(/);
+ assert.match(admin,/if\(!transientAdminError\(error\)/);
+ assert.match(admin,/showResumeGuard\('Verifica non completata/);
+ assert.match(admin,/adminRealtime[?][.]stop\(\)/);
+ assert.doesNotMatch(admin,/dashboard[.]style[.]visibility=['"]hidden['"]/);
+ assert.match(admin,/void verifyDashboardOnResume\(\)/);
+ assert.match(access,/sessionStorage[.]setItem\(SESSION_KEY/);
+ assert.doesNotMatch(access,/localStorage[.]setItem\(SESSION_KEY/);
+ assert.match(access,/Only drivers get a durable device session/);
 });
