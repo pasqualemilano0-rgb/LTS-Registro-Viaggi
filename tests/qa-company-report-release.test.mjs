@@ -170,10 +170,10 @@ test('admin can register Google Maps sites with a company tariff and edit audite
  assert.match(rates,/setupCompanyMaps\(account/);
  assert.match(maps,/readMapsCustomer\(link\)/);
  assert.match(maps,/sharedMapsCustomers\(\)/);
- assert.match(maps,/saveSharedMapsCustomer\(proposal[.]mapsUrl/);
- assert.match(maps,/account[.]companyTariffs\('save'/);
- assert.match(maps,/expectedRevision:current[.]revision/);
- assert.match(maps,/matchingSite\(sites,proposal\)/);
+ assert.match(maps,/await saveSharedPricedCustomer\(\{/);
+ assert.match(maps,/expectedRevision:rate[?][.]revision[?][?]0/);
+ assert.doesNotMatch(maps,/await account[.]companyTariffs\('save'/);
+ assert.match(maps,/matchingSite\(siteResult,proposal\)/);
  assert.match(extras,/account[.]companyTariffs\('list'/);
  assert.match(extras,/account[.]companyTariffs\('extra-save'/);
  assert.match(extras,/expectedRevision:shown[.]revision/);
@@ -232,9 +232,9 @@ test('manual company customer onboarding joins the shared catalog and keeps fare
  assert.match(html,/data-open-manual/);
  assert.match(html,/value="manual"/);
  assert.match(rates,/setupCompanyManual\(account/);
- assert.match(rates,/saveSharedManualCustomer\(\{name:payload[.]client,city:payload[.]city\}\)/);
+ assert.match(rates,/await saveSharedPricedCustomer\(\{/);
  assert.match(report,/companyRates[.]focusManual\(\)/);
- assert.match(manual,/saveSharedManualCustomer\(customer\)/);
+ assert.match(manual,/saveSharedPricedCustomer\(\{source:'manual'/);
  assert.match(manual,/matchingRate\(response[.]tariffs,customer\)/);
  assert.match(backend,/input[.]action==='save-manual'/);
  assert.match(backend,/role!=='admin'/);
