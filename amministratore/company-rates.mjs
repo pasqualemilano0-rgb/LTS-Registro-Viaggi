@@ -120,11 +120,11 @@ export function setupCompanyRates(account){
   const coverage=tariffLinkedCustomerSites(sites,rows,search.value);
   const missing=coverage.sites.filter(site=>!site.hasRate);
   sitesCount.textContent=coverage.priced+' sedi con tariffa · '+coverage.unpriced+
-   ' ancora da tariffare su '+coverage.total+' sedi Google Maps'+
+   ' ancora da tariffare su '+coverage.total+' clienti e sedi aziendali'+
    (search.value.trim()?' · '+missing.length+' corrispondenze senza tariffa':'');
   if(!missing.length)sitesList.append(node('p','company-sites-empty',
    search.value.trim()?'Nessuna sede senza tariffa corrisponde alla ricerca.':
-   coverage.unpriced?'Cerca una sede diversa.':'Tutte le sedi Google Maps hanno un importo aziendale.'));
+   coverage.unpriced?'Cerca una sede diversa.':'Tutti i clienti e le sedi hanno un importo aziendale.'));
   const shown=sitesExpanded?missing:missing.slice(0,10);
   for(const site of shown){
    const item=document.createElement('article');item.className='company-site-row';
@@ -132,7 +132,8 @@ export function setupCompanyRates(account){
    identity.append(node('strong','company-site-name',site.name),
     node('span','company-site-city',site.city));
    if(hasUsableAddress(site.address))identity.append(node('small','company-site-address',site.address));
-   else identity.append(node('small','company-site-address is-missing','Via non ancora confermata'));
+   else identity.append(node('small','company-site-address is-missing',site.source==='manual'
+    ?'Indirizzo facoltativo':'Indirizzo Google Maps da confermare'));
    const action=document.createElement('button');
    action.type='button';action.className='button outline company-site-price';
    action.textContent='Imposta tariffa';action.disabled=!ratesLoaded;
