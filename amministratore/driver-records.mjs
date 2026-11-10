@@ -297,8 +297,8 @@ function personalCompanyPicker(form,{name,city,address,phone,vat,isDuplicate,get
      (existing.address?' · '+existing.address:'')+
      '. Apri la scheda esistente per verificarla. La scheda che stai modificando, i viaggi e le tariffe restano invariati.';
    }
-   hint.textContent='Non puoi rinominare questa scheda in «'+site.name+
-    '»: il cliente esiste già. Puoi aprirlo senza creare duplicati.';
+   hint.textContent='Un altro cliente personale ha già il nome «'+site.name+
+    '». Puoi aprire la scheda esistente senza creare duplicati.';
    hint.classList.add('records-site-warning');return;
   }
   duplicatePanel.hidden=true;duplicateCustomer=null;
