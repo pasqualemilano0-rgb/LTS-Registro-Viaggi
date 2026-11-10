@@ -7,7 +7,7 @@ import * as store from '/LTS-Registro-Viaggi/client-store.mjs';
 import runtimeConfig from '/LTS-Registro-Viaggi/runtime-config.mjs';
 import * as accountAccess from '/LTS-Registro-Viaggi/account-access.mjs';
 import {createLtsRealtime} from '/LTS-Registro-Viaggi/realtime-client.mjs';
-import {sharedMapsEnabled,sharedMapsCustomers,saveSharedMapsCustomer} from '/LTS-Registro-Viaggi/shared-maps-client.mjs';
+import {sharedMapsEnabled,sharedMapsCustomers,saveSharedMapsCustomer} from '/LTS-Registro-Viaggi/shared-maps-client.mjs?v=20261110-maps-approval-v1';
 import {readMapsCustomer} from '/LTS-Registro-Viaggi/maps-reader-client.mjs';
 import {companyFareSnapshot} from '/LTS-Registro-Viaggi/shared/company-fares.mjs';
 import {companyExtraSnapshot} from '/LTS-Registro-Viaggi/shared/company-extras.mjs';
@@ -1204,13 +1204,13 @@ function customerDialog(customer=null,proposal=null,{focusRates=false}={}){
  const seed=customer||proposal;const {dialog,body}=modal(customer?'Modifica cliente':proposal?'Controlla cliente da Maps':'Nuovo cliente',{subtitle:proposal?'Controlla nome, città e indirizzo. Completa i dati mancanti: il cliente sarà aggiunto solo premendo Salva cliente.':'Inserisci i recapiti utili. Il telefono è facoltativo.'});const form=el('form',{novalidate:true});const error=el('div',{class:'form-error',role:'alert'});
  if(proposal?.warnings?.length)form.append(el('p',{class:'info-note'},proposal.warnings.join(' ')));
  if(proposal?.mapsUrl&&sharedMapsEnabled()){
-  form.append(el('p',{class:'info-note'},'Dopo Salva cliente LTS aggiornerà la lista aziendale usando il link Google Maps e i dati di questa scheda che hai controllato. I clienti inseriti manualmente restano personali.'));
+  form.append(el('p',{class:'info-note'},'Dopo il salvataggio, il cliente Google Maps sarà inviato al centro di controllo per l’approvazione e l’assegnazione della tariffa. Sarà condiviso con tutti solo dopo la conferma dell’amministratore.'));
  }
  const customerName=field('Nome cliente','name',seed?.name||'',{placeholder:'Ragione sociale',required:true,maxlength:500});const city=field('Località','city',seed?.city||'',{placeholder:'Città',optional:true,maxlength:500});const address=field('Indirizzo','address',seed?.address||'',{placeholder:'Via e numero civico',optional:true,maxlength:1000});const vat=field('Partita IVA','vat',seed?.vat||'',{placeholder:'Partita IVA',optional:true,maxlength:100});
  const phone=field('Telefono','phone',seed?.phone||'',{placeholder:'Numero di telefono (facoltativo)',optional:true,maxlength:40,type:'tel',inputmode:'tel'});
  if(proposal?.mapsUrl){
   form.append(error,customerName.wrap,city.wrap,address.wrap);
-  form.append(el('p',{class:'field-hint'},'Le sedi con link Google Maps sono condivise. I recapiti personali non vengono pubblicati.'));
+  form.append(el('p',{class:'field-hint'},'Le nuove sedi Google Maps richiedono approvazione amministrativa. I recapiti personali non vengono pubblicati.'));
  }else form.append(error,customerName.wrap,city.wrap,address.wrap,phone.wrap,vat.wrap);
  form.append(el('p',{class:'info-note'},icon('lock'),'Le trasferte sono uguali per tutti gli autisti e si modificano solo dal tariffario aziendale.'));
  const actions=el('div',{class:'dialog-actions'});
@@ -1227,15 +1227,16 @@ function customerDialog(customer=null,proposal=null,{focusRates=false}={}){
   if(customer)requireCurrentEditor(expectedCustomer,state.customers.find(current=>current.id===customer.id),'Il cliente');
   const candidate={name:customerName.input.value,city:city.input.value,address:address.input.value,
    vat:vat.input.value,phone:phone.input.value};
-  // Maps entries go straight to the protected shared register. The backend
-  // deduplicates both a repeated Maps link and normalized company/site/street.
+  // Maps entries are reviewed by the administrator before joining the shared register.
+  // The backend deduplicates repeated site and link submissions.
   // A Maps save must not first create a second, private customer entry.
   const mapsLink=mapsLinkForCompanySync({existingCustomer:customer,proposal,enabled:sharedMapsEnabled()});
   if(mapsLink){
    const shared=await saveSharedMapsCustomer(mapsLink,candidate);
-   await refreshCompanyCustomers();
+   if(!shared.pending)await refreshCompanyCustomers();
    dialog.close();render();
-   toast(shared.created?'Sede aggiunta all’elenco aziendale condiviso.':
+   toast(shared.pending?'Richiesta inviata al centro di controllo. In attesa di approvazione e tariffa.':
+    shared.created?'Sede aggiunta all’elenco aziendale condiviso.':
     shared.updated?'Sede aziendale già presente: indirizzo aggiornato.':
     'Sede già presente nell’elenco condiviso: nessun duplicato creato.');
    return;

@@ -67,6 +67,8 @@ export async function saveSharedMapsCustomer(url,customer){
   throw new Error('Controlla nome, città e indirizzo per condividere il cliente.');
  const result=await post({action:'save-link',url,name:customer.name,
   city:customer.city,address:customer.address});
+ if(result?.pending===true&&typeof result.requestId==='string')
+  return {pending:true,requestId:result.requestId};
  if(typeof result?.created!=='boolean')
   throw new Error('Conferma di salvataggio aziendale non valida.');
  return {customer:validCustomer(result.customer),created:result.created,updated:result.updated===true};
@@ -87,4 +89,28 @@ export async function saveSharedManualCustomer(customer){
  if(typeof result?.created!=='boolean')
   throw new Error('Conferma di condivisione cliente non valida.');
  return {customer:validCustomer(result.customer),created:result.created};
+}
+
+/** Read-only review queue; server verifies administrator role and MFA. */
+export async function pendingMapsApprovals(){
+ const result=await post({action:'approval-list'});
+ if(!Array.isArray(result?.requests)||result.requests.length>100)
+  throw new Error('Risposta delle richieste da approvare non valida.');
+ return result.requests.map(row=>{
+  if(!row||typeof row.id!=='string'||!['name','city','address','mapsUrl','driver','submittedAt']
+   .every(key=>typeof row[key]==='string'&&row[key].length<=4096))
+   throw new Error('Dati della richiesta non validi.');
+  return row;
+ });
+}
+export async function decideMapsApproval(id,decision,cents){
+ if(typeof id!=='string'||!['approve','reject'].includes(decision))
+  throw new Error('Richiesta non valida.');
+ if(decision==='approve'&&(!Number.isSafeInteger(cents)||cents<0||cents>99999999))
+  throw new Error('Inserisci una tariffa valida.');
+ const result=await post({action:'approval-decide',id,decision,
+  ...(decision==='approve'?{cents}:{})});
+ if(result?.[decision==='approve'?'approved':'rejected']!==true)
+  throw new Error('L’operazione non è stata confermata dal server.');
+ return result;
 }

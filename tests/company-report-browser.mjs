@@ -250,6 +250,8 @@ export const saveSharedManualCustomer=async site=>{
  rows.push(created);
  return {customer:structuredClone(created),created:true};
 };
+export const pendingMapsApprovals=async()=>[];
+export const decideMapsApproval=async()=>{throw new Error('Nessuna richiesta di prova.');};
 `;
 const mockMapsReader=String.raw`
 export const readMapsCustomer=async(link)=>{
