@@ -134,6 +134,19 @@
           </button>
         </div>
       </header>
+      <!-- Stato LTS disponibile in tutte le sezioni dopo autenticazione MFA. -->
+      <section id="admin-status-console" class="status-admin-card" aria-label="Stato dei servizi riservato all'amministratore">
+          <h2>LTS Stato · solo amministratore</h2>
+          <p>Diagnostica tecnica su richiesta, disponibile esclusivamente dopo il login amministratore e il secondo fattore.</p>
+          <button id="admin-status-refresh" class="button outline" type="button">Verifica stato dei servizi</button>
+          <p id="admin-status-result" role="status" aria-live="polite">Stato non caricato. Richiede sessione amministratore e MFA.</p>
+          <dl class="status-admin-metrics">
+            <div><dt>Monitor servizi</dt><dd id="admin-status-monitor">—</dd></div>
+            <div><dt>Ultimo rilascio</dt><dd id="admin-status-deploy">—</dd></div>
+            <div><dt>Ultimo controllo</dt><dd id="admin-status-time">—</dd></div>
+          </dl>
+          <p class="hint">La disponibilità HTTP non certifica salvataggi, login reali o autorizzazioni. Nessuna informazione riservata viene letta da GitHub.</p>
+      </section>
       <div id="management-panel">
       <section id="security-console" class="surface console-security" aria-labelledby="security-title">
         <p class="eyebrow">PROTEZIONE DELL'AREA AZIENDALE</p>
@@ -145,18 +158,7 @@
           <a class="button outline" href="../privacy/">Informativa privacy</a>
         </div>
         <p id="security-result" role="status" aria-live="polite">Accesso al pannello protetto dal tuo account amministratore.</p>
-        <section id="admin-status-console" class="status-admin-card" aria-label="Stato dei servizi riservato all'amministratore">
-          <h2>LTS Stato · solo amministratore</h2>
-          <p>Diagnostica tecnica su richiesta, disponibile esclusivamente dopo il login amministratore e il secondo fattore.</p>
-          <button id="admin-status-refresh" class="button outline" type="button">Verifica stato dei servizi</button>
-          <p id="admin-status-result" role="status" aria-live="polite">Stato non caricato. Richiede sessione amministratore e MFA.</p>
-          <dl class="status-admin-metrics">
-            <div><dt>Monitor servizi</dt><dd id="admin-status-monitor">—</dd></div>
-            <div><dt>Ultimo rilascio</dt><dd id="admin-status-deploy">—</dd></div>
-            <div><dt>Ultimo controllo</dt><dd id="admin-status-time">—</dd></div>
-          </dl>
-          <p class="hint">La disponibilità HTTP non certifica salvataggi, login reali o autorizzazioni. Nessuna informazione riservata viene letta da GitHub.</p>
-        </section>
+
       </section>
       <div class="page-intro">
         <div><p class="eyebrow">CONTROLLO ACCESSI LTS</p><h1>Gestione autisti</h1>
