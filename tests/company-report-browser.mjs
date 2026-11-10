@@ -293,6 +293,11 @@ try{
  await page.locator('#dashboard').waitFor({state:'visible'});
  assert.equal(await page.locator('#dashboard').getAttribute('data-view'),'overview','Protected overview should open after verified admin MFA');
  assert.equal(await page.locator('#console-overview').isVisible(),true);
+ assert.equal(await page.locator('#company-rates').isVisible(),false,
+  'Home must never show the tariff administration form or its guide');
+ assert.equal(await page.locator('#maps-approvals').isVisible(),true,
+  'The Maps approval inbox stays on Home');
+
  const mobileLayout=await page.evaluate(()=>{
   const rect=id=>document.getElementById(id).getBoundingClientRect();
   return {
@@ -437,10 +442,26 @@ try{
  // An unpriced shared depot pre-fills precisely its name and city.
  await page.locator('#customer-overview-list .customer-directory-set-rate').first().click();
  await page.waitForFunction(()=>document.querySelector('#dashboard').dataset.view==='rates');
+ assert.equal(await page.locator('#company-rates').isVisible(),true,
+  'Tariffe must show company management only when selected');
+ assert.equal(await page.locator('#maps-approvals').isVisible(),true,
+  'Tariffe must retain the pending Google Maps approval inbox');
+ const rateHeadingColors=await page.locator('#company-rates .company-rates-heading').evaluate(node=>({
+  text:getComputedStyle(node.querySelector('h1')).color,
+  note:getComputedStyle(node.querySelector('p:last-of-type')).color,
+  banner:getComputedStyle(node).backgroundImage
+ }));
+ assert.equal(rateHeadingColors.text,'rgb(23, 56, 73)',
+  'Tariffe heading must be dark on the light v11 background');
+ assert.notEqual(rateHeadingColors.note,'rgb(222, 248, 251)',
+  'Light descriptive text from previous dark theme must not remain');
+ assert.match(rateHeadingColors.banner,/linear-gradient/i);
  assert.equal(await page.locator('#company-rate-client').inputValue(),'CLIENTE GAMMA');
  assert.equal(await page.locator('#company-rate-city').inputValue(),'ROMA');
  await page.waitForFunction(()=>document.querySelector('#company-sites-count').textContent.includes('2 ancora da tariffare'));
  await page.locator('#overview-tab').click();
+ assert.equal(await page.locator('#company-rates').isVisible(),false,
+  'Returning Home hides the tariff editor again');
  await page.waitForFunction(()=>document.querySelector('#customer-overview-priced').textContent==='1');
  assert.equal(await page.locator('#report-panel').isVisible(),true);
  assert.equal(await page.locator('#management-panel').isVisible(),false);
@@ -484,6 +505,8 @@ try{
 
 
  await openAdminTab('analysis-tab');
+ assert.equal(await page.locator('#company-rates').isVisible(),false,
+  'Analisi must not show company tariff editor');
  await page.locator('#report-count').waitFor();
  await page.locator('#report-month').fill('2026-11');
  await page.locator('#report-month').dispatchEvent('change');
