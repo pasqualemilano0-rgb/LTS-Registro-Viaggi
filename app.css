@@ -769,3 +769,55 @@ h1,h2,h3{letter-spacing:-.035em}
 .porti-sunday-sources{display:flex;justify-content:center;flex-wrap:wrap;gap:8px}
 .porti-sunday-sources a{font-size:12px;color:#065b72;background:#ecf6f8;padding:10px 12px;border-radius:9px;text-decoration:none;font-weight:700}
 @media(max-width:520px){.porti-sunday-notice{width:calc(100% - 24px);margin:12px auto;padding:22px 14px}.porti-sunday-notice h2{font-size:19px}}
+
+
+/* Driver session resume: server verification may fail temporarily on mobile.
+   Never expose a private archive under the retry screen or destroy unsaved forms. */
+body.lts-driver-session-blocked{overflow:hidden!important}
+body.lts-driver-session-blocked #app,
+body.lts-driver-session-blocked dialog[open]{visibility:hidden!important;pointer-events:none!important}
+.lts-driver-session-shield{
+ position:fixed;inset:0;z-index:2147483647;display:grid;place-items:center;
+ padding:calc(20px + env(safe-area-inset-top)) 17px calc(24px + env(safe-area-inset-bottom));
+ overflow-y:auto;background:#f2f8f9;color:#173748;
+}
+.lts-driver-session-shield-card,.account-connection-card{
+ width:min(100%,460px);margin:auto;display:grid;justify-items:center;gap:15px;
+ border:1px solid #d5e5e9;border-radius:24px;background:white;
+ padding:clamp(23px,5.5vw,40px) clamp(19px,4.5vw,30px);
+ box-shadow:0 16px 46px rgba(17,49,66,.09);text-align:center;
+}
+.lts-driver-session-mark{
+ display:grid;place-items:center;width:69px;height:69px;
+ background:#e2f5f1;color:#0b7872;border-radius:18px;
+ font-size:27px;font-weight:900;letter-spacing:-.09em;
+}
+.lts-driver-session-shield h1,.account-connection-card h1{
+ color:#153548;font-size:clamp(22px,5.5vw,27px);margin:0;letter-spacing:-.035em;
+}
+.lts-driver-session-shield p,.account-connection-card p{
+ margin:0;color:#4d6b79;font-size:14px;line-height:1.6;
+}
+.lts-driver-session-shield .lts-driver-session-shield-note,
+.account-connection-card .account-connection-note{font-size:12px;color:#607b86}
+.lts-driver-session-retry,.account-connection-card .primary-button{
+ width:100%;min-height:49px;border-radius:12px;
+ border:1px solid #0b7f7e;background:#0b7f7e;color:white;
+ font-size:15px;font-weight:750;cursor:pointer;
+}
+.lts-driver-session-retry:hover,.account-connection-card .primary-button:hover{
+ background:#095d68;border-color:#095d68}
+.lts-driver-session-retry:focus-visible,.account-connection-card .primary-button:focus-visible{
+ outline:3px solid #72d4c2;outline-offset:3px}
+.lts-driver-session-retry[hidden]{display:none!important}
+.account-connection-gate{
+ display:grid;place-items:center;min-height:calc(100dvh - 28px);
+ padding:calc(22px + env(safe-area-inset-top)) 15px calc(24px + env(safe-area-inset-bottom));
+ background:#f2f8f9;
+}
+.account-connection-card img{width:86px;height:auto;object-fit:contain}
+.account-connection-card .account-connection-kicker{
+ color:#0f817a;letter-spacing:.13em;font-size:11px;font-weight:850}
+@media(prefers-reduced-motion:reduce){
+ .lts-driver-session-shield *, .account-connection-gate *{animation:none!important;transition:none!important}
+}
