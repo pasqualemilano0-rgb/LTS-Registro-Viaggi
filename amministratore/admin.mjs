@@ -2,7 +2,7 @@ import * as account from '../account-access.mjs?v=20261107-realtime-v1';
 import realtimeConfig from '../runtime-config.mjs';
 import {createLtsRealtime} from '../realtime-client.mjs?v=20261107-roster-realtime-v1';
 import {STATUS_LABELS,driverSummary,filterDrivers,driverInitial} from './model.mjs?v=20261109-alpha-v1';
-import {setupReport} from './report.mjs?v=20261110-duplicate-guard-v2';
+import {setupReport} from './report.mjs?v=20261111-reefer-retired-v3';
 import {mustRevalidateOnReturn} from '../shared/foreground-resume.mjs';
 import {setupSmartConsole} from './smart-console.mjs?v=20261108-smart-v2';
 import {setupAdminStatus} from './admin-status.mjs';
