@@ -1,7 +1,7 @@
 /** Audited driver records console. Never stores someone else's archive in localStorage.
  * All actions need a verified admin session/MFA and a server-side revision CAS.
  */
-import {SERVICES,formatMoney,toCents,buildTripAmountContext,tripAmounts,saturdayAllowanceStatus} from '../shared/domain.mjs';
+import {SERVICES,ACTIVE_SERVICES,formatMoney,toCents,buildTripAmountContext,tripAmounts,saturdayAllowanceStatus} from '../shared/domain.mjs';
 import {linkedCustomerTripCount} from '../shared/admin-record-operations.mjs?v=20261109-customer-trip-sync-v1';
 import {sharedMapsCustomers} from '../shared-maps-client.mjs';
 import {companyFareSnapshot} from '../shared/company-fares.mjs';
@@ -575,7 +575,7 @@ export function setupDriverRecords(account){
   if(!state)return [];
   if(cachedSources.has(category))return cachedSources.get(category);
   let data;
-  if(category==='extra')data=SERVICES.map(x=>({id:x.key,name:x.label,cents:state.extraRates[x.key]}));
+  if(category==='extra')data=ACTIVE_SERVICES.map(x=>({id:x.key,name:x.label,cents:state.extraRates[x.key]}));
   else if(category==='history')data=audit;
   else{
    const raw=state[categories[category]]||[];
@@ -839,14 +839,23 @@ export function setupDriverRecords(account){
     {kind:'checkbox'});
    const section=make('fieldset','records-services');
    section.append(make('legend','','Servizi extra del viaggio'));
-   for(const srv of SERVICES){
+   // Retired REEFER is not available to new admin-created trips. Historical
+   // selections stay in old records and cannot be repriced during unrelated edits.
+   const historicalReefer=Boolean(item&&(values.services||[]).includes('reefer'));
+   const editableServices=historicalReefer
+    ?[...ACTIVE_SERVICES,...SERVICES.filter(service=>service.key==='reefer')]
+    :ACTIVE_SERVICES;
+   for(const srv of editableServices){
+    const legacy=srv.key==='reefer';
     const row=make('div','records-service-row');
     const box=document.createElement('input');box.type='checkbox';box.name='service:'+srv.key;
     box.checked=(values.services||[]).includes(srv.key);
-    const label=make('label','',srv.label);label.prepend(box);
+    box.disabled=legacy;
+    const label=make('label','',srv.label+(legacy?' (STORICO · NON MODIFICABILE)':''));label.prepend(box);
     const rate=document.createElement('input');rate.type='text';rate.name='rate:'+srv.key;
     rate.inputMode='decimal';rate.placeholder='Importo € (facoltativo)';
     rate.value=euro(values.extraCents?.[srv.key]);
+    rate.disabled=legacy;
     rate.setAttribute('aria-label','Importo '+srv.label);
     row.append(label,rate);section.append(row);serviceBoxes.push({key:srv.key,box,rate});
    }
