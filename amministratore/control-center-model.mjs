@@ -131,6 +131,34 @@ function groupRecords(records,kind){
  }
  return [...map.values()].sort((a,b)=>b.count-a.count||compare(a.name,b.name)||compare(a.id,b.id));
 }
+/** Counts are journeys involving either pickup, not a sum of pickup visits.
+ * Only historical pickup fare snapshots may be attributed to a customer or
+ * locality. Journey totals also contain extras and cannot supply that detail.
+ */
+function groupPickupRecords(records,kind){
+ const map=new Map(),field=kind==='clients'?'client':'city';
+ for(const row of records){
+  const pickups=[{id:text(row[field]),amountCents:integer(row.fareCents)}];
+  if(text(row.secondClient).trim()||text(row.secondCity).trim())pickups.push({
+   id:text(row[kind==='clients'?'secondClient':'secondCity']),
+   amountCents:row.sumPickupFares===true?integer(row.secondFareCents):null
+  });
+  const inTrip=new Map();
+  for(const pickup of pickups){
+   const entry=inTrip.get(pickup.id)||{amountCents:0,pickupCount:0};
+   entry.amountCents=sum([entry.amountCents,pickup.amountCents]);entry.pickupCount++;
+   inTrip.set(pickup.id,entry);
+  }
+  for(const [id,pickup]of inTrip){
+   const found=map.get(id)||{id,name:id||(kind==='clients'?'Cliente non indicato':'Località non indicata'),
+    count:0,pickupCount:0,totalCents:0,amountPartial:false};
+   found.count++;found.pickupCount+=pickup.pickupCount;
+   found.totalCents=sum([found.totalCents,pickup.amountCents]);
+   found.amountPartial=found.totalCents===null;map.set(id,found);
+  }
+ }
+ return [...map.values()].sort((a,b)=>b.count-a.count||compare(a.name,b.name)||compare(a.id,b.id));
+}
 function returnedAlerts(insights){
  return list(insights?.alerts).filter(row=>row&&typeof row==='object'&&typeof row.type==='string');
 }
@@ -181,6 +209,8 @@ export function deriveControlCenter({roster=null,report=null,insights=null,custo
  const monthCents=reportMonthKnown?integer(report?.summary?.knownTotalCents):null;
  const monthlyIncomplete=integer(report?.incompleteArchives);
  const monthPartial=reportMonthKnown?((missing!==null&&missing>0)||(monthlyIncomplete!==null&&monthlyIncomplete>0)):null;
+ const clientGroups=complete?groupPickupRecords(records,'clients'):[];
+ const cityGroups=complete?groupPickupRecords(records,'cities'):[];
  return {
   kpis:{driversTotal:driverCounts?.total??null,driversActive:driverCounts?.active??null,
    tripsToday:todayTrips(report,today),tripsMonth:reportMonthKnown?integer(report?.summary?.trips):null,
@@ -194,7 +224,7 @@ export function deriveControlCenter({roster=null,report=null,insights=null,custo
   charts:{daily:buildTrendDays(insights,{today}),drivers:complete?groupRecords(records,'drivers'):[],
    monthly:list(insights?.monthly).filter(row=>validMonth(row?.month)&&integer(row.trips)!==null&&integer(row.totalCents)!==null)
     .map(row=>({...row})),
-   clients:complete?groupRecords(records,'clients'):[],cities:complete?groupRecords(records,'cities'):[],
+   clients:clientGroups,cities:cityGroups,
    anomalies:alertGroups(insights)},
   scope:{recordsComplete:complete,tripSearch:complete?'complete-period':report?'loaded-page':'unavailable',
    monthly:'whole-months-driver-only',alertsTotal:totalAlerts,alertsLoaded:alerts.length,
@@ -202,13 +232,19 @@ export function deriveControlCenter({roster=null,report=null,insights=null,custo
    pendingApprovalsCapped:pending!==null&&pending.length>=100,
    approvalLimit:100,customerUnit:'Sedi registrate',range:validRange(insights)?{...insights.range}:null,
    selection:insights?.selection?{...insights.selection}:null,
+   pickups:'both-pickups-distinct-trips',
+   secondPickupsComplete:complete&&records.every(row=>typeof row.secondClient==='string'&&typeof row.secondCity==='string'),
+   pickupCountUnit:'Viaggi che coinvolgono il cliente o la località in una delle due prese',
+   clientAmounts:'historical-pickup-fares-excluding-extras',
+   clientAmountsComplete:complete&&!clientGroups.some(row=>row.amountPartial),
+   clientAmountValue:'Solo trasferte storiche attribuibili alla presa; extra esclusi. Seconda trasferta inclusa solo con somma esplicita.',
    monthlyValue:'Tariffe dei viaggi registrati; non fatturato emesso o incassato'},
   operations:{approvals:pending?pending.slice(0,5):[],alerts:alerts.slice(0,5),
    syncAlerts:alerts.filter(row=>row.type==='sync').slice(0,5),
    updates:updateEvents(complete?records:paged,customers||[])},
   options:{drivers:list(report?.drivers).map(row=>({id:row.id,name:row.name,active:row.active})),
-   clients:uniqueOptions([...list(insights?.options?.clients),...records.map(row=>row.client)]),
-   cities:uniqueOptions([...list(insights?.options?.cities),...records.map(row=>row.city)])}
+   clients:uniqueOptions([...list(insights?.options?.clients),...records.flatMap(row=>[row.client,row.secondClient])]),
+   cities:uniqueOptions([...list(insights?.options?.cities),...records.flatMap(row=>[row.city,row.secondCity])])}
  };
 }
 
@@ -229,14 +265,14 @@ export function searchAuthorized({query='',roster=null,report=null,insights=null
    }).slice(0,cap);
  }
  const customerRows=Array.isArray(customers)?customers:list(customers?.customers);
- const localities=uniqueOptions([...tripRows.map(row=>row.city),...customerRows.map(row=>row.city)]);
+ const localities=uniqueOptions([...tripRows.flatMap(row=>[row.city,row.secondCity]),...customerRows.map(row=>row.city)]);
  return {
   drivers:pick(list(roster),'driver',row=>[row.firstName,row.lastName].filter(Boolean).join(' '),
    row=>[row.firstName,row.lastName,row.phone].join(' ')),
   customers:pick(customerRows,'customer',row=>row.name,
    row=>[row.name,row.city,row.address].join(' ')),
   trips:pick(tripRows,'trip',row=>row.container||row.client,
-   row=>[row.container,row.client,row.city,row.driverName,row.date].join(' ')),
+   row=>[row.container,row.client,row.city,row.secondClient,row.secondCity,row.driverName,row.date].join(' ')),
   localities:localities.filter(city=>normalize(city).includes(needle)).slice(0,cap)
    .map(city=>({kind:'locality',label:city,row:{city}})),scope
  };

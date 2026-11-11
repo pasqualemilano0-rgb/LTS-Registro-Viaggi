@@ -2,7 +2,7 @@
  * Shared records are never trusted by client name alone as certified.
  * All deletion/sync authorization remains with the server.
  */
-import {normalizedStreetKey} from '../shared/customer-site-matches.mjs';
+import {normalizedStreetKey,sameSharedSite} from '../shared/customer-site-matches.mjs';
 import {buildTripAmountContext,tripAmounts} from '../shared/domain.mjs';
 
 const normalized=value=>String(value??'').normalize('NFD')
@@ -54,7 +54,7 @@ export function assessPersonalCustomer(customer,sharedSites=null){
  };
  const candidates=validKey(customer)?
   indexedSharedSites(sharedSites).get(key(customer))||[]:[];
- const streetMatches=street?candidates.filter(row=>row.street===street):[];
+ const streetMatches=street?candidates.filter(row=>row.street===street&&sameSharedSite(row.site,customer)):[];
  const exact=streetMatches.length===1?streetMatches[0].site:null;
  const ambiguous=streetMatches.length>1;
  const possibleDuplicate=(candidates.length>0&&!exact)||ambiguous;

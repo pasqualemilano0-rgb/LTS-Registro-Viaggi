@@ -54,6 +54,27 @@ test('existing Google Maps link is recognized even with tracking query strings',
  assert.equal(sameSharedSite(a,b),true);
 });
 
+test('punctuation variants are possible aliases, never proof of a shared identity',()=>{
+ const company={name:'ACME SRL',city:'NAPOLI',address:'VIA PORTO 1'};
+ const personal={...company,id:'personal-alias',name:'ACME-SRL'};
+ assert.equal(sameSharedSite(company,personal),false);
+ assert.equal(matchingSharedCustomer([company],personal),null);
+ const result=dedupedCustomerDirectory([company],[personal]);
+ assert.equal(result.shared.length,1);
+ assert.deepEqual(result.personal,[personal]);
+});
+
+test('Maps search queries and place identity parameters distinguish warehouses',()=>{
+ const site={name:'ACME SRL',city:'NAPOLI',address:'INDIRIZZO STRADALE DA CONFERMARE'};
+ const first={...site,mapsUrl:'https://www.google.com/maps/search/?api=1&query=VIA+ALFA+1'};
+ const second={...site,mapsUrl:'https://www.google.com/maps/search/?api=1&query=VIA+BETA+2'};
+ assert.equal(sameSharedSite(first,second),false);
+ assert.equal(dedupedCustomerDirectory([first,second],[]).shared.length,2);
+ assert.equal(sameSharedSite(first,{...first,mapsUrl:first.mapsUrl+'&utm_source=message&g_st=ac'}),true);
+ assert.equal(sameSharedSite(first,{...first,mapsUrl:first.mapsUrl+'&query_place_id=another-place'}),false);
+ assert.equal(sameSharedSite({...first,address:'VIA ALFA 1'},{...first,address:'VIA BETA 2'}),false);
+});
+
 test('indexed dedup handles many unrelated sites and preserves duplicate originals',()=>{
  const sites=Array.from({length:1200},(_,i)=>({
   name:'COMPANY '+i,city:'NAPOLI',address:'VIA '+i,mapsUrl:'https://maps.app.goo.gl/id'+i

@@ -6,7 +6,10 @@
 const normal=value=>String(value??'').normalize('NFD').replace(/\p{M}/gu,'')
  .toLocaleUpperCase('it-IT').trim();
 const simple=value=>normal(value).replace(/[^A-Z0-9]/gu,'');
-const nameKey=customer=>simple(customer?.name);
+// Search may be forgiving; identity must retain punctuation and accents. A
+// personal alias such as ACME-SRL is not proof that it is company ACME SRL.
+const nameKey=customer=>String(customer?.name??'').normalize('NFC')
+ .toLocaleUpperCase('it-IT').replace(/\s+/gu,' ').trim();
 const cityKey=customer=>simple(normal(customer?.city)
  .replace(/\s*\([A-Z]{2}\)\s*$/u,''));
 const placeholder=value=>/INDIRIZZO(?: STRADALE)? DA CONFERMARE/u.test(normal(value));
@@ -20,16 +23,30 @@ function locationCandidates(shared,record){
  if(!name||!city)return [];
  return shared.filter(item=>nameKey(item)===name&&cityKey(item)===city);
 }
-function sameMapsLink(a,b){
- if(!a?.mapsUrl||!b?.mapsUrl)return false;
+/** Drop known tracking parameters only. Query, place IDs and coordinates are
+ * part of a Maps destination, including links using the common /maps/search/.
+ */
+export function normalizedMapsSiteKey(value){
+ if(!value)return '';
  try{
-  const first=new URL(a.mapsUrl),second=new URL(b.mapsUrl);
-  return first.origin===second.origin&&first.pathname===second.pathname;
- }catch{return false;}
+  const url=new URL(value);
+  if(!['https:','http:'].includes(url.protocol))return '';
+  for(const key of [...url.searchParams.keys()]){
+   if(/^utm_/iu.test(key)||/^(?:g_st|g_ep|gclid|fbclid|igshid)$/iu.test(key))url.searchParams.delete(key);
+  }
+  url.searchParams.sort();
+  return url.href;
+ }catch{return '';}
+}
+export function sameMapsLink(a,b){
+ if(!a?.mapsUrl||!b?.mapsUrl)return false;
+ const first=normalizedMapsSiteKey(a.mapsUrl),second=normalizedMapsSiteKey(b.mapsUrl);
+ return Boolean(first&&first===second);
 }
 export function sameSharedSite(a,b){
  if(nameKey(a)!==nameKey(b)||cityKey(a)!==cityKey(b)||!nameKey(a)||!cityKey(a))return false;
  const streetA=normalizedStreetKey(a?.address),streetB=normalizedStreetKey(b?.address);
+ if(streetA&&streetB&&streetA!==streetB)return false;
  return (Boolean(streetA&&streetB&&streetA===streetB))||sameMapsLink(a,b);
 }
 /** A personal record with no street is safely matched only when a single
