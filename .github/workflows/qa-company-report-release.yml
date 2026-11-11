@@ -24,6 +24,8 @@ on:
       - 'tests/qa-company-report-release.test.mjs'
       - 'tests/qa-report-production-http-smoke.mjs'
       - 'tests/company-report-browser.mjs'
+      - 'tests/control-center-browser.mjs'
+      - 'tests/qa-control-center-model.test.mjs'
       - 'tests/qa-offline-worker-browser.mjs'
       - 'tests/qa-offline-store-browser.mjs'
       - 'tests/qa-trip-editor-safety.test.mjs'
@@ -60,6 +62,8 @@ on:
       - 'tests/qa-company-report-release.test.mjs'
       - 'tests/qa-report-production-http-smoke.mjs'
       - 'tests/company-report-browser.mjs'
+      - 'tests/control-center-browser.mjs'
+      - 'tests/qa-control-center-model.test.mjs'
       - 'tests/qa-offline-worker-browser.mjs'
       - 'tests/qa-offline-store-browser.mjs'
       - 'tests/qa-trip-editor-safety.test.mjs'
@@ -87,6 +91,8 @@ jobs:
           node --check amministratore/report-insights.mjs
           node --check amministratore/report-export.mjs
           node --check amministratore/admin.mjs
+          node --check amministratore/control-center-home.mjs
+          node --check amministratore/control-center-model.mjs
           node --check amministratore/company-manual-registration.mjs
           node --check supabase/functions/lts-shared-maps/maps-registry-handler.mjs
           node --check realtime-client.mjs
@@ -100,6 +106,8 @@ jobs:
           node --check shared/company-extras.mjs
           node --check supabase/functions/lts-company-tariffs/tariff-handler.mjs
           node --check tests/company-report-browser.mjs
+          node --check tests/control-center-browser.mjs
+          node --test tests/qa-control-center-model.test.mjs
           node --check tests/qa-register-browser.mjs
           node --check tests/qa-report-production-http-smoke.mjs
           node --test tests/admin-record-operations.test.mjs
@@ -135,6 +143,17 @@ jobs:
       - name: Mobile dashboard flow with synthetic mock records
         run: LTS_BROWSER_PLAYWRIGHT="$RUNNER_TEMP/lts-playwright" node tests/company-report-browser.mjs
 
+      - name: Control Center verified KPI, filters, lifecycle and isolation in Chromium
+        run: LTS_BROWSER_PLAYWRIGHT="$RUNNER_TEMP/lts-playwright" LTS_CONTROL_REPORT="$RUNNER_TEMP/control-center-chromium.json" node tests/control-center-browser.mjs
+
+      - name: Preserve synthetic Control Center Chromium evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: control-center-chromium
+          path: ${{ runner.temp }}/control-center-chromium.json
+          if-no-files-found: warn
+
       - name: 390px mobile Register V4 search, filters, pagination and undo
         run: LTS_BROWSER_PLAYWRIGHT="$RUNNER_TEMP/lts-playwright" node tests/qa-register-browser.mjs
 
@@ -168,6 +187,15 @@ jobs:
           "$RUNNER_TEMP/lts-playwright/node_modules/.bin/playwright" install --with-deps webkit
       - name: Safari WebKit mobile admin, certifies Maps and restores archived customer
         run: LTS_BROWSER_PLAYWRIGHT="$RUNNER_TEMP/lts-playwright" LTS_BROWSER_ENGINE=webkit node tests/company-report-browser.mjs
+      - name: Control Center verified KPI, filters, lifecycle and isolation in Safari WebKit
+        run: LTS_BROWSER_PLAYWRIGHT="$RUNNER_TEMP/lts-playwright" LTS_BROWSER_ENGINE=webkit LTS_CONTROL_REPORT="$RUNNER_TEMP/control-center-webkit.json" node tests/control-center-browser.mjs
+      - name: Preserve synthetic Control Center Safari WebKit evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: control-center-webkit
+          path: ${{ runner.temp }}/control-center-webkit.json
+          if-no-files-found: warn
       - name: 390px Safari Register V4 search, filters, pagination and undo
         run: LTS_BROWSER_PLAYWRIGHT="$RUNNER_TEMP/lts-playwright" LTS_BROWSER_ENGINE=webkit node tests/qa-register-browser.mjs
       - name: Safari WebKit offline IndexedDB and outbox consistency

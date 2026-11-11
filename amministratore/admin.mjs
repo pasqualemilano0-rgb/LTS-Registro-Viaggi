@@ -2,16 +2,18 @@ import * as account from '../account-access.mjs?v=20261107-realtime-v1';
 import realtimeConfig from '../runtime-config.mjs';
 import {createLtsRealtime} from '../realtime-client.mjs?v=20261107-roster-realtime-v1';
 import {STATUS_LABELS,driverSummary,filterDrivers,driverInitial} from './model.mjs?v=20261109-alpha-v1';
-import {setupReport} from './report.mjs?v=20261111-reefer-retired-v3';
+import {setupReport} from './report.mjs?v=20261111-control-center-v1';
 import {mustRevalidateOnReturn} from '../shared/foreground-resume.mjs';
-import {setupSmartConsole} from './smart-console.mjs?v=20261108-smart-v2';
+import {setupSmartConsole} from './smart-console.mjs?v=20261111-control-center-v1';
 import {setupAdminStatus} from './admin-status.mjs';
-import {setupMapsApprovals} from './maps-approvals.mjs?v=20261110-approval-v1';
+import {setupControlCenter} from './control-center-home.mjs?v=20261111-control-center-v1';
+import {setupMapsApprovals} from './maps-approvals.mjs?v=20261111-control-center-v1';
 import {rememberPosition,readPosition,clearPosition} from './admin-position.mjs?v=20261110-audit-v1';
 
 const byId=id=>document.getElementById(id);
 const loginPanel=byId('login-panel'), dashboard=byId('dashboard');
 const loginError=byId('login-error'),listError=byId('list-error');
+let rosterLoaded=false;
 let drivers=[],busy=false,mfaFactorId=null,mfaMode='login';
 let resumingDashboard=false;
 let lastAdminVerifiedAt=0;
@@ -50,6 +52,42 @@ const smartConsole=setupSmartConsole({
  openManualCustomer:()=>companyView.openManualCustomer(),
  clearPrivateCode:()=>hideCode()
 });
+function openControlView(view,filters={}){
+ if(view==='customers')return companyView.openCustomers();
+ if(view==='approvals')return openControlApprovals();
+ companyView.open(view,null,'trip',['trips','analysis','alerts','exports'].includes(view)?filters:null);
+ if(dashboard.dataset.view!==view)return false;
+ if(view==='drivers'){
+  byId('status-filter').value=typeof filters.status==='string'?filters.status:'all';
+  byId('search').value=filters.phone||filters.query||'';selectedInitial='';
+  renderRoster();
+ }
+ return true;
+}
+function openControlApprovals(id=null){
+ companyView.open('overview');if(dashboard.dataset.view!=='overview')return false;
+ dashboard.dataset.homeSection='approvals';
+ byId('workspace-title').textContent='Approvazioni Google Maps';
+ byId('workspace-description').textContent='Verifica i clienti proposti e conferma le tariffe aziendali.';
+ requestAnimationFrame(()=>{
+  const card=id?[...byId('maps-approvals-list').querySelectorAll('[data-approval-id]')].find(x=>x.dataset.approvalId===String(id)):null;
+  (card||byId('maps-approvals')).scrollIntoView({block:'start',behavior:'auto'});
+  const focus=card?.querySelector('input,button')||byId('maps-approvals-refresh');focus.focus({preventScroll:true});
+ });
+ return true;
+}
+const controlCenter=setupControlCenter({account,
+ authorized:()=>account.isVerified()&&account.getRole()==='admin'&&!dashboard.hidden&&!dashboard.inert&&!adminInlineResumeActive&&byId('mfa-panel').hidden&&byId('admin-resume-guard').hidden,
+ getRoster:()=>rosterLoaded?drivers:null,getReport:()=>companyView.peek(),
+ getCustomers:()=>companyView.peekCustomers(),getApprovals:()=>mapsApprovals.peek(),
+ openView:openControlView,openTrip:row=>smartConsole.openTrip(row),
+ openCustomer:site=>companyView.openRateForSite(site),openApprovals:openControlApprovals,
+ setReportFilters:filters=>{
+  const ok=companyView.setReportFilters(filters);
+  if(ok&&filters.refresh===true){void loadDrivers({silent:true});void mapsApprovals.load({silent:true});}
+  return ok;
+ }
+});
 let adminRealtime=null;
 function startAdminRealtime(){
  if(!account.isVerified()||account.getRole()!=='admin'||dashboard.hidden||
@@ -68,6 +106,7 @@ function startAdminRealtime(){
    }
    if(kind!=='roster'&&dashboard.dataset.view!=='drivers')
     companyView.refreshActive();
+   if(kind==='archive'||kind==='catalog')controlCenter.refresh({forceInsights:true});
   }
  });
  adminRealtime.start();
@@ -203,7 +242,7 @@ function lock(message='Accedi come amministratore per continuare.'){
  smartConsole.reset();byId('smart-command-open').hidden=true;
  adminRealtime?.stop();adminRealtime=null;
  clearAdminPosition();
- drivers=[];companyView.reset();clearMfa();
+ drivers=[];rosterLoaded=false;controlCenter.reset();companyView.reset();clearMfa();
  byId('roster').replaceChildren();byId('roster-count').textContent='';
  for(const key of ['total','active','blocked','pending'])byId('stat-'+key).textContent='—';
  for(const button of byId('roster-letters').querySelectorAll('button')){
@@ -298,7 +337,8 @@ async function loadDrivers({silent=false}={}){
    if(token!==driverRequest||dashboard.hidden)return false;
    if(!Array.isArray(result.drivers))throw new Error('Elenco autisti non valido.');
    const changed=JSON.stringify(drivers)!==JSON.stringify(result.drivers);
-   drivers=result.drivers;
+   drivers=result.drivers;rosterLoaded=true;
+   window.dispatchEvent(new Event('lts-admin-roster-refreshed'));
    if(changed||!silent)renderRoster();
   smartConsole.refresh();
    setError(listError,'');

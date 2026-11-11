@@ -1,6 +1,6 @@
 /** Administrator reporting UI. Aggregates are authoritative only when returned by the API. */
-import {setupInsights} from './report-insights.mjs?v=20261104-company-v3';
-import {setupCustomerOverview} from './customer-overview.mjs?v=20261108-smart-v1';
+import {setupInsights} from './report-insights.mjs?v=20261111-control-center-v1';
+import {setupCustomerOverview} from './customer-overview.mjs?v=20261111-control-center-v1';
 import {setupCompanyRates} from './company-rates.mjs?v=20261110-atomic-v1';
 import {hasUnsubmittedTariffDraft} from './tariff-draft-guard.mjs?v=20261110-audit-v1';
 import {setupDriverRecords} from './driver-records.mjs?v=20261111-reefer-retired-v3';
@@ -187,6 +187,7 @@ export function setupReport(account){
  const month=el('report-month'),driver=el('report-driver');
  month.value=currentMonth();
  let requestSeq=0,rows=[],page=null,loading=false,focusOnDriver=false;
+ let pageDriverId=null,pendingInsightFilters=null,reportStale=false,resetInsightContext=false;
  const insights=setupInsights(account);
  const companyRates=setupCompanyRates(account);
  const companyExtras=setupCompanyExtras(account);
@@ -195,11 +196,40 @@ export function setupReport(account){
   open('rates');companyRates.prefillSite(site);
  });
  const driverSearch=el('report-driver-search');
+ function clearReportScope(){
+  pendingInsightFilters=null;resetInsightContext=true;
+  delete el('dashboard').dataset.reportScope;
+ }
+ function applyReportContext(filters={}){
+  const nextMonth=/^\d{4}-(0[1-9]|1[0-2])$/.test(filters.month||'')?filters.month:month.value;
+  const nextDriver=Object.prototype.hasOwnProperty.call(filters,'driverId')?
+   (typeof filters.driverId==='string'?filters.driverId:''):driver.value;
+  const changed=month.value!==nextMonth||driver.value!==nextDriver;
+  month.value=nextMonth;
+  if(nextDriver&&![...driver.options].some(x=>x.value===nextDriver)){
+   const option=node('option','','Autista selezionato');option.value=nextDriver;driver.append(option);
+  }
+  driver.value=nextDriver;
+  pendingInsightFilters=Object.fromEntries(['fromDate','toDate','client','city','container','alertType']
+   .filter(k=>typeof filters[k]==='string').map(k=>[k,filters[k].slice(0,500)]));
+  if(Object.values(pendingInsightFilters).some(value=>value.trim()))el('dashboard').dataset.reportScope='filtered';
+  else delete el('dashboard').dataset.reportScope;
+  // Explicit Home context replaces old advanced filters, including empty values.
+  resetInsightContext=true;
+  return changed;
+ }
+ function loadCurrentInsights(drivers){
+  const context={month:month.value,driverId:driver.value||null,drivers,
+   ...(pendingInsightFilters||{}),resetFilters:resetInsightContext};
+  pendingInsightFilters=null;resetInsightContext=false;
+  return insights.load(context);
+ }
  function selectDriver(id){
   if(driver.value===id&&page)return;
-  driver.value=id;rows=[];focusOnDriver=Boolean(id);void load(false);
+  clearReportScope();driver.value=id;rows=[];focusOnDriver=Boolean(id);void load(false);
  }
  function tabs(view){
+  delete el('dashboard').dataset.homeSection;
   const current=views.find(v=>v[0]===view)||views[1];
   const showReport=!['drivers','security','records'].includes(current[0]);
   management.hidden=showReport||current[0]==='records';
@@ -210,7 +240,7 @@ export function setupReport(account){
   // The workspace heading mirrors the active authorized view, without altering its data.
   const workspaceTitle=el('workspace-title'),workspaceDescription=el('workspace-description');
   if(workspaceTitle&&workspaceDescription){
-   workspaceTitle.textContent=current[0]==='overview'?'Panoramica operativa':
+   workspaceTitle.textContent=current[0]==='overview'?'LTS Control Center':
     current[0]==='rates'?'Clienti e tariffe':
     current[0]==='records'?'Archivi e modifiche':current[2];
    workspaceDescription.textContent=current[3];
@@ -230,7 +260,7 @@ export function setupReport(account){
   }
  }
  function reset(){
-  requestSeq++;rows=[];page=null;loading=false;
+  requestSeq++;rows=[];page=null;loading=false;pageDriverId=null;pendingInsightFilters=null;reportStale=false;resetInsightContext=false;delete el('dashboard').dataset.reportScope;
   clearData();insights.reset();companyDirectory.reset();companyRates.reset();companyExtras.reset();records.reset();el('report-empty').hidden=true;el('report-status').textContent='';
   el('report-error').hidden=true;el('report-next').disabled=false;
   updateDriverOptions([]);
@@ -238,7 +268,7 @@ export function setupReport(account){
   el('report-period-title').textContent='—';
   focusOnDriver=false;tabs('drivers');
  }
- function open(view,phone=null,recordKind='trip'){
+ function open(view,phone=null,recordKind='trip',filters=null){
   if(!account.isVerified()||account.getRole()!=='admin')return;
   if(!views.some(v=>v[0]===view))return;
   const lastView=el('dashboard').dataset.view;
@@ -246,6 +276,8 @@ export function setupReport(account){
   if(lastView==='records'&&view!=='records'&&!records.canLeave())return;
   if(lastView==='rates'&&view!=='rates'&&hasUnsubmittedTariffDraft(document)&&
      !window.confirm('Ci sono modifiche alle tariffe non ancora salvate. Uscire e scartarle?'))return;
+  const hasContext=filters&&typeof filters==='object'&&!Array.isArray(filters)&&['overview','trips','analysis','alerts','exports'].includes(view);
+  const contextChanged=hasContext?applyReportContext(filters):false;
   const wasReport=!report.hidden,showReport=!['drivers','security','records'].includes(view);
   if(view!=='overview')companyDirectory.reset();
   if(view!=='rates'){companyRates.reset();companyExtras.reset();}
@@ -271,8 +303,11 @@ export function setupReport(account){
     void companyRates.load();void companyExtras.load();
    }else{
     if(view==='overview')void companyDirectory.load();
-    if(!wasReport||(!page&&!loading)){rows=[];void load(false);}
-    else if(view!==lastView)void load(false,{silent:true});
+    const matchingPage=page&&page.month===month.value&&(pageDriverId||'')===(driver.value||'');
+    if(contextChanged||!wasReport||(!matchingPage&&!loading)){rows=[];focusOnDriver=Boolean(driver.value);void load(false);}
+    else if(hasContext){
+     if(view!=='overview'&&!loading)void loadCurrentInsights(page?.drivers||[]);
+    }else if(view!==lastView)void load(false,{silent:true});
    }
   }
   window.scrollTo({top:0,behavior:'instant'});
@@ -286,6 +321,7 @@ export function setupReport(account){
    reset();return;
   }
   const serial=++requestSeq;loading=true;
+  const queryMonth=month.value,queryDriverId=driver.value||null;
   el('report-refresh').disabled=true;el('report-next').disabled=true;
   if(!append&&!silent){
    clearData();insights.reset({keepPending:true});el('report-empty').hidden=true;
@@ -296,9 +332,9 @@ export function setupReport(account){
   }
   try{
    const result=await account.companyReport({
-    month:month.value,driverId:driver.value||null,offset:append?rows.length:0,limit:40
+    month:queryMonth,driverId:queryDriverId,offset:append?rows.length:0,limit:40
    });
-   if(serial!==requestSeq||report.hidden)return;
+   if(serial!==requestSeq||report.hidden||month.value!==queryMonth||(driver.value||null)!==queryDriverId)return;
    if(!result||!result.summary||!Array.isArray(result.trips)||!Array.isArray(result.drivers)||
      !Array.isArray(result.chart)||!result.pagination||result.month!==month.value)
     throw new Error('Il servizio ha restituito un report incompleto.');
@@ -308,14 +344,17 @@ export function setupReport(account){
     result.summary,result.drivers,result.chart,result.trips,result.incompleteArchives
    ]);
    if(unchanged){
+    page={...page,reportedAt:result.reportedAt};reportStale=false;
     el('report-status').textContent='Dati aziendali controllati alle '+
      new Date(result.reportedAt).toLocaleString('it-IT')+
      '. Nessuna variazione nei viaggi ricevuti.';
     el('report-error').hidden=true;
+    if(el('dashboard').dataset.view!=='overview'&&(!insights.peek()||resetInsightContext))void loadCurrentInsights(result.drivers);
+    window.dispatchEvent(new Event('lts-admin-data-refreshed'));
     return true;
    }
    rows=append?[...rows,...result.trips]:result.trips;
-   page=result;
+   page=result;pageDriverId=queryDriverId;reportStale=false;
    window.dispatchEvent(new Event('lts-admin-data-refreshed'));
    el('report-error').hidden=true;
    updateDriverOptions(result.drivers);
@@ -347,7 +386,7 @@ export function setupReport(account){
    el('report-next').hidden=rows.length>=result.pagination.total;
    el('report-status').textContent=(result.source||'Dati sincronizzati')+
     ' Ultimo controllo: '+new Date(result.reportedAt).toLocaleString('it-IT')+'.';
-   if(!append)void insights.load({month:month.value,driverId:driver.value||null,drivers:result.drivers});
+   if(!append&&el('dashboard').dataset.view!=='overview')void loadCurrentInsights(result.drivers);
    if(focusOnDriver&&selected&&el('report-driver-profile').hidden===false){
     focusOnDriver=false;
     el('report-driver-profile').scrollIntoView({block:'start',behavior:'auto'});
@@ -355,6 +394,7 @@ export function setupReport(account){
   }catch(error){
    if(serial!==requestSeq)return false;
    if(silent&&page){
+    reportStale=true;window.dispatchEvent(new Event('lts-admin-data-refreshed'));
     el('report-error').textContent=error?.message||'Aggiornamento non riuscito.';
     el('report-error').hidden=false;
     el('report-status').textContent='Dati non aggiornati: mostrato l’ultimo report ricevuto.';
@@ -413,19 +453,38 @@ export function setupReport(account){
   rows=[];void load(false);
   if(el('dashboard').dataset.view==='overview')void companyDirectory.load();
  });
- month.addEventListener('change',()=>{rows=[];void load(false);});
- driver.addEventListener('change',()=>{rows=[];focusOnDriver=Boolean(driver.value);void load(false);});
+ month.addEventListener('change',()=>{clearReportScope();rows=[];void load(false);});
+ driver.addEventListener('change',()=>{clearReportScope();rows=[];focusOnDriver=Boolean(driver.value);void load(false);});
  driverSearch.addEventListener('input',()=>{
   if(page)driverDirectory(page.drivers,driver.value,selectDriver,driverSearch.value);
  });
  el('report-show-all').addEventListener('click',()=>selectDriver(''));
  el('report-reset-filters').addEventListener('click',()=>{
-  month.value=currentMonth();driver.value='';driverSearch.value='';rows=[];focusOnDriver=false;void load(false);
+  clearReportScope();month.value=currentMonth();driver.value='';driverSearch.value='';rows=[];focusOnDriver=false;void load(false);
  });
  el('report-next').addEventListener('click',()=>void load(true));
- return {reset,open,refreshActive,
-  peek(){return page?{summary:page.summary,month:page.month,reportedAt:page.reportedAt,
-   incompleteArchives:page.incompleteArchives,trips:rows}:null;},
+ function setReportFilters(filters={}){
+  if(!account.isVerified()||account.getRole()!=='admin'||el('dashboard').hidden||el('dashboard').inert)return false;
+  const changed=applyReportContext(filters);
+  if(changed||(filters.refresh===true&&!loading)){rows=[];focusOnDriver=Boolean(driver.value);void load(false,{silent:!changed});}
+  else if(el('dashboard').dataset.view!=='overview'&&!loading)void loadCurrentInsights(page?.drivers||[]);
+  if(filters.refresh===true&&el('dashboard').dataset.view==='overview')void companyDirectory.load({silent:true});
+  return true;
+ }
+
+ function openCustomers(){
+  open('overview');if(el('dashboard').dataset.view!=='overview')return false;
+  el('dashboard').dataset.homeSection='customers';
+  el('workspace-title').textContent='Clienti aziendali';
+  el('workspace-description').textContent='Catalogo condiviso, sedi operative e tariffe collegate.';
+  void companyDirectory.load({silent:true});
+  requestAnimationFrame(()=>{el('customer-overview').scrollIntoView({block:'start',behavior:'auto'});el('customer-overview-title').setAttribute('tabindex','-1');el('customer-overview-title').focus({preventScroll:true});});
+  return true;
+ }
+ el('customers-tab').addEventListener('click',openCustomers);
+ return {reset,open,refreshActive,setReportFilters,openCustomers,
+  peek(){return page?{summary:page.summary,month:page.month,driverId:pageDriverId,reportedAt:page.reportedAt,stale:reportStale,
+   incompleteArchives:page.incompleteArchives,trips:rows,chart:page.chart,drivers:page.drivers}:null;},
   peekCustomers(){return companyDirectory.peek();},
   async prepareRateInline(site){
    if(!account.isVerified()||account.getRole()!=='admin'||el('dashboard').hidden)return false;

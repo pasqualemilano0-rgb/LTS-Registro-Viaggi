@@ -1,0 +1,30 @@
+/* Admin-only integration: keep every existing workspace and form mounted. */
+#dashboard #control-center-home {display:none}
+#dashboard[data-view="overview"] #control-center-home {display:grid}
+#dashboard[data-view="overview"] #report-panel > :not(#control-center-home) {display:none!important}
+#dashboard[data-view="overview"] > #workspace-bar {display:none}
+#dashboard[data-view="overview"][data-home-section="customers"] #control-center-home,
+#dashboard[data-view="overview"][data-home-section="approvals"] #control-center-home {display:none!important}
+#dashboard[data-view="overview"][data-home-section="customers"] #report-panel > #customer-overview,
+#dashboard[data-view="overview"][data-home-section="approvals"] #report-panel > #maps-approvals {display:block!important}
+#dashboard[data-view="overview"][data-home-section="customers"] > #workspace-bar,
+#dashboard[data-view="overview"][data-home-section="approvals"] > #workspace-bar {display:flex}
+.topbar .brand {min-width:0}
+.topbar .brand img {width:88px;height:38px;object-fit:contain;flex:0 0 auto}
+.topbar .brand strong {font-size:clamp(13px,1.8vw,17px);line-height:1.2;color:#12394c}
+.topbar .brand small {font-size:10px}
+#dashboard .admin-nav-name {font-size:15px}
+@media(max-width:600px){
+ .topbar {gap:8px;padding-inline:12px}
+ .topbar .brand {gap:7px;flex:1}
+ .topbar .brand img {width:67px;height:32px}
+ .topbar .brand strong {font-size:12px;max-width:116px;display:block}
+ .topbar .brand small {font-size:9px}
+ .topbar .secure-label {display:none}
+ .topbar .top-actions {gap:5px}
+ .topbar .top-actions .button {min-width:40px;min-height:40px;padding:6px 8px;font-size:11px}
+ .topbar #smart-command-open {font-size:0;min-width:40px}
+ .topbar #smart-command-open::before {content:'⌕';font-size:23px;line-height:1}
+}
+
+#dashboard[data-view="trips"][data-report-scope="filtered"] .report-register {display:none!important}

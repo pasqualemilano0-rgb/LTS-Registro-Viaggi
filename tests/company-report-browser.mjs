@@ -1,7 +1,7 @@
 /** Browser-only isolated QA. No real accounts, production URLs or archive reads. */
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
-import {readFile} from 'node:fs/promises';
+import {readFile,mkdir} from 'node:fs/promises';
 import {fileURLToPath} from 'node:url';
 import {extname,resolve,sep} from 'node:path';
 import {createRequire} from 'node:module';
@@ -146,6 +146,7 @@ export const forgetPendingAdminMfa=()=>{};
 export const logout=async()=>({revoked:true});
 export const signOut=()=>{};
 export const companyReport=async({month,offset=0,limit=40,driverId=null})=>{
+ (globalThis.__mockCompanyReportCalls??=[]).push({month,offset,limit,driverId});
  const drivers=[
  {id:'11111111-1111-4111-8111-111111111111',name:'Mario Rossi',trips:2,days:2,totalCents:25000,missingTariffCount:1,active:true},
  {id:'22222222-2222-4222-8222-222222222222',name:'Lucia Bianchi',trips:0,days:0,totalCents:0,missingTariffCount:0,active:false}
@@ -173,6 +174,7 @@ export const companyReport=async({month,offset=0,limit=40,driverId=null})=>{
 /* Synthetic V3 analytics – no production data or credentials. */
 export const companyInsights=async({month,driverId=null,compareDriverId=null,fromDate=null,toDate=null,
  client='',city='',container=''})=>{
+ (globalThis.__mockInsightsCalls??=[]).push({month,driverId,fromDate,toDate,client,city,container});
  const all=[
  {id:'1',driverId:'11111111-1111-4111-8111-111111111111',driverName:'Mario Rossi',date:'2026-11-04',
   container:'ABCD1234567',client:'CLIENTE ALFA',city:'NAPOLI',amountCents:15000,missingTariff:false},
@@ -303,12 +305,12 @@ await new Promise(r=>server.listen(0,'127.0.0.1',r));
 const origin='http://127.0.0.1:'+server.address().port;
 let browser;
 try{
- browser=await (engine==='webkit'?webkit:chromium).launch(engine==='webkit'?{headless:true}:{headless:true,args:['--no-sandbox']});
+ browser=await (engine==='webkit'?webkit:chromium).launch(engine==='webkit'?{headless:true}:{headless:true,args:['--no-sandbox'],...(process.env.LTS_BROWSER_EXECUTABLE?{executablePath:process.env.LTS_BROWSER_EXECUTABLE}:{})});
  const page=await browser.newPage({viewport:{width:390,height:844},deviceScaleFactor:2,isMobile:true,hasTouch:true});
  const errors=[];page.on('pageerror',e=>errors.push(String(e)));
  const mobileMore=page.locator('#admin-nav-more');
  async function openAdminTab(id){
-  if(['records-tab','rates-tab','alerts-tab','exports-tab','security-tab'].includes(id)&&
+  if(['records-tab','rates-tab','analysis-tab','alerts-tab','exports-tab','security-tab'].includes(id)&&
      !(await mobileMore.evaluate(details=>details.open))){
    await mobileMore.locator('summary').click();
   }
@@ -317,31 +319,75 @@ try{
  await page.goto(origin+'/amministratore/',{waitUntil:'networkidle',timeout:20000});
  await page.locator('#dashboard').waitFor({state:'visible'});
  assert.equal(await page.locator('#dashboard').getAttribute('data-view'),'overview','Protected overview should open after verified admin MFA');
- assert.equal(await page.locator('#console-overview').isVisible(),true);
+ assert.equal(await page.locator('#control-center-home').isVisible(),true);
  assert.equal(await page.locator('#company-rates').isVisible(),false,
   'Home must never show the tariff administration form or its guide');
- assert.equal(await page.locator('#maps-approvals').isVisible(),true,
-  'The Maps approval inbox stays on Home');
-
+ assert.equal(await page.locator('#console-overview').isVisible(),false,
+  'The previous overview stays available to its modules without duplicating the new Home');
+ await page.waitForFunction(()=>document.querySelector('#cc-kpi-tripsMonth .cc-kpi-value')?.textContent==='2');
+ await page.waitForFunction(()=>document.querySelector('#cc-kpi-companyCustomers .cc-kpi-value')?.textContent==='3');
+ assert.equal(await page.locator('#control-center-home .cc-kpi').count(),8);
+ assert.equal(await page.locator('#cc-kpi-driversTotal .cc-kpi-value').textContent(),'1');
+ assert.equal(await page.locator('#cc-kpi-driversActive .cc-kpi-value').textContent(),'1');
+ assert.equal(await page.evaluate(()=>globalThis.__mockCompanyReportCalls.length),1,
+  'Mounting Home must load the monthly report only once');
+ assert.equal(await page.locator('#smart-command-open').isVisible(),true,
+  'Smart Console remains directly accessible from mobile Home');
+ if(process.env.LTS_BROWSER_SCREENSHOT_DIR){await mkdir(process.env.LTS_BROWSER_SCREENSHOT_DIR,{recursive:true});await page.screenshot({path:resolve(process.env.LTS_BROWSER_SCREENSHOT_DIR,engine+'-admin-home-390.png')});await page.screenshot({path:resolve(process.env.LTS_BROWSER_SCREENSHOT_DIR,engine+'-admin-home-390-full.png'),fullPage:true});}
+ // Open the actual authorized insight record through the mounted existing drawer.
+ await page.locator('#cc-global-search').fill('WXYZ1234567');
+ await page.locator('#cc-search-results button').filter({hasText:'WXYZ1234567'}).click();
+ await page.locator('#smart-detail').waitFor({state:'visible'});
+ assert.match(await page.locator('#smart-detail-body').textContent(),/WXYZ1234567/);
+ assert.match(await page.locator('#smart-detail-body').textContent(),/CLIENTE BETA/);
+ assert.match(await page.locator('#smart-detail-body').textContent(),/SALERNO/);
+ assert.equal(await page.locator('#dashboard').getAttribute('data-view'),'overview');
+ await page.locator('#smart-close').click();await page.locator('#cc-global-search').fill('');
  const mobileLayout=await page.evaluate(()=>{
-  const rect=id=>document.getElementById(id).getBoundingClientRect();
-  return {
-   navHeight:document.querySelector('#dashboard>.admin-switch').getBoundingClientRect().height,
-   reviewTop:rect('maps-approvals').top,
-   kpiTop:document.querySelector('#report-panel>.report-kpis').getBoundingClientRect().top,
-   commandsTop:rect('console-overview').top,
-   commandsHeight:rect('console-overview').height,
-   viewport:window.innerWidth,documentWidth:document.documentElement.scrollWidth};
+  const box=selector=>document.querySelector(selector).getBoundingClientRect();
+  return {navHeight:box('#dashboard>.admin-switch').height,
+   heroTop:box('#control-center-home .cc-hero').top,
+   kpiTop:box('#control-center-home .cc-kpis').top,
+   actionsTop:box('#cc-quick-actions').top,
+   viewport:innerWidth,documentWidth:document.documentElement.scrollWidth};
  });
- assert(mobileLayout.navHeight<=78,'Mobile navigation should be compact');
- assert(mobileLayout.reviewTop<mobileLayout.kpiTop&&mobileLayout.kpiTop<mobileLayout.commandsTop,
-  'Approvals and synced KPIs must precede quick actions');
- assert(mobileLayout.commandsHeight<225,'Quick actions cannot take over the mobile dashboard');
+ assert(mobileLayout.navHeight<=90,'Five-item mobile navigation should stay compact');
+ assert(mobileLayout.heroTop<mobileLayout.kpiTop&&mobileLayout.kpiTop<mobileLayout.actionsTop,
+  'Welcome, verified KPI cards and operational actions have a clear mobile order');
  assert(mobileLayout.documentWidth<=mobileLayout.viewport+2,
-  'Unified mobile dashboard must not cause horizontal document overflow');
- assert.equal(await page.locator('#workspace-title').textContent(),'Panoramica operativa');
+  'Control Center must not cause horizontal document overflow');
+ await page.locator('#cc-kpi-pendingApprovals').click();
+ assert.equal(await page.locator('#dashboard').getAttribute('data-home-section'),'approvals');
+ assert.equal(await page.locator('#maps-approvals').isVisible(),true,
+  'The real Maps approval form opens from its KPI card');
+ await page.locator('#overview-tab').click();
+ assert.equal(await page.locator('#control-center-home').isVisible(),true);
  await page.waitForFunction(()=>document.querySelector('#customer-overview-priced').textContent==='1');
  assert.equal(await page.locator('#customer-overview-total').textContent(),'3');
+
+ // A Home day opens only that day's verified rows, without the monthly table below it.
+ const day=await page.locator('#cc-trend-day').getAttribute('aria-valuetext');
+ const beforeDay=await page.evaluate(()=>globalThis.__mockInsightsCalls.length);
+ await page.locator('#cc-open-day').click();
+ await page.waitForFunction(()=>document.querySelector('#pro-filter-summary').textContent.startsWith('Selezione:'));
+ assert.equal(await page.locator('#dashboard').getAttribute('data-view'),'trips');
+ assert.equal(await page.locator('#dashboard').getAttribute('data-report-scope'),'filtered');
+ assert.equal(await page.locator('.report-register').isVisible(),false);
+ assert.equal(await page.locator('#pro-from').inputValue(),await page.locator('#pro-to').inputValue());
+ assert.match(day,/0 viaggi/);
+ assert.equal(await page.locator('#pro-record-count').textContent(),'0 viaggi');
+ assert.equal(await page.evaluate(()=>globalThis.__mockInsightsCalls.length),beforeDay+1,
+  'A contextual Home day must share one protected insight request');
+ await page.locator('#report-month').fill('2026-10');
+ await page.locator('#report-month').dispatchEvent('change');
+ await page.waitForFunction(()=>document.querySelector('#pro-from').value==='2026-10-01'&&document.querySelector('#pro-record-count').textContent==='1 viaggi');
+ assert.equal(await page.locator('#pro-to').inputValue(),'2026-10-31');
+ assert.equal(await page.locator('#dashboard').getAttribute('data-report-scope'),null,
+  'A manual month change must discard the old Home day context');
+ await page.locator('#report-month').fill('2026-11');
+ await page.locator('#report-month').dispatchEvent('change');
+ await page.waitForFunction(()=>document.querySelector('#pro-from').value==='2026-11-01'&&document.querySelector('#pro-record-count').textContent==='2 viaggi');
+ await page.locator('#overview-tab').click();
 
  // Alphabetical roster: existing driver remains accessible by last-name initial.
  await openAdminTab('management-tab');
@@ -473,6 +519,8 @@ try{
  assert.equal(await page.locator('#management-panel #restore-form').count(),1);
  await page.locator('#invite-form').evaluate(form=>form.reset());
 
+ await openAdminTab('customers-tab');
+ assert.equal(await page.locator('#customer-overview').isVisible(),true);
  assert.equal(await page.locator('#customer-overview-unpriced').textContent(),'2');
  assert.match(await page.locator('#customer-overview-sync-status').textContent(),/1 sedi con tariffa, 2 senza tariffa/);
  // An unpriced shared depot pre-fills precisely its name and city.
@@ -511,7 +559,7 @@ try{
  assert.equal(await page.locator('#management-panel').isVisible(),false);
  const navigation=page.locator('#dashboard>.admin-switch');
  assert.equal(await navigation.locator('button:visible').count(),4,
-  'Mobile nav exposes four primary actions; secondary sections live in More');
+  'Mobile nav exposes Home, Autisti, Viaggi and Clienti; secondary sections live in More');
  assert.equal(await mobileMore.locator('summary').isVisible(),true);
  assert.equal(await mobileMore.evaluate(details=>details.open),false,'More starts collapsed on mobile');
  const mobileGeometry=await navigation.evaluate(element=>({
@@ -537,7 +585,7 @@ try{
     labelSize:parseFloat(getComputedStyle(buttons[0]).fontSize)
    };
   });
-  assert.equal(box.colCount,5,width+'px: four tabs and More fit one row');
+  assert.equal(box.colCount,5,width+'px: four primary tabs and More fit one row');
   assert(box.navLeft>=-1&&box.navRight<=box.viewport+1,
    width+'px: bar fits the viewport');
   assert(box.documentScroll<=box.viewport+2,width+'px: no horizontal page overflow');
@@ -668,9 +716,10 @@ try{
  assert.equal(await page.locator('#report-panel').isVisible(),false);
  await openAdminTab('report-tab');
  await page.waitForFunction(()=>document.querySelector('#report-count').textContent==='2');
- // All eight navigation pages are real, separate, keyboard-accessible views.
+ // Existing pages and the new Home/Customers navigation stay real and accessible.
  const sectionCases=[
-  ['overview-tab','overview','#console-overview'],
+  ['overview-tab','overview','#control-center-home'],
+  ['customers-tab','overview','#customer-overview'],
   ['management-tab','drivers','#invite-form'],
   ['report-tab','trips','.report-register'],
   ['records-tab','records','#admin-records-panel'],
@@ -870,7 +919,9 @@ try{
  assert.equal(await page.locator('#records-customers').textContent(),'2');
  // Home shortcut opens the same category without sharing a private record.
  await openAdminTab('overview-tab');
- await page.locator('[data-open-private-customers]').click();
+ await page.locator('#cc-quick-actions [data-action="records"]').click();
+ await page.waitForFunction(()=>document.querySelector('#dashboard').dataset.view==='records');
+ await page.locator('#records-tabs button[data-kind="customer"]').click();
  await page.waitForFunction(()=>document.querySelector('#dashboard').dataset.view==='records');
  assert.equal(await page.locator('#records-tabs button[data-kind="customer"]').getAttribute('aria-pressed'),'true');
  await page.waitForFunction(()=>document.querySelector('#records-list').textContent.includes('CLIENTE AUTISTA CORRETTO'));
@@ -962,7 +1013,7 @@ try{
  await page.waitForFunction(()=>document.querySelector('#company-maps-status').textContent.includes('Cliente Google Maps e tariffa salvati insieme'));
  await page.waitForFunction(()=>document.querySelector('#company-rates-count').textContent.includes('3 tariffe aziendali'));
  // Already-linked Maps shortlink: review first, then update only its placeholder.
- await openAdminTab('overview-tab');
+ await openAdminTab('customers-tab');
  await page.waitForFunction(()=>document.querySelector('#customer-overview-missing').textContent==='1');
  await page.locator('#customer-maps-scan').click();
  await page.waitForFunction(()=>document.querySelector('#customer-maps-refresh-status').textContent.includes('Verifica terminata'));
@@ -997,7 +1048,7 @@ try{
  await openAdminTab('report-tab');
  await page.waitForFunction(()=>document.querySelector('#report-count').textContent==='2');
  // Authorized search must be cleared immediately on logout, even with an open preview.
- await page.locator('#smart-command-open').click();
+ await page.keyboard.press('Control+k');
  await page.locator('#smart-search').fill('ROSSI');
  await page.locator('#smart-results .smart-result-buttons button').first().click();
  assert.equal(await page.locator('#smart-detail').isVisible(),true);
@@ -1025,7 +1076,7 @@ try{
  assert.equal(errors.length,0,'No JavaScript errors: '+errors.join(';'));
  // Data source remains read-only, notes never render as HTML, and no horizontal page scroll on mobile.
  assert.equal(await page.locator('#report-month').inputValue(),'2026-11');
- console.log('PASS '+engine+' mobile 390px: nine real pages, admin MFA, charts, filters, PDF/Excel, anomaly drill-down, security, logout wipe');
+ console.log('PASS '+engine+' mobile 390px: ten real pages, admin MFA, charts, filters, PDF/Excel, anomaly drill-down, security, logout wipe');
  await page.close();
  // Desktop navigation: the protected dashboard must retain working tabs with its
  // new dark sidebar; never make a non-verified page visible via CSS.
@@ -1038,12 +1089,13 @@ try{
  assert(navBox&&contentBox&&navBox.x+navBox.width<contentBox.x,
   'Professional left sidebar must be beside the admin content');
  assert.equal(await nav.evaluate(e=>getComputedStyle(e).position),'sticky');
- const workspaceBox=await desktop.locator('#workspace-bar').boundingBox();
- assert(workspaceBox&&workspaceBox.x>navBox.x+navBox.width&&workspaceBox.y<=contentBox.y,
-  'Desktop section header must be above the content and beside sidebar');
+ const workspaceBox=await desktop.locator('#control-center-home .cc-hero').boundingBox();
+ assert(workspaceBox&&workspaceBox.x>navBox.x+navBox.width&&workspaceBox.y>=contentBox.y,
+  'The new Home welcome sits in the authorized content beside the desktop sidebar');
  assert.equal(await desktop.locator('.admin-nav-brand').isVisible(),true);
- assert.equal(await nav.locator('button').count(),9);
+ assert.equal(await nav.locator('button').count(),10);
  assert.equal(await desktop.locator('#dashboard').getAttribute('data-view'),'overview');
+ if(process.env.LTS_BROWSER_SCREENSHOT_DIR){await desktop.setViewportSize({width:1280,height:900});await desktop.screenshot({path:resolve(process.env.LTS_BROWSER_SCREENSHOT_DIR,engine+'-admin-home-1280.png')});await desktop.screenshot({path:resolve(process.env.LTS_BROWSER_SCREENSHOT_DIR,engine+'-admin-home-1280-full.png'),fullPage:true});}
  await desktop.locator('#report-tab').click();
  await desktop.waitForFunction(()=>document.querySelector('#report-count').textContent==='2');
  assert.equal(await desktop.locator('#report-panel').isVisible(),true);

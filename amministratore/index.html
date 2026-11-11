@@ -6,11 +6,11 @@
   <meta name="theme-color" content="#006f89">
   <meta name="referrer" content="no-referrer">
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src https://otrqynkscpbeyuvdlgpg.supabase.co wss://otrqynkscpbeyuvdlgpg.supabase.co https://api.github.com; worker-src 'self'; manifest-src 'self'; base-uri 'none'; form-action 'self'; object-src 'none'">
-  <title>LTS · Dashboard amministratore</title>
+  <title>LTS Control Center · Amministrazione</title>
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="LTS Admin">
-  <meta name="description" content="Pannello riservato all'amministratore per gestire gli autisti LTS.">
+  <meta name="description" content="Centro di controllo LTS per autisti, viaggi, clienti e tariffe aziendali.">
   <link rel="icon" type="image/png" href="../assets/icon-192.png">
   <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
   <link rel="manifest" href="./manifest.webmanifest">
@@ -25,15 +25,17 @@
   <link rel="stylesheet" href="./admin-login-refreshed.css?v=20261110-seamless-resume-v2">
   <link rel="stylesheet" href="./control-center-v10.css?v=20261110-maps-approval-v1">
   <link rel="stylesheet" href="./dashboard-unified-v11.css?v=20261110-rates-visibility-v2">
-  <script type="module" src="./admin.mjs?v=20261111-reefer-retired-v5"></script>
+  <link rel="stylesheet" href="./control-center-home.css?v=20261111-control-center-v1">
+  <link rel="stylesheet" href="./control-center-integration.css?v=20261111-control-center-v1">
+  <script type="module" src="./admin.mjs?v=20261111-control-center-v1"></script>
   <script type="module" src="./install-pwa.mjs?v=20261108-admin-pwa-v1"></script>
-  <script type="module" src="./dashboard-mobile-nav.mjs?v=20261107-records-admin-v2"></script>
+  <script type="module" src="./dashboard-mobile-nav.mjs?v=20261111-control-center-v1"></script>
 </head>
 <body>
   <header class="topbar">
     <a class="brand" href="../" aria-label="Torna a LTS Registro Viaggi">
       <img src="../assets/lts-logo.png" alt="" width="43" height="43">
-      <span><strong>LTS</strong><small>Gestione autisti</small></span>
+      <span><strong>LTS Control Center</strong><small>Gestione aziendale</small></span>
     </a>
     <div class="top-actions">
       <span class="secure-label"><span aria-hidden="true">●</span> Area riservata</span>
@@ -103,16 +105,17 @@
       <nav class="admin-switch" aria-label="Sezioni amministratore">
         <div class="admin-nav-brand" aria-hidden="true">
           <span class="admin-nav-logo">LTS</span>
-          <span class="admin-nav-name">Gestione Autisti<small>Control Center</small></span>
+          <span class="admin-nav-name">LTS Control Center<small>Area amministratore</small></span>
         </div>
         <p class="admin-nav-caption">NAVIGAZIONE AZIENDALE</p>
         <button type="button" id="overview-tab" class="admin-switch-button" aria-label="Panoramica" aria-pressed="false"><span class="admin-nav-icon"><svg class="admin-nav-svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.3"/><rect x="14" y="3" width="7" height="7" rx="1.3"/><rect x="3" y="14" width="7" height="7" rx="1.3"/><rect x="14" y="14" width="7" height="7" rx="1.3"/></svg></span><span class="admin-nav-label-full">Panoramica</span><span class="admin-nav-label-short" aria-hidden="true">Home</span><span id="approval-nav-count" class="approval-nav-count" aria-label="Richieste nuovi clienti in attesa" hidden></span></button>
         <button type="button" id="management-tab" class="admin-switch-button selected" aria-label="Gestione autisti" aria-pressed="true"><span class="admin-nav-icon"><svg class="admin-nav-svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3 20v-1a6 6 0 0 1 12 0v1"/><path d="M17 11a3 3 0 0 0 0-6M17 14a5 5 0 0 1 4 5v1"/></svg></span><span class="admin-nav-label-full">Gestione autisti</span><span class="admin-nav-label-short" aria-hidden="true">Autisti</span></button>
         <button type="button" id="report-tab" class="admin-switch-button" aria-label="Registro viaggi" aria-pressed="false"><span class="admin-nav-icon"><svg class="admin-nav-svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7h11v9H3zM14 10h4l3 3v3h-7z"/><circle cx="7" cy="17" r="2"/><circle cx="18" cy="17" r="2"/></svg></span><span class="admin-nav-label-full">Registro viaggi</span><span class="admin-nav-label-short" aria-hidden="true">Viaggi</span></button>
-        <button type="button" id="analysis-tab" class="admin-switch-button" aria-label="Analisi e grafici" aria-pressed="false"><span class="admin-nav-icon"><svg class="admin-nav-svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h16M6 17v-5M12 17V5M18 17V9"/></svg></span><span class="admin-nav-label-full">Analisi e grafici</span><span class="admin-nav-label-short" aria-hidden="true">Analisi</span></button>
+        <button type="button" id="customers-tab" class="admin-switch-button" aria-label="Clienti aziendali" aria-pressed="false"><span class="admin-nav-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 21V7l9-4 9 4v14M7 10h2m6 0h2M7 14h2m6 0h2M10 21v-4h4v4"/></svg></span><span class="admin-nav-label-full">Clienti aziendali</span><span class="admin-nav-label-short" aria-hidden="true">Clienti</span></button>
         <details class="admin-nav-more" id="admin-nav-more" open>
           <summary class="admin-nav-more-toggle" aria-label="Altre sezioni" aria-controls="admin-nav-more-items"><span class="admin-nav-icon"><svg class="admin-nav-svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg></span><span>Altro</span></summary>
           <div class="admin-nav-more-items" id="admin-nav-more-items" role="group" aria-label="Altre sezioni">
+<button type="button" id="analysis-tab" class="admin-switch-button" aria-label="Analisi e grafici" aria-pressed="false"><span class="admin-nav-icon"><svg class="admin-nav-svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h16M6 17v-5M12 17V5M18 17V9"/></svg></span><span class="admin-nav-label-full">Analisi e grafici</span><span class="admin-nav-label-short" aria-hidden="true">Analisi</span></button>
             <button type="button" id="records-tab" class="admin-switch-button" aria-label="Archivi autisti e modifiche" aria-pressed="false"><span class="admin-nav-icon" aria-hidden="true">▤</span><span class="admin-nav-label-full">Archivi autisti</span></button>
             <button type="button" id="rates-tab" class="admin-switch-button" aria-label="Tariffe aziendali" aria-pressed="false"><span class="admin-nav-icon"><svg class="admin-nav-svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16v11H4z"/><path d="M4 11h16M15 15h3"/><circle cx="8" cy="15" r="1"/></svg></span><span class="admin-nav-label-full">Tariffe aziendali</span></button>
             <button type="button" id="alerts-tab" class="admin-switch-button" aria-label="Anomalie" aria-pressed="false"><span class="admin-nav-icon"><svg class="admin-nav-svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3 10 18H2L12 3z"/><path d="M12 9v5M12 18h.01"/></svg></span><span class="admin-nav-label-full">Anomalie</span></button>
@@ -283,6 +286,7 @@
         <p class="records-note">Solo i dati già sincronizzati online sono visibili. Un inserimento ancora offline sul telefono dell’autista apparirà dopo la sincronizzazione. Le eliminazioni non cancellano l’audit amministrativo.</p>
       </section>
       <section id="report-panel" aria-labelledby="report-title" hidden>
+        <section id="control-center-home" aria-labelledby="cc-home-title"></section>
         <section id="maps-approvals" class="maps-approvals surface" aria-labelledby="maps-approvals-title">
           <div class="maps-approvals-head">
             <div>

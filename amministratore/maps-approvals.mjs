@@ -43,7 +43,7 @@ export function setupMapsApprovals(account,{onApproved=()=>{}}={}){
    return;
   }
   for(const item of requests){
-   const card=text('article','maps-approval-card','');
+   const card=text('article','maps-approval-card','');card.dataset.approvalId=String(item.id);
    const head=text('div','maps-approval-identity','');
    head.append(text('strong','',item.name),text('span','',item.city));
    const details=text('p','maps-approval-address',item.address);
@@ -102,10 +102,16 @@ export function setupMapsApprovals(account,{onApproved=()=>{}}={}){
    card.append(head,details,origin,link,controls);list.append(card);
   }
  }
- async function load({silent=false,force=false}={}){
+ let loadFlight=null;
+ function load(options={}){
+  if(loadFlight&&!options.force)return loadFlight;
+  const promise=performLoad(options).finally(()=>{if(loadFlight===promise)loadFlight=null;});
+  loadFlight=promise;return promise;
+ }
+ async function performLoad({silent=false,force=false}={}){
   if(!authorized()||(busy&&!force))return false;
-  if(!force&&silent&&panel.contains(document.activeElement)&&
-   document.activeElement?.matches('input'))return false;
+  if(!force&&silent&&([...panel.querySelectorAll('.maps-approval-controls input')].some(input=>input.value.trim())||
+   panel.contains(document.activeElement)&&document.activeElement?.matches('input')))return false;
   const seq=++generation,owner=account.getAccountId();
   if(!silent){refresh.disabled=true;feedback('Controllo delle nuove richieste…');}
   try{
@@ -113,6 +119,7 @@ export function setupMapsApprovals(account,{onApproved=()=>{}}={}){
    if(seq!==generation||owner!==account.getAccountId()||!authorized())return false;
    const changed=!loaded||JSON.stringify(next)!==JSON.stringify(requests);
    requests=next;loaded=true;
+   window.dispatchEvent(new Event('lts-admin-approvals-refreshed'));
    if(changed)render();
    if(!silent||changed)feedback(next.length?
     next.length+' '+(next.length===1?'richiesta da approvare.':'richieste da approvare.')+
@@ -128,11 +135,11 @@ export function setupMapsApprovals(account,{onApproved=()=>{}}={}){
   }finally{if(seq===generation)refresh.disabled=false;}
  }
  function reset(){
-  generation++;busy=false;loaded=false;requests=[];
+  generation++;loadFlight=null;busy=false;loaded=false;requests=[];
   list.replaceChildren();refresh.disabled=false;updateBadge();
   feedback('Accedi come amministratore verificato per leggere le richieste.');
  }
  refresh.addEventListener('click',()=>{void load();});
  reset();
- return {load,reset};
+ return {load,reset,peek:()=>loaded?requests:null};
 }
