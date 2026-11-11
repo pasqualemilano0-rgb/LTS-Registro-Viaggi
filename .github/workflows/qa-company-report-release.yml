@@ -135,6 +135,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Use official Ubuntu HTTPS package mirrors
+        run: |
+          printf '%s\n' 'https://archive.ubuntu.com/ubuntu/' 'https://security.ubuntu.com/ubuntu/' | sudo tee /etc/apt/apt-mirrors.txt > /dev/null
       - name: Install isolated Chromium
         run: |
           mkdir -p "$RUNNER_TEMP/lts-playwright"
@@ -180,6 +183,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Use official Ubuntu HTTPS package mirrors
+        run: |
+          printf '%s\n' 'https://archive.ubuntu.com/ubuntu/' 'https://security.ubuntu.com/ubuntu/' | sudo tee /etc/apt/apt-mirrors.txt > /dev/null
       - name: Install isolated Safari WebKit
         run: |
           mkdir -p "$RUNNER_TEMP/lts-playwright"
