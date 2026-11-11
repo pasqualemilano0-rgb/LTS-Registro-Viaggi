@@ -27,7 +27,7 @@ export function setupCustomerOverview(account,onSetRate=null){
  }
  function reset(){
   mapsRefresh.reset();
-  generation++;records=null;tariffRows=null;expanded=false;
+  generation++;loadFlight=null;records=null;tariffRows=null;expanded=false;
   filter.value='incomplete';list.replaceChildren();clearMetrics();
   el('customer-overview-caption').textContent='La presenza di un indirizzo non ne certifica la validità su Google Maps.';
   status.textContent='Apri la panoramica per aggiornare il catalogo condiviso.';
@@ -98,7 +98,13 @@ export function setupCustomerOverview(account,onSetRate=null){
     filter.value==='complete'?' con indirizzo registrato':
     filter.value==='manual'?' inseriti manualmente':' nell’archivio condiviso');
  }
- async function load({silent=false}={}){
+ let loadFlight=null;
+ function load(options={}){
+  if(loadFlight)return loadFlight;
+  const promise=performLoad(options).finally(()=>{if(loadFlight===promise)loadFlight=null;});
+  loadFlight=promise;return promise;
+ }
+ async function performLoad({silent=false}={}){
   if(!active()){reset();return false;}
   const token=++generation;
   refresh.disabled=true;

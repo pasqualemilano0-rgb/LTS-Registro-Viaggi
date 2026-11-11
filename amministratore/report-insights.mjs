@@ -81,11 +81,12 @@ function renderBreakdown(id,rows,onChoose){
   root.append(btn);
  }
 }
-function renderAlerts(data,onChoose){
+function renderAlerts(data,onChoose,alertType=''){
  const root=el('pro-alerts');root.replaceChildren();
- el('pro-alert-count').textContent=String(data.alertTotal||0);
- if(!data.alerts.length){root.append(dom('p','pro-empty','Nessuna anomalia rilevata nei dati controllati.'));return;}
- for(const a of data.alerts){
+ const shown=alertType?data.alerts.filter(item=>item.type===alertType):data.alerts;
+ el('pro-alert-count').textContent=String(alertType?shown.length:data.alertTotal||0);
+ if(!shown.length){root.append(dom('p','pro-empty',alertType?'Nessuna segnalazione di questo tipo nei dati caricati.':'Nessuna anomalia rilevata nei dati controllati.'));return;}
+ for(const a of shown){
   const selectable=Boolean(a.driverId);
   const b=dom(selectable?'button':'div','pro-alert-item');
   if(selectable){b.type='button';b.dataset.selectable='true';b.addEventListener('click',()=>onChoose(a));}
@@ -97,7 +98,7 @@ function renderAlerts(data,onChoose){
   b.append(icon,t);root.append(b);
  }
  if(data.alertTotal>data.alerts.length)
-  root.append(dom('p','pro-empty','Altre '+(data.alertTotal-data.alerts.length)+' segnalazioni non visualizzate.'));
+  root.append(dom('p','pro-empty',alertType?'Filtro applicato alle sole segnalazioni caricate; altre segnalazioni non sono visualizzate.':'Altre '+(data.alertTotal-data.alerts.length)+' segnalazioni non visualizzate.'));
 }
 function renderCompare(data){
  const root=el('pro-compare-output');root.replaceChildren();
@@ -147,7 +148,7 @@ function validateData(d,month){
  return d;
 }
 export function setupInsights(account){
- let state=null,seq=0,currentMonth='',driverId='',drivers=[],visible=30,pendingAlert=null;
+ let state=null,seq=0,currentMonth='',driverId='',drivers=[],visible=30,pendingAlert=null,alertType='',loadFlight=null,loadKey=null;
  const monthEl=el('report-month'),driverEl=el('report-driver');
  const compare=el('pro-compare-driver');
  const from=el('pro-from'),to=el('pro-to');
@@ -155,7 +156,7 @@ export function setupInsights(account){
  const buttonIds=['pro-export-pdf','pro-export-xlsx'];
  const lock=locked=>buttonIds.forEach(id=>el(id).disabled=locked);
  function clear(){
-  seq++;state=null;lock(true);visible=30;
+  seq++;state=null;loadFlight=null;loadKey=null;lock(true);visible=30;
   for(const id of ['pro-trend','pro-trend-months','pro-clients','pro-routes','pro-alerts',
                    'pro-records','pro-compare-output'])el(id).replaceChildren();
   for(const id of ['pro-delta-trips','pro-delta-value','pro-alert-count','pro-record-count'])
@@ -187,20 +188,38 @@ export function setupInsights(account){
   const originalCompare=compare.value;
   driverId=ctx.driverId||'';currentMonth=ctx.month;
   drivers=Array.isArray(ctx.drivers)?ctx.drivers:[];
-  if(!sameMonth){
-   from.value=first(ctx.month);to.value=last(ctx.month);container.value='';
+  if(!sameMonth||ctx.resetFilters===true){
+   alertType='';from.value=first(ctx.month);to.value=last(ctx.month);container.value='';
    client.value='';city.value='';compare.value='';
   }
   const d=drivers.filter(x=>x.id!==driverId);
   compare.replaceChildren();
   const none=dom('option','','Nessun confronto');none.value='';compare.append(none);
   for(const item of d){const opt=dom('option','',item.name);opt.value=item.id;compare.append(opt);}
-  compare.value=driverId&&d.some(x=>x.id===originalCompare)?originalCompare:'';
+  compare.value=ctx.resetFilters!==true&&driverId&&d.some(x=>x.id===originalCompare)?originalCompare:'';
   const earliest=new Date(Date.UTC(Number(ctx.month.slice(0,4)),Number(ctx.month.slice(5,7))-12,1))
    .toISOString().slice(0,10);
   from.min=earliest;from.max=last(ctx.month);to.min=earliest;to.max=last(ctx.month);
   if(from.value<earliest||from.value>from.max)from.value=first(ctx.month);
   if(to.value>to.max||to.value<to.min)to.value=last(ctx.month);
+  const validDay=value=>typeof value==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(value)&&
+   Number.isFinite(Date.parse(value+'T12:00:00Z'))&&new Date(value+'T12:00:00Z').toISOString().slice(0,10)===value;
+  const requestedFrom=typeof ctx.fromDate==='string'?ctx.fromDate:from.value;
+  const requestedTo=typeof ctx.toDate==='string'?ctx.toDate:to.value;
+  // Reject stale/out-of-context ranges before they can reach the authenticated API.
+  if(validDay(requestedFrom)&&validDay(requestedTo)&&requestedFrom>=earliest&&
+     requestedTo<=to.max&&requestedFrom<=requestedTo){from.value=requestedFrom;to.value=requestedTo;}
+  else {from.value=first(ctx.month);to.value=last(ctx.month);}
+  for(const [key,input] of [['client',client],['city',city],['container',container]]){
+   if(typeof ctx[key]!=='string')continue;
+   const value=ctx[key].slice(0,500);
+   if(input.tagName==='SELECT'&&value&&![...input.options].some(o=>o.value===value)){
+    const option=dom('option','',value);option.value=value;input.append(option);
+   }
+   input.value=value;
+  }
+  if(typeof ctx.alertType==='string')alertType=/^[a-z][a-z0-9_-]{0,79}$/i.test(ctx.alertType)?ctx.alertType:'';
+
   if(pendingAlert){
    const alert=pendingAlert;pendingAlert=null;
    if((!alert.driverId||alert.driverId===driverId)&&alert.date&&
@@ -226,35 +245,41 @@ export function setupInsights(account){
   options('pro-city',data.options?.cities||[],city.value,'Tutte le località');
   renderBreakdown('pro-clients',data.clients,name=>{client.value=name;void load();});
   renderBreakdown('pro-routes',data.routes,name=>{city.value=name;void load();});
-  renderAlerts(data,chosenAlerts);
+  renderAlerts(data,chosenAlerts,alertType);
   renderRecords(data,visible);
   el('pro-filter-summary').textContent='Selezione: '+data.range.fromDate+' – '+data.range.toDate+
    ', '+data.summary.trips+' viaggi, '+money(data.summary.totalCents)+
    ' registrati'+(data.partial?' · Attenzione: dati parziali.':'.');
  }
- async function load(){
-  if(!account.isVerified()||account.getRole()!=='admin'||el('report-panel').hidden){clear();return;}
+ function load(){
+  if(!account.isVerified()||account.getRole()!=='admin'||el('report-panel').hidden){clear();return Promise.resolve(false);}
+  const query={month:currentMonth,driverId:driverId||null,compareDriverId:compare.value||null,
+   fromDate:from.value,toDate:to.value,client:client.value,city:city.value,container:container.value.trim()};
+  const key=JSON.stringify(query);
+  if(loadFlight&&loadKey===key)return loadFlight;
+  const promise=performLoad(query).finally(()=>{if(loadFlight===promise){loadFlight=null;loadKey=null;}});
+  loadKey=key;loadFlight=promise;return promise;
+ }
+ async function performLoad(query){
   const index=++seq;state=null;lock(true);
   el('pro-error').hidden=true;el('pro-progress').textContent='Analisi aziendale in aggiornamento…';
   try{
-   if(!from.value||!to.value||from.value>to.value)throw Error('Controlla le date del periodo.');
-   const result=validateData(await account.companyInsights({
-    month:currentMonth,driverId:driverId||null,compareDriverId:compare.value||null,
-    fromDate:from.value,toDate:to.value,client:client.value,city:city.value,
-    container:container.value.trim()
-   }),currentMonth);
-   if(index!==seq||el('report-panel').hidden)return;
-   render(result);
+   if(!query.fromDate||!query.toDate||query.fromDate>query.toDate)throw Error('Controlla le date del periodo.');
+   const result=validateData(await account.companyInsights(query),query.month);
+   if(index!==seq||el('report-panel').hidden)return false;
+   render(result);return true;
   }catch(error){
-   if(index!==seq)return;
+   if(index!==seq)return false;
    clear();
    el('pro-error').textContent=error?.message||'Analisi non disponibile.';
    el('pro-error').hidden=false;
    el('pro-progress').textContent='Analisi non disponibile: nessun dato confermato.';
+   return false;
   }
  }
+
  function reset({keepPending=false}={}){
-  clear();currentMonth='';driverId='';drivers=[];
+  clear();currentMonth='';driverId='';drivers=[];alertType='';
   if(!keepPending)pendingAlert=null;
   compare.replaceChildren();from.value='';to.value='';client.replaceChildren();city.replaceChildren();
   container.value='';
@@ -264,7 +289,7 @@ export function setupInsights(account){
  el('pro-apply').addEventListener('click',()=>void load());
  el('pro-clear').addEventListener('click',()=>{
   from.value=first(currentMonth);to.value=last(currentMonth);
-  client.value='';city.value='';container.value='';compare.value='';void load();
+  client.value='';city.value='';container.value='';compare.value='';alertType='';void load();
  });
  el('pro-show-more').addEventListener('click',()=>{if(state){visible+=30;renderRecords(state,visible);}});
  for(const [button,kind] of [['pro-export-pdf','pdf'],['pro-export-xlsx','xlsx']]){
@@ -280,5 +305,5 @@ export function setupInsights(account){
   });
  }
  reset();
- return {load:ctx=>{changedContext(ctx);return load();},reset};
+ return {load:ctx=>{changedContext(ctx);return load();},reset,peek:()=>state};
 }

@@ -141,6 +141,10 @@ export function setupSmartConsole({
    field('Data',record.date);field('Autista',record.driverName);
    field('Cliente',record.client);field('Località',record.city);
    field('Container',record.container);
+   const cents=record.totalCents??record.amountCents;
+   if(Number.isSafeInteger(cents)&&cents>=0)field('Valore registrato',new Intl.NumberFormat('it-IT',{style:'currency',currency:'EUR'}).format(cents/100));
+   field('Seconda presa',record.secondClient?[record.secondClient,record.secondCity].filter(Boolean).join(' · '):'');
+   field('Nota',record.note);
    appendAction(detailActions,'Apri registro del periodo',()=>goTo('trips'));
   }
   detailBody.append(el('h3','smart-detail-title',item.label),details);
@@ -335,6 +339,10 @@ export function setupSmartConsole({
  });
  secretObserver.observe(byId('secret-panel'),{attributes:true,attributeFilter:['hidden']});
  return {
+  openTrip(row){
+   if(!allowed()||!row||typeof row!=='object')return false;
+   open();showDetail({kind:'trips'},{row,label:row.container||row.client||'Viaggio'});return true;
+  },
   refresh(){if(isVisible()&&mode==='home')render();},
   reset(){close({focus:false});search.value='';results.replaceChildren();}
  };
