@@ -46,8 +46,12 @@ async function authorize(req,pair){
  }
  return {id:uid,role:access.role};
 }
+// Keep the old eight-key database catalog readable for app-version compatibility.
+// The retired REEFER row remains immutable, preserving existing history and
+// avoiding accidental failures in older installed clients during rollout.
 const EXTRA_KEYS=new Set(['facchinaggioBilico','facchinaggioReefer','reefer','adr',
  'pernotto','sabatoPorto','sabatoTrasferta','preOrario']);
+const WRITABLE_EXTRA_KEYS=new Set([...EXTRA_KEYS].filter(key=>key!=='reefer'));
 const extraProjection=row=>({serviceKey:row.service_key,cents:row.cents,
  revision:row.revision,updatedAt:row.updated_at});
 async function listExtras(db){
@@ -58,7 +62,7 @@ async function listExtras(db){
  return data.map(extraProjection);
 }
 async function saveExtra(db,input,adminId){
- if(!EXTRA_KEYS.has(input.serviceKey)||
+ if(!WRITABLE_EXTRA_KEYS.has(input.serviceKey)||
   !(input.cents===null||(Number.isSafeInteger(input.cents)&&
    input.cents>=0&&input.cents<=99999999))||
   !Number.isSafeInteger(input.expectedRevision)||input.expectedRevision<1)
