@@ -3,6 +3,9 @@
  */
 export function companyExtraSnapshot(extraRates,loaded,key,{unchanged=false,previous=null}={}){
  if(unchanged)return previous??null;
+ // A cached old company catalog must not accidentally re-enable REEFER for
+ // a new journey; existing journey snapshots retain their original amount.
+ if(key==='reefer')return null;
  if(!loaded)return null;
  const rate=(Array.isArray(extraRates)?extraRates:[]).find(x=>x.serviceKey===key);
  return rate&&(rate.cents===null||
