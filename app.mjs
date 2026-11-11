@@ -637,14 +637,20 @@ function renderInsert(main){
  const servicesSymbol=el('span',{class:'plus-disc','aria-hidden':'true'},draft.servicesOpen?'−':'+');
  const servicesToggle=el('button',{type:'button',class:'trip-option','aria-expanded':String(Boolean(draft.servicesOpen)),'aria-controls':'trip-services',on:{click:()=>{collect();draft.servicesOpen=!draft.servicesOpen;services.hidden=!draft.servicesOpen;servicesToggle.setAttribute('aria-expanded',String(draft.servicesOpen));servicesSymbol.textContent=draft.servicesOpen?'−':'+';keepEditorScratchpad();}}},icon('sliders'),el('span',{class:'tile-label'},'Servizi extra'),servicesSymbol);
  options.append(servicesToggle);
- const services=el('div',{class:'service-grid trip-service-editor',id:'trip-services',hidden:!draft.servicesOpen},D.SERVICES.map(service=>el('label',{class:'service-chip'},el('input',{type:'checkbox',name:'service',value:service.key,'aria-label':service.label,checked:draft.services.includes(service.key),on:{change:()=>{collect();updateEstimate();}}}),el('span',{class:'chip-check','aria-hidden':'true'},'✓'),service.label)));
+ // Do not offer retired standalone REEFER for new trips. An old journey may
+ // still contain the service: display it as a historical snapshot and preserve
+ // its selected key and price when any unrelated field is edited.
+ const retiredReeferInEdit=Boolean(editingId&&state.trips.find(trip=>trip.id===editingId)?.services.includes('reefer'));
+ const services=el('div',{class:'service-grid trip-service-editor',id:'trip-services',hidden:!draft.servicesOpen},D.ACTIVE_SERVICES.map(service=>el('label',{class:'service-chip'},el('input',{type:'checkbox',name:'service',value:service.key,'aria-label':service.label,checked:draft.services.includes(service.key),on:{change:()=>{collect();updateEstimate();}}}),el('span',{class:'chip-check','aria-hidden':'true'},'✓'),service.label)));
+ if(retiredReeferInEdit)services.append(el('p',{class:'field-hint'},
+  'REEFER (storico): resta nel viaggio già salvato con il suo importo originale, ma non è più selezionabile nei nuovi viaggi.'));
  form.append(services);
  const estimate=el('div',{class:'preview-total'});const estimateBreakdown=el('div',{class:'trip-estimate-breakdown',role:'group','aria-label':'Dettaglio importi stimati'});const saturdayNote=el('p',{class:'saturday-note',role:'status',hidden:true});const missing=el('p',{class:'missing-note'});form.append(estimate,estimateBreakdown,saturdayNote,missing);
  const save=el('button',{type:'submit',class:'primary-button full','data-save':true},icon('check'),editingId?'Salva modifiche':'Salva viaggio');
  const draftStatus=el('p',{id:'trip-draft-state',class:'trip-draft-state',role:'status','aria-live':'polite'},'Le modifiche vengono conservate sul dispositivo durante la compilazione.');
  const syncDetail=el('p',{id:'trip-save-hint',class:'trip-save-hint',role:'status','aria-live':'polite'});
  form.append(save,draftStatus,syncDetail,el('p',{class:'privacy-footnote'},icon('lock'),'Tariffe e note restano nell’app, mai nel PDF.'));
- function collect(){draft={date:date.input.value,container:container.input.value,client:client.input.value,city:city.input.value,secondClient:secondClient?.input.value||'',secondCity:secondCity?.input.value||'',services:[...form.querySelectorAll('[name=service]:checked')].map(n=>n.value),second:draft.second,note:noteInput.value,noteOpen:Boolean(draft.noteOpen),servicesOpen:Boolean(draft.servicesOpen)};}
+ function collect(){draft={date:date.input.value,container:container.input.value,client:client.input.value,city:city.input.value,secondClient:secondClient?.input.value||'',secondCity:secondCity?.input.value||'',services:[...form.querySelectorAll('[name=service]:checked')].map(n=>n.value).concat(retiredReeferInEdit?['reefer']:[]),second:draft.second,note:noteInput.value,noteOpen:Boolean(draft.noteOpen),servicesOpen:Boolean(draft.servicesOpen)};}
  let missingEstimateTariffs=false;
  function updateEstimate(){
   collect();
@@ -1116,7 +1122,7 @@ function renderExtraRates(main){
   finally{update.disabled=false;}
  }}},icon('refresh'),'Aggiorna servizi extra');
  function show(){
-  list.replaceChildren(...D.SERVICES.map(service=>{
+  list.replaceChildren(...D.ACTIVE_SERVICES.map(service=>{
    const price=companyExtraSnapshot(companyExtraRates,companyExtrasLoaded,service.key);
    return el('div',{class:'rate-row'},el('span',{},service.label),
     el('strong',{},price===null?'Da configurare':D.formatMoney(price)));
