@@ -280,7 +280,7 @@ test('driver trip picker searches Maps, manual company tariffs and personal driv
  assert.doesNotMatch(source,/document[.]createElement\('select'\)/);
  assert.match(css,/records-site-results\[hidden\]/);
  assert.match(css,/records-site-option-address/);
- assert.match(html,/driver-records[.]css[?]v=20261111-reefer-retired-v3/);
+ assert.match(html,/driver-records[.]css[?]v=20261110-duplicate-guard-v2/);
  assert.match(report,/driver-records[.]mjs[?]v=20261111-reefer-retired-v3/);
  assert.doesNotMatch([source,css].join('\n'),/innerHTML|SUPABASE_SERVICE_ROLE_KEY|sb_secret_/);
 });
