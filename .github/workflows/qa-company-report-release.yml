@@ -127,6 +127,8 @@ jobs:
 
   chromium-mobile:
     runs-on: ubuntu-24.04
+    container:
+      image: mcr.microsoft.com/playwright:v1.56.1-noble@sha256:42f02d323c310069b4d54c94bd91a608966a486c3492c48ae0b1cea747ec5ca2
     timeout-minutes: 12
     steps:
       - uses: actions/checkout@v4
@@ -135,14 +137,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Use official Ubuntu HTTPS package mirrors
-        run: |
-          printf '%s\n' 'https://archive.ubuntu.com/ubuntu/' 'https://security.ubuntu.com/ubuntu/' | sudo tee /etc/apt/apt-mirrors.txt > /dev/null
-      - name: Install isolated Chromium
+      - name: Verify pinned Chromium environment
         run: |
           mkdir -p "$RUNNER_TEMP/lts-playwright"
           npm install --prefix "$RUNNER_TEMP/lts-playwright" --no-save --no-package-lock playwright@1.56.1
-          "$RUNNER_TEMP/lts-playwright/node_modules/.bin/playwright" install --with-deps chromium
+          LTS_BROWSER_PLAYWRIGHT="$RUNNER_TEMP/lts-playwright" node -e "const fs=require('node:fs'); const browser=require(process.env.LTS_BROWSER_PLAYWRIGHT+'/node_modules/playwright').chromium; if(!fs.existsSync(browser.executablePath())) throw Error('Pinned chromium executable missing');"
       - name: Mobile dashboard flow with synthetic mock records
         run: LTS_BROWSER_PLAYWRIGHT="$RUNNER_TEMP/lts-playwright" node tests/company-report-browser.mjs
 
@@ -175,6 +174,8 @@ jobs:
 
   webkit-safari:
     runs-on: ubuntu-24.04
+    container:
+      image: mcr.microsoft.com/playwright:v1.56.1-noble@sha256:42f02d323c310069b4d54c94bd91a608966a486c3492c48ae0b1cea747ec5ca2
     timeout-minutes: 12
     steps:
       - uses: actions/checkout@v4
@@ -183,14 +184,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Use official Ubuntu HTTPS package mirrors
-        run: |
-          printf '%s\n' 'https://archive.ubuntu.com/ubuntu/' 'https://security.ubuntu.com/ubuntu/' | sudo tee /etc/apt/apt-mirrors.txt > /dev/null
-      - name: Install isolated Safari WebKit
+      - name: Verify pinned Safari WebKit environment
         run: |
           mkdir -p "$RUNNER_TEMP/lts-playwright"
           npm install --prefix "$RUNNER_TEMP/lts-playwright" --no-save --no-package-lock playwright@1.56.1
-          "$RUNNER_TEMP/lts-playwright/node_modules/.bin/playwright" install --with-deps webkit
+          LTS_BROWSER_PLAYWRIGHT="$RUNNER_TEMP/lts-playwright" node -e "const fs=require('node:fs'); const browser=require(process.env.LTS_BROWSER_PLAYWRIGHT+'/node_modules/playwright').webkit; if(!fs.existsSync(browser.executablePath())) throw Error('Pinned webkit executable missing');"
       - name: Safari WebKit mobile admin, certifies Maps and restores archived customer
         run: LTS_BROWSER_PLAYWRIGHT="$RUNNER_TEMP/lts-playwright" LTS_BROWSER_ENGINE=webkit node tests/company-report-browser.mjs
       - name: Control Center verified KPI, filters, lifecycle and isolation in Safari WebKit
