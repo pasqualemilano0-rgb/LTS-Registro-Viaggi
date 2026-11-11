@@ -34,5 +34,5 @@ jobs:
         run: node --test tests/*.test.mjs
       - name: Run all Python regression tests
         run: python -m unittest discover -s tests -p 'test_*.py' -v
-      - name: Check that scheduled Porti updates cannot auto-publish
+      - name: Verify Porti publisher is validated, main-only and PR read-only
         run: node --test tests/qa-no-auto-publish.test.mjs
