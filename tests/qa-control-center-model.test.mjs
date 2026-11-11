@@ -9,7 +9,8 @@ const driverA='11111111-1111-4111-8111-111111111111';
 const driverB='22222222-2222-4222-8222-222222222222';
 const trip=(id,driverId,date,amountCents,other={})=>({id,driverId,date,amountCents,
  driverName:driverId===driverA?'MARCO ROSSI':'MARCO ROSSI',container:'MSDU345676.8',
- client:'CLIENTE ALFA',city:'NAPOLI',updatedAt:date+'T12:00:00Z',...other});
+ client:'CLIENTE ALFA',city:'NAPOLI',fareCents:amountCents,secondClient:'',secondCity:'',
+ updatedAt:date+'T12:00:00Z',...other});
 function insights(records=[],overrides={}){
  const daily=new Map();
  for(const t of records){const r=daily.get(t.date)||{date:t.date,trips:0,totalCents:0};r.trips++;r.totalCents+=t.amountCents;daily.set(t.date,r);}
@@ -168,6 +169,59 @@ test('search keeps unsafe input as inert text and never interprets it as markup'
  const result=searchAuthorized({query:'img',customers:[{name:literal,city:'ROMA'}]});
  assert.equal(result.customers[0].label,literal);
  assert.equal(result.customers[0].kind,'customer');
+});
+
+test('both pickups are searchable and supply client and locality filter options',()=>{
+ const row=trip('two',driverA,today,5000,{secondClient:'CLIENTE BÈTA',secondCity:'CITTÀ DI CASTELLO',
+  fareCents:1000,secondFareCents:2000,sumPickupFares:true});
+ const data=insights([row]);
+ assert.equal(searchAuthorized({query:'cliente beta',insights:data}).trips[0].row,row);
+ const citySearch=searchAuthorized({query:'citta',insights:data});
+ assert.equal(citySearch.trips.length,1);
+ assert.deepEqual(citySearch.localities.map(item=>item.label),['CITTÀ DI CASTELLO']);
+ assert.equal(searchAuthorized({query:'cliente beta',report:monthly({trips:[row]})}).scope,'loaded-page');
+ assert.equal(searchAuthorized({query:'cliente beta',report:monthly({trips:[row]})}).trips.length,1);
+ const model=deriveControlCenter({today,insights:data});
+ assert(model.options.clients.includes('CLIENTE BÈTA'));
+ assert(model.options.cities.includes('CITTÀ DI CASTELLO'));
+ assert.equal(model.scope.pickups,'both-pickups-distinct-trips');
+ assert.equal(model.scope.secondPickupsComplete,true);
+});
+
+test('pickup charts count each involved client and city once per journey and exclude extras from fare attribution',()=>{
+ const row=trip('reefer',driverA,today,7500,{client:'ALFA',city:'NAPOLI',
+  secondClient:'BETA',secondCity:'ROMA',fareCents:1000,secondFareCents:2000,
+  sumPickupFares:true,services:['reefer'],extraCents:{reefer:4500}});
+ const repeated=trip('same',driverA,today,3000,{client:'ALFA',city:'NAPOLI',
+  secondClient:'ALFA',secondCity:'NAPOLI',fareCents:1500,secondFareCents:1500,sumPickupFares:true});
+ const data=freeze(insights([row,repeated])),before=JSON.stringify(data);
+ const model=deriveControlCenter({today,insights:data});
+ const alfa=model.charts.clients.find(item=>item.id==='ALFA'),beta=model.charts.clients.find(item=>item.id==='BETA');
+ assert.deepEqual({count:alfa.count,pickupCount:alfa.pickupCount,totalCents:alfa.totalCents,partial:alfa.amountPartial},
+  {count:2,pickupCount:3,totalCents:4000,partial:false});
+ assert.deepEqual({count:beta.count,totalCents:beta.totalCents},{count:1,totalCents:2000});
+ assert.equal(model.charts.cities.find(item=>item.id==='NAPOLI').count,2);
+ assert.equal(model.charts.clients.reduce((sum,item)=>sum+item.totalCents,0),6000);
+ assert.equal(model.charts.drivers[0].totalCents,10500,'Driver totals keep the real journey extras');
+ assert.equal(model.scope.clientAmounts,'historical-pickup-fares-excluding-extras');
+ assert.equal(model.scope.clientAmountsComplete,true);
+ assert.equal(JSON.stringify(data),before,'Historical fare and REEFER snapshots stay immutable');
+});
+
+test('legacy or non-summed second pickup amounts stay unknown instead of receiving journey extras',()=>{
+ const legacy=trip('legacy',driverA,today,1500,{fareCents:undefined,secondClient:undefined,secondCity:undefined});
+ const first=deriveControlCenter({today,insights:insights([legacy])});
+ assert.equal(first.charts.clients[0].totalCents,null);assert.equal(first.charts.clients[0].amountPartial,true);
+ assert.equal(first.scope.clientAmountsComplete,false);assert.equal(first.scope.secondPickupsComplete,false);
+ for(const sumPickupFares of [false,undefined]){
+  const row=trip('two',driverA,today,4500,{client:'ALFA',fareCents:1000,
+   secondClient:'BETA',secondCity:'ROMA',secondFareCents:2000,sumPickupFares});
+  const model=deriveControlCenter({today,insights:insights([row])});
+  assert.equal(model.charts.clients.find(item=>item.id==='ALFA').totalCents,1000);
+  const second=model.charts.clients.find(item=>item.id==='BETA');
+  assert.equal(second.count,1);assert.equal(second.totalCents,null);assert.equal(second.amountPartial,true);
+  assert.equal(model.scope.clientAmountsComplete,false);
+ }
 });
 
 test('quick preferences are complete, unique, valid and retain at least one visible action',()=>{

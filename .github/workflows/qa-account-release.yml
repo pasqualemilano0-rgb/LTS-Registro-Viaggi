@@ -15,8 +15,12 @@ on:
       - 'supabase/functions/lts-driver-onboarding/**'
       - 'supabase/migrations/**'
       - 'shared/customer-site-matches.mjs'
+      - 'shared/trip-customer-choices.mjs'
+      - 'shared/operational-checks.mjs'
       - 'shared-maps-client.mjs'
       - 'tests/customer-site-matches.test.mjs'
+      - 'tests/trip-customer-search.test.mjs'
+      - 'tests/operational-checks.test.mjs'
       - 'tests/qa-personal-customer-delete.test.mjs'
       - 'tests/qa-customers-v5.test.mjs'
       - 'shared/customer-quality.mjs'
@@ -65,8 +69,12 @@ on:
       - 'supabase/functions/lts-driver-onboarding/**'
       - 'supabase/migrations/**'
       - 'shared/customer-site-matches.mjs'
+      - 'shared/trip-customer-choices.mjs'
+      - 'shared/operational-checks.mjs'
       - 'shared-maps-client.mjs'
       - 'tests/customer-site-matches.test.mjs'
+      - 'tests/trip-customer-search.test.mjs'
+      - 'tests/operational-checks.test.mjs'
       - 'tests/qa-personal-customer-delete.test.mjs'
       - 'tests/qa-customers-v5.test.mjs'
       - 'shared/customer-quality.mjs'
@@ -123,6 +131,8 @@ jobs:
           node --check shared/company-extras.mjs
           node --check supabase/functions/lts-company-tariffs/tariff-handler.mjs
           node --check shared/customer-site-matches.mjs
+          node --check shared/trip-customer-choices.mjs
+          node --check shared/operational-checks.mjs
           node --check shared/customer-quality.mjs
           node --check shared/domain.mjs
           node --check client-store.mjs
@@ -138,6 +148,7 @@ jobs:
           node --check driver-session-vault.mjs
           node --check recupera-password.mjs
           node --check sw.js
+          node --test tests/trip-customer-search.test.mjs tests/operational-checks.test.mjs
           node --test tests/qa-driver-management-fixes.test.mjs tests/qa-manual-customers.test.mjs tests/qa-realtime.test.mjs tests/qa-account-release.test.mjs tests/qa-trip-editor-safety.test.mjs tests/qa-register-explorer.test.mjs tests/driver-session-vault.test.mjs tests/leaked-password-protection.test.mjs tests/qa-company-tariffs.test.mjs tests/customer-site-matches.test.mjs tests/qa-personal-customer-delete.test.mjs tests/qa-customers-v5.test.mjs tests/personal-customer-certification.test.mjs tests/records-intelligence.test.mjs tests/qa-release-versions.test.mjs tests/qa-regression-contract.test.mjs tests/qa-no-auto-publish.test.mjs
       - name: Verify live protected driver records API
         run: node --test tests/qa-admin-records-live.test.mjs

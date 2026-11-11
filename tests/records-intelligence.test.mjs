@@ -66,6 +66,14 @@ test('ambiguous company rows never become certified automatically',()=>{
  assert.equal(result.exactShared,null);
 });
 
+test('punctuation aliases with matching streets remain possible rather than already shared',()=>{
+ const alias={...personal,name:'ALFA-LOGISTICA SRL'};
+ const result=assessPersonalCustomer(alias,[shared]);
+ assert.equal(result.status,'possible');
+ assert.equal(result.exactShared,null);
+ assert.equal(customerMatchesQuickFilter(alias,'shared',[shared]),false);
+});
+
 test('accent-insensitive search includes VAT, notes, city and container',()=>{
  assert.equal(archiveMatchesSearch(personal,'customer','alfa 01234567890'),true);
  assert.equal(archiveMatchesSearch(personal,'customer','Napoli industriale'),false);
