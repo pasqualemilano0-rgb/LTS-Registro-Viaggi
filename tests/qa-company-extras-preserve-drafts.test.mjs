@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {runInNewContext} from 'node:vm';
-import {SERVICES} from '../shared/domain.mjs';
+import {SERVICES,ACTIVE_SERVICES} from '../shared/domain.mjs';
 const read=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
 const microtask=()=>new Promise(resolve=>setTimeout(resolve,0));
 function element(tag='div'){
@@ -35,7 +35,7 @@ function fixture(){
   .replace('export function setupCompanyExtras','function setupCompanyExtras');
  const setupCompanyExtras=runInNewContext(source+'\nsetupCompanyExtras',{
   document:{getElementById:id=>ids[id],createElement:element},
-  window:{confirm:()=>true},SERVICES,
+  window:{confirm:()=>true},SERVICES,ACTIVE_SERVICES,
   parseEuro:value=>{
    const raw=String(value).trim().replace(',','.');
    assert.match(raw,/^\d+(?:\.\d{1,2})?$/);
@@ -83,12 +83,12 @@ test('refresh cannot silently replace an extra amount still being typed',async()
  const f=fixture();
  try{
   assert.equal(await f.api.load(),true);
-  const input=f.rowFor(SERVICES[2].key).querySelector('input');
+  const input=f.rowFor(ACTIVE_SERVICES[2].key).querySelector('input');
   input.value='72,30';input.dispatch('input');
   const before=f.getCalls();
   assert.equal(await f.api.load(),false);
   assert.equal(f.getCalls(),before);
-  assert.equal(f.rowFor(SERVICES[2].key).querySelector('input').value,'72,30');
+  assert.equal(f.rowFor(ACTIVE_SERVICES[2].key).querySelector('input').value,'72,30');
   assert.match(f.status.textContent,/importi extra non ancora salvati/);
  }finally{f.restore()}
 });
@@ -97,4 +97,12 @@ test('driver refresh only displays a success when the catalogue request actually
  assert.match(source,/const \[,confirmed\]=await Promise\.all\(\[store\.syncPending\(\),refreshCompanyRates\(\{quiet:false\}\)\]\)/);
  assert.match(source,/if\(!confirmed\)throw new Error\('Sincronizzazione delle tariffe non confermata/);
  assert.match(source,/if\(!confirmed\)throw new Error\('Aggiornamento degli extra non confermato/);
+});
+
+test('retired standalone REEFER is absent even while legacy server catalog has eight rows',async()=>{
+ const f=fixture();
+ assert.equal(await f.api.load(),true);
+ assert.equal(f.rowFor('reefer'),undefined);
+ assert.ok(f.rowFor('facchinaggioReefer'),'FACCHINAGGIO REEFER must remain available');
+ assert.equal(f.list.children.length,7);
 });

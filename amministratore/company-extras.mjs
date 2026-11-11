@@ -1,8 +1,8 @@
 /** Shared company extra-service prices, edited only by an MFA-verified admin.
- * All eight prices live on the company tariff endpoint, not driver archives.
+ * Only active services are editable; legacy REEFER remains in archived trips.
  * Updating prices never changes previously saved trip snapshots.
  */
-import {SERVICES} from '../shared/domain.mjs';
+import {SERVICES,ACTIVE_SERVICES} from '../shared/domain.mjs';
 import {parseEuro} from './company-maps-registration.mjs';
 const byId=id=>document.getElementById(id);
 const euro=cents=>cents===null?'':(cents/100).toFixed(2).replace('.',',');
@@ -36,7 +36,7 @@ export function setupCompanyExtras(account){
   const edits=collectUnsubmittedEdits(savedService);
   list.replaceChildren();
   if(!loaded)return;
-  for(const service of SERVICES){
+  for(const service of ACTIVE_SERVICES){
    const rate=rates.find(row=>row.serviceKey===service.key);
    const form=el('form','','company-extra-row');
    form.dataset.service=service.key;
@@ -103,7 +103,10 @@ export function setupCompanyExtras(account){
    const result=await account.companyTariffs('list');
    if(id!==generation||!authorized())return false;
    const extras=result?.extraRates;
-   if(!Array.isArray(extras)||extras.length!==SERVICES.length||
+   // Accept both older eight-key server catalogs and the retired seven-key
+   // format; only the seven active services can be presented or edited.
+   if(!Array.isArray(extras)||
+    ACTIVE_SERVICES.some(service=>!extras.some(row=>row.serviceKey===service.key))||
     extras.some(row=>!SERVICES.some(service=>service.key===row.serviceKey)||
      !(row.cents===null||(Number.isSafeInteger(row.cents)&&row.cents>=0&&row.cents<=99999999))||
      !Number.isSafeInteger(row.revision)||row.revision<1))

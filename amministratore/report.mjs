@@ -3,8 +3,8 @@ import {setupInsights} from './report-insights.mjs?v=20261104-company-v3';
 import {setupCustomerOverview} from './customer-overview.mjs?v=20261108-smart-v1';
 import {setupCompanyRates} from './company-rates.mjs?v=20261110-atomic-v1';
 import {hasUnsubmittedTariffDraft} from './tariff-draft-guard.mjs?v=20261110-audit-v1';
-import {setupDriverRecords} from './driver-records.mjs?v=20261110-duplicate-guard-v2';
-import {setupCompanyExtras} from './company-extras.mjs?v=20261110-tariffe-bugfix-v1';
+import {setupDriverRecords} from './driver-records.mjs?v=20261111-reefer-retired-v3';
+import {setupCompanyExtras} from './company-extras.mjs?v=20261111-reefer-retired-v2';
 const el=id=>document.getElementById(id);
 function node(tag,className='',value=''){
  const e=document.createElement(tag);

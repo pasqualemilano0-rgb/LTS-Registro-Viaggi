@@ -11,6 +11,10 @@ export const SERVICES = Object.freeze([
   { key: 'sabatoTrasferta', label: 'SABATO TRASFERTA' },
   { key: 'preOrario', label: 'PRE-ORARIO' },
 ].map(Object.freeze));
+// REEFER is retired from all new menus but remains in the historical schema.
+// Never drop the key from SERVICES: old trip snapshots, backups and calculations
+// must continue to validate and keep their original prices.
+export const ACTIVE_SERVICES = Object.freeze(SERVICES.filter(service => service.key !== 'reefer'));
 const SERVICE_KEYS = new Set(SERVICES.map(item => item.key));
 const MAX_ROWS = 100000;
 const MAX_BACKUP_BYTES = 32 * 1024 * 1024;

@@ -14,7 +14,7 @@ test('dashboard accessibile solo dal pannello admin, CSP e versioni coerenti',()
    'pro-city','pro-container','pro-compare-driver','pro-alerts','pro-alert-count',
    'pro-export-pdf','pro-export-xlsx','pro-records'])
    assert.match(html,new RegExp('id="'+id+'"'));
- assert.match(html,/admin\.mjs\?v=20261110-fast-login-v4/);
+ assert.match(html,/admin\.mjs\?v=20261111-reefer-retired-v5/);
  assert.match(html,/admin\.css\?v=20261109-alpha-v1/);
  assert.match(js,/account-access\.mjs\?v=20261107-realtime-v1/);
  assert.match(js,/setupReport\(account\)/);
@@ -26,7 +26,7 @@ test('dashboard accessibile solo dal pannello admin, CSP e versioni coerenti',()
  assert.match(report,/function driverProfile\(/);
  assert.match(report,/function driverDirectory\(/);
  assert.match(report,/function renderAmountChart\(/);
- assert.match(js,/report\.mjs\?v=20261110-duplicate-guard-v2/);
+ assert.match(js,/report\.mjs\?v=20261111-reefer-retired-v3/);
  assert.match(report,/setupInsights\(account\)/);
  const advanced=read('amministratore/report-insights.mjs');
  const exportsModule=read('amministratore/report-export.mjs');
@@ -281,7 +281,7 @@ test('driver trip picker searches Maps, manual company tariffs and personal driv
  assert.match(css,/records-site-results\[hidden\]/);
  assert.match(css,/records-site-option-address/);
  assert.match(html,/driver-records[.]css[?]v=20261110-duplicate-guard-v2/);
- assert.match(report,/driver-records[.]mjs[?]v=20261110-duplicate-guard-v2/);
+ assert.match(report,/driver-records[.]mjs[?]v=20261111-reefer-retired-v3/);
  assert.doesNotMatch([source,css].join('\n'),/innerHTML|SUPABASE_SERVICE_ROLE_KEY|sb_secret_/);
 });
 

@@ -941,7 +941,11 @@ try{
   'Historic trip price must remain unchanged after customer replacement');
  // One shared company extra price: no individual driver selector.
  await openAdminTab('rates-tab');
- await page.waitForFunction(()=>document.querySelectorAll('.company-extra-row').length===8);
+ await page.waitForFunction(()=>document.querySelectorAll('.company-extra-row').length===7);
+ assert.equal(await page.locator('.company-extra-row[data-service="reefer"]').count(),0,
+  'Retired standalone REEFER must not appear in the company extra rate editor');
+ assert.equal(await page.locator('.company-extra-row[data-service="facchinaggioReefer"]').count(),1,
+  'FACCHINAGGIO REEFER is a different active service');
  assert.equal(await page.locator('#company-extra-driver').count(),0);
  await page.locator('.company-extra-row[data-service="adr"] input').fill('12,50');
  page.once('dialog',dialog=>dialog.accept());
