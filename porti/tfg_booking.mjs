@@ -33,6 +33,10 @@ export function parseTfgBookingApi(raw){
   return {status:'found',vessel,voyage,message,checked_at:raw.checked_at};
 }
 export async function lookupTfgBooking(booking, fetcher=fetch, signal){
+  // A staging browser must never send a booking to the production Worker.
+  // Fail closed until a QA-only booking endpoint is explicitly deployed and audited.
+  if(globalThis.location?.origin==='https://lts-booking-security-stage.pasqualemilano0.workers.dev')
+    throw Error('LTS_BOOKING_STAGE_NOT_CONFIGURED');
   const checked=validateBooking(booking);
   if(!checked.valid)throw Error('BOOKING_INVALID');
   let response;
