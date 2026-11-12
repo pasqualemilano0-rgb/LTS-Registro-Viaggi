@@ -790,11 +790,13 @@ async function renderTfgBooking(booking){
       try{accessToken=await getVerifiedAccessToken();}
       catch(error){
         if(error?.offline===true)throw Error('LTS_BOOKING_OFFLINE');
-        if(error?.serviceUnavailable===true)throw Error('LTS_BOOKING_AUTH_UNAVAILABLE');
+        if(error?.serviceUnavailable===true)throw Error('LTS_BOOKING_AUTH_NETWORK');
         if(error?.status>=500)throw Error('LTS_BOOKING_AUTH_UNAVAILABLE');
         throw Error('LTS_BOOKING_LOGIN_REQUIRED');
       }
-      const response=await fetch(endpoint,{...options,headers:{...options.headers,Authorization:'Bearer '+accessToken}});
+      let response;
+      try{response=await fetch(endpoint,{...options,headers:{...options.headers,Authorization:'Bearer '+accessToken}});}
+      catch(error){if(error?.name==='AbortError')throw Error('TFG_REQUEST_TIMEOUT');throw Error('TFG_GATEWAY_NETWORK');}
       if(response.status===401)throw Error('LTS_BOOKING_LOGIN_REQUIRED');
       if(response.status===403)throw Error('LTS_BOOKING_ACCESS_DENIED');
       return response;
@@ -833,12 +835,30 @@ async function renderTfgBooking(booking){
     // navigator.onLine is only a browser hint: a failed API/auth request does not prove the device is offline.
     // Keep authentication, rate limits and backend failures distinct from confirmed offline errors.
     const offline=error?.message==='LTS_BOOKING_OFFLINE';
+    // Only fixed, non-sensitive diagnostic codes reach the UI. Never expose tokens, URLs or booking numbers.
+    const diagnostics=Object.freeze({
+      LTS_BOOKING_OFFLINE:'AUTH-OFFLINE',
+      LTS_BOOKING_AUTH_NETWORK:'AUTH-NETWORK',
+      LTS_BOOKING_AUTH_UNAVAILABLE:'AUTH-503',
+      LTS_BOOKING_LOGIN_REQUIRED:'AUTH-LOGIN',
+      LTS_BOOKING_ACCESS_DENIED:'AUTH-DENIED',
+      TFG_GATEWAY_NETWORK:'TFG-NETWORK',
+      TFG_GATEWAY_4XX:'TFG-HTTP4',
+      TFG_GATEWAY_5XX:'TFG-HTTP5',
+      TFG_REQUEST_TIMEOUT:'TFG-TIMEOUT',
+      TFG_RATE_LIMITED:'TFG-LIMIT',
+      TFG_RESPONSE_NOT_JSON:'TFG-FORMAT',
+      TFG_RESPONSE_OVERSIZED:'TFG-SIZE',
+      TFG_RESPONSE_INVALID:'TFG-JSON'
+    });
+    const diagnostic=diagnostics[error?.message]||'TFG-UNKNOWN';
     openResults('Booking · TFG',denied?'ACCESSO LTS NECESSARIO':offline?'CONNESSIONE ASSENTE':
       limited?'TROPPE RICHIESTE':'SERVIZIO NON DISPONIBILE','warn',
       denied?'La sessione LTS non è valida o l’account non ha accesso. Verifica il login e l’Authenticator, poi riapri Porti.':
       offline?'Connettiti a Internet e verifica nuovamente l’accesso a LTS prima di cercare il booking.':
       limited?'Per proteggere il portale TFG, attendi almeno un minuto prima di riprovare. Se necessario usa il sito ufficiale.':
       'Non è stato possibile verificare la risposta TFG. Puoi aprire direttamente il modulo ufficiale con il booking già inserito.');
+    results.append(textBlock('Codice diagnostico: '+diagnostic,'tiny'));
   }finally{
     clearTimeout(timeoutId);
     if(bookingLookupAbort===controller)bookingLookupAbort=null;
