@@ -11,6 +11,13 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 4
     steps:
+      - uses: actions/checkout@v4
+      - name: Validate changed JS syntax and transport diagnostics
+        run: |
+          node --check account-access.mjs
+          node --check porti/app.js
+          grep -Fq "transportCode=timedOut?'AUTH-TIMEOUT':'AUTH-FETCH'" account-access.mjs
+          grep -Fq "LTS_BOOKING_AUTH_TIMEOUT:'AUTH-TIMEOUT'" porti/app.js
       - name: Check GitHub Pages deployed config and CORS without credentials
         shell: bash
         run: |
