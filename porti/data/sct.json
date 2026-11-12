@@ -1,7 +1,7 @@
 {
   "source": "https://www.salernocontainerterminal.com/ca/an/vessel_schedule.php",
   "source_updated_at": null,
-  "acquired_at": "2026-11-12T21:00:17.053Z",
+  "acquired_at": "2026-11-12T21:30:16.795Z",
   "rows": [
     {
       "vessel": "KATHERINE BORCHARD",
@@ -256,6 +256,6 @@
       "status": "PENDING"
     }
   ],
-  "updated_at": "2026-11-12T21:00:17.053Z",
+  "updated_at": "2026-11-12T21:30:16.795Z",
   "data_changed_at": "2026-11-12T16:00:17.367Z"
 }
