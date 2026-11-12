@@ -26,3 +26,11 @@ test('Cloudflare and Booking security jobs remain separate required CI jobs',()=
 test('obsolete GitHub full-qa runner is absent after proven CircleCI parity',()=>{
   assert.equal(existsSync(new URL('../.github/workflows/qa-full-prerelease.yml',import.meta.url)),false);
 });
+
+test('CircleCI preserves account live authorization and Maps canonical fixture parity',()=>{
+  assert.match(config,/node --test tests\/\*\.test\.mjs/);
+  for(const file of ['qa-admin-records-live.test.mjs','qa-maps-reader-live.test.mjs']) {
+    assert.ok(existsSync(new URL('tests/'+file,new URL('../',import.meta.url))), 'Missing read-only live auth check: '+file);
+  }
+  assert.match(config,/node tests\/maps-redirect-diagnostic\.mjs/);
+});

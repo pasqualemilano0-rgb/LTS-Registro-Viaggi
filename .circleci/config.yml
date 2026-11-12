@@ -1,5 +1,5 @@
 version: 2.1
-# Full offline QA parity with former GitHub full-qa: no secrets, production writes, or deployments.
+# Full QA parity incl. read-only unauthenticated live HTTP auth smoke; no secrets, production writes, or deployments.
 workflows:
   essential-offline:
     jobs:
@@ -15,12 +15,13 @@ jobs:
     steps:
       - checkout
       - run:
-          name: Essential offline regression
+          name: Full JS regression and read-only authorization checks
           command: |
             set -eu
             find . -type f -name '*.mjs' ! -path './node_modules/*' -print0 | xargs -0 -n 1 node --check
             node --check sw.js
             node --test tests/*.test.mjs
+            node tests/maps-redirect-diagnostic.mjs
 
   booking-auth-transport:
     docker:
