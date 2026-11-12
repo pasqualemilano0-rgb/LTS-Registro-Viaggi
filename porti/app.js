@@ -870,7 +870,7 @@ async function renderTfgBooking(booking){
       offline?'Connettiti a Internet e verifica nuovamente l’accesso a LTS prima di cercare il booking.':
       limited?'Per proteggere il portale TFG, attendi almeno un minuto prima di riprovare. Se necessario usa il sito ufficiale.':
       'Non è stato possibile verificare la risposta TFG. Puoi aprire direttamente il modulo ufficiale con il booking già inserito.');
-    results.append(textBlock('Codice diagnostico: '+diagnostic,'tiny'));
+    results.append(textBlock('Codice diagnostico: '+diagnostic+connectionHint,'tiny'));
   }finally{
     clearTimeout(timeoutId);
     if(bookingLookupAbort===controller)bookingLookupAbort=null;
