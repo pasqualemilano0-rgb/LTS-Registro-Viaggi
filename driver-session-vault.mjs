@@ -51,7 +51,9 @@ export async function readDriverToken(){
        !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(data.user_id)||
        typeof data.refresh_token!=='string'||!/^[A-Za-z0-9._-]{8,4096}$/.test(data.refresh_token))
      throw Error('Invalid vault');
-   return {...data,rotated_at:Number.isSafeInteger(data.rotated_at)&&data.rotated_at>0?data.rotated_at:0};
+   return Number.isSafeInteger(data.rotated_at)&&data.rotated_at>0
+     ?{...data,rotated_at:data.rotated_at}
+     :{user_id:data.user_id,role:data.role,refresh_token:data.refresh_token};
  }catch{
    await clearDriverToken().catch(()=>{});
    return null;
