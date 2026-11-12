@@ -21,9 +21,9 @@ test('concurrent booking checks share in-flight verification and clean up',()=>{
  assert.match(block,/finally\{if\(bookingSessionVerification===task\)bookingSessionVerification=null/);
 });
 test('CORS remains strict and authentication endpoint pinned',()=>{
- assert.match(src,/result\\.hostname==='otrqynkscpbeyuvdlgpg\\.supabase\\.co'/);
- assert.match(src,/result\\.hostname==='sywxretbfgwxwhvdcknq\\.supabase\\.co'/);
- assert.match(src,/globalThis\\.location\\?\\.origin==='https:\\/\\/lts-booking-security-stage\\.pasqualemilano0\\.workers\\.dev'/);
+ assert.ok(src.includes("result.hostname==='otrqynkscpbeyuvdlgpg.supabase.co'"));
+ assert.ok(src.includes("result.hostname==='sywxretbfgwxwhvdcknq.supabase.co'"));
+ assert.ok(src.includes("globalThis.location?.origin==='https://lts-booking-security-stage.pasqualemilano0.workers.dev'"));
  assert.match(src,/mode:'cors'/);
  assert.match(src,/redirect:'error'/);
 });
