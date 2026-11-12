@@ -534,11 +534,11 @@ test('Porti can start only after verified account handshake from the LTS parent'
 });
 
 
-test('TFG Booking requires an LTS revalidated access token in the generated client',()=>{ 
+test('TFG Booking supplies an unexpired bearer for mandatory server-side revalidation',()=>{ 
  const porti=read('porti/app.js');
- assert.match(porti,/import \{getVerifiedAccessToken\} from '\.\.\/account-access[.]mjs'/);
- assert.match(porti,/await getVerifiedAccessToken\(\)/);
- assert.match(auth,/export async function getVerifiedAccessToken\(\)/);
+ assert.match(porti,/import \{getBookingBearerForServerVerification\} from '\.\.\/account-access[.]mjs'/);
+ assert.match(porti,/await getBookingBearerForServerVerification\(\)/);
+ assert.match(auth,/export async function getBookingBearerForServerVerification\(\)/);
  assert.match(porti,/lookupTfgBooking\(/);
 });
 
