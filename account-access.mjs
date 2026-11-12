@@ -36,7 +36,8 @@ function url(which){
  const address=runtime.accountAuth?.[which];
  const result=new URL(address);
  if(result.protocol!=='https:'||
-     result.hostname!=='otrqynkscpbeyuvdlgpg.supabase.co'||
+     !((result.hostname==='otrqynkscpbeyuvdlgpg.supabase.co'&&globalThis.location?.origin==='https://pasqualemilano0-rgb.github.io')||
+       (result.hostname==='sywxretbfgwxwhvdcknq.supabase.co'&&globalThis.location?.origin==='https://lts-booking-security-stage.pasqualemilano0.workers.dev'))||
      result.username||result.password||result.search||result.hash||
      !['/functions/v1/lts-phone-auth','/functions/v1/lts-account-state','/functions/v1/lts-driver-onboarding','/functions/v1/lts-company-report','/functions/v1/lts-company-tariffs','/functions/v1/lts-admin-records'].includes(result.pathname))
    throw new Error('Servizio account non configurato in modo sicuro.');
