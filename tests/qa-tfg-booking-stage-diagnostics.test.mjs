@@ -10,7 +10,9 @@ test('auth session remains mandatory before gateway fetch',()=>{
  assert.match(app,/response\.status===403\)throw Error\('LTS_BOOKING_ACCESS_DENIED'\)/);
 });
 test('auth and gateway transport errors are not conflated',()=>{
- assert.match(app,/serviceUnavailable===true\)throw Error\('LTS_BOOKING_AUTH_NETWORK'\)/);
+ assert.match(app,/serviceUnavailable===true/);
+ assert.match(app,/LTS_BOOKING_AUTH_TIMEOUT/);
+ assert.match(app,/LTS_BOOKING_AUTH_NETWORK/);
  assert.match(app,/throw Error\('TFG_GATEWAY_NETWORK'\)/);
  assert.match(booking,/throw Error\('TFG_GATEWAY_NETWORK'\)/);
  assert.match(booking,/TFG_GATEWAY_5XX':'TFG_GATEWAY_4XX'/);

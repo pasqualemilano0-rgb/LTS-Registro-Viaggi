@@ -352,6 +352,13 @@ export async function verifySession(){
 export async function getVerifiedAccessToken(){
  if(bookingSessionVerification)return bookingSessionVerification;
  const task=(async()=>{
+  // LTS already verified this session during sign-in/restore. Reuse the same
+  // unexpired JWT for booking: the Cloudflare gateway independently validates
+  // its signature, expiry and permissions. A redundant Supabase POST here can
+  // fail on Android despite the user having a valid, verified session.
+  const existing=readStored();
+  if(isVerified()&&existing?.access_token&&existing.expires_at>Date.now()+60000)
+   return existing.access_token;
   // On mobile networks a transient TLS/radio interruption may break a fetch.
   // Retry only server-side read-only session checks; never bypass authorization.
   for(let attempt=0;attempt<3;attempt++){
