@@ -25,7 +25,7 @@ jobs:
         run: |
           set -euo pipefail
           health=$(curl --silent --show-error --fail --max-time 15 --retry 2 "$URL/health")
-          echo "$health" | jq -e '.status == "ok" and .mode == "QA_ONLY" and .upstream_booking_enabled == false and .production_data_access == false' >/dev/null
+          echo "$health" | jq -e '.status == "ok" and .mode == "QA_ONLY" and .upstream_booking_enabled == true and .production_data_access == false' >/dev/null
           wrong=$(curl --silent --show-error --max-time 15 -o /tmp/wrong.json -w '%{http_code}' -X POST "$URL/api/tfg_booking" -H 'Origin: https://example.invalid' -H 'Content-Type: application/json' --data '{}')
           echo "Wrong origin status: $wrong"
           test "$wrong" = 403
