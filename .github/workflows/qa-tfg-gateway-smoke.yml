@@ -92,6 +92,11 @@ jobs:
           jq -c '{mode,auth_http_status,expected_rejection,error,exception_name,exception_message}' /tmp/diag.json
           test "$diagnostic" = 200
           jq -e '.expected_rejection == true and .auth_http_status == 401' /tmp/diag.json >/dev/null
+          reference=$(curl --silent --show-error --max-time 30 -o /tmp/reference.json -w '%{http_code}' -H "Origin: $QA_ORIGIN" "$URL/diag/tfg-reference")
+          echo "QA Worker fixed-reference diagnostic HTTP: $reference"
+          jq -c '{mode,status,expected_vessel,expected_voyage,error}' /tmp/reference.json
+          test "$reference" = 200
+          jq -e '.status == "found" and .expected_vessel == true and .expected_voyage == true and .booking_authorized == false' /tmp/reference.json >/dev/null
           # Diagnose the QA auth endpoint independently of the Worker, with a fake token only.
           direct=$(curl --silent --show-error --max-time 15 -o /tmp/direct.json -w '%{http_code}' -X POST 'https://sywxretbfgwxwhvdcknq.supabase.co/functions/v1/lts-phone-auth' -H "Origin: $QA_ORIGIN" -H 'Content-Type: application/json' -H "Authorization: Bearer $(printf 'x%.0s' {1..80})" --data '{"action":"session"}')
           echo "Direct QA Supabase fake-token status: $direct; response category: $(jq -r 'if .error then "rejected" else "other" end' /tmp/direct.json 2>/dev/null || echo non_json)"
