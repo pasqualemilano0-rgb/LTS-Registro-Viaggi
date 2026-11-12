@@ -2,7 +2,7 @@ import {tfgScheduleDelivery,conatecoForecastDelivery,conatecoDepotAcceptance} fr
 import {normalizeName,parseItalianDate,findSctVessels,evaluateSct,evaluateSctType,isSnapshotRecent,isSctFeedRecent,listSctVoyages,describeVesselStatus,describeClosing} from './rules.mjs?v=20261102-v65';
 import {parseTfgBookingResult} from './tfg.mjs?v=20261031-v41';
 import {validateBooking,bookingTerminal} from './booking_search.mjs?v=20261031-v41';
-import {lookupTfgBooking} from './tfg_booking.mjs?v=20261102-v63';
+import {lookupTfgBooking,tfgBookingEndpoint} from './tfg_booking.mjs?v=20261112-qa-route';
 import {getBookingBearerForServerVerification} from '../account-access.mjs';
 import {lookupConatecoBooking,matchConatecoBookingToSchedule,matchConatecoVesselToForecast} from './conateco_booking.mjs?v=20261102-v64';
 import {matchTfgVoyage,isTfgFeedFresh,evaluateTfgSchedule} from './tfg_schedule.mjs?v=20261102-v62';
@@ -784,7 +784,7 @@ async function renderTfgBooking(booking){
   results.append(node('div','booking-loading','Controllo il booking su TFG…'));
   try{
     const data=await lookupTfgBooking(booking,async (endpoint,options)=>{
-      if(endpoint!=='https://container-booking-backend.pasqualemilano0.workers.dev/api/tfg_booking')
+      if(endpoint!==tfgBookingEndpoint())
         throw Error('UNEXPECTED_BOOKING_ENDPOINT');
       let accessToken;
       try{accessToken=await getBookingBearerForServerVerification();}
