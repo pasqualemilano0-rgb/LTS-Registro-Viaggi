@@ -3,6 +3,7 @@ on:
   pull_request:
     paths:
       - 'account-access.mjs'
+      - 'tests/qa-tfg-auth-transport-stage.test.mjs'
       - 'driver-session-vault.mjs'
       - 'tests/qa-driver-refresh-vault-freshness.test.mjs'
       - 'tests/qa-tfg-auth-network-session-retry.test.mjs'
@@ -22,6 +23,7 @@ jobs:
         with:
           node-version: '22'
       - run: node --check account-access.mjs
+      - run: node --test tests/qa-tfg-auth-transport-stage.test.mjs
       - run: node --check driver-session-vault.mjs
       - run: node --test tests/qa-driver-refresh-vault-freshness.test.mjs
       - run: node --test tests/qa-tfg-auth-network-session-retry.test.mjs
