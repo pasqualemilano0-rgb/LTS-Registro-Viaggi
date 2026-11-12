@@ -19,6 +19,7 @@ jobs:
           command: |
             set -eu
             node --test tests/qa-trip-editor-safety.test.mjs tests/qa-realtime.test.mjs tests/qa-porti-stale-cache.test.mjs tests/driver-session-vault.test.mjs tests/qa-foreground-resume.test.mjs
+            node --test tests/qa-lts-cloudflare-uptime.test.mjs
 
   booking-auth-transport:
     docker:
