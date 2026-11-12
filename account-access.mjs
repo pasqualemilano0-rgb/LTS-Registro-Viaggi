@@ -59,7 +59,7 @@ function saveSession(data){
  if(!valid(data))throw new Error('Risposta di autenticazione non valida.');
  const next={access_token:data.access_token,refresh_token:data.refresh_token,
    expires_in:data.expires_in,user_id:data.user_id,role:data.role,
-   expires_at:Date.now()+data.expires_in*1000};
+   expires_at:Date.now()+data.expires_in*1000,rotated_at:Date.now()};
  if(session&&session.user_id!==next.user_id)throw new Error('Identità account cambiata durante il rinnovo.');
  session=next;verified=false;
  try{sessionStorage.setItem(SESSION_KEY,JSON.stringify(session));}catch{}
@@ -174,7 +174,11 @@ async function refresh(){
   try{
    // Read the newest rotated token under a cross-tab lock (where supported).
    const stored=s.role==='driver'?await readDriverToken().catch(()=>null):null;
-   const token=stored?.user_id===s.user_id?stored.refresh_token:s.refresh_token;
+   // Prefer the most recently rotated credential; an old vault write must not
+   // override a newer in-memory session. Legacy vault entries have no timestamp.
+   const token=stored?.user_id===s.user_id&&
+     Number.isSafeInteger(stored.rotated_at)&&stored.rotated_at>(s.rotated_at||0)
+       ?stored.refresh_token:s.refresh_token;
    const data=await api('loginEndpoint',{action:'refresh',refresh_token:token});
    if(!valid(data)||data.user_id!==s.user_id||data.role!==s.role){
      revoke();throw new Error('L’identità dell’account non corrisponde.');
