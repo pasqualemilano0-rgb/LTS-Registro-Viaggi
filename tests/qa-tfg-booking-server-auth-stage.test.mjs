@@ -7,7 +7,7 @@ const app=readFileSync(new URL('../porti/app.js',import.meta.url),'utf8');
 const start=source.indexOf('export async function getBookingBearerForServerVerification(){');
 const end=source.indexOf('\n/** Authenticated Realtime channels',start);
 assert.ok(start>=0&&end>start);
-const method=source.slice(start,end);
+const method=source.slice(start,end).replace(/^export /,'');
 function scenario(stored,verified=false){
  let refreshed=0;
  const ctx={readStored:()=>stored,isVerified:()=>verified,
