@@ -11,10 +11,13 @@ test('auth still verifies session before issuing booking bearer',()=>{
 });
 test('confirmed offline is distinguished from a failed fetch',()=>{
  assert.match(auth,/if\(navigator\.onLine===false\)\{[\s\S]*?e\.offline=true;throw e;/);
- assert.match(auth,/catch\{\s*const e=new Error\('Servizio account temporaneamente non raggiungibile\.'\);[\s\S]*?e\.serviceUnavailable=true;e\.status=503;throw e;/);
+ assert.match(auth,/e\.serviceUnavailable=true/);
+ assert.match(auth,/e\.transportCode=/);
 });
 test('TFG Booking displays unavailable service rather than offline on auth fetch failure',()=>{
- assert.match(porti,/if\(error\?\.serviceUnavailable===true\)throw Error\('LTS_BOOKING_AUTH_NETWORK'\)/);
+ assert.match(porti,/error\?\.serviceUnavailable===true/);
+ assert.match(porti,/LTS_BOOKING_AUTH_TIMEOUT/);
+ assert.match(porti,/LTS_BOOKING_AUTH_NETWORK/);
  assert.match(porti,/if\(error\?\.status>=500\)throw Error\('LTS_BOOKING_AUTH_UNAVAILABLE'\)/);
  assert.match(porti,/const offline=error\?\.message==='LTS_BOOKING_OFFLINE'/);
  assert.match(porti,/offline\?'CONNESSIONE ASSENTE'/);
