@@ -34,3 +34,9 @@ test('CircleCI preserves account live authorization and Maps canonical fixture p
   }
   assert.match(config,/node tests\/maps-redirect-diagnostic\.mjs/);
 });
+
+test('GitHub account release QA duplicate is absent after CircleCI live parity',()=>{
+  assert.equal(existsSync(new URL('../.github/workflows/qa-account-release.yml',import.meta.url)),false);
+  assert.match(config,/node tests\/maps-redirect-diagnostic\.mjs/);
+  assert.match(config,/node --test tests\/\*\.test\.mjs/);
+});
