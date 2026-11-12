@@ -46,6 +46,20 @@ jobs:
               'voyage_646w': bool(re.search(r'\\b646W\\b',body,re.I)),
               'container_mieu2007836': bool(re.search(r'\\bMIEU2007836\\b',body,re.I)),
           }
+          from collections import Counter
+          class FormInspector(HTMLParser):
+              def __init__(self):
+                  super().__init__(); self.forms=[]; self.fields=[]; self.buttons=[]; self.labels=[]
+              def handle_starttag(self,tag,attrs):
+                  a=dict(attrs)
+                  if tag=='form': self.forms.append({'method':a.get('method','GET'),'action':a.get('action','')[:100]})
+                  if tag in ('input','select','textarea'): self.fields.append({'tag':tag,'name':a.get('name','')[:70],'type':a.get('type','')[:30],'value_length':len(a.get('value','')),'value_present':bool(a.get('value',''))})
+                  if tag=='button': self.buttons.append({'type':a.get('type',''),'name':a.get('name','')})
+          inspector=FormInspector();inspector.feed(raw[:100000].decode('iso-8859-1',errors='replace'))
+          print('Form metadata (no values):',inspector.forms)
+          print('Field metadata (no values):',inspector.fields[:30])
+          print('Button metadata:',inspector.buttons[:12])
+          print('Body classification:', {k:bool(re.search(v,body,re.I)) for k,v in {'booking_not_found':r'inesistent|non\\s+trovato','error':r'errore|error','form_prompt':r'inserire|ricerca|cerca|search','booking_echo':r'280630439','access_denied':r'accesso negato|login|password|captcha'}.items()})
           print('Public TFG response bytes:',len(raw))
           for name,ok in checks.items(): print(name+':',ok)
           if not checks['title_export_booking'] or not checks['vessel_mv_salween'] or not checks['voyage_646w']:
