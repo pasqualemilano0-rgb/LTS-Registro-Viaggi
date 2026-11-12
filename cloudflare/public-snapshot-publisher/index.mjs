@@ -158,7 +158,7 @@ export default{
   async fetch(request,env){
     const url=new URL(request.url);
     if(request.method!=='GET'||!['/health','/preview'].includes(url.pathname))return new Response('Not found',{status:404});
-    if(url.pathname==='/preview'&&env?.PUBLISH_ENABLED==='yes')return new Response('Not found',{status:404});
+    if(url.pathname==='/preview'&&(env?.PUBLISH_ENABLED==='yes'||env?.QA_PREVIEW_ENABLED!=='yes'))return new Response('Not found',{status:404});
     try{
       const result=url.pathname==='/preview'?await preview(env):await readAll(env);
       const body=url.pathname==='/preview'?result:{status:'ok',mode:'read_only',publishing_enabled:env?.PUBLISH_ENABLED==='yes',
