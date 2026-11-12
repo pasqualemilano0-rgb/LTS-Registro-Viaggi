@@ -1,0 +1,21 @@
+{
+  "name": "lts-porti-public-snapshot-publisher",
+  "main": "./index.mjs",
+  "compatibility_date": "2026-11-01",
+  "workers_dev": true,
+  "kv_namespaces": [
+    {
+      "binding": "SCHEDULES_KV",
+      "id": "0f3ce70b4e934cb3b8d78083a2ef5f23"
+    }
+  ],
+  "vars": {
+    "PUBLISH_ENABLED": "no"
+  },
+  "triggers": {
+    "crons": []
+  },
+  "observability": {
+    "enabled": true
+  }
+}
