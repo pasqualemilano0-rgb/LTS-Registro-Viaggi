@@ -6,6 +6,9 @@ on:
     paths:
       - '.github/workflows/qa-tfg-gateway-smoke.yml'
       - 'staging/tfg-qa-gateway.js'
+      - 'porti/tfg_booking.mjs'
+      - 'porti/app.js'
+      - 'tests/qa-tfg-origin-route.test.mjs'
   workflow_dispatch:
 permissions:
   contents: read
@@ -70,6 +73,8 @@ jobs:
               raise SystemExit('TFG public form verification incomplete')
           PY
           test "$status" = 200
+      - name: Verify QA browser endpoint isolation
+        run: node --test tests/qa-tfg-origin-route.test.mjs
       - name: Verify live QA gateway with safe negative tests only
         shell: bash
         env:
