@@ -52,7 +52,7 @@ test('installed PWA refreshes current data and update assets without dropping un
  const mainApp=read('app.mjs');
  const worker=read('sw.js');
  for(const source of [main]){
-  assert.match(source,/setInterval\(refreshSoon, 6000\)/);
+  assert.match(source,/setInterval\(pollArchive, 2000\)/);
   assert.match(source,/addEventListener\('focus', refreshSoon\)/);
   assert.match(source,/addEventListener\('pageshow', refreshSoon\)/);
   assert.match(source,/if \(!active \|\| blocked \|\| refreshing \|\| document[.]hidden/);

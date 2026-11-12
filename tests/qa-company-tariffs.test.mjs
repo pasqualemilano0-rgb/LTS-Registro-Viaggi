@@ -83,7 +83,7 @@ test('drivers browse grouped company tariffs without being able to edit them',()
  assert.match(app,/await store[.]syncPending\(\)/);
  assert.match(app,/\['insert','tariffs','customers'\][.]includes\(next\)/);
  assert.doesNotMatch(app,/Nuova tariffa personale|Aggiungi tariffa personale|function tariffDialog\(/);
- assert.match(store,/setInterval\(refreshSoon, 6000\)/);
+ assert.match(store,/setInterval\(pollArchive, 2000\)/);
  assert.match(store,/window[.]addEventListener\('online', refreshSoon\)/);
  assert.match(store,/document[.]addEventListener\('visibilitychange'/);
  const css=read('app.css');

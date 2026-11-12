@@ -28,6 +28,8 @@ on:
       - 'tests/qa-control-center-model.test.mjs'
       - 'tests/qa-offline-worker-browser.mjs'
       - 'tests/qa-offline-store-browser.mjs'
+      - 'tests/qa-store-cas-browser.mjs'
+      - 'client-store.mjs'
       - 'tests/qa-trip-editor-safety.test.mjs'
       - 'shared/register-explorer.mjs'
       - 'tests/qa-register-explorer.test.mjs'
@@ -66,6 +68,8 @@ on:
       - 'tests/qa-control-center-model.test.mjs'
       - 'tests/qa-offline-worker-browser.mjs'
       - 'tests/qa-offline-store-browser.mjs'
+      - 'tests/qa-store-cas-browser.mjs'
+      - 'client-store.mjs'
       - 'tests/qa-trip-editor-safety.test.mjs'
       - 'shared/register-explorer.mjs'
       - 'tests/qa-register-explorer.test.mjs'
@@ -168,6 +172,9 @@ jobs:
       - name: IndexedDB offline edits and outbox replay in Chromium
         run: LTS_BROWSER_PLAYWRIGHT="$RUNNER_TEMP/lts-playwright" node tests/qa-offline-store-browser.mjs
 
+      - name: Atomic IndexedDB CAS, recovery and account isolation in Chromium
+        run: LTS_BROWSER_PLAYWRIGHT="$RUNNER_TEMP/lts-playwright" node tests/qa-store-cas-browser.mjs
+
       - name: Verify live protected driver records API
         run: node --test tests/qa-admin-records-live.test.mjs
 
@@ -204,3 +211,6 @@ jobs:
         run: LTS_BROWSER_PLAYWRIGHT="$RUNNER_TEMP/lts-playwright" LTS_BROWSER_ENGINE=webkit node tests/qa-register-browser.mjs
       - name: Safari WebKit offline IndexedDB and outbox consistency
         run: LTS_BROWSER_PLAYWRIGHT="$RUNNER_TEMP/lts-playwright" LTS_BROWSER_ENGINE=webkit node tests/qa-offline-store-browser.mjs
+
+      - name: Atomic IndexedDB CAS, recovery and account isolation in Safari WebKit
+        run: LTS_BROWSER_PLAYWRIGHT="$RUNNER_TEMP/lts-playwright" LTS_BROWSER_ENGINE=webkit node tests/qa-store-cas-browser.mjs
