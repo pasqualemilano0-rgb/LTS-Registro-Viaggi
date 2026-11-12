@@ -146,7 +146,9 @@ async function api(which,body,bearer=null){
        ...(bearer?{Authorization:'Bearer '+bearer}:{})},
      body:JSON.stringify(body)});
   }catch{
-   const e=new Error('Servizio account temporaneamente non raggiungibile.');\n   // A failed fetch is not proof that the device is offline (DNS, CORS, TLS or timeout).\n   e.serviceUnavailable=true;e.status=503;throw e;
+   const e=new Error('Servizio account temporaneamente non raggiungibile.');
+   // A failed fetch is not proof that the device is offline (DNS, CORS, TLS or timeout).
+   e.serviceUnavailable=true;e.status=503;throw e;
   }
   const type=result.headers.get('content-type')||'';
   if(!type.includes('application/json')){
