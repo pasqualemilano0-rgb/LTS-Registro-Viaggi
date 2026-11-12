@@ -1,0 +1,18 @@
+version: 2.1
+# Offline regression only: no secrets, production API calls, or deployments.
+workflows:
+  essential-offline:
+    jobs:
+      - webapp-regression
+jobs:
+  webapp-regression:
+    docker:
+      - image: cimg/node:22.13
+    resource_class: small
+    steps:
+      - checkout
+      - run:
+          name: Essential offline regression
+          command: |
+            set -eu
+            node --test tests/qa-trip-editor-safety.test.mjs tests/qa-realtime.test.mjs tests/qa-porti-stale-cache.test.mjs tests/driver-session-vault.test.mjs tests/qa-foreground-resume.test.mjs
