@@ -17,6 +17,41 @@ jobs:
       - uses: actions/checkout@v4
       - name: Check QA gateway JavaScript syntax
         run: node --check staging/tfg-qa-gateway.js
+      - name: Probe public TFG form independently of QA auth
+        shell: bash
+        run: |
+          set -euo pipefail
+          status=$(curl --silent --show-error --max-time 25 -o /tmp/tfg-public.html -w '%{http_code}' -X POST 'https://tfg.bucci.it/@/TFGW_WW_BKK' -H 'Accept: text/html' -H 'Content-Type: application/x-www-form-urlencoded' --data 'modo=2&bkk=280630439' || true)
+          echo "Public TFG HTTP status: $status"
+          if [ ! -f /tmp/tfg-public.html ]; then echo 'No response body'; exit 1; fi
+          python3 - <<'PY'
+          from html.parser import HTMLParser
+          from pathlib import Path
+          import re
+          class Parser(HTMLParser):
+              def __init__(self):
+                  super().__init__(); self.in_title=False; self.title=[]; self.visible=[]
+              def handle_starttag(self,tag,attrs):
+                  if tag=='title': self.in_title=True
+              def handle_endtag(self,tag):
+                  if tag=='title': self.in_title=False
+              def handle_data(self,data):
+                  (self.title if self.in_title else self.visible).append(data)
+          raw=Path('/tmp/tfg-public.html').read_bytes()
+          p=Parser(); p.feed(raw[:100000].decode('iso-8859-1',errors='replace'))
+          body=' '.join(p.visible)
+          checks={
+              'title_export_booking': ' '.join(p.title).strip().upper()=='EXPORT BOOKING',
+              'vessel_mv_salween': bool(re.search(r'\\bMV\\s+SALWEEN\\b',body,re.I)),
+              'voyage_646w': bool(re.search(r'\\b646W\\b',body,re.I)),
+              'container_mieu2007836': bool(re.search(r'\\bMIEU2007836\\b',body,re.I)),
+          }
+          print('Public TFG response bytes:',len(raw))
+          for name,ok in checks.items(): print(name+':',ok)
+          if not checks['title_export_booking'] or not checks['vessel_mv_salween'] or not checks['voyage_646w']:
+              raise SystemExit('TFG public form verification incomplete')
+          PY
+          test "$status" = 200
       - name: Verify live QA gateway with safe negative tests only
         shell: bash
         env:
