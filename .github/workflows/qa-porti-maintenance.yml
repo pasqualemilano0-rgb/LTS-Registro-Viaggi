@@ -7,13 +7,8 @@ on:
       - 'porti/index.html'
       - 'tests/test_porti_maintenance.mjs'
       - '.github/workflows/qa-porti-maintenance.yml'
-  push:
-    branches: [main]
-    paths:
-      - 'porti-access.mjs'
-      - 'porti/index.html'
-      - 'tests/test_porti_maintenance.mjs'
-      - '.github/workflows/qa-porti-maintenance.yml'
+  workflow_dispatch:
+
 permissions:
   contents: read
 jobs:
