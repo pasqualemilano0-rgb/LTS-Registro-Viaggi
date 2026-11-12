@@ -25,6 +25,9 @@ test('CircleCI retains Porti maintenance, stale-cache and auth transport safety 
     'tests/qa-tfg-booking-stage-diagnostics.test.mjs',
     'tests/qa-tfg-booking-offline-diagnostics.test.mjs',
   ]) {
-    assert.ok(ci.includes(file), 'Missing CircleCI regression: '+file);
+    // Full Node glob is a strict superset of individual *.test.mjs files.
+    const includedInFullSuite = ci.includes('node --test tests/*.test.mjs')
+      && file.endsWith('.test.mjs') && existsSync(new URL(file,root));
+    assert.ok(ci.includes(file) || includedInFullSuite, 'Missing CircleCI regression: '+file);
   }
 });
