@@ -4,7 +4,7 @@ import {readFileSync} from 'node:fs';
 const app=readFileSync(new URL('../porti/app.js',import.meta.url),'utf8');
 const booking=readFileSync(new URL('../porti/tfg_booking.mjs',import.meta.url),'utf8');
 test('auth session remains mandatory before gateway fetch',()=>{
- assert.match(app,/accessToken=await getVerifiedAccessToken\(\)/);
+ assert.match(app,/accessToken=await getBookingBearerForServerVerification\(\)/);
  assert.match(app,/Authorization:'Bearer '\+accessToken/);
  assert.match(app,/response\.status===401\)throw Error\('LTS_BOOKING_LOGIN_REQUIRED'\)/);
  assert.match(app,/response\.status===403\)throw Error\('LTS_BOOKING_ACCESS_DENIED'\)/);
