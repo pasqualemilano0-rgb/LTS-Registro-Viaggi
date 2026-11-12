@@ -790,6 +790,7 @@ async function renderTfgBooking(booking){
       try{accessToken=await getVerifiedAccessToken();}
       catch(error){
         if(error?.offline===true)throw Error('LTS_BOOKING_OFFLINE');
+        if(error?.serviceUnavailable===true)throw Error('LTS_BOOKING_AUTH_UNAVAILABLE');
         if(error?.status>=500)throw Error('LTS_BOOKING_AUTH_UNAVAILABLE');
         throw Error('LTS_BOOKING_LOGIN_REQUIRED');
       }
