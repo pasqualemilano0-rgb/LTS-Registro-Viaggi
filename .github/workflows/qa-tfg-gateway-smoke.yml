@@ -31,6 +31,9 @@ jobs:
           echo "Missing bearer status: $unauthorized"
           test "$unauthorized" = 401
           jq -e '.error == "SESSION_REQUIRED"' /tmp/unauth.json >/dev/null
+          # Diagnose the QA auth endpoint independently of the Worker, with a fake token only.
+          direct=$(curl --silent --show-error --max-time 15 -o /tmp/direct.json -w '%{http_code}' -X POST 'https://sywxretbfgwxwhvdcknq.supabase.co/functions/v1/lts-phone-auth' -H "Origin: $QA_ORIGIN" -H 'Content-Type: application/json' -H "Authorization: Bearer $(printf 'x%.0s' {1..80})" --data '{"action":"session"}')
+          echo "Direct QA Supabase fake-token status: $direct; response category: $(jq -r 'if .error then "rejected" else "other" end' /tmp/direct.json 2>/dev/null || echo non_json)"
           # A syntactically valid but untrusted token must never unlock booking.
           invalid=$(curl --silent --show-error --max-time 15 -o /tmp/invalid.json -w '%{http_code}' -X POST "$URL/api/tfg_booking" -H "Origin: $QA_ORIGIN" -H 'Content-Type: application/json' -H "Authorization: Bearer $(printf 'x%.0s' {1..80})" --data '{"booking":"000000000"}')
           echo "Invalid bearer status: $invalid; error code: $(jq -r '.error // "NONE"' /tmp/invalid.json)"
