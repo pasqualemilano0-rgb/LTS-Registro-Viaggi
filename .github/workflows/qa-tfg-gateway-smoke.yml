@@ -9,6 +9,8 @@ on:
       - 'porti/tfg_booking.mjs'
       - 'porti/app.js'
       - 'tests/qa-tfg-origin-route.test.mjs'
+      - 'tests/qa-stage-deployment-gates.test.mjs'
+      - 'staging/runtime-config.mjs'
   workflow_dispatch:
 permissions:
   contents: read
@@ -74,7 +76,7 @@ jobs:
           PY
           test "$status" = 200
       - name: Verify QA browser endpoint isolation
-        run: node --test tests/qa-tfg-origin-route.test.mjs
+        run: node --test tests/qa-tfg-origin-route.test.mjs tests/qa-stage-deployment-gates.test.mjs
       - name: Verify live QA gateway with safe negative tests only
         shell: bash
         env:
