@@ -4,6 +4,8 @@ workflows:
   essential-offline:
     jobs:
       - webapp-regression
+      - booking-auth-transport
+      - snapshot-publisher-contract
 jobs:
   webapp-regression:
     docker:
@@ -16,3 +18,32 @@ jobs:
           command: |
             set -eu
             node --test tests/qa-trip-editor-safety.test.mjs tests/qa-realtime.test.mjs tests/qa-porti-stale-cache.test.mjs tests/driver-session-vault.test.mjs tests/qa-foreground-resume.test.mjs
+
+  booking-auth-transport:
+    docker:
+      - image: cimg/node:22.13
+    resource_class: small
+    steps:
+      - checkout
+      - run:
+          name: Booking TFG, Supabase session and Porti CSP regressions (offline)
+          command: |
+            set -eu
+            node --check account-access.mjs
+            node --check porti/app.js
+            node --check porti/tfg_booking.mjs
+            node --test tests/qa-driver-refresh-vault-freshness.test.mjs tests/qa-tfg-auth-network-session-retry.test.mjs tests/qa-tfg-booking-stage-diagnostics.test.mjs tests/qa-tfg-booking-offline-diagnostics.test.mjs tests/qa-porti-android-auth-transport-diagnostics.test.mjs tests/qa-account-release.test.mjs tests/qa-regression-contract.test.mjs tests/qa-no-auto-publish.test.mjs
+
+  snapshot-publisher-contract:
+    docker:
+      - image: cimg/python:3.12
+    resource_class: small
+    steps:
+      - checkout
+      - run:
+          name: Public CNT TFG SCT snapshot safety gates (offline; no publish)
+          command: |
+            set -eu
+            python -m py_compile scripts/refresh_porti_from_worker.py scripts/check_public_snapshot_freshness.py
+            python -m unittest discover -s tests -p 'test_refresh_porti_from_worker.py' -v
+            python -m unittest discover -s tests -p 'test_public_snapshot_freshness.py' -v
