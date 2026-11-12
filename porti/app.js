@@ -792,7 +792,8 @@ async function renderTfgBooking(booking){
         if(error?.offline===true)throw Error('LTS_BOOKING_OFFLINE');
         if(error?.serviceUnavailable===true)
           throw Error(error?.transportCode==='AUTH-TIMEOUT'
-            ?'LTS_BOOKING_AUTH_TIMEOUT':'LTS_BOOKING_AUTH_NETWORK');
+            ?'LTS_BOOKING_AUTH_TIMEOUT':error?.transportCode==='AUTH-FETCH'
+              ?'LTS_BOOKING_AUTH_FETCH':'LTS_BOOKING_AUTH_NETWORK');
         if(error?.status>=500)throw Error('LTS_BOOKING_AUTH_UNAVAILABLE');
         throw Error('LTS_BOOKING_LOGIN_REQUIRED');
       }
@@ -841,6 +842,7 @@ async function renderTfgBooking(booking){
     const diagnostics=Object.freeze({
       LTS_BOOKING_OFFLINE:'AUTH-OFFLINE',
       LTS_BOOKING_AUTH_NETWORK:'AUTH-NETWORK',
+      LTS_BOOKING_AUTH_FETCH:'AUTH-FETCH',
       LTS_BOOKING_AUTH_TIMEOUT:'AUTH-TIMEOUT',
       LTS_BOOKING_AUTH_UNAVAILABLE:'AUTH-503',
       LTS_BOOKING_LOGIN_REQUIRED:'AUTH-LOGIN',
@@ -855,6 +857,13 @@ async function renderTfgBooking(booking){
       TFG_RESPONSE_INVALID:'TFG-JSON'
     });
     const diagnostic=diagnostics[error?.message]||'TFG-UNKNOWN';
+    // These are deliberately non-sensitive, browser-observable hints only.
+    // Fetch failures cannot reliably distinguish TLS, DNS and CORS.
+    const authTransportFailure=['AUTH-NETWORK','AUTH-FETCH','AUTH-TIMEOUT'].includes(diagnostic);
+    const connectionHint=authTransportFailure
+      ?(navigator.onLine===false?' · dispositivo segnala offline':
+        document.visibilityState==='hidden'?' · pagina in background':' · pagina visibile')
+      :'';
     openResults('Booking · TFG',denied?'ACCESSO LTS NECESSARIO':offline?'CONNESSIONE ASSENTE':
       limited?'TROPPE RICHIESTE':'SERVIZIO NON DISPONIBILE','warn',
       denied?'La sessione LTS non è valida o l’account non ha accesso. Verifica il login e l’Authenticator, poi riapri Porti.':
