@@ -28,6 +28,18 @@ function respond(status,data,origin){const h={'Content-Type':'application/json; 
 addEventListener('fetch',event=>event.respondWith(handle(event.request)));
 async function handle(request){const url=new URL(request.url),origin=request.headers.get('Origin');
 if(url.pathname==='/health'&&request.method==='GET')return respond(200,{status:'ok',mode:'QA_ONLY',upstream_booking_enabled:true,production_data_access:false},origin);
+if(url.pathname==='/diag/tfg-reference'&&request.method==='GET'){
+  // Fixed known QA reference only. No arbitrary booking lookup or raw TFG data without auth.
+  if(origin!==ORIGIN)return respond(403,{error:'ORIGIN_DENIED'},origin);
+  if(!TFG_CLIENT_LIMIT||!TFG_GLOBAL_LIMIT)return respond(503,{error:'RATE_LIMIT_NOT_CONFIGURED'},origin);
+  const client=await TFG_CLIENT_LIMIT.limit({key:'reference:'+(request.headers.get('CF-Connecting-IP')||'unknown')});
+  const global=await TFG_GLOBAL_LIMIT.limit({key:'all'});
+  if(!client.success||!global.success)return respond(429,{error:'RATE_LIMITED'},origin);
+  try{
+    const result=await publicTfgLookup('280630439');
+    return respond(200,{mode:'QA_REFERENCE_DIAGNOSTIC',status:result.status,expected_vessel:result.vessel==='MV SALWEEN',expected_voyage:result.voyage==='646W',booking_authorized:false},origin);
+  }catch{return respond(503,{mode:'QA_REFERENCE_DIAGNOSTIC',error:'TFG_UPSTREAM_UNAVAILABLE'},origin)}
+}
 if(url.pathname==='/diag/auth-reachability'&&request.method==='GET'){
   // No session or booking is accepted. A fixed fake token tests outbound QA auth only.
   if(origin!==ORIGIN)return respond(403,{error:'ORIGIN_DENIED'},origin);
