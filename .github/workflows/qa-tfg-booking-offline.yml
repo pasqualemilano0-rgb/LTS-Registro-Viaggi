@@ -3,6 +3,7 @@ on:
   pull_request:
     paths:
       - 'account-access.mjs'
+      - 'tests/qa-tfg-auth-network-session-retry.test.mjs'
       - 'porti/app.js'
       - 'porti/tfg_booking.mjs'
       - 'tests/qa-tfg-booking-stage-diagnostics.test.mjs'
@@ -19,6 +20,7 @@ jobs:
         with:
           node-version: '22'
       - run: node --check account-access.mjs
+      - run: node --test tests/qa-tfg-auth-network-session-retry.test.mjs
       - run: node --check porti/app.js
       - run: node --check porti/tfg_booking.mjs
       - run: node --test tests/qa-tfg-booking-stage-diagnostics.test.mjs
