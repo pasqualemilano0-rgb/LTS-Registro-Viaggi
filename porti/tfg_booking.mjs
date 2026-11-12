@@ -35,14 +35,19 @@ export function parseTfgBookingApi(raw){
 export async function lookupTfgBooking(booking, fetcher=fetch, signal){
   const checked=validateBooking(booking);
   if(!checked.valid)throw Error('BOOKING_INVALID');
-  const response=await fetcher(TFG_BOOKING_API,{
+  let response;
+  try{response=await fetcher(TFG_BOOKING_API,{
     method:'POST',mode:'cors',cache:'no-store',credentials:'omit',
     referrerPolicy:'no-referrer',redirect:'error',signal,
     headers:{'Content-Type':'application/json','Accept':'application/json'},
     body:JSON.stringify({booking:checked.booking})
-  });
+  });}catch(error){
+    if(error?.name==='AbortError')throw Error('TFG_REQUEST_TIMEOUT');
+    if(/^LTS_BOOKING_|^UNEXPECTED_BOOKING_ENDPOINT/.test(error?.message||''))throw error;
+    throw Error('TFG_GATEWAY_NETWORK');
+  }
   if(response.status===429)throw Error('TFG_RATE_LIMITED');
-  if(!response.ok)throw Error('TFG_BACKEND_UNAVAILABLE');
+  if(!response.ok)throw Error(response.status>=500?'TFG_GATEWAY_5XX':'TFG_GATEWAY_4XX');
   if(!(response.headers?.get('content-type')||'').toLowerCase().includes('application/json'))
     throw Error('TFG_RESPONSE_NOT_JSON');
   const body=await response.text();
