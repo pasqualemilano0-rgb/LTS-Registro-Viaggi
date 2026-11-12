@@ -51,13 +51,15 @@ export async function readDriverToken(){
        !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(data.user_id)||
        typeof data.refresh_token!=='string'||!/^[A-Za-z0-9._-]{8,4096}$/.test(data.refresh_token))
      throw Error('Invalid vault');
-   return data;
+   return Number.isSafeInteger(data.rotated_at)&&data.rotated_at>0
+     ?{...data,rotated_at:data.rotated_at}
+     :{user_id:data.user_id,role:data.role,refresh_token:data.refresh_token};
  }catch{
    await clearDriverToken().catch(()=>{});
    return null;
  }
 }
-export async function writeDriverToken({user_id,role,refresh_token}){
+export async function writeDriverToken({user_id,role,refresh_token,rotated_at=0}){
  if(!supported())return false;
  if(role!=='driver'||typeof user_id!=='string'||typeof refresh_token!=='string')
    throw new Error('Identità autista non valida.');
@@ -68,7 +70,7 @@ export async function writeDriverToken({user_id,role,refresh_token}){
    if(!key)key=await crypto.subtle.generateKey({name:'AES-GCM',length:256},false,['encrypt','decrypt']);
    const iv=crypto.getRandomValues(new Uint8Array(12));
    const cipher=await crypto.subtle.encrypt({name:'AES-GCM',iv},key,
-     encoder.encode(JSON.stringify({user_id,role,refresh_token})));
+     encoder.encode(JSON.stringify({user_id,role,refresh_token,rotated_at})));
    await transact(db,table=>{
      if(created)table.put(key,'key');
      table.put({iv:Array.from(iv),cipher:Array.from(new Uint8Array(cipher))},'refresh');
