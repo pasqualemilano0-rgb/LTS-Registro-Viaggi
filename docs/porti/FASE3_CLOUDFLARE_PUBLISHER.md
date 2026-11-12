@@ -6,7 +6,7 @@
 - Questo **nuovo** Worker `lts-porti-public-snapshot-publisher` legge esclusivamente tali chiavi KV, applica filtri di pubblicazione pubblica e prepara **un solo commit Git fast-forward non forzato** sul ramo `main` di `pasqualemilano0-rgb/LTS-Registro-Viaggi`. Non legge né esporta booking, utenti, sessioni o token.
 - La pagina LTS continua a usare il gateway TFG esistente. La pubblicazione dei file di fallback non equivale ad autorizzazione al ritiro dei container.
 - **Stato iniziale storico:** il Worker è stato rilasciato prima del collaudo con `PUBLISH_ENABLED=no` e `crons=[]`. **Stato attuale verificato (12 novembre 2026):** `PUBLISH_ENABLED=yes`, cron `8,38 * * * *` attivo, secret GitHub a permessi limitati presente; vedi l'handoff operativo seguente.
-- Il vecchio `.github/workflows/refresh-lts-porti-snapshots.yml` **non va disattivato** prima di un commit automatico riuscito del nuovo Worker, una verifica della freschezza e un collaudo del ripristino.
+- **Cutover completato (12/11/2026):** il vecchio workflow `.github/workflows/refresh-lts-porti-snapshots.yml` è stato rimosso da `main` con la PR #154 soltanto dopo un commit automatico riuscito, controlli di freschezza e test di ripristino dei backup. I vecchi passi sotto restano come cronologia del collaudo.
 
 ## Controlli prima di scrivere
 
@@ -50,7 +50,7 @@
 - **Prova monouso:** versione QA v7 con handler interno Queue; un solo messaggio; `state=published`, `updated=[cnt,tfg,sct]` registrati in KV con SHA suddetto. La coda e il consumer sono stati cancellati; la versione temporanea non è più in servizio e non è presente un URL HTTP pubblico di pubblicazione.
 - **Backup e recupero:** almeno un `backup:v1:*` per terminal, verificati leggibili; ripristino in un namespace KV temporaneo isolato e confronto dei tre JSON riusciti (41/19/28 righe). Namespace temporaneo eliminato; KV di produzione non sovrascritto. Tale prova verifica il recupero dei dati, non un restore dell'intera applicazione.
 - **CI su commit `be24e8d`:** CircleCI `snapshot-publisher-contract`, `cloudflare-publisher-contract`, `booking-auth-transport`, `webapp-regression` tutti `success`. La pianificazione *ricorrente* di CircleCI non è stata dimostrata da questi quattro job.
-- **GitHub Actions:** vecchio workflow `.github/workflows/refresh-lts-porti-snapshots.yml` **ancora attivo in configurazione**; altri workflow Actions esistono. Budget fatturazione a 0 $ **non certificato** dalle verifiche tecniche. Nessun workflow è stato disattivato in questo collaudo.
+- **GitHub Actions al momento di quel checkpoint (20:55 italiane):** il workflow precedente era ancora presente. La situazione successiva al merge #154 è registrata in **Fase 4** più sotto. Il budget effettivo di fatturazione rimane non verificato.
 
 ### Passo successivo, con blocco di sicurezza
 
@@ -61,3 +61,31 @@
 5. Se il Worker fallisce: non ripetere a forza la pubblicazione; preservare le copie precedenti, ricontrollare token/freschezza/backup e, ove serva bloccare nuove scritture, ripristinare `PUBLISH_ENABLED=no` mediante procedura sicura. Non cambiare il Worker Booking.
 
 **Politica di rilascio:** questo handoff documenta risultati già osservati e attività future distinte. Non equivale a un'autorizzazione a cancellare subito GitHub Actions né a una certificazione 10/10 di tutta LTS.
+
+## Fase 4 — Cutover del publisher completato, 12 novembre 2026 (21:24 Europe/Rome)
+
+### Risultati positivi della prima esecuzione programmata
+
+- Cron Cloudflare in produzione: `8,38 * * * *` UTC sul Worker `lts-porti-public-snapshot-publisher` v8 `63539da9-aeab-49c6-838e-b98b886de042`, `PUBLISH_ENABLED=yes`.
+- Alle **20:08:44 UTC (21:08:44 italiane)** il Worker ha prodotto su `main` il commit [`84b0ebf429b9747256273a774efed0f9e7ff8d93`](https://github.com/pasqualemilano0-rgb/LTS-Registro-Viaggi/commit/84b0ebf429b9747256273a774efed0f9e7ff8d93): aggiornamento verificato di CNT, TFG e SCT **senza GitHub Actions**. Timestamp e contenuti dei tre JSON coerenti con lo snapshot KV valido delle 20:00 UTC. Non sono stati letti log di invocazione diretti; il commit a distanza di 44 secondi dal cron e il messaggio del pubblicatore costituiscono la prova osservata.
+- Stato acquisitori alle 20:15:16 UTC: CNT 41 righe, TFG 19 righe, SCT 28 righe; `state=ok`, `last_error_code=null` per ciascuno. Cron del Worker `container-booking-backend` invariato: `*/15 * * * *`.
+- Backup `backup:v1:*` per i tre terminal già ripristinati con successo in un namespace KV temporaneo isolato, poi eliminato. JWT, MFA e Booking TFG non modificati; questa è prova di non modifica della configurazione, non un nuovo test di login end-to-end.
+
+### Ritiro del publisher GitHub Actions
+
+- **PR [#154](https://github.com/pasqualemilano0-rgb/LTS-Registro-Viaggi/pull/154) unita su `main`**; SHA di merge `5fef36475111e26dedbedcca4b73ffcba799a891`.
+- La PR ha **eliminato** `.github/workflows/refresh-lts-porti-snapshots.yml` e aggiornato `tests/qa-no-auto-publish.test.mjs` per verificare che non esista più il vecchio publisher e che la pubblicazione Cloudflare resti fail-closed e atomica.
+- **Quattro controlli CircleCI** sul candidato PR #154 conclusi `success`: `snapshot-publisher-contract`, `cloudflare-publisher-contract`, `booking-auth-transport`, `webapp-regression`; anche sei check-run GitHub Actions relativi al candidato hanno avuto esito positivo. Non assumere che ciò certifichi costo 0 o assenza di esecuzioni Actions degli altri workflow.
+- Controllo dopo merge: la directory `.github/workflows` di `main` contiene **8 file**, senza `refresh-lts-porti-snapshots.yml`. Il Worker Cloudflare rimane attivo e il cron Booking rimane invariato. Un check CircleCI sul commit di merge era ancora `pending` nell'ultima lettura; ricontrollarlo prima di dichiarare verde l'intero commit.
+
+### Cosa manca prima dell'obiettivo generale GitHub Actions = 0 $ / zero runner LTS
+
+1. **Non disattivare ciecamente gli altri workflow.** Sono rimasti 8 workflow nel repository pubblico e, alla precedente ricognizione, 27 nel privato `LTS`. Alcuni sono attivati da `push`, `pull_request`, `schedule` o `workflow_dispatch` e possono generare minuti Actions.
+2. **Promemoria iPhone pubblico:** attualmente usa `iphone-reminders.yml` con cron ogni cinque minuti e token di identità OIDC specifico GitHub Actions. Per sostituirlo con Cloudflare serve una nuova autenticazione server-to-server, adeguati permessi, rate limiting e test di consegna; non cancellare i promemoria né aggirare l'identità OIDC esistente.
+3. **Monitor disponibilità:** esiste già `lts-registro-uptime-independent` su Cloudflare; confrontare copertura e allarmi rispetto a `lts-uptime-monitor.yml` e dismettere il runner soltanto con parità verificata.
+4. **Verifiche private Booking/Security:** migrare le pianificazioni residue verso CircleCI schedulato o Cloudflare read-only, distinguendo test offline da controlli autenticati/live. Conservare JWT, MFA, CORS, rate limiting e cron Booking.
+5. **Economia/CI:** confermare il billing reale di Actions; verificare che CircleCI sia verde e non esegua test doppi. Non dichiarare "0 $" solo dalla presenza della configurazione CircleCI.
+
+### Rollback e guardrail
+
+Se gli snapshot pubblici smettono di aggiornarsi, confrontare `status:*`, `schedule:*`, backup, ultimo commit e cron. Non riattivare il vecchio workflow senza valutazione e autorizzazione; non generare cron concorrenti. Bloccare eventuali scritture Cloudflare con `PUBLISH_ENABLED=no` solo quando necessario e con procedura controllata. Non modificare il Worker Booking o il suo cron.
