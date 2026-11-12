@@ -1,0 +1,34 @@
+name: Porti production auth transport diagnostic (read-only)
+on:
+  workflow_dispatch:
+  push:
+    branches: [fix/porti-auth-network-diagnostics-20261112]
+    paths: ['.github/workflows/porti-auth-transport-diagnostic.yml']
+permissions:
+  contents: read
+jobs:
+  transport:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - name: Check GitHub Pages deployed config and CORS without credentials
+        shell: bash
+        run: |
+          set -euo pipefail
+          site='https://pasqualemilano0-rgb.github.io/LTS-Registro-Viaggi'
+          auth='https://otrqynkscpbeyuvdlgpg.supabase.co/functions/v1/lts-phone-auth'
+          gateway='https://container-booking-backend.pasqualemilano0.workers.dev'
+          curl -fsS --max-time 20 "$site/runtime-config.mjs" -o /tmp/config.mjs
+          grep -Fq "$auth" /tmp/config.mjs
+          curl -fsS --max-time 20 "$site/account-access.mjs" -o /tmp/account.mjs
+          grep -Fq 'getVerifiedAccessToken' /tmp/account.mjs
+          echo 'Deployed Pages auth configuration is present.'
+          code=$(curl -sS --max-time 20 -o /tmp/auth-options -D /tmp/auth-headers -w '%{http_code}' -X OPTIONS "$auth" -H 'Origin: https://pasqualemilano0-rgb.github.io' -H 'Access-Control-Request-Method: POST' -H 'Access-Control-Request-Headers: content-type,authorization')
+          echo "Supabase production preflight: $code"
+          test "$code" = 204
+          grep -Fi 'access-control-allow-origin: https://pasqualemilano0-rgb.github.io' /tmp/auth-headers >/dev/null
+          code=$(curl -sS --max-time 20 -o /tmp/session.json -w '%{http_code}' -X POST "$auth" -H 'Origin: https://pasqualemilano0-rgb.github.io' -H 'Content-Type: application/json' --data '{"action":"session"}')
+          echo "Supabase unauthenticated session status: $code"
+          test "$code" = 401
+          curl -sS --max-time 20 "$gateway/health" -o /tmp/booking-health.json -w 'Booking backend health HTTP: %{http_code}\n'
+          echo 'Production read-only transport diagnostic completed.'
