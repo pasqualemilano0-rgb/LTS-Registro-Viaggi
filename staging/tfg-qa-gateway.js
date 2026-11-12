@@ -30,31 +30,6 @@ function respond(status,data,origin){const h={'Content-Type':'application/json; 
 addEventListener('fetch',event=>event.respondWith(handle(event.request)));
 async function handle(request){const url=new URL(request.url),origin=request.headers.get('Origin');
 if(url.pathname==='/health'&&request.method==='GET')return respond(200,{status:'ok',mode:'QA_ONLY',upstream_booking_enabled:true,production_data_access:false},origin);
-if(url.pathname==='/diag/tfg-reference'&&request.method==='GET'){
-  // Fixed known QA reference only. No arbitrary booking lookup or raw TFG data without auth.
-  if(origin!==ORIGIN)return respond(403,{error:'ORIGIN_DENIED'},origin);
-  if(!TFG_CLIENT_LIMIT||!TFG_GLOBAL_LIMIT)return respond(503,{error:'RATE_LIMIT_NOT_CONFIGURED'},origin);
-  const client=await TFG_CLIENT_LIMIT.limit({key:'reference:'+(request.headers.get('CF-Connecting-IP')||'unknown')});
-  const global=await TFG_GLOBAL_LIMIT.limit({key:'all'});
-  if(!client.success||!global.success)return respond(429,{error:'RATE_LIMITED'},origin);
-  try{
-    const result=await publicTfgLookup('280630439');
-    return respond(200,{mode:'QA_REFERENCE_DIAGNOSTIC',status:result.status,expected_vessel:/^(?:MV )?SALWEEN$/.test(result.vessel||''),expected_voyage:result.voyage==='646W',booking_authorized:false},origin);
-  }catch(error){return respond(503,{mode:'QA_REFERENCE_DIAGNOSTIC',error:'TFG_UPSTREAM_UNAVAILABLE',exception_name:String(error?.name||'unknown').slice(0,40),exception_message:String(error?.message||'unknown').slice(0,100)},origin)}
-}
-if(url.pathname==='/diag/auth-reachability'&&request.method==='GET'){
-  // No session or booking is accepted. A fixed fake token tests outbound QA auth only.
-  if(origin!==ORIGIN)return respond(403,{error:'ORIGIN_DENIED'},origin);
-  if(!TFG_CLIENT_LIMIT)return respond(503,{error:'RATE_LIMIT_NOT_CONFIGURED'},origin);
-  const limited=await TFG_CLIENT_LIMIT.limit({key:'diag:'+ (request.headers.get('CF-Connecting-IP')||'unknown')});
-  if(!limited.success)return respond(429,{error:'RATE_LIMITED'},origin);
-  try{
-    const response=await fetch(AUTH,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+ 'x'.repeat(80),'Origin':ORIGIN},body:JSON.stringify({action:'session'}),redirect:'manual',signal:AbortSignal.timeout(8000)});
-    return respond(200,{mode:'QA_DIAGNOSTIC_ONLY',auth_http_status:response.status,expected_rejection:response.status===401},origin);
-  }catch(error){
-    return respond(503,{mode:'QA_DIAGNOSTIC_ONLY',error:'AUTH_TRANSPORT_FAILURE',exception_name:String(error?.name||'unknown').slice(0,40),exception_message:String(error?.message||'unknown').slice(0,120)},origin);
-  }
-}
 if(url.pathname!=='/api/tfg_booking')return respond(404,{error:'NOT_FOUND'},origin);
 if(!allowedApiOrigin(origin))return respond(403,{error:'ORIGIN_DENIED'},origin);
 if(request.method==='OPTIONS'){return new Response(null,{status:204,headers:{'Access-Control-Allow-Origin':origin,'Access-Control-Allow-Methods':'POST, OPTIONS','Access-Control-Allow-Headers':'Authorization, Content-Type','Access-Control-Max-Age':'300','Vary':'Origin'}})}
