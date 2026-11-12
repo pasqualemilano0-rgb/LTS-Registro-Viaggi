@@ -2,7 +2,7 @@ const ORIGIN='https://lts-booking-security-stage.pasqualemilano0.workers.dev';
 const AUTH='https://sywxretbfgwxwhvdcknq.supabase.co/functions/v1/lts-phone-auth';
 const TFG_SOURCE='https://tfg.bucci.it/@/TFGW_WW_BKK';
 async function publicTfgLookup(booking){
-  const response=await fetch(TFG_SOURCE,{method:'POST',redirect:'manual',credentials:'omit',cache:'no-store',signal:AbortSignal.timeout(20000),headers:{'Accept':'text/html','Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({modo:'2',bkk:booking}).toString()});
+  const response=await fetch(TFG_SOURCE,{method:'POST',redirect:'manual',credentials:'omit',signal:AbortSignal.timeout(20000),headers:{'Accept':'text/html','Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({modo:'2',bkk:booking}).toString()});
   if(response.status!==200||response.redirected||(response.url&&response.url!==TFG_SOURCE)||!/^text\/html(?:\s*;|$)/i.test(response.headers.get('content-type')||''))throw Error('TFG_UPSTREAM_UNVERIFIED');
   const declared=Number(response.headers.get('content-length')||'0');
   if(declared>100000)throw Error('TFG_RESPONSE_TOO_LARGE');
