@@ -18,10 +18,10 @@ test('auth and gateway transport errors are not conflated',()=>{
  assert.match(booking,/TFG_GATEWAY_5XX':'TFG_GATEWAY_4XX'/);
 });
 test('diagnostic codes are fixed and do not contain booking or tokens',()=>{
- for(const code of ['AUTH-NETWORK','AUTH-503','TFG-NETWORK','TFG-HTTP5','TFG-TIMEOUT','TFG-FORMAT']){
+ for(const code of ['AUTH-NETWORK','AUTH-FETCH','AUTH-TIMEOUT','AUTH-503','TFG-NETWORK','TFG-HTTP5','TFG-TIMEOUT','TFG-FORMAT']){
   assert.ok(app.includes("'"+code+"'"));
  }
- assert.match(app,/results\.append\(textBlock\('Codice diagnostico: '\+diagnostic,'tiny'\)\)/);
+ assert.match(app,/results\.append\(textBlock\('Codice diagnostico: '\+diagnostic\+connectionHint,'tiny'\)\)/);
  assert.doesNotMatch(app,/console\.(log|error)\(.*accessToken/);
 });
 test('TFG API retains strict response validation and rate limiting',()=>{
