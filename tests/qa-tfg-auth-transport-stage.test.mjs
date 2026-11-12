@@ -45,6 +45,6 @@ test('HTTP denial is not retried or reclassified as network',async()=>{
 test('UI exposes fixed codes, not raw errors or credentials',()=>{
  assert.match(app,/LTS_BOOKING_AUTH_TIMEOUT:'AUTH-TIMEOUT'/);
  assert.match(app,/LTS_BOOKING_AUTH_NETWORK:'AUTH-FETCH'/);
- assert.match(app,/accessToken=await getVerifiedAccessToken\(\)/);
+ assert.match(app,/accessToken=await getBookingBearerForServerVerification\(\)/);
  assert.match(app,/Authorization:'Bearer '\+accessToken/);
 });
