@@ -113,11 +113,7 @@ function decodeBlob(o){
   try{return JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(bytes));}
   catch{throw new PublishRejected('PREVIOUS_SNAPSHOT_CORRUPT');}
 }
-export async function publish(env,{now=Date.now(),fetcher=fetch}={}){
-  // This check is deliberately ahead of ALL external requests and KV access.
-  requireTrue(env?.PUBLISH_ENABLED==='yes'&&typeof env.GITHUB_PUBLIC_CONTENTS_TOKEN==='string'&&
-    env.GITHUB_PUBLIC_CONTENTS_TOKEN.length>=20,'PUBLISH_DISABLED_OR_SECRET_MISSING');
-  const token=env.GITHUB_PUBLIC_CONTENTS_TOKEN;
+async function readBaseline(fetcher,token){
   const ref=await github('/git/ref/heads/main',{token,fetcher});
   const parent=ref?.object?.sha;requireTrue(SHA.test(parent),'BAD_MAIN_REF');
   const commit=await github('/git/commits/'+parent,{token,fetcher});
@@ -127,6 +123,20 @@ export async function publish(env,{now=Date.now(),fetcher=fetch}={}){
     const data=await github('/contents/porti/data/'+spec.filename+'?ref='+parent,{token,fetcher});
     old[terminal]=decodeBlob(data);
   }
+  return{parent,treeSha:commit.tree.sha,old};
+}
+export async function preview(env,{now=Date.now(),fetcher=fetch}={}){
+  const {parent,old}=await readBaseline(fetcher);
+  const vetted=await readAll(env,now,old);
+  return{status:'ready',mode:'read_only',parent,updated:Object.keys(vetted).filter(t=>vetted[t].changed),
+    terminals:Object.fromEntries(Object.entries(vetted).map(([t,v])=>[t,{rows:v.rows,acquired_at:new Date(v.acquired).toISOString()}]))};
+}
+export async function publish(env,{now=Date.now(),fetcher=fetch}={}){
+  // This check is deliberately ahead of ALL external requests and KV access.
+  requireTrue(env?.PUBLISH_ENABLED==='yes'&&typeof env.GITHUB_PUBLIC_CONTENTS_TOKEN==='string'&&
+    env.GITHUB_PUBLIC_CONTENTS_TOKEN.length>=20,'PUBLISH_DISABLED_OR_SECRET_MISSING');
+  const token=env.GITHUB_PUBLIC_CONTENTS_TOKEN;
+  const {parent,treeSha,old}=await readBaseline(fetcher,token);
   const vetted=await readAll(env,now,old); // validate ALL before creating any Git object
   const updated=Object.keys(vetted).filter(t=>vetted[t].changed);
   if(!updated.length)return{status:'unchanged',updated:[],parent};
@@ -136,7 +146,7 @@ export async function publish(env,{now=Date.now(),fetcher=fetch}={}){
     requireTrue(SHA.test(r?.sha),'INVALID_GIT_BLOB');
     tree.push({path:'porti/data/'+FEEDS[terminal].filename,mode:'100644',type:'blob',sha:r.sha});
   }
-  const newTree=await github('/git/trees',{method:'POST',body:{base_tree:commit.tree.sha,tree},token,fetcher});
+  const newTree=await github('/git/trees',{method:'POST',body:{base_tree:treeSha,tree},token,fetcher});
   requireTrue(SHA.test(newTree?.sha),'INVALID_GIT_TREE');
   const message='data(porti): publish verified Cloudflare vessel schedules (no Actions)';
   const next=await github('/git/commits',{method:'POST',body:{message,tree:newTree.sha,parents:[parent]},token,fetcher});
@@ -147,11 +157,13 @@ export async function publish(env,{now=Date.now(),fetcher=fetch}={}){
 export default{
   async fetch(request,env){
     const url=new URL(request.url);
-    if(request.method!=='GET'||url.pathname!=='/health')return new Response('Not found',{status:404});
+    if(request.method!=='GET'||!['/health','/preview'].includes(url.pathname))return new Response('Not found',{status:404});
+    if(url.pathname==='/preview'&&env?.PUBLISH_ENABLED==='yes')return new Response('Not found',{status:404});
     try{
-      const records=await readAll(env);
-      return new Response(JSON.stringify({status:'ok',mode:'read_only',publishing_enabled:env?.PUBLISH_ENABLED==='yes',
-        terminals:Object.fromEntries(Object.entries(records).map(([k,v])=>[k,{rows:v.rows,acquired_at:new Date(v.acquired).toISOString()}]))}),
+      const result=url.pathname==='/preview'?await preview(env):await readAll(env);
+      const body=url.pathname==='/preview'?result:{status:'ok',mode:'read_only',publishing_enabled:env?.PUBLISH_ENABLED==='yes',
+        terminals:Object.fromEntries(Object.entries(result).map(([k,v])=>[k,{rows:v.rows,acquired_at:new Date(v.acquired).toISOString()}]))};
+      return new Response(JSON.stringify(body),
         {headers:{'content-type':'application/json; charset=utf-8','cache-control':'no-store','x-content-type-options':'nosniff'}});
     }catch(e){return new Response(JSON.stringify({status:'blocked',reason:e instanceof PublishRejected?e.message:'CHECK_FAILED'}),
       {status:503,headers:{'content-type':'application/json','cache-control':'no-store'}});}
