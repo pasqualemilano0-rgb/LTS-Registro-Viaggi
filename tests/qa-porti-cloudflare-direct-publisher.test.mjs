@@ -152,3 +152,12 @@ test('read-only preview verifies GitHub baseline and KV without creating blobs o
   assert.equal(g.calls.length,5,'Only read public ref, commit and three previous JSONs');
   assert.ok(g.calls.every(c=>c.method==='GET'));
 });
+
+test('public preview route remains inaccessible outside explicitly enabled QA',async()=>{
+  const {default:worker}=await import('../cloudflare/public-snapshot-publisher/index.mjs');
+  const req=new Request('https://publisher.workers.dev/preview',{method:'GET'});
+  let res=await worker.fetch(req,{PUBLISH_ENABLED:'no'});
+  assert.equal(res.status,404);
+  res=await worker.fetch(req,{PUBLISH_ENABLED:'yes',QA_PREVIEW_ENABLED:'yes'});
+  assert.equal(res.status,404);
+});
