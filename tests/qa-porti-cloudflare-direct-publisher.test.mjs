@@ -141,3 +141,14 @@ test('idempotent: same acquisition has no Git write',async()=>{
   assert.equal(result.status,'unchanged');
   assert.equal(g.calls.filter(c=>c.method!=='GET').length,0);
 });
+
+test('read-only preview verifies GitHub baseline and KV without creating blobs or commits',async()=>{
+  const f=fixture(),g=fakeGit(f.previous);
+  const {preview}=await import('../cloudflare/public-snapshot-publisher/index.mjs');
+  const result=await preview({PUBLISH_ENABLED:'no',SCHEDULES_KV:kv(f)},{now:NOW,fetcher:g.fetch});
+  assert.equal(result.status,'ready');
+  assert.equal(result.mode,'read_only');
+  assert.deepEqual(result.updated,['cnt','tfg','sct']);
+  assert.equal(g.calls.length,5,'Only read public ref, commit and three previous JSONs');
+  assert.ok(g.calls.every(c=>c.method==='GET'));
+});
