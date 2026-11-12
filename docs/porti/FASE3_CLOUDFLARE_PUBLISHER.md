@@ -89,3 +89,12 @@
 ### Rollback e guardrail
 
 Se gli snapshot pubblici smettono di aggiornarsi, confrontare `status:*`, `schedule:*`, backup, ultimo commit e cron. Non riattivare il vecchio workflow senza valutazione e autorizzazione; non generare cron concorrenti. Bloccare eventuali scritture Cloudflare con `PUBLISH_ENABLED=no` solo quando necessario e con procedura controllata. Non modificare il Worker Booking o il suo cron.
+
+## Monitor disponibilità LTS — passaggio Cloudflare (12 novembre 2026)
+
+- Il Worker indipendente `lts-registro-uptime-independent` è stato aggiornato con la PR [#156](https://github.com/pasqualemilano0-rgb/LTS-Registro-Viaggi/pull/156), merge `af3ced26a843fad5fba4e8daddcdc25c58e0f44a`, versione Cloudflare `ba76d148-8aeb-482a-8fb8-3ebee8ee7753`.
+- Primo ciclo reale riuscito alle **21:47 (Europe/Rome)** del 12 novembre 2026, verificato nei log Cloudflare Workers Observability: `LTS_MONITOR_OK {"checked":["site","admin","bundle","auth"]}`, evento scheduled con `outcome=ok`, versione v2 confermata. Controlla la disponibilità tecnica HTTP e il preflight CORS, **non** garantisce tutte le funzionalità della webapp.
+- Cron Cloudflare conservato: `2,17,32,47 * * * *` (ogni 15 minuti). Il vecchio cron GitHub Actions `23 * * * *` è stato ritirato con la PR [#157](https://github.com/pasqualemilano0-rgb/LTS-Registro-Viaggi/pull/157), merge `ea841bfb9b9b8995e92c50973b43210b8a3765b5`, dopo esito positivo dei quattro job CircleCI e `full-qa`. È stato eliminato **solo** `.github/workflows/lts-uptime-monitor.yml`.
+- Restano in repository `scripts/lts_health_monitor.py` (read-only), `cloudflare/uptime-monitor/index.mjs` e `tests/qa-lts-cloudflare-uptime.test.mjs`, eseguiti dalla pipeline CircleCI. Il Worker non contiene credenziali e il suo endpoint HTTP risponde 404.
+- Il Worker Booking TFG `container-booking-backend` e il cron `*/15 * * * *` non sono stati modificati. Non modificati neppure JWT, MFA, GitHub Pages, pubblicazione Porti e regole CORS Supabase.
+- Per i controlli successivi: Cloudflare Workers Observability, filtro `$metadata.service=lts-registro-uptime-independent`, cerca `LTS_MONITOR_OK` oppure `LTS_MONITOR_FAIL`; in caso di FAIL verificare i singoli endpoint prima di considerare sano il servizio.
