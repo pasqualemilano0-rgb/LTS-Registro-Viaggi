@@ -3,7 +3,7 @@ import {normalizeName,parseItalianDate,findSctVessels,evaluateSct,evaluateSctTyp
 import {parseTfgBookingResult} from './tfg.mjs?v=20261031-v41';
 import {validateBooking,bookingTerminal} from './booking_search.mjs?v=20261031-v41';
 import {lookupTfgBooking} from './tfg_booking.mjs?v=20261102-v63';
-import {getVerifiedAccessToken} from '../account-access.mjs';
+import {getBookingBearerForServerVerification} from '../account-access.mjs';
 import {lookupConatecoBooking,matchConatecoBookingToSchedule,matchConatecoVesselToForecast} from './conateco_booking.mjs?v=20261102-v64';
 import {matchTfgVoyage,isTfgFeedFresh,evaluateTfgSchedule} from './tfg_schedule.mjs?v=20261102-v62';
 import {evaluateConateco,isConatecoRecent} from './conateco_rules.mjs?v=20261110-porti-freshcode-v2';
@@ -787,7 +787,7 @@ async function renderTfgBooking(booking){
       if(endpoint!=='https://container-booking-backend.pasqualemilano0.workers.dev/api/tfg_booking')
         throw Error('UNEXPECTED_BOOKING_ENDPOINT');
       let accessToken;
-      try{accessToken=await getVerifiedAccessToken();}
+      try{accessToken=await getBookingBearerForServerVerification();}
       catch(error){
         if(error?.offline===true)throw Error('LTS_BOOKING_OFFLINE');
         if(error?.serviceUnavailable===true)throw Error(error?.authTransportCode==='AUTH-TIMEOUT'?'LTS_BOOKING_AUTH_TIMEOUT':'LTS_BOOKING_AUTH_NETWORK');
