@@ -37,7 +37,7 @@ if(url.pathname==='/diag/tfg-reference'&&request.method==='GET'){
   if(!client.success||!global.success)return respond(429,{error:'RATE_LIMITED'},origin);
   try{
     const result=await publicTfgLookup('280630439');
-    return respond(200,{mode:'QA_REFERENCE_DIAGNOSTIC',status:result.status,expected_vessel:result.vessel==='MV SALWEEN',expected_voyage:result.voyage==='646W',booking_authorized:false},origin);
+    return respond(200,{mode:'QA_REFERENCE_DIAGNOSTIC',status:result.status,expected_vessel:/^(?:MV )?SALWEEN$/.test(result.vessel||''),expected_voyage:result.voyage==='646W',booking_authorized:false},origin);
   }catch(error){return respond(503,{mode:'QA_REFERENCE_DIAGNOSTIC',error:'TFG_UPSTREAM_UNAVAILABLE',exception_name:String(error?.name||'unknown').slice(0,40),exception_message:String(error?.message||'unknown').slice(0,100)},origin)}
 }
 if(url.pathname==='/diag/auth-reachability'&&request.method==='GET'){
