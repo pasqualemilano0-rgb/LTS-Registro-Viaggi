@@ -3,10 +3,10 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 const auth=readFileSync(new URL('../account-access.mjs',import.meta.url),'utf8');
 const porti=readFileSync(new URL('../porti/app.js',import.meta.url),'utf8');
-test('auth still verifies session before issuing booking bearer',()=>{
- assert.match(auth,/export async function getVerifiedAccessToken\(\)\{[\s\S]*?await verifySession\(\)/);
- assert.match(auth,/if\(!isVerified\(\)\)throw/);
- assert.match(porti,/accessToken=await getVerifiedAccessToken\(\)/);
+test('booking bearer remains unexpired and Worker performs mandatory online verification',()=>{
+ assert.match(auth,/export async function getBookingBearerForServerVerification\(\)\{[\s\S]*?await refresh\(\)/);
+ assert.match(auth,/latest.role==='admin'&&!isVerified\(\)/);
+ assert.match(porti,/accessToken=await getBookingBearerForServerVerification\(\)/);
  assert.match(porti,/Authorization:'Bearer '\+accessToken/);
 });
 test('confirmed offline is distinguished from a failed fetch',()=>{
