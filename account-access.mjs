@@ -146,10 +146,14 @@ async function api(which,body,bearer=null){
      headers:{Accept:'application/json','Content-Type':'application/json',
        ...(bearer?{Authorization:'Bearer '+bearer}:{})},
      body:JSON.stringify(body)});
-  }catch{
-   const e=new Error('Servizio account temporaneamente non raggiungibile.');
-   // A failed fetch is not proof that the device is offline (DNS, CORS, TLS or timeout).
-   e.serviceUnavailable=true;e.status=503;throw e;
+  }catch(cause){
+   // A rejected fetch does not prove the network is offline. Distinguish the
+   // browser-enforced timeout from a transport rejection, without logging secrets.
+   const timedOut=controller.signal.aborted;
+   const e=new Error(timedOut?'Verifica account scaduta.':'Servizio account temporaneamente non raggiungibile.');
+   e.serviceUnavailable=true;e.status=503;
+   e.authTransportCode=timedOut?'AUTH-TIMEOUT':'AUTH-FETCH';
+   throw e;
   }
   const type=result.headers.get('content-type')||'';
   if(!type.includes('application/json')){
