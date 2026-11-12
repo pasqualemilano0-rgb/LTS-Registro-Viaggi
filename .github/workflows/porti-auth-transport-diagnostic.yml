@@ -18,6 +18,8 @@ jobs:
           node --check porti/app.js
           grep -Fq "transportCode=timedOut?'AUTH-TIMEOUT':'AUTH-FETCH'" account-access.mjs
           grep -Fq "LTS_BOOKING_AUTH_TIMEOUT:'AUTH-TIMEOUT'" porti/app.js
+          grep -Fq "body?.action==='session'?22000:15000" account-access.mjs
+          grep -Fq 'attempt<3' account-access.mjs
       - name: Check GitHub Pages deployed config and CORS without credentials
         shell: bash
         run: |
