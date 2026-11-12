@@ -14,9 +14,9 @@ test('dashboard accessibile solo dal pannello admin, CSP e versioni coerenti',()
    'pro-city','pro-container','pro-compare-driver','pro-alerts','pro-alert-count',
    'pro-export-pdf','pro-export-xlsx','pro-records'])
    assert.match(html,new RegExp('id="'+id+'"'));
- assert.match(html,/admin\.mjs\?v=20261111-control-center-v1/);
+ assert.match(html,/admin\.mjs\?v=20261111-smart-realtime-v1/);
  assert.match(html,/admin\.css\?v=20261109-alpha-v1/);
- assert.match(js,/account-access\.mjs\?v=20261107-realtime-v1/);
+ assert.match(js,/account-access\.mjs'/);
  assert.match(js,/setupReport\(account\)/);
  assert.match(js,/companyView\.reset\(\)/);
  assert.match(html,/default-src 'none'/);
@@ -26,7 +26,7 @@ test('dashboard accessibile solo dal pannello admin, CSP e versioni coerenti',()
  assert.match(report,/function driverProfile\(/);
  assert.match(report,/function driverDirectory\(/);
  assert.match(report,/function renderAmountChart\(/);
- assert.match(js,/report\.mjs\?v=20261111-control-center-v1/);
+ assert.match(js,/report\.mjs\?v=20261111-smart-realtime-v1/);
  assert.match(report,/setupInsights\(account\)/);
  const advanced=read('amministratore/report-insights.mjs');
  const exportsModule=read('amministratore/report-export.mjs');
@@ -199,8 +199,8 @@ test('dashboard automatically refreshes the active verified section without losi
  assert.match(admin,/else companyView[.]refreshActive\(\)/);
  assert.match(admin,/restoreAdminPosition\(saved\)/);
  assert.match(admin,/companyView[.]refreshActive\(\)/);
- assert.match(report,/function refreshActive\(\)/);
- assert.match(report,/companyRates[.]load\(\{silent:true\}\)/);
+ assert.match(report,/function refreshActive\(\{trailing=false\}=\{\}\)/);
+ assert.match(report,/companyRates[.]load\(\{silent:true,trailing\}\)/);
  assert.match(report,/companyDirectory[.]load\(\{silent:true\}\)/);
  assert.match(report,/load\(false,\{silent:true\}\)/);
  assert.match(report,/rows[.]length>40/);

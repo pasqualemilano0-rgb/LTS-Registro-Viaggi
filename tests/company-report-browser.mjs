@@ -400,7 +400,7 @@ try{
  // A quick Android app switch must not display a reconnect overlay.
  await page.locator('#search').fill('ROSSI');
  await page.evaluate(async()=>{
-  const account=await import('/account-access.mjs?v=20261107-realtime-v1');
+  const account=await import('/account-access.mjs');
   account.mockSetVerifyMode('offline');
   document.dispatchEvent(new Event('visibilitychange'));
  });
@@ -429,7 +429,7 @@ try{
   'The current filter/edit state must survive mobile network loss');
  assert.equal(await page.locator('#admin-resume-guard').isVisible(),true);
  await page.evaluate(async()=>{
-  const account=await import('/account-access.mjs?v=20261107-realtime-v1');
+  const account=await import('/account-access.mjs');
   account.mockSetVerifyMode('ok');
  });
  await page.locator('#admin-resume-retry').click();
@@ -900,7 +900,7 @@ try{
  // Simulate production HTTP 400: error must be visible beside save, and
  // the user's edited form must remain intact for a second attempt.
  await page.evaluate(async()=>{
-  const account=await import('/account-access.mjs?v=20261107-realtime-v1');
+  const account=await import('/account-access.mjs');
   account.mockRejectNextCustomerSave();
  });
  await page.locator('#records-editor button[type="submit"]').click();

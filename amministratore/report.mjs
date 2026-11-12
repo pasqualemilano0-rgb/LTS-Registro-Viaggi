@@ -1,10 +1,10 @@
 /** Administrator reporting UI. Aggregates are authoritative only when returned by the API. */
 import {setupInsights} from './report-insights.mjs?v=20261111-control-center-v1';
 import {setupCustomerOverview} from './customer-overview.mjs?v=20261111-control-center-v1';
-import {setupCompanyRates} from './company-rates.mjs?v=20261110-atomic-v1';
+import {setupCompanyRates} from './company-rates.mjs?v=20261111-smart-realtime-v1';
 import {hasUnsubmittedTariffDraft} from './tariff-draft-guard.mjs?v=20261110-audit-v1';
 import {setupDriverRecords} from './driver-records.mjs?v=20261111-reefer-retired-v3';
-import {setupCompanyExtras} from './company-extras.mjs?v=20261111-reefer-retired-v2';
+import {setupCompanyExtras} from './company-extras.mjs?v=20261111-smart-realtime-v1';
 const el=id=>document.getElementById(id);
 function node(tag,className='',value=''){
  const e=document.createElement(tag);
@@ -413,11 +413,13 @@ export function setupReport(account){
  }
  /** Refresh only the selected authorized dashboard section; do not navigate,
   * reset search fields, or lose a trip/fee form that is currently being edited. */
- function refreshActive(){
+ function refreshActive({trailing=false}={}){
   if(!account.isVerified()||account.getRole()!=='admin'||
      el('dashboard').hidden||document.hidden||navigator.onLine===false)return false;
   const view=el('dashboard').dataset.view;
-  if(view==='rates'){void companyRates.load({silent:true});return true;}
+  if(view==='rates'){
+   void companyRates.load({silent:true,trailing});void companyExtras.load({silent:true,trailing});return true;
+  }
   if(view==='records')return records.refreshActive();
   if(view==='overview'){
    void companyDirectory.load({silent:true});

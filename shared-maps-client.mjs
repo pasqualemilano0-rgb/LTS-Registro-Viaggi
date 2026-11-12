@@ -32,10 +32,22 @@ function validCustomer(c){
  return {name:c.name,city:c.city,address:c.address,mapsUrl:c.mapsUrl,
   source:c.source,operationalNotes:c.operationalNotes||''};
 }
-async function post(payload){
+function post(payload){
+ if(['list','approval-list'].includes(payload.action))
+  return account.shareCompanyRead('maps:'+payload.action,()=>postRequest(payload));
+ return postRequest(payload);
+}
+async function postRequest(payload){
  const url=endpoint();
+ const mutation=!['list','approval-list'].includes(payload.action);
+ if(mutation)account.invalidateCompanyCatalog();
+ const owner=account.getAccountId(),when=account.getSessionGeneration();
+ const current=()=>{
+  if(owner!==account.getAccountId()||when!==account.getSessionGeneration()||!account.isVerified())
+   throw new Error('Account cambiato durante la richiesta.');
+ };
  const bearer=await account.getVerifiedAccessToken();
- const owner=account.getAccountId();
+ current();
  const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),14000);
  try{
   const response=await fetch(url,{method:'POST',mode:'cors',credentials:'omit',
@@ -45,13 +57,13 @@ async function post(payload){
   if(!(response.headers.get('content-type')||'').includes('application/json'))
    throw new Error('Risposta del registro aziendale non valida.');
   const result=await response.json();
-  if(owner!==account.getAccountId())throw new Error('Account cambiato durante la richiesta.');
+  current();
   if(!response.ok){
    const err=new Error(typeof result?.error==='string'?result.error:'Registro aziendale non disponibile.');
    err.status=response.status;throw err;
   }
   return result;
- }finally{clearTimeout(timeout);}
+ }finally{clearTimeout(timeout);if(mutation)account.invalidateCompanyCatalog();}
 }
 export async function sharedMapsCustomers(){
  const result=await post({action:'list'});

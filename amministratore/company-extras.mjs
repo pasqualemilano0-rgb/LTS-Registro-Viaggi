@@ -13,12 +13,12 @@ const el=(tag,text='',className='')=>{
 export function setupCompanyExtras(account){
  const refresh=byId('company-extra-refresh'),list=byId('company-extra-list'),
   status=byId('company-extra-status');
- let rates=[],loaded=false,busy=false,generation=0;
+ let rates=[],loaded=false,busy=false,generation=0,loading=null;
  const authorized=()=>account.isVerified()&&account.getRole()==='admin'&&
   !byId('dashboard').hidden&&byId('dashboard').dataset.view==='rates';
  const feedback=(msg,problem=false)=>{status.textContent=msg;status.dataset.error=String(problem);};
  function reset(){
-  generation++;rates=[];loaded=false;busy=false;refresh.disabled=false;
+  generation++;loading=null;rates=[];loaded=false;busy=false;refresh.disabled=false;
   list.replaceChildren();feedback('Apri Tariffe per caricare il listino extra aziendale.');
  }
  function collectUnsubmittedEdits(skipService=null){
@@ -33,28 +33,36 @@ export function setupCompanyExtras(account){
   return edits;
  }
  function render({savedService=null}={}){
-  const edits=collectUnsubmittedEdits(savedService);
-  list.replaceChildren();
   if(!loaded)return;
+  // Reuse existing inputs so background updates cannot move focus/caret or
+  // change an unfinished amount. Each edited input keeps its shown revision.
   for(const service of ACTIVE_SERVICES){
    const rate=rates.find(row=>row.serviceKey===service.key);
-   const form=el('form','','company-extra-row');
-   form.dataset.service=service.key;
-   const label=el('label',service.label,'company-extra-label');
-   const input=document.createElement('input');
-   input.type='text';input.inputMode='decimal';input.maxLength=14;
-   input.value=edits.has(service.key)?edits.get(service.key):euro(rate?.cents??null);
-   input.placeholder='Da configurare';
-   if(edits.has(service.key))input.dataset.dirty='true';
-   input.addEventListener('input',()=>{input.dataset.dirty='true';});
-   input.setAttribute('aria-label','Importo aziendale '+service.label+' in euro');
-   const button=el('button','Salva','button primary small');button.type='submit';
-   button.disabled=!rate;
-   form.append(label,input,button);
-   form.addEventListener('submit',event=>{
-    event.preventDefault();if(rate)void save(service,rate,input);
-   });
-   list.append(form);
+   let form=[...list.querySelectorAll('form[data-service]')]
+    .find(row=>row.dataset.service===service.key);
+   if(!form){
+    form=el('form','','company-extra-row');form.dataset.service=service.key;
+    const label=el('label',service.label,'company-extra-label');
+    const input=document.createElement('input');
+    input.type='text';input.inputMode='decimal';input.maxLength=14;
+    input.placeholder='Da configurare';
+    input.addEventListener('input',()=>{input.dataset.dirty='true';});
+    input.setAttribute('aria-label','Importo aziendale '+service.label+' in euro');
+    const button=el('button','Salva','button primary small');button.type='submit';
+    form.append(label,input,button);
+    form.addEventListener('submit',event=>{
+     event.preventDefault();if(input.ltsShownRate)void save(service,input.ltsShownRate,input);
+    });
+    list.append(form);
+   }
+   const input=form.querySelector('input');
+   if(savedService===service.key)input.dataset.dirty='false';
+   if(savedService===service.key||
+      (input.dataset.dirty!=='true'&&input!==document.activeElement)){
+    input.value=euro(rate?.cents??null);input.ltsShownRate=rate;
+   }
+   const button=form.querySelector('button');
+   if(button)button.disabled=!rate;
   }
  }
  async function save(service,shown,input){
@@ -68,7 +76,8 @@ export function setupCompanyExtras(account){
   }
   if(!window.confirm('Aggiornare la tariffa '+service.label+' per TUTTI gli autisti? '+
    'La nuova tariffa varrà per i nuovi viaggi. Le registrazioni precedenti manterranno i loro importi.'))return;
-  busy=true;refresh.disabled=true;
+  const owner=account.getAccountId?.(),when=++generation;
+  busy=true;loading=null;refresh.disabled=true;
   list.querySelectorAll('input,button').forEach(node=>{node.disabled=true;});
   feedback('Aggiornamento listino extra aziendale…');
   try{
@@ -78,22 +87,40 @@ export function setupCompanyExtras(account){
    if(!answer?.extra||answer.extra.serviceKey!==service.key||
       !Number.isSafeInteger(answer.extra.revision))
     throw new Error('Il servizio non ha confermato la tariffa extra.');
-   if(!authorized())return;
+   if(when!==generation||owner!==account.getAccountId?.()||!authorized())return;
    rates=rates.map(row=>row.serviceKey===service.key?answer.extra:row);
    render({savedService:service.key});
    feedback('Tariffa '+service.label+' aggiornata per tutti gli autisti. '+
     'La vedranno al prossimo aggiornamento online. I viaggi storici non vengono ricalcolati.');
   }catch(error){
-   if(authorized())feedback((error?.message||'Aggiornamento non riuscito.')+
+   if(when===generation&&owner===account.getAccountId?.()&&authorized())feedback((error?.message||'Aggiornamento non riuscito.')+
     ' Premi Aggiorna extra per rileggere il listino aziendale.',true);
    // Keep the form for correction and do not silently overwrite the new typed value.
-   list.querySelectorAll('input,button').forEach(node=>{node.disabled=false;});
-  }finally{busy=false;refresh.disabled=false;}
+  }finally{
+   if(when===generation&&owner===account.getAccountId?.()){
+    busy=false;refresh.disabled=false;
+    list.querySelectorAll('input,button').forEach(node=>{node.disabled=false;});
+   }
+  }
  }
- async function load(){
+ function load({silent=false,trailing=false}={}){
+  if(!authorized()||busy)return Promise.resolve(false);
+  const owner=account.getAccountId?.();
+  if(loading&&loading.owner===owner){
+   loading.trailing||=trailing||!silent;return loading.promise;
+  }
+  const job={owner,trailing:false,promise:null};loading=job;
+  job.promise=loadOnce({silent}).finally(()=>{
+   if(loading!==job)return;
+   loading=null;
+   if(job.trailing&&owner===account.getAccountId?.()&&authorized())void load({silent:true});
+  });
+  return job.promise;
+ }
+ async function loadOnce({silent=false}={}){
   if(!authorized()||busy)return false;
   // Never replace unsaved changes with a periodic or manual server reload.
-  if(collectUnsubmittedEdits().size){
+  if(!silent&&collectUnsubmittedEdits().size){
    feedback('Hai importi extra non ancora salvati. Salvali prima di aggiornare l’elenco.',true);
    return false;
   }
@@ -105,7 +132,8 @@ export function setupCompanyExtras(account){
    const extras=result?.extraRates;
    // Accept both older eight-key server catalogs and the retired seven-key
    // format; only the seven active services can be presented or edited.
-   if(!Array.isArray(extras)||
+   if(!Array.isArray(extras)||extras.length<ACTIVE_SERVICES.length||extras.length>SERVICES.length||
+    new Set(extras.map(row=>row?.serviceKey)).size!==extras.length||
     ACTIVE_SERVICES.some(service=>!extras.some(row=>row.serviceKey===service.key))||
     extras.some(row=>!SERVICES.some(service=>service.key===row.serviceKey)||
      !(row.cents===null||(Number.isSafeInteger(row.cents)&&row.cents>=0&&row.cents<=99999999))||
