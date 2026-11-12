@@ -1,0 +1,21 @@
+name: QA TFG Booking offline diagnostics
+on:
+  pull_request:
+    paths:
+      - 'account-access.mjs'
+      - 'porti/app.js'
+      - 'tests/qa-tfg-booking-offline-diagnostics.test.mjs'
+      - '.github/workflows/qa-tfg-booking-offline.yml'
+  workflow_dispatch:
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --check account-access.mjs
+      - run: node --check porti/app.js
+      - run: node --test tests/qa-tfg-booking-offline-diagnostics.test.mjs
