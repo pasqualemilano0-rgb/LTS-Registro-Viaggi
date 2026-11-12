@@ -14,6 +14,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
+      - uses: actions/checkout@v4
+      - name: Check QA gateway JavaScript syntax
+        run: node --check staging/tfg-qa-gateway.js
       - name: Verify live QA gateway with safe negative tests only
         shell: bash
         env:
