@@ -147,7 +147,7 @@ test('active rates refresh invokes both editors without navigation or form reset
 });
 
 function deferred(){let resolve,reject;const promise=new Promise((yes,no)=>{resolve=yes;reject=no});return {promise,resolve,reject};}
-function accountFixture(){
+function accountFixture({locks=null}={}){
  const pending=[],calls=[];
  const source=read('account-access.mjs').replace(/^import [^\n]+\n/gm,'').replace(/\bexport /g,'');
  const sessionFor=id=>({user_id:id,role:'admin',access_token:'a'.repeat(100),
@@ -155,7 +155,7 @@ function accountFixture(){
  const api=runInNewContext(source+`
  api=request;
  session=initial;verified=true;
- ({companyTariffs,driverCompanyCatalog,driverCompanyTariffs,syncDiagnostics,shareCompanyRead,
+ ({companyTariffs,driverCompanyCatalog,driverCompanyTariffs,syncDiagnostics,shareCompanyRead,refresh,isVerified,getAccountId,
   changeOwner(next){signOut();session=next;verified=true;},
   invalidateCompanyCatalog});`,{
   initial:sessionFor('3bfc2a56-6f4f-490e-bafe-84a6b11c33e4'),
@@ -163,7 +163,7 @@ function accountFixture(){
    calls.push({endpoint,payload});
    if(['list','refresh'].includes(payload.action)){const task=deferred();pending.push(task);return task.promise;}
    return Promise.resolve({saved:true});
-  },runtime:{accountAuth:{}},navigator:{onLine:true},
+  },runtime:{accountAuth:{}},navigator:{onLine:true,...(locks?{locks}:{})},
   sessionStorage:{removeItem(){}},localStorage:{setItem(){}},
   clearDriverToken:async()=>{},readDriverToken:async()=>null,writeDriverToken:async()=>true,setTimeout,clearTimeout,URL
  });
@@ -336,4 +336,37 @@ test('a denied old token refresh cannot revoke a session opened while it was in 
  f.pending.shift().reject(Object.assign(new Error('old refresh denied'),{status:403}));await rejected;
  const next=f.api.driverCompanyCatalog();await microtask();
  f.pending.shift().resolve(catalog());assert.equal((await next).tariffs.length,1);
+});
+
+test('a token refresh queued on a cross-tab lock never starts for a subsequent account',async()=>{
+ const waiting=[];
+ const f=accountFixture({locks:{request:(_name,task)=>{
+  const pending=deferred();waiting.push(()=>Promise.resolve().then(task).then(pending.resolve,pending.reject));
+  return pending.promise;
+ }}});
+ const old=f.api.refresh(),rejected=assert.rejects(old,/Sessione chiusa/);
+ assert.equal(waiting.length,1);assert.equal(f.calls.length,0);
+ const next=f.sessionFor('847a5fd9-d9f8-4ad3-a9ce-ba18920499f0');f.api.changeOwner(next);
+ await waiting.shift()();await rejected;
+ assert.equal(f.calls.length,0,'an old queued callback cannot read or rotate the new owner token');
+ assert.equal(f.api.isVerified(),true);assert.equal(f.api.getAccountId(),'account:'+next.user_id);
+});
+
+test('HTTP conflicts expose only bounded validated field paths, never response payloads',async()=>{
+ const source=read('account-access.mjs').replace(/^import [^\n]+\n/gm,'').replace(/\bexport /g,'');
+ let reply;
+ const call=runInNewContext(source+';api',{
+  runtime:{accountAuth:{enabled:true,archiveEndpoint:'https://otrqynkscpbeyuvdlgpg.supabase.co/functions/v1/lts-account-state'}},
+  navigator:{onLine:true},URL,AbortController,setTimeout,clearTimeout,
+  fetch:async()=>({ok:false,status:409,headers:{get:()=> 'application/json'},json:async()=>reply})
+ });
+ reply={error:'Conflitto',paths:['trips[abc-1].fareCents','revision','revision',null,'password',
+  'trips[abc].note\nprivate','trips['+'x'.repeat(240)+'].client'],state:{secret:'must not copy'},access_token:'must not copy'};
+ await assert.rejects(call('archiveEndpoint',{}),error=>{
+  assert.equal(error.status,409);assert.deepEqual(Array.from(error.paths),['trips[abc-1].fareCents','revision']);
+  assert.equal(error.state,undefined);assert.equal(error.access_token,undefined);assert.equal(error.details,undefined);
+  return true;
+ });
+ reply={error:'Conflitto',paths:Array(201).fill('revision')};
+ await assert.rejects(call('archiveEndpoint',{}),error=>{assert.equal(error.paths,undefined);return true;});
 });

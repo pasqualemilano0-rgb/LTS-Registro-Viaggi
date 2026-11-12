@@ -187,22 +187,35 @@ async function api(which,body,bearer=null){
   }
   if(!result.ok){
    const e=new Error(typeof data?.error==='string'?data.error:'Operazione account non riuscita.');
-   e.status=result.status;throw e;
+   e.status=result.status;
+   // Carry only bounded conflict field paths, never the full error body or a
+   // remote archive/token payload, into the local recovery diagnostics.
+   if(result.status===409&&Array.isArray(data?.paths)&&data.paths.length<=200)
+    e.paths=[...new Set(data.paths.filter(path=>typeof path==='string'&&
+     path.length<=240&&!/[\u0000-\u001f\u007f]/u.test(path)&&
+     /^(?:revision|requestId|archive|profile\.[A-Za-z]+|extraRates\.[A-Za-z]+|(?:trips|customers|tariffs)\[.+\](?:\.[A-Za-z]+)?)$/u.test(path)))];
+   throw e;
   }
   return data;
  }finally{clearTimeout(timeout)}
 }
 async function refresh(){
  if(refreshing)return refreshing;
+ const s=readStored(),when=generation;
+ if(!s)throw new Error('Accedi al tuo account.');
+ const current=()=>{
+  if(when!==generation||s.user_id!==readStored()?.user_id||s.role!==readStored()?.role)
+   throw new Error('Sessione chiusa durante il rinnovo.');
+ };
  refreshing=withRefreshLock(async()=>{
-  const s=readStored(),when=generation;
-  if(!s)throw new Error('Accedi al tuo account.');
+  current();
   try{
    // Read the newest rotated token under a cross-tab lock (where supported).
    const stored=s.role==='driver'?await readDriverToken().catch(()=>null):null;
+   current();
    const token=stored?.user_id===s.user_id?stored.refresh_token:s.refresh_token;
    const data=await api('loginEndpoint',{action:'refresh',refresh_token:token});
-   if(when!==generation||s.user_id!==readStored()?.user_id)throw new Error('Sessione chiusa.');
+   current();
    if(!valid(data)||data.user_id!==s.user_id||data.role!==s.role){
      revoke();throw new Error('L’identità dell’account non corrisponde.');
    }
@@ -225,6 +238,7 @@ export async function restoreDriverSession(){
  const when=generation;
  restoring=(async()=>{
   const restored=await withRefreshLock(async()=>{
+   if(when!==generation)return false;
    if(readStored())return true;
    // A sign-out's storage cleanup wins against any pending restoration.
    await vaultQueue.catch(()=>{});
@@ -246,6 +260,7 @@ export async function restoreDriverSession(){
     throw error; // Offline or temporary failures retain the credential for retry.
    }
   });
+  if(when!==generation)return false;
   if(restored)await verifySession(); // Online server check before exposing any data.
   return restored;
  })();
