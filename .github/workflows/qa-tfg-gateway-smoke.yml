@@ -78,7 +78,7 @@ jobs:
           PY
           test "$status" = 200
       - name: Verify QA browser endpoint isolation
-        run: node --test tests/qa-tfg-origin-route.test.mjs tests/qa-stage-deployment-gates.test.mjs
+        run: node --test tests/qa-tfg-origin-route.test.mjs tests/qa-stage-deployment-gates.test.mjs tests/qa-android-shell.test.mjs
       - name: Verify live QA gateway with safe negative tests only
         shell: bash
         env:
@@ -96,16 +96,11 @@ jobs:
           echo "Missing bearer status: $unauthorized"
           test "$unauthorized" = 401
           jq -e '.error == "SESSION_REQUIRED"' /tmp/unauth.json >/dev/null
-          diagnostic=$(curl --silent --show-error --max-time 15 -o /tmp/diag.json -w '%{http_code}' -H "Origin: $QA_ORIGIN" "$URL/diag/auth-reachability")
-          echo "Cloudflare QA no-login diagnostic HTTP: $diagnostic"
-          jq -c '{mode,auth_http_status,expected_rejection,error,exception_name,exception_message}' /tmp/diag.json
-          test "$diagnostic" = 200
-          jq -e '.expected_rejection == true and .auth_http_status == 401' /tmp/diag.json >/dev/null
-          reference=$(curl --silent --show-error --max-time 30 -o /tmp/reference.json -w '%{http_code}' -H "Origin: $QA_ORIGIN" "$URL/diag/tfg-reference")
-          echo "QA Worker fixed-reference diagnostic HTTP: $reference"
-          jq -c '{mode,status,expected_vessel,expected_voyage,error,exception_name,exception_message}' /tmp/reference.json
-          test "$reference" = 200
-          jq -e '.status == "found" and .expected_vessel == true and .expected_voyage == true and .booking_authorized == false' /tmp/reference.json >/dev/null
+          for route in auth-reachability tfg-reference; do
+            status=$(curl --silent --show-error --max-time 15 -o /dev/null -w '%{http_code}' -H "Origin: $QA_ORIGIN" "$URL/diag/$route")
+            test "$status" = 404
+          done
+          echo 'Temporary unauthenticated diagnostics disabled.'
           # Diagnose the QA auth endpoint independently of the Worker, with a fake token only.
           direct=$(curl --silent --show-error --max-time 15 -o /tmp/direct.json -w '%{http_code}' -X POST 'https://sywxretbfgwxwhvdcknq.supabase.co/functions/v1/lts-phone-auth' -H "Origin: $QA_ORIGIN" -H 'Content-Type: application/json' -H "Authorization: Bearer $(printf 'x%.0s' {1..80})" --data '{"action":"session"}')
           echo "Direct QA Supabase fake-token status: $direct; response category: $(jq -r 'if .error then "rejected" else "other" end' /tmp/direct.json 2>/dev/null || echo non_json)"
@@ -119,4 +114,4 @@ jobs:
           if echo "$headers" | grep -qi '^access-control-allow-origin:'; then echo 'Unexpected CORS grant' >&2; exit 1; fi
           options=$(curl --silent --show-error --max-time 15 -o /dev/null -w '%{http_code}' -X OPTIONS "$URL/api/tfg_booking" -H "Origin: $QA_ORIGIN" -H 'Access-Control-Request-Method: POST')
           test "$options" = 204
-          echo 'QA gateway live security and TFG fixed-reference tests passed; no user credentials used.'
+          echo 'QA gateway live security tests passed; no user credentials used.'
