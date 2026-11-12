@@ -1,4 +1,6 @@
 const ORIGIN='https://lts-booking-security-stage.pasqualemilano0.workers.dev';
+const ANDROID_QA_ORIGIN='https://lts-tfg-android-qa-stage.pasqualemilano0.workers.dev';
+const allowedApiOrigin=origin=>origin===ORIGIN||origin===ANDROID_QA_ORIGIN;
 const AUTH='https://sywxretbfgwxwhvdcknq.supabase.co/functions/v1/lts-phone-auth';
 const TFG_SOURCE='https://tfg.bucci.it/@/TFGW_WW_BKK';
 async function publicTfgLookup(booking){
@@ -24,7 +26,7 @@ async function publicTfgLookup(booking){
   if(unique.length!==1)return {status:'unverified',message:'Nave e viaggio non verificabili.'};
   return {status:'found',...unique[0],message:'Nave e viaggio rilevati da TFG; accettazione non confermata.'};
 }
-function respond(status,data,origin){const h={'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff','Vary':'Origin'};if(origin===ORIGIN)h['Access-Control-Allow-Origin']=ORIGIN;return new Response(JSON.stringify(data),{status,headers:h});}
+function respond(status,data,origin){const h={'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff','Vary':'Origin'};if(allowedApiOrigin(origin))h['Access-Control-Allow-Origin']=origin;return new Response(JSON.stringify(data),{status,headers:h});}
 addEventListener('fetch',event=>event.respondWith(handle(event.request)));
 async function handle(request){const url=new URL(request.url),origin=request.headers.get('Origin');
 if(url.pathname==='/health'&&request.method==='GET')return respond(200,{status:'ok',mode:'QA_ONLY',upstream_booking_enabled:true,production_data_access:false},origin);
@@ -54,8 +56,8 @@ if(url.pathname==='/diag/auth-reachability'&&request.method==='GET'){
   }
 }
 if(url.pathname!=='/api/tfg_booking')return respond(404,{error:'NOT_FOUND'},origin);
-if(origin!==ORIGIN)return respond(403,{error:'ORIGIN_DENIED'},origin);
-if(request.method==='OPTIONS'){return new Response(null,{status:204,headers:{'Access-Control-Allow-Origin':ORIGIN,'Access-Control-Allow-Methods':'POST, OPTIONS','Access-Control-Allow-Headers':'Authorization, Content-Type','Access-Control-Max-Age':'300','Vary':'Origin'}})}
+if(!allowedApiOrigin(origin))return respond(403,{error:'ORIGIN_DENIED'},origin);
+if(request.method==='OPTIONS'){return new Response(null,{status:204,headers:{'Access-Control-Allow-Origin':origin,'Access-Control-Allow-Methods':'POST, OPTIONS','Access-Control-Allow-Headers':'Authorization, Content-Type','Access-Control-Max-Age':'300','Vary':'Origin'}})}
 if(request.method!=='POST')return respond(405,{error:'METHOD_DENIED'},origin);
 if(!TFG_CLIENT_LIMIT||!TFG_GLOBAL_LIMIT)return respond(503,{error:'RATE_LIMIT_NOT_CONFIGURED'},origin);
 const ip=request.headers.get('CF-Connecting-IP')||'unknown';const client=await TFG_CLIENT_LIMIT.limit({key:ip});const global=await TFG_GLOBAL_LIMIT.limit({key:'all'});
