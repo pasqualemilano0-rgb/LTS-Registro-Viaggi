@@ -366,6 +366,27 @@ export async function getVerifiedAccessToken(){
  try{return await task;}finally{if(bookingSessionVerification===task)bookingSessionVerification=null;}
 }
 
+/** Booking transport: only supplies a locally held, unexpired bearer.
+ * This is NOT authorization. The Cloudflare Booking Worker must validate the
+ * live account, role, MFA and revocation with Supabase on every request.
+ * No cached role may be used as an authorization decision.
+ */
+export async function getBookingBearerForServerVerification(){
+ const current=readStored();
+ if(!current)throw new Error('Effettua l’accesso con numero e password.');
+ if(current.expires_at<Date.now()+15000){
+  // Refresh remains server-backed; never send an expired or stale bearer.
+  await refresh();
+ }
+ const latest=readStored();
+ if(!latest?.access_token||latest.expires_at<Date.now()+15000)
+  throw new Error('Effettua nuovamente l’accesso.');
+ // Never allow an admin with pending MFA to use the booking path.
+ if(latest.role==='admin'&&!isVerified())
+  throw new Error('Verifica amministratore necessaria.');
+ return latest.access_token;
+}
+
 /** Authenticated Realtime channels receive ONLY change hints.
  * Tokens are returned in memory to the socket transport, never to URLs or logs.
  * Expiring tokens are rotated using the existing session checks.
