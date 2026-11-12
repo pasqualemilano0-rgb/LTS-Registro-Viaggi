@@ -9,7 +9,7 @@ on:
       - 'porti/tfg_booking.mjs'
       - 'porti/app.js'
       - 'tests/qa-tfg-origin-route.test.mjs'
-      - 'tests/qa-stage-deployment-gates.test.mjs tests/qa-android-shell.test.mjs'
+      - 'tests/qa-stage-deployment-gates.test.mjs'
       - 'staging/runtime-config.mjs'
       - 'staging/android/**'
       - 'tests/qa-android-shell.test.mjs'
