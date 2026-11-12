@@ -1,0 +1,34 @@
+name: QA TFG gateway HTTP smoke (staging only)
+on:
+  push:
+    branches:
+      - diagnostic/tfg-auth-transport-stage-20261112
+    paths:
+      - '.github/workflows/qa-tfg-gateway-smoke.yml'
+      - 'staging/tfg-qa-gateway.js'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  qa-http-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Verify live QA gateway with safe negative tests only
+        shell: bash
+        env:
+          URL: https://lts-tfg-booking-qa-gateway.pasqualemilano0.workers.dev
+          QA_ORIGIN: https://lts-booking-security-stage.pasqualemilano0.workers.dev
+        run: |
+          set -euo pipefail
+          health=$(curl --silent --show-error --fail --max-time 15 --retry 2 "$URL/health")
+          echo "$health" | jq -e '.status == "ok" and .mode == "QA_ONLY" and .upstream_booking_enabled == false and .production_data_access == false' >/dev/null
+          wrong=$(curl --silent --show-error --max-time 15 -o /tmp/wrong.json -w '%{http_code}' -X POST "$URL/api/tfg_booking" -H 'Origin: https://example.invalid' -H 'Content-Type: application/json' --data '{}')
+          test "$wrong" = 403
+          jq -e '.error == "ORIGIN_DENIED"' /tmp/wrong.json >/dev/null
+          unauthorized=$(curl --silent --show-error --max-time 15 -o /tmp/unauth.json -w '%{http_code}' -X POST "$URL/api/tfg_booking" -H "Origin: $QA_ORIGIN" -H 'Content-Type: application/json' --data '{}')
+          test "$unauthorized" = 401
+          jq -e '.error == "SESSION_REQUIRED"' /tmp/unauth.json >/dev/null
+          options=$(curl --silent --show-error --max-time 15 -o /dev/null -w '%{http_code}' -X OPTIONS "$URL/api/tfg_booking" -H "Origin: $QA_ORIGIN" -H 'Access-Control-Request-Method: POST')
+          test "$options" = 204
+          echo 'QA gateway live negative tests passed; no real booking or user credentials used.'
