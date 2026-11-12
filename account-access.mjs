@@ -137,7 +137,8 @@ async function api(which,body,bearer=null){
    const e=new Error('Connessione assente. I dati salvati sul telefono restano conservati.');
    e.offline=true;throw e;
  }
- const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),15000);
+ const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),
+   body?.action==='session'?22000:15000);
  try{
   let result;
   try{
@@ -351,14 +352,17 @@ export async function verifySession(){
 export async function getVerifiedAccessToken(){
  if(bookingSessionVerification)return bookingSessionVerification;
  const task=(async()=>{
-  try{await verifySession();}
-  catch(error){
-   if(error?.serviceUnavailable!==true)throw error;
-   // Retry only the read-only session check. A rotating refresh token is never retried.
-   const current=readStored();
-   if(!current||current.expires_at<Date.now()+15000)throw error;
-   await new Promise(resolve=>setTimeout(resolve,350));
-   await verifySession();
+  // On mobile networks a transient TLS/radio interruption may break a fetch.
+  // Retry only server-side read-only session checks; never bypass authorization.
+  for(let attempt=0;attempt<3;attempt++){
+   try{await verifySession();break;}
+   catch(error){
+    if(error?.serviceUnavailable!==true||attempt===2)throw error;
+    const current=readStored();
+    // Never retry a rotating refresh token, expired session or MFA failure.
+    if(!current||current.expires_at<Date.now()+15000)throw error;
+    await new Promise(resolve=>setTimeout(resolve,attempt===0?600:1500));
+   }
   }
   if(!isVerified())throw new Error('Verifica amministratore necessaria.');
   const current=readStored();
