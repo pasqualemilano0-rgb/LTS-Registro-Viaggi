@@ -146,10 +146,17 @@ async function api(which,body,bearer=null){
      headers:{Accept:'application/json','Content-Type':'application/json',
        ...(bearer?{Authorization:'Bearer '+bearer}:{})},
      body:JSON.stringify(body)});
-  }catch{
-   const e=new Error('Servizio account temporaneamente non raggiungibile.');
-   // A failed fetch is not proof that the device is offline (DNS, CORS, TLS or timeout).
-   e.serviceUnavailable=true;e.status=503;throw e;
+  }catch(error){
+   // Keep a small, non-sensitive transport classification. Fetch cannot reliably
+   // distinguish DNS/TLS/CORS errors; never claim a specific root cause.
+   const timedOut=controller.signal.aborted||error?.name==='AbortError';
+   const e=new Error(timedOut
+     ?'Timeout nella verifica della sessione LTS.'
+     :'Connessione al servizio account non riuscita.');
+   e.serviceUnavailable=true;
+   e.transportCode=timedOut?'AUTH-TIMEOUT':'AUTH-FETCH';
+   e.status=503;
+   throw e;
   }
   const type=result.headers.get('content-type')||'';
   if(!type.includes('application/json')){
