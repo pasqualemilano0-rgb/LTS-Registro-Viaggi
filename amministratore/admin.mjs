@@ -1,8 +1,8 @@
-import * as account from '../account-access.mjs?v=20261107-realtime-v1';
+import * as account from '../account-access.mjs';
 import realtimeConfig from '../runtime-config.mjs';
-import {createLtsRealtime} from '../realtime-client.mjs?v=20261107-roster-realtime-v1';
+import {createLtsRealtime} from '../realtime-client.mjs';
 import {STATUS_LABELS,driverSummary,filterDrivers,driverInitial} from './model.mjs?v=20261109-alpha-v1';
-import {setupReport} from './report.mjs?v=20261111-control-center-v1';
+import {setupReport} from './report.mjs?v=20261111-smart-realtime-v1';
 import {mustRevalidateOnReturn} from '../shared/foreground-resume.mjs';
 import {setupSmartConsole} from './smart-console.mjs?v=20261111-control-center-v1';
 import {setupAdminStatus} from './admin-status.mjs';
@@ -88,7 +88,7 @@ const controlCenter=setupControlCenter({account,
   return ok;
  }
 });
-let adminRealtime=null;
+let adminRealtime=null,lastAdminFallbackAt=0,lastApprovalsFallbackAt=0,adminFallbackView=null;
 function startAdminRealtime(){
  if(!account.isVerified()||account.getRole()!=='admin'||dashboard.hidden||
     typeof account.getRealtimeCredentials!=='function')return;
@@ -105,7 +105,8 @@ function startAdminRealtime(){
      void loadDrivers({silent:true});
    }
    if(kind!=='roster'&&dashboard.dataset.view!=='drivers')
-    companyView.refreshActive();
+    companyView.refreshActive({trailing:true});
+   if(kind==='catalog'||kind==='ready')void mapsApprovals.load({silent:true});
    if(kind==='archive'||kind==='catalog')controlCenter.refresh({forceInsights:true});
   }
  });
@@ -691,6 +692,9 @@ function resumeWhenSafe(){
 setInterval(()=>{
  if(dashboard.hidden||document.hidden||navigator.onLine===false||
     !byId('admin-resume-guard').hidden||!account.isVerified()||account.getRole()!=='admin'||resumingDashboard)return;
+ const view=dashboard.dataset.view;
+ if(adminRealtime?.isConnected()&&adminFallbackView===view&&Date.now()-lastAdminFallbackAt<120000)return;
+ adminFallbackView=view;lastAdminFallbackAt=Date.now();
  if(dashboard.dataset.view==='drivers'){
   if(document.activeElement?.matches?.('input:not([type=hidden]),textarea,select'))return;
   void loadDrivers({silent:true});
@@ -700,8 +704,12 @@ setInterval(()=>{
 setInterval(()=>{
  if(!dashboard.hidden&&!document.hidden&&navigator.onLine!==false&&
    byId('admin-resume-guard').hidden&&account.isVerified()&&
-   account.getRole()==='admin'&&!resumingDashboard)
+   account.getRole()==='admin'&&!resumingDashboard){
+  if(adminRealtime?.isConnected()&&Date.now()-lastApprovalsFallbackAt<120000)return;
+  lastApprovalsFallbackAt=Date.now();
   void mapsApprovals.load({silent:true});
+ }
+
 },25000);
 byId('admin-resume-retry').addEventListener('click',()=>{
  if(!account.hasSession()){lock('Sessione non disponibile. Accedi nuovamente.');return;}

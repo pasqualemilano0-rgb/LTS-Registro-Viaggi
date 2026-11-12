@@ -353,8 +353,8 @@ test('dedicated admin console loads only verified administrative transport',asyn
  const css=readFileSync(new URL('../amministratore/admin.css',import.meta.url),'utf8');
  const model=await import('../amministratore/model.mjs');
  assert.match(adminHtml,/Content-Security-Policy/);
- assert.match(adminHtml,/src="\.\/admin[.]mjs\?v=20261111-control-center-v1"/);
- assert.match(adminJs,/import \* as account from '\.\.\/account-access[.]mjs\?v=20261107-realtime-v1'/);
+ assert.match(adminHtml,/src="\.\/admin[.]mjs\?v=20261111-smart-realtime-v1"/);
+ assert.match(adminJs,/import \* as account from '\.\.\/account-access[.]mjs'/);
  assert.match(adminJs,/await account[.]verifySession\(\)/);
  assert.match(adminJs,/account[.]getRole\(\)!=='admin'/);
  assert.ok(adminJs.includes("account.manageDrivers('list')"));
@@ -452,7 +452,7 @@ test('TOTP admin flow uses verified backend session and never exposes secret in 
  assert.match(html,/id="mfa-warning"/);
  assert.match(html,/pattern="\[0-9\]\{6\}"/);
  assert.match(html,/img-src 'self' data:/);
- assert.match(html,/admin\.mjs\?v=20261111-control-center-v1/);
+ assert.match(html,/admin\.mjs\?v=20261111-smart-realtime-v1/);
  assert.match(html,/admin\.css\?v=20261109-alpha-v1/);
  assert.match(admin,/account\.enrollAdminTotp/);
  assert.match(admin,/account\.verifyAdminTotp/);
@@ -473,7 +473,7 @@ test('MFA enrollment requires the latest QR and a correctly synchronized device 
  assert.match(html,/Data e ora automatiche/);
  assert.match(html,/fuso orario automatico/);
  assert.match(html,/codice basato sull'ora/);
- assert.match(html,/admin[.]mjs[?]v=20261111-control-center-v1/);
+ assert.match(html,/admin[.]mjs[?]v=20261111-smart-realtime-v1/);
 });
 
 test('Authenticator app switching preserves the existing enrollment instead of regenerating QR',()=>{
@@ -564,8 +564,8 @@ test('login gate shows visible account recovery before password fields without l
 });
 
 test('online catalog sync never reconstructs a currently edited trip',()=>{
- const fn=app.slice(app.indexOf('async function refreshCompanyCustomers(){'),
-    app.indexOf('function companyCustomersPanel(){'));
+ const fn=app.slice(app.indexOf('function refreshCompanyCustomers('),
+    app.indexOf('function updateCompanyCustomersPanel('));
  assert.match(fn,/if\(changed&&tab==='customers'\)updateCompanyCustomersPanel\(\)/);
  assert.match(fn,/document[.]getElementById\('trip-customers'\)/);
  assert.match(fn,/form[.]querySelector\('#trip-cities'\)/);
@@ -1010,6 +1010,6 @@ test('admin login and MFA confirmation reuse the just-verified server response',
  assert.match(admin,/Promise[.]allSettled\(\[loadDrivers\(\),/);
  assert.match(access,/const status=await verifySession\(\);[\s\S]*Only drivers get a durable device session/);
  assert.match(access,/saveSession\(result\);\s*const status=await verifySession\(\)/);
- assert.match(html,/admin[.]mjs\?v=20261111-control-center-v1/);
+ assert.match(html,/admin[.]mjs\?v=20261111-smart-realtime-v1/);
  assert.doesNotMatch(admin,/sessionStorage|localStorage|innerHTML/);
 });

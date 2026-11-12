@@ -9,7 +9,7 @@ import * as store from '/LTS-Registro-Viaggi/client-store.mjs';
 import runtimeConfig from '/LTS-Registro-Viaggi/runtime-config.mjs';
 import * as accountAccess from '/LTS-Registro-Viaggi/account-access.mjs';
 import {createDriverSessionShield,transientDriverSessionError} from '/LTS-Registro-Viaggi/driver-session-guard.mjs';
-import {createLtsRealtime} from '/LTS-Registro-Viaggi/realtime-client.mjs';
+import {createLtsRealtime,realtimeHealthy} from '/LTS-Registro-Viaggi/realtime-client.mjs';
 import {sharedMapsEnabled,sharedMapsCustomers,saveSharedMapsCustomer} from '/LTS-Registro-Viaggi/shared-maps-client.mjs?v=20261110-maps-approval-v1';
 import {readMapsCustomer} from '/LTS-Registro-Viaggi/maps-reader-client.mjs';
 import {companyFareSnapshot} from '/LTS-Registro-Viaggi/shared/company-fares.mjs';
@@ -29,9 +29,9 @@ let companyRates=[]; // Complete corporate catalog, even if a personal rate over
 let companyRatesLoaded=false;
 let companyExtraRates=[]; // One shared extra list across ALL drivers.
 let companyExtrasLoaded=false;
-let companyRatesRequest=0;
+let companyRatesRequest=0,companyRatesInFlight=null,lastCompanyRatesReadAt=0;
 let companyCustomersError='';
-let companyCustomersRequest=0;
+let companyCustomersRequest=0,companyCustomersInFlight=null,lastCompanyCustomersReadAt=0;
 let companyCustomerSearch=''; // Single live search for company and personal customers.
 let customerDirectoryScope='all';
 let customerDirectoryLimit=24;
@@ -102,8 +102,8 @@ function beginLtsRealtime(){
    if(!store.usingAccount()||!accountAccess.isVerified())return;
    if(kind==='archive'||kind==='ready')void store.syncPending().catch(()=>{});
    if(kind==='catalog'||kind==='ready'){
-    void refreshCompanyCustomers();
-    void refreshCompanyRates();
+    void refreshCompanyCustomers({trailing:true});
+    void refreshCompanyRates({trailing:true});
    }
   }
  });
@@ -338,9 +338,16 @@ function emptyState(title,message,ico='truck',action=null){return el('section',{
 /** Read-only tariff list for every verified driver. The personal archive
  * remains the source of trips; the separate catalog shows company prices even
  * on routes for which a driver already has a personal rate. */
-async function refreshCompanyRates({quiet=true}={}){
+function refreshCompanyRates({quiet=true,trailing=false}={}){
  if(!store.usingAccount()||!accountAccess.isVerified())return false;
- const owner=accountAccess.getAccountId(),request=++companyRatesRequest;
+ const owner=accountAccess.getAccountId();
+ if(companyRatesInFlight?.owner===owner&&companyRatesInFlight.request===companyRatesRequest){
+  companyRatesInFlight.trailing||=trailing;
+  return companyRatesInFlight.promise;
+ }
+ const request=++companyRatesRequest,job={owner,request,trailing:false,promise:null};
+ companyRatesInFlight=job;lastCompanyRatesReadAt=Date.now();
+ job.promise=(async()=>{
  try{
   const catalog=await accountAccess.driverCompanyCatalog();
   if(owner!==accountAccess.getAccountId()||request!==companyRatesRequest)return false;
@@ -360,11 +367,25 @@ async function refreshCompanyRates({quiet=true}={}){
   if(!quiet)throw error;
   return false;
  }
+ })().finally(()=>{
+  if(companyRatesInFlight!==job)return;
+  companyRatesInFlight=null;
+  if(job.trailing&&request===companyRatesRequest&&owner===accountAccess.getAccountId()&&
+     store.usingAccount()&&accountAccess.isVerified())void refreshCompanyRates();
+ });
+ return job.promise;
 }
 /** Read-only shared list. An unavailable network never unlocks an account. */
-async function refreshCompanyCustomers(){
+function refreshCompanyCustomers({trailing=false}={}){
  if(!sharedMapsEnabled()||!store.usingAccount()||!accountAccess.isVerified())return;
- const owner=accountAccess.getAccountId(),request=++companyCustomersRequest;
+ const owner=accountAccess.getAccountId();
+ if(companyCustomersInFlight?.owner===owner&&companyCustomersInFlight.request===companyCustomersRequest){
+  companyCustomersInFlight.trailing||=trailing;
+  return companyCustomersInFlight.promise;
+ }
+ const request=++companyCustomersRequest,job={owner,request,trailing:false,promise:null};
+ companyCustomersInFlight=job;lastCompanyCustomersReadAt=Date.now();
+ job.promise=(async()=>{
  try{
   const customers=await sharedMapsCustomers();
   if(owner!==accountAccess.getAccountId()||request!==companyCustomersRequest)return;
@@ -396,7 +417,14 @@ async function refreshCompanyCustomers(){
   if(owner!==accountAccess.getAccountId()||request!==companyCustomersRequest)return;
   companyCustomersError='Impossibile aggiornare l’elenco clienti aziendali. Verifica la connessione e riprova.';
   if(tab==='customers')updateCompanyCustomersPanel();
- }
+  }
+ })().finally(()=>{
+  if(companyCustomersInFlight!==job)return;
+  companyCustomersInFlight=null;
+  if(job.trailing&&request===companyCustomersRequest&&owner===accountAccess.getAccountId()&&
+     store.usingAccount()&&accountAccess.isVerified())void refreshCompanyCustomers();
+ });
+ return job.promise;
 }
 /** Update only the company list, leaving the search field, caret and keyboard intact. */
 /** Combined search without merging or changing the private client archive. */
@@ -2044,9 +2072,9 @@ function renderAccountGate(message=''){
  realtimeBridge?.stop();realtimeBridge=null;
  companyCustomers=[];
  companyCustomersError='';
- companyCustomerSearch='';customerDirectoryScope='all';customerDirectoryLimit=24;companyCustomersLoaded=false;companyCustomersRequest++;
+ companyCustomerSearch='';customerDirectoryScope='all';customerDirectoryLimit=24;companyCustomersLoaded=false;companyCustomersRequest++;companyCustomersInFlight=null;lastCompanyCustomersReadAt=0;
  companyRates=[];companyRatesLoaded=false;
- companyExtraRates=[];companyExtrasLoaded=false;companyRatesRequest++;
+ companyExtraRates=[];companyExtrasLoaded=false;companyRatesRequest++;companyRatesInFlight=null;lastCompanyRatesReadAt=0;
  const hasPreviousSession=accountAccess.hasSession();
  const recovery=hasPreviousSession?el('div',{class:'account-session-recovery'},
    el('p',{},'Questo dispositivo conserva una sessione precedente. Per rientrare nello stesso account, inserisci nuovamente la password. Per usare un altro account, esci prima.'),
@@ -2293,14 +2321,16 @@ async function initialize(){
 // The private archive still synchronizes separately in client-store.mjs.
 setInterval(()=>{
  if(['insert','tariffs','customers'].includes(tab)&&!document.hidden&&navigator.onLine!==false&&
-   store.usingAccount()&&accountAccess.isVerified())void refreshCompanyRates();
+   store.usingAccount()&&accountAccess.isVerified()&&
+   Date.now()-lastCompanyRatesReadAt>=(realtimeHealthy()?120000:8000))void refreshCompanyRates();
 },8000);
 window.addEventListener('online',()=>{
  if(['insert','tariffs','customers'].includes(tab)&&store.usingAccount()&&accountAccess.isVerified())void refreshCompanyRates();
 });
 setInterval(()=>{
  if(['insert','customers'].includes(tab)&&!document.hidden&&navigator.onLine!==false&&
-   store.usingAccount()&&accountAccess.isVerified())void refreshCompanyCustomers();
+   store.usingAccount()&&accountAccess.isVerified()&&
+   Date.now()-lastCompanyCustomersReadAt>=(realtimeHealthy()?120000:8000))void refreshCompanyCustomers();
 },8000);
 window.addEventListener('online',()=>{
  if(['insert','customers'].includes(tab)&&store.usingAccount()&&accountAccess.isVerified())void refreshCompanyCustomers();

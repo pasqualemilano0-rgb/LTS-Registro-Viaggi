@@ -16,6 +16,34 @@ let refreshing=null;
 let verified=false;
 let restoring=null,generation=0;
 let vaultQueue=Promise.resolve();
+// Coalesce only overlapping read requests. No business response survives its
+// request, a mutation boundary, or the verified session that authorized it.
+const companyReads=new Map();
+let companyReadEpoch=0;
+export function invalidateCompanyCatalog(){companyReadEpoch++;companyReads.clear();}
+export function shareCompanyRead(query,request){
+ if(!['tariffs:list','maps:list','maps:approval-list'].includes(query)||typeof request!=='function')
+  throw new Error('Lettura aziendale non valida.');
+ const owner=getAccountId(),role=getRole(),when=generation,epoch=companyReadEpoch;
+ if(!isVerified()||!owner)throw new Error('Accesso verificato richiesto.');
+ const key=owner+':'+role+':'+query;
+ if(companyReads.has(key))return companyReads.get(key);
+ const current=()=>{
+  if(generation!==when||epoch!==companyReadEpoch||owner!==getAccountId()||
+     role!==getRole()||!isVerified())throw new Error('Sessione o tariffario cambiati durante la richiesta.');
+ };
+ const pending=Promise.resolve().then(()=>{current();return request(current);})
+  .then(result=>{current();return result;},error=>{current();throw error;})
+  .finally(()=>{if(companyReads.get(key)===pending)companyReads.delete(key);});
+ companyReads.set(key,pending);
+ return pending;
+}
+function companyListRequest(){
+ return shareCompanyRead('tariffs:list',current=>withSessionRetry(()=>{
+  current();return api('tariffsEndpoint',{action:'list'},readStored()?.access_token);
+ },async()=>{await verifySession();current();}));
+}
+
 function enqueueVault(task){
  const result=vaultQueue.catch(()=>{}).then(task);
  vaultQueue=result.catch(()=>{});
@@ -37,7 +65,7 @@ function url(which){
  if(result.protocol!=='https:'||
      result.hostname!=='otrqynkscpbeyuvdlgpg.supabase.co'||
      result.username||result.password||result.search||result.hash||
-     !['/functions/v1/lts-phone-auth','/functions/v1/lts-account-state','/functions/v1/lts-driver-onboarding','/functions/v1/lts-company-report','/functions/v1/lts-company-tariffs','/functions/v1/lts-admin-records'].includes(result.pathname))
+     !['/functions/v1/lts-phone-auth','/functions/v1/lts-account-state','/functions/v1/lts-driver-onboarding','/functions/v1/lts-company-report','/functions/v1/lts-company-tariffs','/functions/v1/lts-admin-records','/functions/v1/lts-sync-diagnostics'].includes(result.pathname))
    throw new Error('Servizio account non configurato in modo sicuro.');
  return result.href;
 }
@@ -71,6 +99,7 @@ export function accountGateRequired(){return true;}
 export function isVerified(){return verified&&Boolean(session);}
 export function getAccountId(){return session?'account:'+session.user_id:null;}
 export function getRole(){return session?.role??null;}
+export function getSessionGeneration(){return generation;}
 /** Persist only the unfinished factor UUID in this tab, never TOTP secret/QR. */
 export function rememberPendingAdminMfa(factorId,purpose='primary'){
  const admin=readStored();
@@ -106,7 +135,7 @@ export function pendingAdminMfaInfo(){
 // The legacy device archive stays on IndexedDB for authenticated recovery only.
 export function chooseDeviceArchive(){throw new Error('Accesso senza credenziali disattivato. Accedi con il tuo account per recuperare i vecchi viaggi.');}
 export function signOut(){
- generation++;
+ generation++;invalidateCompanyCatalog();
  session=null;verified=false;refreshing=null;
  try{sessionStorage.removeItem(SESSION_KEY);}catch{}
  forgetPendingAdminMfa();
@@ -158,21 +187,35 @@ async function api(which,body,bearer=null){
   }
   if(!result.ok){
    const e=new Error(typeof data?.error==='string'?data.error:'Operazione account non riuscita.');
-   e.status=result.status;throw e;
+   e.status=result.status;
+   // Carry only bounded conflict field paths, never the full error body or a
+   // remote archive/token payload, into the local recovery diagnostics.
+   if(result.status===409&&Array.isArray(data?.paths)&&data.paths.length<=200)
+    e.paths=[...new Set(data.paths.filter(path=>typeof path==='string'&&
+     path.length<=240&&!/[\u0000-\u001f\u007f]/u.test(path)&&
+     /^(?:revision|requestId|archive|profile\.[A-Za-z]+|extraRates\.[A-Za-z]+|(?:trips|customers|tariffs)\[.+\](?:\.[A-Za-z]+)?)$/u.test(path)))];
+   throw e;
   }
   return data;
  }finally{clearTimeout(timeout)}
 }
 async function refresh(){
  if(refreshing)return refreshing;
+ const s=readStored(),when=generation;
+ if(!s)throw new Error('Accedi al tuo account.');
+ const current=()=>{
+  if(when!==generation||s.user_id!==readStored()?.user_id||s.role!==readStored()?.role)
+   throw new Error('Sessione chiusa durante il rinnovo.');
+ };
  refreshing=withRefreshLock(async()=>{
-  const s=readStored(),when=generation;
-  if(!s)throw new Error('Accedi al tuo account.');
+  current();
   try{
    // Read the newest rotated token under a cross-tab lock (where supported).
    const stored=s.role==='driver'?await readDriverToken().catch(()=>null):null;
+   current();
    const token=stored?.user_id===s.user_id?stored.refresh_token:s.refresh_token;
    const data=await api('loginEndpoint',{action:'refresh',refresh_token:token});
+   current();
    if(!valid(data)||data.user_id!==s.user_id||data.role!==s.role){
      revoke();throw new Error('L’identità dell’account non corrisponde.');
    }
@@ -181,11 +224,12 @@ async function refresh(){
    if(next.role==='driver')await rememberDriver(next,when).catch(()=>{});
    return next;
   }catch(error){
-   if([401,403].includes(error.status))revoke();
+   if(when===generation&&s.user_id===readStored()?.user_id&&[401,403].includes(error.status))revoke();
    throw error;
   }
  });
- try{return await refreshing;}finally{refreshing=null}
+ const pending=refreshing;
+ try{return await pending;}finally{if(refreshing===pending)refreshing=null}
 }
 /** Restore a previously verified driver only. Admins must log in each time. */
 export async function restoreDriverSession(){
@@ -194,6 +238,7 @@ export async function restoreDriverSession(){
  const when=generation;
  restoring=(async()=>{
   const restored=await withRefreshLock(async()=>{
+   if(when!==generation)return false;
    if(readStored())return true;
    // A sign-out's storage cleanup wins against any pending restoration.
    await vaultQueue.catch(()=>{});
@@ -202,6 +247,7 @@ export async function restoreDriverSession(){
    if(!saved)return false;
    try{
     const data=await api('loginEndpoint',{action:'refresh',refresh_token:saved.refresh_token});
+    if(when!==generation)return false;
     if(!valid(data)||data.user_id!==saved.user_id||data.role!=='driver'){
       revoke();throw new Error('Identità salvata non valida.');
     }
@@ -210,28 +256,37 @@ export async function restoreDriverSession(){
     await rememberDriver(next,when).catch(()=>{});
     return true;
    }catch(error){
-    if([401,403].includes(error.status))revoke();
+    if(when===generation&&[401,403].includes(error.status))revoke();
     throw error; // Offline or temporary failures retain the credential for retry.
    }
   });
+  if(when!==generation)return false;
   if(restored)await verifySession(); // Online server check before exposing any data.
   return restored;
  })();
- try{return await restoring;}finally{restoring=null}
+ const pending=restoring;
+ try{return await pending;}finally{if(restoring===pending)restoring=null}
 }
 // A revoked account must be locked even when denial follows a token refresh.
 // Never treat an HTTP 401 as permission to retry indefinitely.
 async function withSessionRetry(request, afterRefresh=null){
- try{return await request();}
+ const owner=getAccountId(),role=getRole(),when=generation;
+ const current=()=>{
+  if(when!==generation||owner!==getAccountId()||role!==getRole())
+   throw new Error('Sessione cambiata durante la richiesta.');
+ };
+ try{const result=await request();current();return result;}
  catch(error){
+  current();
   if(error.status===403){revoke();throw error;}
   if(error.status!==401)throw error;
  }
  try{
-  await refresh();
+  await refresh();current();
   if(afterRefresh)await afterRefresh();
-  return await request();
+  current();const result=await request();current();return result;
  }catch(error){
+  current();
   if([401,403].includes(error.status))revoke();
   throw error;
  }
@@ -442,10 +497,22 @@ export async function companyInsights({month,driverId=null,compareDriverId=null,
 export async function companyTariffs(action='list',data={}){
  if(!isVerified()||getRole()!=='admin')throw new Error('Accesso amministratore richiesto.');
  if(!['list','save','extra-save'].includes(action))throw new Error('Operazione tariffa non valida.');
- const payload={action,...data};
- return withSessionRetry(
-  ()=>api('tariffsEndpoint',payload,readStored()?.access_token),
-  async()=>{await verifySession();if(getRole()!=='admin')throw new Error('Ruolo amministratore non valido.');});
+ if(action==='list')return companyListRequest();
+ const payload={...data,action};
+ const owner=getAccountId(),when=generation;
+ invalidateCompanyCatalog();
+ try{
+  const result=await withSessionRetry(
+   ()=>{
+    if(when!==generation||owner!==getAccountId()||!isVerified()||getRole()!=='admin')
+     throw new Error('Sessione amministratore cambiata durante il salvataggio.');
+    return api('tariffsEndpoint',payload,readStored()?.access_token);
+   },
+   async()=>{await verifySession();if(getRole()!=='admin')throw new Error('Ruolo amministratore non valido.');});
+  if(when!==generation||owner!==getAccountId()||!isVerified())
+   throw new Error('Sessione amministratore cambiata durante il salvataggio.');
+  return result;
+ }finally{invalidateCompanyCatalog();}
 }
 
 /** Read-only company catalog for every verified driver or administrator.
@@ -453,9 +520,7 @@ export async function companyTariffs(action='list',data={}){
  * archives are exposed and only the admin can write these prices. */
 export async function driverCompanyTariffs(){
  if(!isVerified()||!hasSession())throw new Error('Accedi per consultare il tariffario aziendale.');
- const result=await withSessionRetry(
-  ()=>api('tariffsEndpoint',{action:'list'},readStored()?.access_token),
-  ()=>verifySession());
+ const result=await companyListRequest();
  if(!Array.isArray(result?.tariffs)||result.tariffs.length>500||
    result.tariffs.some(row=>typeof row?.client!=='string'||typeof row?.city!=='string'||
    !Number.isSafeInteger(row?.cents)||row.cents<0||row.cents>99999999||
@@ -464,26 +529,28 @@ export async function driverCompanyTariffs(){
  return result.tariffs;
 }
 
-/** Company fares and the eight shared extra rates are fetched atomically
+/** Company fares and the active shared extra rates are fetched atomically
  * from the same authenticated server response. Never fall back to private
  * historic rate entries when a shared price is unavailable. */
 export async function driverCompanyCatalog(){
  if(!isVerified()||!hasSession())throw new Error('Accedi per consultare il tariffario aziendale.');
- const result=await withSessionRetry(
-  ()=>api('tariffsEndpoint',{action:'list'},readStored()?.access_token),
-  ()=>verifySession());
+ const result=await companyListRequest();
  if(!Array.isArray(result?.tariffs)||result.tariffs.length>500||
    result.tariffs.some(row=>typeof row?.client!=='string'||typeof row?.city!=='string'||
    !Number.isSafeInteger(row?.cents)||row.cents<0||row.cents>99999999||
    typeof row?.id!=='string'))
   throw new Error('Tariffario trasferte aziendale non valido.');
  const extras=result?.extraRates;
- const expected=new Set(['facchinaggioBilico','facchinaggioReefer','reefer','adr',
+ const expected=new Set(['facchinaggioBilico','facchinaggioReefer','adr',
   'pernotto','sabatoPorto','sabatoTrasferta','preOrario']);
- if(!Array.isArray(extras)||extras.length!==expected.size||
-   extras.some(row=>!expected.delete(row?.serviceKey)||
+ const seen=new Set();
+ if(!Array.isArray(extras)||extras.length<expected.size||extras.length>expected.size+1||
+   extras.some(row=>seen.has(row?.serviceKey)||
+    (!expected.has(row?.serviceKey)&&row?.serviceKey!=='reefer')||
+    !seen.add(row.serviceKey)||
     !(row.cents===null||(Number.isSafeInteger(row.cents)&&row.cents>=0&&row.cents<=99999999))||
-    !Number.isSafeInteger(row.revision)||row.revision<1))
+    !Number.isSafeInteger(row.revision)||row.revision<1)||
+   [...expected].some(key=>!seen.has(key)))
   throw new Error('Tariffario servizi extra aziendale incompleto.');
  return {tariffs:result.tariffs,extraRates:extras};
 }
@@ -502,4 +569,27 @@ export async function adminRecords(action,data={}){
   ()=>api('adminRecordsEndpoint',{action,...data},readStored()?.access_token),
   async()=>{await verifySession();if(getRole()!=='admin')
    throw new Error('Permesso amministratore non confermato.');});
+}
+
+/** Authorized diagnostic metadata only; the server enforces role, live session
+ * and administrator MFA again. No automatic reporting or archive payloads. */
+export async function syncDiagnostics(action,data={}){
+ if(!isVerified()||!hasSession())throw new Error('Accesso verificato richiesto.');
+ if(!['report','list','read-own'].includes(action)||
+    data===null||typeof data!=='object'||Array.isArray(data))
+  throw new Error('Richiesta diagnostica non valida.');
+ if(action==='list'&&getRole()!=='admin')throw new Error('Accesso amministratore richiesto.');
+ if(typeof runtime.accountAuth?.syncDiagnosticsEndpoint!=='string'||
+    !runtime.accountAuth.syncDiagnosticsEndpoint)
+  throw new Error('Diagnostica sincronizzazione non ancora disponibile.');
+ const owner=getAccountId(),when=generation;
+ const current=()=>{
+  if(when!==generation||owner!==getAccountId()||!isVerified()||
+     (action==='list'&&getRole()!=='admin'))
+   throw new Error('Sessione cambiata durante la diagnostica.');
+ };
+ const result=await withSessionRetry(()=>{
+  current();return api('syncDiagnosticsEndpoint',{...data,action},readStored()?.access_token);
+ },async()=>{await verifySession();current();});
+ current();return result;
 }

@@ -36,7 +36,7 @@ export function setupCompanyRates(account){
   sitesMore=get('company-sites-more'),
   clientOptions=get('company-rate-client-options'),
   cityOptions=get('company-rate-city-options');
- let rows=[],sites=[],editing=null,generation=0,busy=false;
+ let rows=[],sites=[],editing=null,generation=0,busy=false,loading=null,lifecycle=0;
  let ratesLoaded=false,sitesLoaded=false,sitesExpanded=false;
  const maps=setupCompanyMaps(account,{onSaved:async()=>{await load();}});
  const manual=setupCompanyManual(account,{onSaved:async()=>{await load();}});
@@ -150,14 +150,28 @@ export function setupCompanyRates(account){
  }
  function reset(){
   maps.reset();manual.reset();
-  generation++;rows=[];sites=[];ratesLoaded=false;sitesLoaded=false;sitesExpanded=false;
+  generation++;lifecycle++;loading=null;rows=[];sites=[];ratesLoaded=false;sitesLoaded=false;sitesExpanded=false;
   busy=false;search.value='';list.replaceChildren();sitesList.replaceChildren();
   clearForm();customerChoices();
   count.textContent='—';sitesCount.textContent='Apri Tariffe per sincronizzare le sedi Google Maps.';
   feedback('Apri Tariffe aziendali per caricare i dati.');
   sitesMore.hidden=true;refresh.disabled=false;submit.disabled=true;
  }
- async function load({silent=false}={}){
+ function load({silent=false,trailing=false}={}){
+  if(!authorized()){reset();return Promise.resolve(false);}
+  const owner=account.getAccountId?.();
+  if(loading&&loading.owner===owner){
+   loading.trailing||=trailing||!silent;return loading.promise;
+  }
+  const job={owner,trailing:false,promise:null};loading=job;
+  job.promise=loadOnce({silent}).finally(()=>{
+   if(loading!==job)return;
+   loading=null;
+   if(job.trailing&&owner===account.getAccountId?.()&&authorized())void load({silent:true});
+  });
+  return job.promise;
+ }
+ async function loadOnce({silent=false}={}){
   if(!authorized()){reset();return false;}
   // Never displace a driver/site/amount currently being typed, nor interrupt
   // a save. The next polling tick (or manual refresh) will retry.
@@ -223,6 +237,9 @@ export function setupCompanyRates(account){
    payload={client:name,city:place,cents};
    if(editing)Object.assign(payload,{id:editing.id,expectedRevision:editing.revision});
   }catch(e){feedback(e.message,true);return;}
+  const owner=account.getAccountId?.(),when=lifecycle;
+  const current=()=>when===lifecycle&&owner===account.getAccountId?.();
+  generation++;loading=null;
   busy=true;submit.disabled=true;refresh.disabled=true;
   window.dispatchEvent(new Event('lts-admin-company-rate-save-started'));
   feedback('Salvataggio atomico di cliente e tariffa in corso…');
@@ -232,16 +249,19 @@ export function setupCompanyRates(account){
     source:'manual',name:payload.client,city:payload.city,cents:payload.cents,
     expectedRevision:0
    });
+   if(!current()||!authorized())return;
    clearForm();
    window.dispatchEvent(new Event('lts-admin-company-rate-saved'));
    await load();
-   if(authorized()&&ratesLoaded)
+   if(current()&&authorized()&&ratesLoaded)
     feedback('Tariffa salvata e disponibile per tutti gli autisti al prossimo aggiornamento online. Gli importi storici restano invariati.');
-  }catch(e){feedback('Salvataggio non completato: nessuna nuova coppia cliente/tariffa pubblicata. '+
+  }catch(e){if(current()&&authorized())feedback('Salvataggio non completato: nessuna nuova coppia cliente/tariffa pubblicata. '+
     (e?.message||'Riprova.'),true);}
   finally{
-   busy=false;submit.disabled=!ratesLoaded;if(authorized())refresh.disabled=false;
-   window.dispatchEvent(new Event('lts-admin-company-rate-save-completed'));
+   if(current()){
+    busy=false;submit.disabled=!ratesLoaded;if(authorized())refresh.disabled=false;
+    window.dispatchEvent(new Event('lts-admin-company-rate-save-completed'));
+   }
   }
  });
  reset();
