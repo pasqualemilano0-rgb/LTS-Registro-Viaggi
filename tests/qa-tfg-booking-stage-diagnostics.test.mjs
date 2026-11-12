@@ -10,13 +10,13 @@ test('auth session remains mandatory before gateway fetch',()=>{
  assert.match(app,/response\.status===403\)throw Error\('LTS_BOOKING_ACCESS_DENIED'\)/);
 });
 test('auth and gateway transport errors are not conflated',()=>{
- assert.match(app,/serviceUnavailable===true\)throw Error\('LTS_BOOKING_AUTH_NETWORK'\)/);
+ assert.match(app,/serviceUnavailable===true\)throw Error\(error\?\.authTransportCode==='AUTH-TIMEOUT'\?'LTS_BOOKING_AUTH_TIMEOUT':'LTS_BOOKING_AUTH_NETWORK'\)/);
  assert.match(app,/throw Error\('TFG_GATEWAY_NETWORK'\)/);
  assert.match(booking,/throw Error\('TFG_GATEWAY_NETWORK'\)/);
  assert.match(booking,/TFG_GATEWAY_5XX':'TFG_GATEWAY_4XX'/);
 });
 test('diagnostic codes are fixed and do not contain booking or tokens',()=>{
- for(const code of ['AUTH-NETWORK','AUTH-503','TFG-NETWORK','TFG-HTTP5','TFG-TIMEOUT','TFG-FORMAT']){
+ for(const code of ['AUTH-FETCH','AUTH-TIMEOUT','AUTH-503','TFG-NETWORK','TFG-HTTP5','TFG-TIMEOUT','TFG-FORMAT']){
   assert.ok(app.includes("'"+code+"'"));
  }
  assert.match(app,/results\.append\(textBlock\('Codice diagnostico: '\+diagnostic,'tiny'\)\)/);
