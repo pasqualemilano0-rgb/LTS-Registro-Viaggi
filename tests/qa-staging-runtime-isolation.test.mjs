@@ -15,6 +15,11 @@ test('QA runtime config has no production origin or backend',async()=>{
 test('every configured account endpoint is QA Supabase only',()=>{
  for(const [key,value] of Object.entries(config.accountAuth)){
   if(key==='enabled'||value===null)continue;
-  assert.match(value,/^https:\/\/sywxretbfgwxwhvdcknq\\.supabase\\.co\/functions\/v1\/lts-[a-z-]+$/);
+  const endpoint=new URL(value);
+  assert.equal(endpoint.protocol,'https:');
+  assert.equal(endpoint.hostname,'sywxretbfgwxwhvdcknq.supabase.co');
+  assert.match(endpoint.pathname,/^\/functions\/v1\/lts-[a-z-]+$/);
+  assert.equal(endpoint.search,'');
+  assert.equal(endpoint.hash,'');
  }
 });
