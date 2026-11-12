@@ -42,4 +42,4 @@ $('booking-form').addEventListener('submit',async event=>{
  }catch(error){message('result',error.message||'Ricerca non riuscita.');if(/Sessione|MFA|autorizzata/i.test(error.message||''))clear()}
  finally{button.disabled=false}
 });
-$('logout').addEventListener('click',()=>{clear();message('login-status','Sessione locale chiusa.')});
+$('logout').addEventListener('click',async()=>{\n const current=token;clear();message('login-status','Chiusura sessione QA…');\n if(!current){message('login-status','Sessione locale chiusa.');return;}\n try{const data=await post(AUTH,{action:'logout'},current);if(data.revoked!==true)throw Error('Revoca non confermata');message('login-status','Sessione QA revocata.');}\n catch{message('login-status','Sessione locale chiusa. La revoca remota non è confermata: attendi la scadenza del token.');}\n});
