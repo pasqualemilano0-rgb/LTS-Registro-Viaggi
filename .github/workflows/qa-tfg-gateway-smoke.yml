@@ -110,4 +110,4 @@ jobs:
           if echo "$headers" | grep -qi '^access-control-allow-origin:'; then echo 'Unexpected CORS grant' >&2; exit 1; fi
           options=$(curl --silent --show-error --max-time 15 -o /dev/null -w '%{http_code}' -X OPTIONS "$URL/api/tfg_booking" -H "Origin: $QA_ORIGIN" -H 'Access-Control-Request-Method: POST')
           test "$options" = 204
-          echo 'QA gateway live security and fixed-reference tests passed; no user credentials used.'
+          echo 'QA gateway live security and TFG fixed-reference tests passed; no user credentials used.'
