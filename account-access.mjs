@@ -36,7 +36,8 @@ function url(which){
  const address=runtime.accountAuth?.[which];
  const result=new URL(address);
  if(result.protocol!=='https:'||
-     result.hostname!=='otrqynkscpbeyuvdlgpg.supabase.co'||
+     !(result.hostname==='otrqynkscpbeyuvdlgpg.supabase.co'||
+       (result.hostname==='sywxretbfgwxwhvdcknq.supabase.co'&&globalThis.location?.origin==='https://lts-booking-security-stage.pasqualemilano0.workers.dev'))||
      result.username||result.password||result.search||result.hash||
      !['/functions/v1/lts-phone-auth','/functions/v1/lts-account-state','/functions/v1/lts-driver-onboarding','/functions/v1/lts-company-report','/functions/v1/lts-company-tariffs','/functions/v1/lts-admin-records'].includes(result.pathname))
    throw new Error('Servizio account non configurato in modo sicuro.');
@@ -146,10 +147,14 @@ async function api(which,body,bearer=null){
      headers:{Accept:'application/json','Content-Type':'application/json',
        ...(bearer?{Authorization:'Bearer '+bearer}:{})},
      body:JSON.stringify(body)});
-  }catch{
-   const e=new Error('Servizio account temporaneamente non raggiungibile.');
-   // A failed fetch is not proof that the device is offline (DNS, CORS, TLS or timeout).
-   e.serviceUnavailable=true;e.status=503;throw e;
+  }catch(cause){
+   // A rejected fetch does not prove the network is offline. Distinguish the
+   // browser-enforced timeout from a transport rejection, without logging secrets.
+   const timedOut=controller.signal.aborted;
+   const e=new Error(timedOut?'Verifica account scaduta.':'Servizio account temporaneamente non raggiungibile.');
+   e.serviceUnavailable=true;e.status=503;
+   e.authTransportCode=timedOut?'AUTH-TIMEOUT':'AUTH-FETCH';
+   throw e;
   }
   const type=result.headers.get('content-type')||'';
   if(!type.includes('application/json')){
@@ -360,6 +365,27 @@ export async function getVerifiedAccessToken(){
  })();
  bookingSessionVerification=task;
  try{return await task;}finally{if(bookingSessionVerification===task)bookingSessionVerification=null;}
+}
+
+/** Booking transport: only supplies a locally held, unexpired bearer.
+ * This is NOT authorization. The Cloudflare Booking Worker must validate the
+ * live account, role, MFA and revocation with Supabase on every request.
+ * No cached role may be used as an authorization decision.
+ */
+export async function getBookingBearerForServerVerification(){
+ const current=readStored();
+ if(!current)throw new Error('Effettua l’accesso con numero e password.');
+ if(current.expires_at<Date.now()+15000){
+  // Refresh remains server-backed; never send an expired or stale bearer.
+  await refresh();
+ }
+ const latest=readStored();
+ if(!latest?.access_token||latest.expires_at<Date.now()+15000)
+  throw new Error('Effettua nuovamente l’accesso.');
+ // Never allow an admin with pending MFA to use the booking path.
+ if(latest.role==='admin'&&!isVerified())
+  throw new Error('Verifica amministratore necessaria.');
+ return latest.access_token;
 }
 
 /** Authenticated Realtime channels receive ONLY change hints.

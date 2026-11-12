@@ -2,8 +2,8 @@ import {tfgScheduleDelivery,conatecoForecastDelivery,conatecoDepotAcceptance} fr
 import {normalizeName,parseItalianDate,findSctVessels,evaluateSct,evaluateSctType,isSnapshotRecent,isSctFeedRecent,listSctVoyages,describeVesselStatus,describeClosing} from './rules.mjs?v=20261102-v65';
 import {parseTfgBookingResult} from './tfg.mjs?v=20261031-v41';
 import {validateBooking,bookingTerminal} from './booking_search.mjs?v=20261031-v41';
-import {lookupTfgBooking} from './tfg_booking.mjs?v=20261102-v63';
-import {getVerifiedAccessToken} from '../account-access.mjs';
+import {lookupTfgBooking,tfgBookingEndpoint} from './tfg_booking.mjs?v=20261112-qa-route';
+import {getBookingBearerForServerVerification} from '../account-access.mjs';
 import {lookupConatecoBooking,matchConatecoBookingToSchedule,matchConatecoVesselToForecast} from './conateco_booking.mjs?v=20261102-v64';
 import {matchTfgVoyage,isTfgFeedFresh,evaluateTfgSchedule} from './tfg_schedule.mjs?v=20261102-v62';
 import {evaluateConateco,isConatecoRecent} from './conateco_rules.mjs?v=20261110-porti-freshcode-v2';
@@ -784,13 +784,13 @@ async function renderTfgBooking(booking){
   results.append(node('div','booking-loading','Controllo il booking su TFG…'));
   try{
     const data=await lookupTfgBooking(booking,async (endpoint,options)=>{
-      if(endpoint!=='https://container-booking-backend.pasqualemilano0.workers.dev/api/tfg_booking')
+      if(endpoint!==tfgBookingEndpoint())
         throw Error('UNEXPECTED_BOOKING_ENDPOINT');
       let accessToken;
-      try{accessToken=await getVerifiedAccessToken();}
+      try{accessToken=await getBookingBearerForServerVerification();}
       catch(error){
         if(error?.offline===true)throw Error('LTS_BOOKING_OFFLINE');
-        if(error?.serviceUnavailable===true)throw Error('LTS_BOOKING_AUTH_NETWORK');
+        if(error?.serviceUnavailable===true)throw Error(error?.authTransportCode==='AUTH-TIMEOUT'?'LTS_BOOKING_AUTH_TIMEOUT':'LTS_BOOKING_AUTH_NETWORK');
         if(error?.status>=500)throw Error('LTS_BOOKING_AUTH_UNAVAILABLE');
         throw Error('LTS_BOOKING_LOGIN_REQUIRED');
       }
@@ -838,7 +838,8 @@ async function renderTfgBooking(booking){
     // Only fixed, non-sensitive diagnostic codes reach the UI. Never expose tokens, URLs or booking numbers.
     const diagnostics=Object.freeze({
       LTS_BOOKING_OFFLINE:'AUTH-OFFLINE',
-      LTS_BOOKING_AUTH_NETWORK:'AUTH-NETWORK',
+      LTS_BOOKING_AUTH_NETWORK:'AUTH-FETCH',
+      LTS_BOOKING_AUTH_TIMEOUT:'AUTH-TIMEOUT',
       LTS_BOOKING_AUTH_UNAVAILABLE:'AUTH-503',
       LTS_BOOKING_LOGIN_REQUIRED:'AUTH-LOGIN',
       LTS_BOOKING_ACCESS_DENIED:'AUTH-DENIED',

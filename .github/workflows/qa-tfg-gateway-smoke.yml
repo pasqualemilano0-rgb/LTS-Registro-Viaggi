@@ -1,0 +1,117 @@
+name: QA TFG gateway HTTP smoke (staging only)
+on:
+  push:
+    branches:
+      - diagnostic/tfg-auth-transport-stage-20261112
+    paths:
+      - '.github/workflows/qa-tfg-gateway-smoke.yml'
+      - 'staging/tfg-qa-gateway.js'
+      - 'porti/tfg_booking.mjs'
+      - 'porti/app.js'
+      - 'tests/qa-tfg-origin-route.test.mjs'
+      - 'tests/qa-stage-deployment-gates.test.mjs'
+      - 'staging/runtime-config.mjs'
+      - 'staging/android/**'
+      - 'tests/qa-android-shell.test.mjs'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  qa-http-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check QA gateway JavaScript syntax
+        run: node --check staging/tfg-qa-gateway.js
+      - name: Probe public TFG form independently of QA auth
+        shell: bash
+        run: |
+          set -euo pipefail
+          status=$(curl --silent --show-error --max-time 25 -o /tmp/tfg-public.html -w '%{http_code}' -X POST 'https://tfg.bucci.it/@/TFGW_WW_BKK' -H 'Accept: text/html' -H 'Content-Type: application/x-www-form-urlencoded' --data 'modo=2&bkk=280630439' || true)
+          echo "Public TFG HTTP status: $status"
+          if [ ! -f /tmp/tfg-public.html ]; then echo 'No response body'; exit 1; fi
+          python3 - <<'PY'
+          from html.parser import HTMLParser
+          from pathlib import Path
+          import re
+          class Parser(HTMLParser):
+              def __init__(self):
+                  super().__init__(); self.in_title=False; self.title=[]; self.visible=[]
+              def handle_starttag(self,tag,attrs):
+                  if tag=='title': self.in_title=True
+              def handle_endtag(self,tag):
+                  if tag=='title': self.in_title=False
+              def handle_data(self,data):
+                  (self.title if self.in_title else self.visible).append(data)
+          raw=Path('/tmp/tfg-public.html').read_bytes()
+          p=Parser(); p.feed(raw[:100000].decode('iso-8859-1',errors='replace'))
+          body=' '.join(p.visible)
+          checks={
+              'title_export_booking': ' '.join(p.title).strip().upper()=='EXPORT BOOKING',
+              'vessel_mv_salween': bool(re.search(r'\bMV\s+SALWEEN\b',body,re.I)),
+              'voyage_646w': bool(re.search(r'\b646W\b',body,re.I)),
+              'container_mieu2007836': bool(re.search(r'\bMIEU2007836\b',body,re.I)),
+          }
+          from collections import Counter
+          class FormInspector(HTMLParser):
+              def __init__(self):
+                  super().__init__(); self.forms=[]; self.fields=[]; self.buttons=[]; self.labels=[]
+              def handle_starttag(self,tag,attrs):
+                  a=dict(attrs)
+                  if tag=='form': self.forms.append({'method':a.get('method','GET'),'action':a.get('action','')[:100]})
+                  if tag in ('input','select','textarea'): self.fields.append({'tag':tag,'name':a.get('name','')[:70],'type':a.get('type','')[:30],'value_length':len(a.get('value','')),'value_present':bool(a.get('value',''))})
+                  if tag=='button': self.buttons.append({'type':a.get('type',''),'name':a.get('name','')})
+          inspector=FormInspector();inspector.feed(raw[:100000].decode('iso-8859-1',errors='replace'))
+          print('Form metadata (no values):',inspector.forms)
+          print('Field metadata (no values):',inspector.fields[:30])
+          print('Button metadata:',inspector.buttons[:12])
+          print('HTML script src paths:',re.findall(r'<script[^>]*src=[\\\"\\\']([^\\\"\\\']+)',raw.decode('iso-8859-1',errors='replace'),re.I)[:15])
+          print('Form hidden mode value:',re.search(r'name=[\\\"\\\']modo[\\\"\\\'][^>]*value=[\\\"\\\']([^\\\"\\\']*)',raw.decode('iso-8859-1',errors='replace'),re.I).group(1) if re.search(r'name=[\\\"\\\']modo[\\\"\\\'][^>]*value=[\\\"\\\']([^\\\"\\\']*)',raw.decode('iso-8859-1',errors='replace'),re.I) else 'unknown')
+          print('HTML elements:',dict(Counter(re.findall(r'<([a-z][a-z0-9]*)\b',raw.decode('iso-8859-1',errors='replace'),re.I)).most_common(12)))
+
+          print('Body classification:', {k:bool(re.search(v,body,re.I)) for k,v in {'booking_not_found':r'inesistent|non\s+trovato','error':r'errore|error','form_prompt':r'inserire|ricerca|cerca|search','booking_echo':r'280630439','access_denied':r'accesso negato|login|password|captcha'}.items()})
+          print('Public TFG response bytes:',len(raw))
+          for name,ok in checks.items(): print(name+':',ok)
+          if not checks['title_export_booking'] or not checks['vessel_mv_salween'] or not checks['voyage_646w']:
+              raise SystemExit('TFG public form verification incomplete')
+          PY
+          test "$status" = 200
+      - name: Verify QA browser endpoint isolation
+        run: node --test tests/qa-tfg-origin-route.test.mjs tests/qa-stage-deployment-gates.test.mjs tests/qa-android-shell.test.mjs
+      - name: Verify live QA gateway with safe negative tests only
+        shell: bash
+        env:
+          URL: https://lts-tfg-booking-qa-gateway.pasqualemilano0.workers.dev
+          QA_ORIGIN: https://lts-booking-security-stage.pasqualemilano0.workers.dev
+        run: |
+          set -euo pipefail
+          health=$(curl --silent --show-error --fail --max-time 15 --retry 2 "$URL/health")
+          echo "$health" | jq -e '.status == "ok" and .mode == "QA_ONLY" and .upstream_booking_enabled == true and .production_data_access == false' >/dev/null
+          wrong=$(curl --silent --show-error --max-time 15 -o /tmp/wrong.json -w '%{http_code}' -X POST "$URL/api/tfg_booking" -H 'Origin: https://example.invalid' -H 'Content-Type: application/json' --data '{}')
+          echo "Wrong origin status: $wrong"
+          test "$wrong" = 403
+          jq -e '.error == "ORIGIN_DENIED"' /tmp/wrong.json >/dev/null
+          unauthorized=$(curl --silent --show-error --max-time 15 -o /tmp/unauth.json -w '%{http_code}' -X POST "$URL/api/tfg_booking" -H "Origin: $QA_ORIGIN" -H 'Content-Type: application/json' --data '{}')
+          echo "Missing bearer status: $unauthorized"
+          test "$unauthorized" = 401
+          jq -e '.error == "SESSION_REQUIRED"' /tmp/unauth.json >/dev/null
+          for route in auth-reachability tfg-reference; do
+            status=$(curl --silent --show-error --max-time 15 -o /dev/null -w '%{http_code}' -H "Origin: $QA_ORIGIN" "$URL/diag/$route")
+            test "$status" = 404
+          done
+          echo 'Temporary unauthenticated diagnostics disabled on deployed QA Worker.'
+          # Diagnose the QA auth endpoint independently of the Worker, with a fake token only.
+          direct=$(curl --silent --show-error --max-time 15 -o /tmp/direct.json -w '%{http_code}' -X POST 'https://sywxretbfgwxwhvdcknq.supabase.co/functions/v1/lts-phone-auth' -H "Origin: $QA_ORIGIN" -H 'Content-Type: application/json' -H "Authorization: Bearer $(printf 'x%.0s' {1..80})" --data '{"action":"session"}')
+          echo "Direct QA Supabase fake-token status: $direct; response category: $(jq -r 'if .error then "rejected" else "other" end' /tmp/direct.json 2>/dev/null || echo non_json)"
+          # A syntactically valid but untrusted token must never unlock booking.
+          invalid=$(curl --silent --show-error --max-time 15 -o /tmp/invalid.json -w '%{http_code}' -X POST "$URL/api/tfg_booking" -H "Origin: $QA_ORIGIN" -H 'Content-Type: application/json' -H "Authorization: Bearer $(printf 'x%.0s' {1..80})" --data '{"booking":"000000000"}')
+          echo "Invalid bearer status: $invalid; error code: $(jq -r '.error // "NONE"' /tmp/invalid.json)"
+          test "$invalid" = 401
+          jq -e '.error == "SESSION_REJECTED"' /tmp/invalid.json >/dev/null
+          # Disallowed origins must not receive permissive CORS response headers.
+          headers=$(curl --silent --show-error --max-time 15 -D - -o /dev/null -X POST "$URL/api/tfg_booking" -H 'Origin: https://example.invalid' -H 'Content-Type: application/json' --data '{}')
+          if echo "$headers" | grep -qi '^access-control-allow-origin:'; then echo 'Unexpected CORS grant' >&2; exit 1; fi
+          options=$(curl --silent --show-error --max-time 15 -o /dev/null -w '%{http_code}' -X OPTIONS "$URL/api/tfg_booking" -H "Origin: $QA_ORIGIN" -H 'Access-Control-Request-Method: POST')
+          test "$options" = 204
+          echo 'QA gateway live security tests passed; no user credentials used.'

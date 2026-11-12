@@ -1,0 +1,43 @@
+name: QA Android staging HTTP smoke
+on:
+  workflow_dispatch:
+  push:
+    branches: [diagnostic/tfg-auth-transport-stage-20261112]
+    paths: ['.github/workflows/qa-android-http-smoke.yml']
+permissions:
+  contents: read
+jobs:
+  live-qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - name: Verify isolated Android QA HTML and assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          base='https://lts-tfg-android-qa-stage.pasqualemilano0.workers.dev'
+          curl -fsS --max-time 20 "$base/" -o /tmp/lts-qa-index.html
+          grep -q 'LTS Porti' /tmp/lts-qa-index.html
+          curl -fsS --max-time 20 "$base/app.mjs" -o /tmp/lts-qa-app.mjs
+          grep -q 'lts-tfg-booking-qa-gateway' /tmp/lts-qa-app.mjs
+          ! grep -Eq 'otrqynkscpbeyuvdlgpg|container-booking-backend' /tmp/lts-qa-app.mjs
+          curl -fsS --max-time 20 "$base/manifest.webmanifest" -o /tmp/lts-qa-manifest.json
+          node -e "const m=require('/tmp/lts-qa-manifest.json');if(m.display!=='standalone'||m.scope!=='./')process.exit(1)"
+          echo 'Android QA HTML, script and manifest served correctly.'
+      - name: Verify QA Supabase and gateway CORS
+        shell: bash
+        run: |
+          set -euo pipefail
+          origin='https://lts-tfg-android-qa-stage.pasqualemilano0.workers.dev'
+          for endpoint in 'https://sywxretbfgwxwhvdcknq.supabase.co/functions/v1/lts-phone-auth' 'https://lts-tfg-booking-qa-gateway.pasqualemilano0.workers.dev/api/tfg_booking'; do
+            curl -fsS --max-time 20 -X OPTIONS "$endpoint" -H "Origin: $origin" -H 'Access-Control-Request-Method: POST' -H 'Access-Control-Request-Headers: authorization,content-type' -D /tmp/qa-headers -o /dev/null
+            grep -Fi "access-control-allow-origin: $origin" /tmp/qa-headers >/dev/null
+          done
+          echo 'QA Supabase and booking gateway accept exact Android QA origin.'
+      - name: Verify unauthenticated booking request denied
+        shell: bash
+        run: |
+          set -euo pipefail
+          code=$(curl -sS --max-time 20 -o /tmp/qa-denied.json -w '%{http_code}' -X POST 'https://lts-tfg-booking-qa-gateway.pasqualemilano0.workers.dev/api/tfg_booking' -H 'Origin: https://lts-tfg-android-qa-stage.pasqualemilano0.workers.dev' -H 'Content-Type: application/json' --data '{"booking":"280630439"}')
+          test "$code" = 401
+          echo 'Unauthenticated booking request rejected HTTP 401.'

@@ -4,6 +4,11 @@
  */
 import {validateBooking} from './booking_search.mjs';
 export const TFG_BOOKING_API='https://container-booking-backend.pasqualemilano0.workers.dev/api/tfg_booking';
+export const TFG_BOOKING_QA_API='https://lts-tfg-booking-qa-gateway.pasqualemilano0.workers.dev/api/tfg_booking';
+export const TFG_BOOKING_STAGE_ORIGIN='https://lts-booking-security-stage.pasqualemilano0.workers.dev';
+export function tfgBookingEndpoint(origin=globalThis.location?.origin){
+  return origin===TFG_BOOKING_STAGE_ORIGIN?TFG_BOOKING_QA_API:TFG_BOOKING_API;
+}
 export const TFG_BOOKING_SOURCE='https://tfg.bucci.it/@/TFGW_WW_BKK';
 
 function scalar(x,max){
@@ -33,10 +38,12 @@ export function parseTfgBookingApi(raw){
   return {status:'found',vessel,voyage,message,checked_at:raw.checked_at};
 }
 export async function lookupTfgBooking(booking, fetcher=fetch, signal){
+  // Exact QA origin uses QA gateway; never fall back to production on QA errors.
+  const endpoint=tfgBookingEndpoint();
   const checked=validateBooking(booking);
   if(!checked.valid)throw Error('BOOKING_INVALID');
   let response;
-  try{response=await fetcher(TFG_BOOKING_API,{
+  try{response=await fetcher(endpoint,{
     method:'POST',mode:'cors',cache:'no-store',credentials:'omit',
     referrerPolicy:'no-referrer',redirect:'error',signal,
     headers:{'Content-Type':'application/json','Accept':'application/json'},

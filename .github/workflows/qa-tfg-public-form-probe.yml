@@ -1,0 +1,38 @@
+name: QA TFG public form reachability (no gateway bypass)
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  public-form-probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Probe public TFG form with known reference; no credentials or production calls
+        shell: bash
+        run: |
+          set -euo pipefail
+          status=$(curl --silent --show-error --max-time 25 -o /tmp/tfg.html -w '%{http_code}' -X POST 'https://tfg.bucci.it/@/TFGW_WW_BKK' -H 'Accept: text/html' -H 'Content-Type: application/x-www-form-urlencoded' --data 'modo=2&bkk=280630439' || true)
+          echo "Public TFG HTTP status: $status"
+          echo "Response bytes: $(wc -c </tmp/tfg.html 2>/dev/null || echo 0)"
+          if [ "$status" != 200 ]; then echo "::warning::Public TFG upstream not reachable with HTTP 200"; exit 1; fi
+          python3 - <<'PY'
+          from html.parser import HTMLParser
+          from pathlib import Path
+          class P(HTMLParser):
+              def __init__(self): super().__init__();self.title=False;self.parts=[];self.titles=[]
+              def handle_starttag(self,tag,attrs):
+                  if tag=='title':self.title=True
+              def handle_endtag(self,tag):
+                  if tag=='title':self.title=False
+              def handle_data(self,data):
+                  (self.titles if self.title else self.parts).append(data)
+          p=P();p.feed(Path('/tmp/tfg.html').read_bytes()[:100000].decode('iso-8859-1',errors='replace'))
+          import re
+          text=' '.join(p.parts)
+          print('Title is EXPORT BOOKING:', ' '.join(p.titles).strip().upper()=='EXPORT BOOKING')
+          print('Expected vessel present:', bool(re.search(r'MV\\s+SALWEEN',text,re.I)))
+          print('Expected voyage present:', bool(re.search(r'646W',text,re.I)))
+          print('Expected container present:', bool(re.search(r'MIEU2007836',text,re.I)))
+          if ' '.join(p.titles).strip().upper()!='EXPORT BOOKING': raise SystemExit('TFG result not verified')
+          PY

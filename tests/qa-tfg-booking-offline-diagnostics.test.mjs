@@ -3,18 +3,18 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 const auth=readFileSync(new URL('../account-access.mjs',import.meta.url),'utf8');
 const porti=readFileSync(new URL('../porti/app.js',import.meta.url),'utf8');
-test('auth still verifies session before issuing booking bearer',()=>{
- assert.match(auth,/export async function getVerifiedAccessToken\(\)\{[\s\S]*?await verifySession\(\)/);
- assert.match(auth,/if\(!isVerified\(\)\)throw/);
- assert.match(porti,/accessToken=await getVerifiedAccessToken\(\)/);
+test('booking bearer remains unexpired and Worker performs mandatory online verification',()=>{
+ assert.match(auth,/export async function getBookingBearerForServerVerification\(\)\{[\s\S]*?await refresh\(\)/);
+ assert.match(auth,/latest.role==='admin'&&!isVerified\(\)/);
+ assert.match(porti,/accessToken=await getBookingBearerForServerVerification\(\)/);
  assert.match(porti,/Authorization:'Bearer '\+accessToken/);
 });
 test('confirmed offline is distinguished from a failed fetch',()=>{
  assert.match(auth,/if\(navigator\.onLine===false\)\{[\s\S]*?e\.offline=true;throw e;/);
- assert.match(auth,/catch\{\s*const e=new Error\('Servizio account temporaneamente non raggiungibile\.'\);[\s\S]*?e\.serviceUnavailable=true;e\.status=503;throw e;/);
+ assert.match(auth,/catch\(cause\)\{[\s\S]*?e\.serviceUnavailable=true;e\.status=503;/);
 });
 test('TFG Booking displays unavailable service rather than offline on auth fetch failure',()=>{
- assert.match(porti,/if\(error\?\.serviceUnavailable===true\)throw Error\('LTS_BOOKING_AUTH_NETWORK'\)/);
+ assert.match(porti,/if\(error\?\.serviceUnavailable===true\)throw Error\(error\?\.authTransportCode==='AUTH-TIMEOUT'\?'LTS_BOOKING_AUTH_TIMEOUT':'LTS_BOOKING_AUTH_NETWORK'\)/);
  assert.match(porti,/if\(error\?\.status>=500\)throw Error\('LTS_BOOKING_AUTH_UNAVAILABLE'\)/);
  assert.match(porti,/const offline=error\?\.message==='LTS_BOOKING_OFFLINE'/);
  assert.match(porti,/offline\?'CONNESSIONE ASSENTE'/);

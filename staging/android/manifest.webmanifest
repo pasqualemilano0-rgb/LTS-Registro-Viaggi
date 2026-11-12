@@ -1,0 +1,20 @@
+{
+  "id": "/qa-android/",
+  "name": "LTS Porti QA",
+  "short_name": "LTS QA",
+  "description": "Verifica booking TFG in ambiente QA isolato",
+  "lang": "it",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#edf5f7",
+  "theme_color": "#006f89",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
