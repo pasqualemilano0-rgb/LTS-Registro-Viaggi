@@ -17,8 +17,13 @@ test('offline snapshot and Cloudflare publisher contracts remain in CircleCI', (
   assert.match(circle, /- snapshot-publisher-contract\b/);
   assert.match(circle, /- cloudflare-publisher-contract\b/);
   assert.match(circle, /node --test tests\/qa-porti-cloudflare-direct-publisher\.test\.mjs/);
-  assert.match(circle, /python -m unittest discover -s tests -p 'test_refresh_porti_from_worker\.py'/);
-  assert.match(circle, /python -m unittest discover -s tests -p 'test_public_snapshot_freshness\.py'/);
+  // The full 'test_*.py' discovery is a superset of both prior targeted suites.
+  const fullPythonSuite = circle.includes("python -m unittest discover -s tests -p 'test_*.py' -v");
+  for (const file of ['test_refresh_porti_from_worker.py','test_public_snapshot_freshness.py']) {
+    const individuallyListed = circle.includes("python -m unittest discover -s tests -p '"+file+"'");
+    const inFullSuite = fullPythonSuite && existsSync(new URL('tests/'+file, root));
+    assert.ok(individuallyListed || inFullSuite, 'Missing Python snapshot contract: '+file);
+  }
   assert.match(circle, /node --test[^\n]*qa-no-auto-publish\.test\.mjs/);
 });
 
