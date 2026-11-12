@@ -4,6 +4,8 @@ on:
     paths:
       - 'account-access.mjs'
       - 'porti/app.js'
+      - 'porti/tfg_booking.mjs'
+      - 'tests/qa-tfg-booking-stage-diagnostics.test.mjs'
       - 'tests/qa-tfg-booking-offline-diagnostics.test.mjs'
       - '.github/workflows/qa-tfg-booking-offline.yml'
   workflow_dispatch:
@@ -18,4 +20,6 @@ jobs:
           node-version: '22'
       - run: node --check account-access.mjs
       - run: node --check porti/app.js
+      - run: node --check porti/tfg_booking.mjs
+      - run: node --test tests/qa-tfg-booking-stage-diagnostics.test.mjs
       - run: node --test tests/qa-tfg-booking-offline-diagnostics.test.mjs
