@@ -42,9 +42,9 @@ jobs:
           body=' '.join(p.visible)
           checks={
               'title_export_booking': ' '.join(p.title).strip().upper()=='EXPORT BOOKING',
-              'vessel_mv_salween': bool(re.search(r'\\bMV\\s+SALWEEN\\b',body,re.I)),
-              'voyage_646w': bool(re.search(r'\\b646W\\b',body,re.I)),
-              'container_mieu2007836': bool(re.search(r'\\bMIEU2007836\\b',body,re.I)),
+              'vessel_mv_salween': bool(re.search(r'\bMV\s+SALWEEN\b',body,re.I)),
+              'voyage_646w': bool(re.search(r'\b646W\b',body,re.I)),
+              'container_mieu2007836': bool(re.search(r'\bMIEU2007836\b',body,re.I)),
           }
           from collections import Counter
           class FormInspector(HTMLParser):
@@ -61,9 +61,9 @@ jobs:
           print('Button metadata:',inspector.buttons[:12])
           print('HTML script src paths:',re.findall(r'<script[^>]*src=[\\\"\\\']([^\\\"\\\']+)',raw.decode('iso-8859-1',errors='replace'),re.I)[:15])
           print('Form hidden mode value:',re.search(r'name=[\\\"\\\']modo[\\\"\\\'][^>]*value=[\\\"\\\']([^\\\"\\\']*)',raw.decode('iso-8859-1',errors='replace'),re.I).group(1) if re.search(r'name=[\\\"\\\']modo[\\\"\\\'][^>]*value=[\\\"\\\']([^\\\"\\\']*)',raw.decode('iso-8859-1',errors='replace'),re.I) else 'unknown')
-          print('HTML elements:',dict(Counter(re.findall(r'<([a-z][a-z0-9]*)\\b',raw.decode('iso-8859-1',errors='replace'),re.I)).most_common(12)))
+          print('HTML elements:',dict(Counter(re.findall(r'<([a-z][a-z0-9]*)\b',raw.decode('iso-8859-1',errors='replace'),re.I)).most_common(12)))
 
-          print('Body classification:', {k:bool(re.search(v,body,re.I)) for k,v in {'booking_not_found':r'inesistent|non\\s+trovato','error':r'errore|error','form_prompt':r'inserire|ricerca|cerca|search','booking_echo':r'280630439','access_denied':r'accesso negato|login|password|captcha'}.items()})
+          print('Body classification:', {k:bool(re.search(v,body,re.I)) for k,v in {'booking_not_found':r'inesistent|non\s+trovato','error':r'errore|error','form_prompt':r'inserire|ricerca|cerca|search','booking_echo':r'280630439','access_denied':r'accesso negato|login|password|captcha'}.items()})
           print('Public TFG response bytes:',len(raw))
           for name,ok in checks.items(): print(name+':',ok)
           if not checks['title_export_booking'] or not checks['vessel_mv_salween'] or not checks['voyage_646w']:
