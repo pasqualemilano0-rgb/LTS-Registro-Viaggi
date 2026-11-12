@@ -13,6 +13,7 @@ const ACCESS=/^[A-Za-z0-9._-]{50,4096}$/;
 const REFRESH=/^[A-Za-z0-9._-]{8,4096}$/;
 let session=null;
 let refreshing=null;
+let bookingSessionVerification=null;
 let verified=false;
 let restoring=null,generation=0;
 let vaultQueue=Promise.resolve();
@@ -333,13 +334,30 @@ export async function verifySession(){
 /** Only an actively revalidated LTS session can authorize a booking lookup.
  * The caller must not persist, log, or pass the bearer token in URL parameters.
  */
+/** Booking-only verification: coalesce concurrent checks and retry one transient
+ * transport failure. Never retry refresh tokens, revoked sessions or MFA failures.
+ */
 export async function getVerifiedAccessToken(){
- await verifySession();
- if(!isVerified())throw new Error('Verifica amministratore necessaria.');
- const current=readStored();
- if(!current?.access_token)throw new Error('Effettua nuovamente l’accesso.');
- return current.access_token;
+ if(bookingSessionVerification)return bookingSessionVerification;
+ const task=(async()=>{
+  try{await verifySession();}
+  catch(error){
+   if(error?.serviceUnavailable!==true)throw error;
+   // Retry only the read-only session check. A rotating refresh token is never retried.
+   const current=readStored();
+   if(!current||current.expires_at<Date.now()+15000)throw error;
+   await new Promise(resolve=>setTimeout(resolve,350));
+   await verifySession();
+  }
+  if(!isVerified())throw new Error('Verifica amministratore necessaria.');
+  const current=readStored();
+  if(!current?.access_token)throw new Error('Effettua nuovamente l’accesso.');
+  return current.access_token;
+ })();
+ bookingSessionVerification=task;
+ try{return await task;}finally{if(bookingSessionVerification===task)bookingSessionVerification=null;}
 }
+
 /** Authenticated Realtime channels receive ONLY change hints.
  * Tokens are returned in memory to the socket transport, never to URLs or logs.
  * Expiring tokens are rotated using the existing session checks.
