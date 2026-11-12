@@ -30,8 +30,10 @@ jobs:
           command: |
             set -eu
             node --check account-access.mjs
+            node --check porti-access.mjs
             node --check porti/app.js
             node --check porti/tfg_booking.mjs
+            node --test tests/test_porti_maintenance.mjs tests/leaked-password-protection.test.mjs
             node --test tests/qa-driver-refresh-vault-freshness.test.mjs tests/qa-tfg-auth-network-session-retry.test.mjs tests/qa-tfg-booking-stage-diagnostics.test.mjs tests/qa-tfg-booking-offline-diagnostics.test.mjs tests/qa-porti-android-auth-transport-diagnostics.test.mjs tests/qa-account-release.test.mjs tests/qa-regression-contract.test.mjs tests/qa-no-auto-publish.test.mjs
 
   snapshot-publisher-contract:
