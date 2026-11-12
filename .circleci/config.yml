@@ -1,5 +1,5 @@
 version: 2.1
-# Offline regression only: no secrets, production API calls, or deployments.
+# Full offline QA parity with former GitHub full-qa: no secrets, production writes, or deployments.
 workflows:
   essential-offline:
     jobs:
@@ -18,8 +18,9 @@ jobs:
           name: Essential offline regression
           command: |
             set -eu
-            node --test tests/qa-trip-editor-safety.test.mjs tests/qa-realtime.test.mjs tests/qa-porti-stale-cache.test.mjs tests/driver-session-vault.test.mjs tests/qa-foreground-resume.test.mjs
-            node --test tests/qa-lts-cloudflare-uptime.test.mjs
+            find . -type f -name '*.mjs' ! -path './node_modules/*' -print0 | xargs -0 -n 1 node --check
+            node --check sw.js
+            node --test tests/*.test.mjs
 
   booking-auth-transport:
     docker:
@@ -51,8 +52,7 @@ jobs:
           command: |
             set -eu
             python -m py_compile scripts/refresh_porti_from_worker.py scripts/check_public_snapshot_freshness.py
-            python -m unittest discover -s tests -p 'test_refresh_porti_from_worker.py' -v
-            python -m unittest discover -s tests -p 'test_public_snapshot_freshness.py' -v
+            python -m unittest discover -s tests -p 'test_*.py' -v
 
   cloudflare-publisher-contract:
     docker:
