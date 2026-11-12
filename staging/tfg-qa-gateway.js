@@ -11,7 +11,7 @@ if(url.pathname==='/diag/auth-reachability'&&request.method==='GET'){
   const limited=await TFG_CLIENT_LIMIT.limit({key:'diag:'+ (request.headers.get('CF-Connecting-IP')||'unknown')});
   if(!limited.success)return respond(429,{error:'RATE_LIMITED'},origin);
   try{
-    const response=await fetch(AUTH,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+ 'x'.repeat(80),'Origin':ORIGIN},body:JSON.stringify({action:'session'}),redirect:'error',signal:AbortSignal.timeout(8000)});
+    const response=await fetch(AUTH,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+ 'x'.repeat(80),'Origin':ORIGIN},body:JSON.stringify({action:'session'}),redirect:'manual',signal:AbortSignal.timeout(8000)});
     return respond(200,{mode:'QA_DIAGNOSTIC_ONLY',auth_http_status:response.status,expected_rejection:response.status===401},origin);
   }catch(error){
     return respond(503,{mode:'QA_DIAGNOSTIC_ONLY',error:'AUTH_TRANSPORT_FAILURE',exception_name:String(error?.name||'unknown').slice(0,40),exception_message:String(error?.message||'unknown').slice(0,120)},origin);
@@ -26,7 +26,7 @@ const ip=request.headers.get('CF-Connecting-IP')||'unknown';const client=await T
 if(!client.success||!global.success)return respond(429,{error:'RATE_LIMITED'},origin);
 const bearer=request.headers.get('Authorization')||'';
 if(!/^Bearer [A-Za-z0-9._-]{50,4096}$/.test(bearer))return respond(401,{error:'SESSION_REQUIRED'},origin);
-let verified;try{const res=await fetch(AUTH,{method:'POST',headers:{'Content-Type':'application/json','Authorization':bearer,'Origin':ORIGIN},body:JSON.stringify({action:'session'}),redirect:'error',signal:AbortSignal.timeout(5000)});if(!res.ok)return respond(res.status===403?403:401,{error:'SESSION_REJECTED'},origin);verified=await res.json()}catch{return respond(503,{error:'QA_AUTH_UNAVAILABLE'},origin)}
+let verified;try{const res=await fetch(AUTH,{method:'POST',headers:{'Content-Type':'application/json','Authorization':bearer,'Origin':ORIGIN},body:JSON.stringify({action:'session'}),redirect:'manual',signal:AbortSignal.timeout(5000)});if(!res.ok)return respond(res.status===403?403:401,{error:'SESSION_REJECTED'},origin);verified=await res.json()}catch{return respond(503,{error:'QA_AUTH_UNAVAILABLE'},origin)}
 if(verified?.active!==true||!verified.user_id||!['driver','admin'].includes(verified.role))return respond(403,{error:'ACCOUNT_DENIED'},origin);
 if(verified.role==='admin'&&verified.mfa_verified!==true)return respond(403,{error:'MFA_REQUIRED'},origin);
 return respond(503,{error:'QA_BOOKING_UPSTREAM_DISABLED',authenticated:true},origin);
