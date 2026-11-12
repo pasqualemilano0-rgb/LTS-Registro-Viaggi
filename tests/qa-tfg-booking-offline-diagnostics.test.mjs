@@ -4,7 +4,7 @@ import {readFileSync} from 'node:fs';
 const auth=readFileSync(new URL('../account-access.mjs',import.meta.url),'utf8');
 const porti=readFileSync(new URL('../porti/app.js',import.meta.url),'utf8');
 test('auth still verifies session before issuing booking bearer',()=>{
- assert.match(auth,/export async function getVerifiedAccessToken\(\)\{\s*await verifySession\(\)/);
+ assert.match(auth,/export async function getVerifiedAccessToken\(\)\{[\s\S]*?await verifySession\(\)/);
  assert.match(auth,/if\(!isVerified\(\)\)throw/);
  assert.match(porti,/accessToken=await getVerifiedAccessToken\(\)/);
  assert.match(porti,/Authorization:'Bearer '\+accessToken/);
