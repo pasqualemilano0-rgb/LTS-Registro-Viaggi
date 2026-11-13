@@ -99,6 +99,26 @@ export function generateMonthlyPdf({ state, month, logoDataUrl, jsPDF = globalTh
     columnStyles: Object.fromEntries(widths.map((width, index) => [index, { cellWidth: width, ...(index === 1 ? { fontStyle: 'bold' } : {}) }])),
     willDrawPage: drawHeader,
   });
+  // Only explicitly designated administrative notes appear after the trip table.
+  // Existing private trip.note values and all monetary data remain excluded.
+  const adminNotes = monthlyTrips(state, month)
+    .filter(trip => typeof trip.adminNote === 'string' && trip.adminNote.trim())
+    .sort((a, b) => a.date.localeCompare(b.date) || String(a.createdAt ?? '').localeCompare(String(b.createdAt ?? '')))
+    .map(trip => [
+      [displayDate(trip.date), trip.container, trip.secondCity ? `${trip.city} / ${trip.secondCity}` : trip.city,
+        trip.secondClient ? `${trip.client} / ${trip.secondClient}` : trip.client].join(' - ') + ' = ' + trip.adminNote
+    ]);
+  if (adminNotes.length) {
+    const y = (doc.lastAutoTable?.finalY ?? tableTop) + 10;
+    doc.autoTable({
+      startY: y, margin: { top: tableTop, right: 11, bottom: 15, left: 11 },
+      head: [['NOTE PER L\'AMMINISTRAZIONE']], body: adminNotes,
+      theme: 'grid', showHead: 'everyPage', rowPageBreak: 'avoid',
+      styles: { font: 'helvetica', fontSize: 8.5, cellPadding: 2.5, overflow: 'linebreak', textColor: '#203942', lineColor: '#dbe5e9' },
+      headStyles: { fillColor: '#007e96', textColor: '#ffffff', fontStyle: 'bold' },
+      willDrawPage: drawHeader,
+    });
+  }
   const pages = doc.getNumberOfPages();
   for (let page = 1; page <= pages; page++) {
     doc.setPage(page);

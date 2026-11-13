@@ -134,6 +134,11 @@ export function validateTrip(input) {
     if ((input.note?.length ?? 0) > 2000 || draft.note.length > 2000 || /[\u0000-\u0008\u000b\u000c\u000e-\u001f]/u.test(input.note ?? ''))
       throw new Error('Nota: usa al massimo 2000 caratteri validi.');
   } catch (error) { errors.note = error.message; }
+  try {
+    if (input.adminNote !== undefined && typeof input.adminNote !== 'string') throw new Error('Nota amministrazione: testo non valido.');
+    draft.adminNote = normalizeNote(input.adminNote);
+    if ((input.adminNote?.length ?? 0) > 2000 || draft.adminNote.length > 2000 || /[\u0000-\u0008\u000b\u000c\u000e-\u001f]/u.test(input.adminNote ?? '')) throw new Error('Nota amministrazione: massimo 2000 caratteri validi.');
+  } catch (error) { errors.adminNote = error.message; }
   return { valid: Object.keys(errors).length === 0, errors, value: draft };
 }
 
@@ -150,7 +155,7 @@ function newId() {
 }
 
 export function createTrip(input, state, existing = null) {
-  const validation = validateTrip(existing && !Object.hasOwn(input, 'note') ? { ...input, note: existing.note } : input);
+  const validation = validateTrip({ ...input, ...((existing && !Object.hasOwn(input, 'note')) ? { note: existing.note } : {}), ...((existing && !Object.hasOwn(input, 'adminNote')) ? { adminNote: existing.adminNote } : {}) });
   if (!validation.valid) {
     const error = new Error(Object.values(validation.errors)[0]);
     error.errors = validation.errors;
