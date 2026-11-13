@@ -724,6 +724,11 @@ function renderInsert(main){
    const clients=[{name:trip.client,city:trip.city},...(trip.secondClient?[{name:trip.secondClient,city:trip.secondCity}]:[])];
    for(const customer of clients)if(!next.customers.some(c=>c.name===customer.name))next=D.upsertCustomer(next,customer);
    await persist(next);
+   const persistedTrip=state.trips.find(saved=>saved.id===trip.id);
+   if((persistedTrip?.adminNote||'')!==trip.adminNote){
+    keepEditorScratchpad();
+    throw new Error('La nota per amministrazione non è stata conservata dal registro sincronizzato. La bozza resta disponibile: non considerare il viaggio aggiornato e non generare il PDF finché il problema non è risolto.');
+   }
    const pending=store.getSyncInfo?.().pending;
    const savedDate=draft.date;
    month=savedDate.slice(0,7);registerQuery='';registerFilter='all';registerLimit=REGISTER_PAGE_SIZE;
@@ -778,7 +783,7 @@ function autofillCity(client,city){if(!city.value.trim()){const normalized=D.nor
 function editTrip(trip,{focusNote=false}={}){
  const apply=()=>{
   editingId=trip.id;editingBaseline=tripEditVersion(trip);
-  draft={...trip,services:[...trip.services],second:Boolean(trip.secondClient||trip.secondCity),note:trip.note||'',adminNote:trip.adminNote||'',noteOpen:focusNote||Boolean(trip.note),servicesOpen:true};
+  draft={...trip,services:[...trip.services],second:Boolean(trip.secondClient||trip.secondCity),note:trip.note||'',adminNote:trip.adminNote||'',noteOpen:focusNote||Boolean(trip.note||trip.adminNote),servicesOpen:true};
   keepEditorScratchpad();navigate('insert',{keepDraft:true});
   if(focusNote)document.querySelector('#trip-note')?.focus();
  };
@@ -814,6 +819,7 @@ function tripCard(trip,amountContext){
    : D.formatMoney(trip.extraCents?.[key]);
   return el('span',{class:'mini-chip'},label,' · ',value);
  })));
+ if(trip.adminNote)card.append(el('p',{class:'trip-note-summary'},el('span',{class:'trip-note-prefix'},'Nota amministrazione:'),el('span',{class:'trip-note-text'},'Presente nel PDF mensile')));
  if(trip.note)card.append(el('p',{class:'trip-note-summary'},el('span',{class:'trip-note-prefix'},'Nota:'),el('span',{class:'trip-note-text',title:trip.note},trip.note)));
  else card.append(el('button',{type:'button',class:'trip-option trip-note-add','aria-label':`INSERISCI NOTA · ${trip.container} · ${formatDate(trip.date)}`,on:{click:()=>editTrip(trip,{focusNote:true})}},el('span',{class:'plus-disc','aria-hidden':'true'},'+'),'INSERISCI NOTA'));
  if(saturday.status!=='none')card.append(el('p',{class:'saturday-note',dataset:{saturdayStatus:saturday.status}},saturdayNoteText(saturday.status)));
