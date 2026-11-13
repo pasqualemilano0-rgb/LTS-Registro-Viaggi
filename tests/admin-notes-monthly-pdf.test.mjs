@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {emptyState,createTrip,validateState,validateTrip} from '../shared/domain.mjs';
 import {reportRows} from '../shared/pdf.mjs';
+import {tripDraftHasWork,restoreTripEditorSnapshot,TRIP_DRAFT_VERSION} from '../shared/trip-editor-safety.mjs';
 
 const base={date:'2026-11-13',client:'ALFA',city:'SALERNO',container:'MSCU1234567',services:[],note:'NOTA PRIVATA',adminNote:'ATTESA 2 ORE'};
 test('trip notes and administrative notes persist independently',()=>{
@@ -21,4 +22,11 @@ test('invalid administrative note is rejected without changing private notes',()
  assert.equal(validateTrip({...base,adminNote:7}).valid,false);
  assert.equal(validateTrip({...base,adminNote:'X'.repeat(2001)}).valid,false);
  assert.equal(validateTrip({...base,adminNote:''}).value.note,'NOTA PRIVATA');
+});
+
+test('administrative-only draft survives recovery',()=>{
+ const draft={...base,container:'',client:'',city:'',note:'',adminNote:'NOTA SOLO ADMIN'};
+ assert.equal(tripDraftHasWork(draft,null,'2026-11-13'),true);
+ const restored=restoreTripEditorSnapshot({version:TRIP_DRAFT_VERSION,draft},[]);
+ assert.equal(restored.draft.adminNote,'NOTA SOLO ADMIN');
 });
