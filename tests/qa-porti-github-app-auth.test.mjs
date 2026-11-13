@@ -28,6 +28,15 @@ test('GitHub App JWT is correctly RS256 signed and installation token is reposit
  assert.equal(token,'installation-token-valid-12345');
  assert.equal(called,1);
 });
+test('GitHub App accepts downloaded PKCS#1 RSA private keys',async()=>{
+ const pkcs1=privateKey.export({type:'pkcs1',format:'pem'});
+ const token=await appInstallationToken({...env,GITHUB_APP_PRIVATE_KEY:pkcs1},{fetcher:async(_url,opts)=>{
+   const jwt=opts.headers.Authorization.slice(7).split('.');
+   assert.equal(verify('RSA-SHA256',Buffer.from(jwt[0]+'.'+jwt[1]),publicKey,Buffer.from(jwt[2],'base64url')),true);
+   return {ok:true,redirected:false,status:201,text:async()=>JSON.stringify({token:'installation-token-valid-12345'})};
+ }});
+ assert.equal(token,'installation-token-valid-12345');
+});
 test('GitHub App accepts escaped PEM newlines',async()=>{
  const token=await appInstallationToken({...env,GITHUB_APP_PRIVATE_KEY:pem.replace(/\n/g,'\\n')},{fetcher:async()=>({ok:true,redirected:false,status:201,text:async()=>JSON.stringify({token:'installation-token-valid-12345'})})});
  assert.equal(token,'installation-token-valid-12345');
