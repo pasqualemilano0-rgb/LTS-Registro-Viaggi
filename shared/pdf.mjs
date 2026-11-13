@@ -113,13 +113,9 @@ export function generateMonthlyPdf({ state, month, logoDataUrl, jsPDF = globalTh
   if (adminNotes.length) {
     // Compact two-column note cards preserve the existing LTS PDF palette.
     // A note is never truncated: autoTable may continue onto another page.
-    const noteCards = adminNotes.map(([date, container, city, client, note]) =>
-      `${date} · ${container}\n${city} · ${client}\nNota: ${note}`);
-    const cardRows = [];
+    const noteCards = adminNotes.map(([date, container, city, client, note]) => ({ date, container, city, client, note }));
     const leftCount = Math.ceil(noteCards.length / 2);
-    for (let index = 0; index < leftCount; index++) {
-      cardRows.push([noteCards[index], noteCards[index + leftCount] ?? '']);
-    }
+    const cardRows = Array.from({ length: leftCount }, (_, index) => [noteCards[index], noteCards[index + leftCount] ?? null]);
     const previousTableEnd = doc.lastAutoTable?.finalY ?? tableTop;
     const titleY = previousTableEnd + 6;
     // Keep the title with its first card when the main table fills a page.
@@ -128,7 +124,7 @@ export function generateMonthlyPdf({ state, month, logoDataUrl, jsPDF = globalTh
       startY,
       margin: { top: tableTop + 8, right: 11, bottom: 15, left: 11 },
       head: [['NOTE PER L\'AMMINISTRAZIONE', '']],
-      body: cardRows,
+      body: cardRows.map(row => row.map(() => '')),
       theme: 'grid', showHead: 'firstPage', rowPageBreak: 'avoid',
       styles: {
         font: 'helvetica', fontSize: 6.4,
@@ -142,9 +138,36 @@ export function generateMonthlyPdf({ state, month, logoDataUrl, jsPDF = globalTh
       },
       columnStyles: { 0: { cellWidth: 94 }, 1: { cellWidth: 94 } },
       didParseCell: data => {
-        if (data.section === 'head' && data.column.index === 1) {
-          data.cell.text = [];
-        }
+        if (data.section === 'head' && data.column.index === 1) data.cell.text = [];
+        if (data.section !== 'body') return;
+        const card = cardRows[data.row.index]?.[data.column.index];
+        if (!card) return;
+        doc.setFontSize(7);
+        const placeLines = doc.splitTextToSize(`${card.city} · ${card.client}`, 90);
+        const noteLines = doc.splitTextToSize(`Nota: ${card.note}`, 90);
+        data.cell.styles.minCellHeight = Math.max(11, 4 + 3.1 + placeLines.length * 2.8 + noteLines.length * 3.2);
+      },
+      didDrawCell: data => {
+        if (data.section !== 'body') return;
+        const card = cardRows[data.row.index]?.[data.column.index];
+        if (!card) return;
+        const x = data.cell.x + 1.7;
+        let y = data.cell.y + 3.1;
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(7.4);
+        doc.setTextColor('#173846');
+        doc.text(`${card.date} · ${card.container}`, x, y);
+        y += 3.1;
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(6.4);
+        doc.setTextColor('#203942');
+        const placeLines = doc.splitTextToSize(`${card.city} · ${card.client}`, 90);
+        doc.text(placeLines, x, y);
+        y += placeLines.length * 2.8;
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(7.2);
+        doc.setTextColor('#006c82');
+        doc.text(doc.splitTextToSize(`Nota: ${card.note}`, 90), x, y);
       },
       willDrawPage: drawHeader,
     });
