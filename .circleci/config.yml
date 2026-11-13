@@ -7,6 +7,17 @@ workflows:
       - booking-auth-transport
       - snapshot-publisher-contract
       - cloudflare-publisher-contract
+  # Browser tests run only on explicitly selected review/release branches.
+  # Important: main receives automated Porti data commits every 30 minutes.
+  # Do not schedule medium Docker Playwright on each data(porti) update.
+  browser-release-parity:
+    jobs:
+      - browser-report-parity:
+          filters:
+            branches:
+              only:
+                - /ci\/browser-parity-.*/
+                - /release\/.*/
 jobs:
   webapp-regression:
     docker:
@@ -68,3 +79,52 @@ jobs:
             node --check cloudflare/public-snapshot-publisher/index.mjs
             node --test tests/qa-porti-cloudflare-direct-publisher.test.mjs
             node --input-type=module -e "import {readFileSync} from 'node:fs';import assert from 'node:assert/strict';const cfg=JSON.parse(readFileSync('cloudflare/public-snapshot-publisher/wrangler.jsonc'));assert.equal(cfg.vars.PUBLISH_ENABLED,'no');assert.deepEqual(cfg.triggers.crons,[]);assert.ok(cfg.kv_namespaces.some(x=>x.binding==='SCHEDULES_KV'))"
+
+  browser-report-parity:
+    # Single medium Docker job: shared pinned browser image, Chromium then WebKit.
+    # No macOS VM, production login, write operations, or user data.
+    docker:
+      - image: mcr.microsoft.com/playwright:v1.56.1-noble@sha256:42f02d323c310069b4d54c94bd91a608966a486c3492c48ae0b1cea747ec5ca2
+    resource_class: medium
+    steps:
+      - checkout
+      - run:
+          name: Install matching, fixed Playwright Node package
+          command: |
+            set -eu
+            mkdir -p "$HOME/lts-playwright"
+            npm install --prefix "$HOME/lts-playwright" --no-save --no-package-lock playwright@1.56.1
+            LTS_BROWSER_PLAYWRIGHT="$HOME/lts-playwright" node -e "const fs=require('node:fs');const p=require(process.env.LTS_BROWSER_PLAYWRIGHT+'/node_modules/playwright');for(const b of ['chromium','webkit'])if(!fs.existsSync(p[b].executablePath()))throw Error('Pinned browser missing: '+b);"
+      - run:
+          name: Chromium mobile, admin PWA, outbox and IndexedDB
+          command: |
+            set -eu
+            export LTS_BROWSER_PLAYWRIGHT="$HOME/lts-playwright"
+            mkdir -p browser-evidence
+            node tests/company-report-browser.mjs
+            LTS_CONTROL_REPORT="$PWD/browser-evidence/control-center-chromium.json" node tests/control-center-browser.mjs
+            node tests/qa-register-browser.mjs
+            node tests/qa-offline-worker-browser.mjs
+            node tests/qa-admin-installable-browser.mjs
+            node tests/qa-offline-store-browser.mjs
+            node tests/qa-store-cas-browser.mjs
+      - run:
+          name: Safari WebKit mobile, offline and account isolation
+          command: |
+            set -eu
+            export LTS_BROWSER_PLAYWRIGHT="$HOME/lts-playwright"
+            export LTS_BROWSER_ENGINE=webkit
+            mkdir -p browser-evidence
+            node tests/company-report-browser.mjs
+            LTS_CONTROL_REPORT="$PWD/browser-evidence/control-center-webkit.json" node tests/control-center-browser.mjs
+            node tests/qa-register-browser.mjs
+            node tests/qa-offline-store-browser.mjs
+            node tests/qa-store-cas-browser.mjs
+      - run:
+          name: Read-only production company report CORS and JWT boundary
+          command: |
+            set -eu
+            node tests/qa-report-production-http-smoke.mjs
+      - store_artifacts:
+          path: browser-evidence
+          destination: lts-browser-synthetic-evidence
