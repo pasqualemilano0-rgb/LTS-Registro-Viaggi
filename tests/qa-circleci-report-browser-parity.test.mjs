@@ -41,11 +41,12 @@ test('Read-only production smoke and synthetic evidence remain',()=>{
   assert.match(browser,/store_artifacts:/);
   assert.match(browser,/lts-browser-synthetic-evidence/);
 });
-test('Expensive browser job does not start on every main Porti data commit',()=>{
+test('Expensive browser job excludes main, filters review branches by changed files',()=>{
   const workflow=circle.split('  browser-release-parity:\n')[1].split('\njobs:\n')[0];
   assert.match(workflow,/browser-report-parity:/);
-  assert.match(workflow,/branches:\n\s+only:/);
-  assert.match(workflow,/ci\\\/browser-parity/);
-  assert.match(workflow,/release\\\//);
-  assert.doesNotMatch(workflow,/^\s+- main\s*$/m);
+  assert.match(workflow,/branches:\n\s+ignore:\n\s+- main/);
+  assert.doesNotMatch(workflow,/branches:\n\s+only:/);
+  assert.match(browser,/node scripts\/ci-browser-change-gate\.mjs/);
+  assert.match(browser,/circleci-agent step halt/);
+  assert.ok(browser.indexOf('name: Skip non-app changes')<browser.indexOf('name: Install matching'));
 });
