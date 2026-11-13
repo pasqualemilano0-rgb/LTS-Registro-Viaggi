@@ -111,17 +111,17 @@ export function generateMonthlyPdf({ state, month, logoDataUrl, jsPDF = globalTh
       trip.adminNote,
     ]);
   if (adminNotes.length) {
-    const y = (doc.lastAutoTable?.finalY ?? tableTop) + 14;
+    const y = (doc.lastAutoTable?.finalY ?? tableTop) + 11;
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(9);
+    doc.setFontSize(8);
     doc.setTextColor('#173846');
-    doc.text('NOTE PER L\'AMMINISTRAZIONE', 11, y - 4);
+    doc.text('NOTE PER L\'AMMINISTRAZIONE', 11, y - 3);
     doc.autoTable({
       startY: y, margin: { top: tableTop, right: 11, bottom: 15, left: 11 },
       head: [['DATA', 'CONTAINER', 'CITTÀ', 'CLIENTE', 'NOTA']], body: adminNotes,
       theme: 'grid', showHead: 'everyPage', rowPageBreak: 'avoid',
-      styles: { font: 'helvetica', fontSize: 8, cellPadding: { top: 1.6, bottom: 1.6, left: 2, right: 2 }, overflow: 'linebreak', textColor: '#203942', lineColor: '#dbe5e9', lineWidth: 0.15, valign: 'top', minCellHeight: 6.5 },
-      headStyles: { fillColor: '#007e96', textColor: '#ffffff', fontStyle: 'bold', fontSize: 8, cellPadding: 2 },
+      styles: { font: 'helvetica', fontSize: 7, cellPadding: { top: 1, bottom: 1, left: 1.5, right: 1.5 }, overflow: 'linebreak', textColor: '#203942', lineColor: '#dbe5e9', lineWidth: 0.15, valign: 'top', minCellHeight: 5 },
+      headStyles: { fillColor: '#007e96', textColor: '#ffffff', fontStyle: 'bold', fontSize: 7, cellPadding: 1.5 },
       alternateRowStyles: { fillColor: '#f4f8fa' },
       columnStyles: Object.fromEntries(widths.map((width, index) => [index, { cellWidth: width, ...(index === 1 ? { fontStyle: 'bold' } : {}) }])),
       willDrawPage: drawHeader,
