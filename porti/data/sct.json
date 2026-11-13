@@ -1,7 +1,7 @@
 {
   "source": "https://www.salernocontainerterminal.com/ca/an/vessel_schedule.php",
   "source_updated_at": null,
-  "acquired_at": "2026-11-13T09:30:17.128Z",
+  "acquired_at": "2026-11-13T10:00:16.807Z",
   "rows": [
     {
       "vessel": "MIRIAM BORCHARD",
@@ -157,15 +157,6 @@
       "status": "PENDING"
     },
     {
-      "vessel": "OYKU A",
-      "voyage": "535",
-      "eta": "17/11/2026 00:00",
-      "closing": "16/11/2026 17:00",
-      "acceptance_dry": "CARGO ACCEPTED",
-      "acceptance_reef": "CARGO ACCEPTED",
-      "status": "PENDING"
-    },
-    {
       "vessel": "XIN NAN TONG",
       "voyage": "644N",
       "eta": "17/11/2026 00:00",
@@ -220,6 +211,15 @@
       "status": "PENDING"
     },
     {
+      "vessel": "OYKU A",
+      "voyage": "535",
+      "eta": "19/11/2026 00:00",
+      "closing": "16/11/2026 17:00",
+      "acceptance_dry": "CARGO ACCEPTED",
+      "acceptance_reef": "CARGO ACCEPTED",
+      "status": "PENDING"
+    },
+    {
       "vessel": "MAERSK IDAHO",
       "voyage": "646W",
       "eta": "20/11/2026 00:00",
@@ -247,6 +247,6 @@
       "status": "PENDING"
     }
   ],
-  "updated_at": "2026-11-13T09:30:17.128Z",
-  "data_changed_at": "2026-11-13T08:45:16.756Z"
+  "updated_at": "2026-11-13T10:00:16.807Z",
+  "data_changed_at": "2026-11-13T10:00:16.807Z"
 }
