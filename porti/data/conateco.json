@@ -1,7 +1,7 @@
 {
   "source": "https://api.conateco.it/ConatecoServicesApi/BerthForecast",
   "source_updated_at": null,
-  "acquired_at": "2026-11-13T03:00:17.008Z",
+  "acquired_at": "2026-11-13T03:30:16.986Z",
   "rows": [
     {
       "vessel": "JAN",
