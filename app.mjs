@@ -120,7 +120,7 @@ window.addEventListener('appinstalled',()=>{installPrompt=null;document.querySel
 standaloneMode.addEventListener?.('change',updateInstallButtons);
 const tabs = [{id:'insert',label:'Inserisci viaggio',icon:'addTrip'},{id:'register',label:'Registro viaggi',icon:'calendar'},{id:'customers',label:'Clienti',icon:'users'},{id:'tariffs',label:'Tariffe',icon:'wallet'},{id:'porti',label:'Porti',icon:'ship'}];
 
-function newDraft() { return {date:today(),client:'',city:'',container:'',secondClient:'',secondCity:'',services:[],second:false,note:'',noteOpen:false,servicesOpen:false}; }
+function newDraft() { return {date:today(),client:'',city:'',container:'',secondClient:'',secondCity:'',services:[],second:false,note:'',adminNote:'',noteOpen:false,servicesOpen:false}; }
 const editorVersion = value => JSON.stringify(value ?? null);
 function requireCurrentEditor(expected,current,label){
  if(expected!==editorVersion(current))throw new Error(`${label} è stato aggiornato o eliminato su un altro dispositivo. I dati del modulo sono conservati: chiudi e riapri la scheda aggiornata prima di salvare.`);
@@ -129,7 +129,7 @@ function tripEditVersion(trip) {
  if(!trip)return null;
  // Prices and timestamps may change as linked tariffs refresh. Only the
  // journey's editable/business fields invalidate an already open edit form.
- return JSON.stringify([trip.date,trip.container,trip.client,trip.city,trip.secondClient,trip.secondCity,trip.sumPickupFares,D.SERVICES.filter(service=>trip.services.includes(service.key)).map(service=>service.key),trip.note||'']);
+ return JSON.stringify([trip.date,trip.container,trip.client,trip.city,trip.secondClient,trip.secondCity,trip.sumPickupFares,D.SERVICES.filter(service=>trip.services.includes(service.key)).map(service=>service.key),trip.note||'',trip.adminNote||'']);
 }
 function el(tag, attrs={}, ...children) {
   const node=document.createElement(tag);
@@ -633,6 +633,10 @@ function renderInsert(main){
  const noteSymbol=el('span',{class:'plus-disc','aria-hidden':'true'},draft.noteOpen?'−':'+');
  const noteToggle=el('button',{type:'button',class:'trip-option','aria-expanded':String(Boolean(draft.noteOpen)),'aria-controls':'trip-note-editor',on:{click:()=>{collect();draft.noteOpen=!draft.noteOpen;noteEditor.hidden=!draft.noteOpen;noteToggle.setAttribute('aria-expanded',String(draft.noteOpen));noteSymbol.textContent=draft.noteOpen?'−':'+';keepEditorScratchpad();if(draft.noteOpen)noteInput.focus();}}},icon('edit'),el('span',{class:'tile-label'},'INSERISCI NOTA'),noteSymbol);
  options.append(noteToggle);form.append(noteEditor);
+ const adminNoteInput=el('textarea',{id:'trip-admin-note',name:'adminNote',value:draft.adminNote||'',maxlength:2000,rows:3,autocapitalize:'characters',spellcheck:'false',placeholder:'Comunicazione per il PDF mensile'});
+ const adminNoteEditor=el('section',{class:'trip-note-editor'},el('label',{class:'field-label',for:'trip-admin-note'},'Nota per amministrazione',el('span',{class:'optional'},'Facoltativa')),adminNoteInput,el('p',{class:'trip-note-help'},'Compare solo in fondo al PDF mensile, separata dalla nota viaggio.'));
+ form.append(adminNoteEditor);
+ adminNoteInput.addEventListener('input',()=>{collect();keepEditorScratchpad();});
  noteInput.addEventListener('input',()=>{const start=noteInput.selectionStart,end=noteInput.selectionEnd;const upper=noteInput.value.toLocaleUpperCase('it-IT');if(upper!==noteInput.value){noteInput.value=upper;noteInput.setSelectionRange(start,end);}collect();keepEditorScratchpad();});
  const servicesSymbol=el('span',{class:'plus-disc','aria-hidden':'true'},draft.servicesOpen?'−':'+');
  const servicesToggle=el('button',{type:'button',class:'trip-option','aria-expanded':String(Boolean(draft.servicesOpen)),'aria-controls':'trip-services',on:{click:()=>{collect();draft.servicesOpen=!draft.servicesOpen;services.hidden=!draft.servicesOpen;servicesToggle.setAttribute('aria-expanded',String(draft.servicesOpen));servicesSymbol.textContent=draft.servicesOpen?'−':'+';keepEditorScratchpad();}}},icon('sliders'),el('span',{class:'tile-label'},'Servizi extra'),servicesSymbol);
@@ -649,8 +653,8 @@ function renderInsert(main){
  const save=el('button',{type:'submit',class:'primary-button full','data-save':true},icon('check'),editingId?'Salva modifiche':'Salva viaggio');
  const draftStatus=el('p',{id:'trip-draft-state',class:'trip-draft-state',role:'status','aria-live':'polite'},'Le modifiche vengono conservate sul dispositivo durante la compilazione.');
  const syncDetail=el('p',{id:'trip-save-hint',class:'trip-save-hint',role:'status','aria-live':'polite'});
- form.append(save,draftStatus,syncDetail,el('p',{class:'privacy-footnote'},icon('lock'),'Tariffe e note restano nell’app, mai nel PDF.'));
- function collect(){draft={date:date.input.value,container:container.input.value,client:client.input.value,city:city.input.value,secondClient:secondClient?.input.value||'',secondCity:secondCity?.input.value||'',services:[...form.querySelectorAll('[name=service]:checked')].map(n=>n.value).concat(retiredReeferInEdit?['reefer']:[]),second:draft.second,note:noteInput.value,noteOpen:Boolean(draft.noteOpen),servicesOpen:Boolean(draft.servicesOpen)};}
+ form.append(save,draftStatus,syncDetail,el('p',{class:'privacy-footnote'},icon('lock'),'Le note viaggio restano private; solo le note per amministrazione sono riportate nel PDF.'));
+ function collect(){draft={date:date.input.value,container:container.input.value,client:client.input.value,city:city.input.value,secondClient:secondClient?.input.value||'',secondCity:secondCity?.input.value||'',services:[...form.querySelectorAll('[name=service]:checked')].map(n=>n.value).concat(retiredReeferInEdit?['reefer']:[]),second:draft.second,note:noteInput.value,adminNote:adminNoteInput.value,noteOpen:Boolean(draft.noteOpen),servicesOpen:Boolean(draft.servicesOpen)};}
  let missingEstimateTariffs=false;
  function updateEstimate(){
   collect();
@@ -774,7 +778,7 @@ function autofillCity(client,city){if(!city.value.trim()){const normalized=D.nor
 function editTrip(trip,{focusNote=false}={}){
  const apply=()=>{
   editingId=trip.id;editingBaseline=tripEditVersion(trip);
-  draft={...trip,services:[...trip.services],second:Boolean(trip.secondClient||trip.secondCity),note:trip.note||'',noteOpen:focusNote||Boolean(trip.note),servicesOpen:true};
+  draft={...trip,services:[...trip.services],second:Boolean(trip.secondClient||trip.secondCity),note:trip.note||'',adminNote:trip.adminNote||'',noteOpen:focusNote||Boolean(trip.note),servicesOpen:true};
   keepEditorScratchpad();navigate('insert',{keepDraft:true});
   if(focusNote)document.querySelector('#trip-note')?.focus();
  };
