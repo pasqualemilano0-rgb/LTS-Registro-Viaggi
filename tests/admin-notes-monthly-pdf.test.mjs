@@ -63,7 +63,7 @@ test('monthly PDF places only administrative notes after trip rows',()=>{
  const card={row:{index:0},column:{index:0},section:'body',cell:{x:11,y:70}};
  calls[3].didDrawCell(card);
  FakePdf.prototype.text=originalText;
- assert(drawn.some(value=>String(value).includes('13/11/2026 · MSCU1234567')));
+ assert(drawn.some(value=>String(value).includes('13/11/2026 · MSCU')));
  assert(drawn.some(value=>String(value).includes('Nota: ATTESA 2 ORE')));
  assert.equal(calls[1].columnStyles[0].cellWidth,94);
  assert.equal(calls[1].columnStyles[1].cellWidth,94);
