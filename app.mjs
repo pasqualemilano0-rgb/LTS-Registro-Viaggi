@@ -635,7 +635,7 @@ function renderInsert(main){
  options.append(noteToggle);form.append(noteEditor);
  const adminNoteInput=el('textarea',{id:'trip-admin-note',name:'adminNote',value:draft.adminNote||'',maxlength:2000,rows:3,autocapitalize:'characters',spellcheck:'false',placeholder:'Comunicazione per il PDF mensile'});
  const adminNoteEditor=el('section',{class:'trip-note-editor'},el('label',{class:'field-label',for:'trip-admin-note'},'Nota per amministrazione',el('span',{class:'optional'},'Facoltativa')),adminNoteInput,el('p',{class:'trip-note-help'},'Compare solo in fondo al PDF mensile, separata dalla nota viaggio.'));
- form.append(adminNoteEditor);
+ noteEditor.append(adminNoteEditor);
  adminNoteInput.addEventListener('input',()=>{collect();keepEditorScratchpad();});
  noteInput.addEventListener('input',()=>{const start=noteInput.selectionStart,end=noteInput.selectionEnd;const upper=noteInput.value.toLocaleUpperCase('it-IT');if(upper!==noteInput.value){noteInput.value=upper;noteInput.setSelectionRange(start,end);}collect();keepEditorScratchpad();});
  const servicesSymbol=el('span',{class:'plus-disc','aria-hidden':'true'},draft.servicesOpen?'−':'+');
