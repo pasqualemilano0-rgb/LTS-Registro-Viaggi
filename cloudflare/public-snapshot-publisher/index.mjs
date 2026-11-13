@@ -110,12 +110,30 @@ async function github(path,{method='GET',body,token,fetcher=fetch}={}){
 function appConfigured(env){
   return !!(env?.GITHUB_APP_ID||env?.GITHUB_APP_INSTALLATION_ID||env?.GITHUB_APP_PRIVATE_KEY);
 }
+function derLength(n){
+  if(n<128)return Uint8Array.of(n);
+  const bytes=[];while(n){bytes.unshift(n&255);n>>>=8;}
+  return Uint8Array.of(128|bytes.length,...bytes);
+}
+function derTag(tag,data){
+  return Uint8Array.of(tag,...derLength(data.length),...data);
+}
 function pemBytes(pem){
-  requireTrue(typeof pem==='string' && pem.length<12000,'APP_PRIVATE_KEY_INVALID');
-  const clean=pem.replace(/\\n/g,'\n').replace(/-----BEGIN PRIVATE KEY-----|-----END PRIVATE KEY-----|\s/g,'');
+  requireTrue(typeof pem==='string'&&pem.length<12000,'APP_PRIVATE_KEY_INVALID');
+  const normalized=pem.replace(/\\n/g,'\n').trim();
+  const pkcs1=normalized.includes('-----BEGIN RSA PRIVATE KEY-----');
+  const header=pkcs1?'RSA PRIVATE KEY':'PRIVATE KEY';
+  requireTrue(normalized.includes('-----BEGIN '+header+'-----')&&normalized.includes('-----END '+header+'-----'),'APP_PRIVATE_KEY_INVALID');
+  const clean=normalized.replace(new RegExp('-----BEGIN '+header+'-----|-----END '+header+'-----|\\s','g'),'');
   requireTrue(/^[A-Za-z0-9+/=]+$/.test(clean),'APP_PRIVATE_KEY_INVALID');
-  try{return Uint8Array.from(atob(clean),c=>c.charCodeAt(0));}
+  let bytes;
+  try{bytes=Uint8Array.from(atob(clean),c=>c.charCodeAt(0));}
   catch{throw new PublishRejected('APP_PRIVATE_KEY_INVALID');}
+  if(!pkcs1)return bytes;
+  // GitHub App downloads commonly contain PKCS#1 RSA keys; WebCrypto requires PKCS#8.
+  const version=Uint8Array.of(2,1,0);
+  const algorithm=Uint8Array.of(0x30,0x0d,0x06,0x09,0x2a,0x86,0x48,0x86,0xf7,0x0d,0x01,0x01,0x01,0x05,0x00);
+  return derTag(0x30,Uint8Array.of(...version,...algorithm,...derTag(0x04,bytes)));
 }
 export async function appInstallationToken(env,{now=Date.now(),fetcher=fetch}={}){
   requireTrue(/^\d+$/.test(String(env?.GITHUB_APP_ID||''))&&
