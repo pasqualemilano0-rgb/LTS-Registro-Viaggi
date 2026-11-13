@@ -140,6 +140,11 @@ jobs:
           command: |
             set -eu
             node tests/qa-report-production-http-smoke.mjs
+      - run:
+          name: Read-only admin records CORS and anonymous write-denial smoke
+          command: |
+            set -eu
+            node --test tests/qa-admin-records-live.test.mjs
       - store_artifacts:
           path: browser-evidence
           destination: lts-browser-synthetic-evidence
