@@ -79,6 +79,7 @@ jobs:
             set -eu
             node --check cloudflare/public-snapshot-publisher/index.mjs
             node --test tests/qa-porti-cloudflare-direct-publisher.test.mjs
+            node --test tests/qa-porti-github-app-auth.test.mjs
             node --input-type=module -e "import {readFileSync} from 'node:fs';import assert from 'node:assert/strict';const cfg=JSON.parse(readFileSync('cloudflare/public-snapshot-publisher/wrangler.jsonc'));assert.equal(cfg.vars.PUBLISH_ENABLED,'no');assert.deepEqual(cfg.triggers.crons,[]);assert.ok(cfg.kv_namespaces.some(x=>x.binding==='SCHEDULES_KV'))"
 
   browser-report-parity:
