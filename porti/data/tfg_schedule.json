@@ -1,7 +1,7 @@
 {
   "source": "https://tfg.bucci.it/@/TFGW_TP_ETA",
-  "source_updated_at": "2026-11-12T13:08:54.000Z",
-  "acquired_at": "2026-11-13T06:30:16.594Z",
+  "source_updated_at": "2026-11-13T06:38:43.000Z",
+  "acquired_at": "2026-11-13T07:00:16.539Z",
   "rows": [
     {
       "vessel": "MSC GRETA III",
@@ -85,8 +85,8 @@
       "arrival_voyage": "FMX0C0S19",
       "departure_voyage": "FMX0C0S19",
       "eta": "14/11/26",
-      "acceptance": "ACCETTA CARICO",
-      "custom_close_time": "&nbsp;",
+      "acceptance": "NON ACCETTA CARICO",
+      "custom_close_time": "ANNULLATA",
       "fast_corridor_cut_off": "",
       "gate_cut_off": "",
       "destination": "INTERNO PORTO"
