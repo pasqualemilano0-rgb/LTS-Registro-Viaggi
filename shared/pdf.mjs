@@ -111,19 +111,41 @@ export function generateMonthlyPdf({ state, month, logoDataUrl, jsPDF = globalTh
       trip.adminNote,
     ]);
   if (adminNotes.length) {
-    const y = (doc.lastAutoTable?.finalY ?? tableTop) + 11;
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(8);
-    doc.setTextColor('#173846');
-    doc.text('NOTE PER L\'AMMINISTRAZIONE', 11, y - 3);
+    // Compact two-column note cards preserve the existing LTS PDF palette.
+    // A note is never truncated: autoTable may continue onto another page.
+    const noteCards = adminNotes.map(([date, container, city, client, note]) =>
+      `${date} · ${container}\n${city} · ${client}\nNota: ${note}`);
+    const cardRows = [];
+    const leftCount = Math.ceil(noteCards.length / 2);
+    for (let index = 0; index < leftCount; index++) {
+      cardRows.push([noteCards[index], noteCards[index + leftCount] ?? '']);
+    }
+    const previousTableEnd = doc.lastAutoTable?.finalY ?? tableTop;
+    const titleY = previousTableEnd + 6;
+    // Keep the title with its first card when the main table fills a page.
+    const startY = titleY + 3;
     doc.autoTable({
-      startY: y, margin: { top: tableTop, right: 11, bottom: 15, left: 11 },
-      head: [['DATA', 'CONTAINER', 'CITTÀ', 'CLIENTE', 'NOTA']], body: adminNotes,
-      theme: 'grid', showHead: 'everyPage', rowPageBreak: 'avoid',
-      styles: { font: 'helvetica', fontSize: 7, cellPadding: { top: 1, bottom: 1, left: 1.5, right: 1.5 }, overflow: 'linebreak', textColor: '#203942', lineColor: '#dbe5e9', lineWidth: 0.15, valign: 'top', minCellHeight: 5 },
-      headStyles: { fillColor: '#007e96', textColor: '#ffffff', fontStyle: 'bold', fontSize: 7, cellPadding: 1.5 },
-      alternateRowStyles: { fillColor: '#f4f8fa' },
-      columnStyles: Object.fromEntries(widths.map((width, index) => [index, { cellWidth: width, ...(index === 1 ? { fontStyle: 'bold' } : {}) }])),
+      startY,
+      margin: { top: tableTop + 8, right: 11, bottom: 15, left: 11 },
+      head: [['NOTE PER L\'AMMINISTRAZIONE', '']],
+      body: cardRows,
+      theme: 'grid', showHead: 'firstPage', rowPageBreak: 'avoid',
+      styles: {
+        font: 'helvetica', fontSize: 6.4,
+        cellPadding: { top: 1, bottom: 1, left: 1.6, right: 1.6 },
+        overflow: 'linebreak', textColor: '#203942',
+        lineColor: '#dbe5e9', lineWidth: 0.15, valign: 'top',
+      },
+      headStyles: {
+        fillColor: '#007e96', textColor: '#ffffff',
+        fontStyle: 'bold', fontSize: 7, cellPadding: 1.4,
+      },
+      columnStyles: { 0: { cellWidth: 94 }, 1: { cellWidth: 94 } },
+      didParseCell: data => {
+        if (data.section === 'head' && data.column.index === 1) {
+          data.cell.text = [];
+        }
+      },
       willDrawPage: drawHeader,
     });
   }
