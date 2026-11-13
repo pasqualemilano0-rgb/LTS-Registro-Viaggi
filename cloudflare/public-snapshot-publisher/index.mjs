@@ -106,6 +106,52 @@ async function github(path,{method='GET',body,token,fetcher=fetch}={}){
     throw new PublishRejected('GITHUB_UNAVAILABLE_OR_INVALID_JSON');
   }finally{clearTimeout(timer);}
 }
+// GitHub App installation authentication. App credentials are never logged or returned.
+function appConfigured(env){
+  return !!(env?.GITHUB_APP_ID||env?.GITHUB_APP_INSTALLATION_ID||env?.GITHUB_APP_PRIVATE_KEY);
+}
+function pemBytes(pem){
+  requireTrue(typeof pem==='string' && pem.length<12000,'APP_PRIVATE_KEY_INVALID');
+  const clean=pem.replace(/\\n/g,'\n').replace(/-----BEGIN PRIVATE KEY-----|-----END PRIVATE KEY-----|\s/g,'');
+  requireTrue(/^[A-Za-z0-9+/=]+$/.test(clean),'APP_PRIVATE_KEY_INVALID');
+  try{return Uint8Array.from(atob(clean),c=>c.charCodeAt(0));}
+  catch{throw new PublishRejected('APP_PRIVATE_KEY_INVALID');}
+}
+export async function appInstallationToken(env,{now=Date.now(),fetcher=fetch}={}){
+  requireTrue(/^\d+$/.test(String(env?.GITHUB_APP_ID||''))&&
+    /^\d+$/.test(String(env?.GITHUB_APP_INSTALLATION_ID||'')),'APP_IDS_INVALID');
+  let key;
+  try{key=await crypto.subtle.importKey('pkcs8',pemBytes(env.GITHUB_APP_PRIVATE_KEY),
+    {name:'RSASSA-PKCS1-v1_5',hash:'SHA-256'},false,['sign']);}
+  catch{throw new PublishRejected('APP_PRIVATE_KEY_INVALID');}
+  const enc=v=>btoa(String.fromCharCode(...new TextEncoder().encode(JSON.stringify(v))))
+    .replace(/=/g,'').replace(/\+/g,'-').replace(/\//g,'_');
+  const issued=Math.floor(now/1000);
+  const header=enc({alg:'RS256',typ:'JWT'});
+  const payload=enc({iat:issued-60,exp:issued+540,iss:String(env.GITHUB_APP_ID)});
+  const unsigned=header+'.'+payload;
+  const signature=new Uint8Array(await crypto.subtle.sign('RSASSA-PKCS1-v1_5',key,new TextEncoder().encode(unsigned)));
+  const jwt=unsigned+'.'+btoa(String.fromCharCode(...signature)).replace(/=/g,'').replace(/\+/g,'-').replace(/\//g,'_');
+  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),18000);
+  try{
+    const response=await fetcher('https://api.github.com/app/installations/'+env.GITHUB_APP_INSTALLATION_ID+'/access_tokens',{
+      method:'POST',redirect:'manual',signal:controller.signal,
+      headers:{Authorization:'Bearer '+jwt,Accept:'application/vnd.github+json',
+        'X-GitHub-Api-Version':'2022-11-28','User-Agent':'LTS-Porti-Snapshot-Publisher/1.0'},
+      body:JSON.stringify({repositories:['LTS-Registro-Viaggi'],permissions:{contents:'write'}})
+    });
+    requireTrue(response.ok&&!response.redirected&&response.status===201,'APP_TOKEN_HTTP_'+response.status);
+    const raw=await response.text();
+    requireTrue(raw.length<=100000,'APP_TOKEN_RESPONSE_OVERSIZED');
+    let data;
+    try{data=JSON.parse(raw);}catch{throw new PublishRejected('APP_TOKEN_INVALID_RESPONSE');}
+    requireTrue(typeof data.token==='string'&&data.token.length>=20,'APP_TOKEN_INVALID_RESPONSE');
+    return data.token;
+  }catch(e){
+    if(e instanceof PublishRejected)throw e;
+    throw new PublishRejected('APP_TOKEN_UNAVAILABLE');
+  }finally{clearTimeout(timer);}
+}
 function decodeBlob(o){
   requireTrue(o?.encoding==='base64'&&typeof o.content==='string','GITHUB_BASE64_EXPECTED');
   const bytes=Uint8Array.from(atob(o.content.replace(/\s/g,'')),ch=>ch.charCodeAt(0));
@@ -133,9 +179,10 @@ export async function preview(env,{now=Date.now(),fetcher=fetch}={}){
 }
 export async function publish(env,{now=Date.now(),fetcher=fetch}={}){
   // This check is deliberately ahead of ALL external requests and KV access.
-  requireTrue(env?.PUBLISH_ENABLED==='yes'&&typeof env.GITHUB_PUBLIC_CONTENTS_TOKEN==='string'&&
-    env.GITHUB_PUBLIC_CONTENTS_TOKEN.length>=20,'PUBLISH_DISABLED_OR_SECRET_MISSING');
-  const token=env.GITHUB_PUBLIC_CONTENTS_TOKEN;
+  requireTrue(env?.PUBLISH_ENABLED==='yes','PUBLISH_DISABLED_OR_SECRET_MISSING');
+  // An incomplete App configuration fails closed: never silently downgrade to a personal token.
+  const token=appConfigured(env)?await appInstallationToken(env,{now,fetcher}):env.GITHUB_PUBLIC_CONTENTS_TOKEN;
+  requireTrue(typeof token==='string'&&token.length>=20,'PUBLISH_DISABLED_OR_SECRET_MISSING');
   const {parent,treeSha,old}=await readBaseline(fetcher,token);
   const vetted=await readAll(env,now,old); // validate ALL before creating any Git object
   const updated=Object.keys(vetted).filter(t=>vetted[t].changed);
