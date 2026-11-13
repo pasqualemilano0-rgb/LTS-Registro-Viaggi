@@ -53,7 +53,9 @@ test('monthly PDF places only administrative notes after trip rows',()=>{
  assert.equal(calls.length,2);
  assert.equal(calls[0].body.length,2);
  assert.equal(calls[1].body.length,1);
-  assert(calls[1].body[0][0].includes('MSCU1234567 - SALERNO - ALFA = ATTESA 2 ORE'));
+  assert.match(calls[1].body[0][0], /ATTESA 2 ORE$/);
+ assert.match(calls[1].body[0][0], /SALERNO - ALFA =/);
+ assert.match(calls[1].body[0][0], /^13\/11\/2026 - /);
  assert(!JSON.stringify(calls).includes('NOTA PRIVATA'));
  assert(!JSON.stringify(calls).includes('SEGRETO'));
  assert.ok(calls[1].startY>calls[0].startY);
