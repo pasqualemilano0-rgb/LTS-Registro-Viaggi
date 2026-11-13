@@ -1,7 +1,7 @@
 {
   "source": "https://api.conateco.it/ConatecoServicesApi/BerthForecast",
   "source_updated_at": null,
-  "acquired_at": "2026-11-13T14:00:16.641Z",
+  "acquired_at": "2026-11-13T14:30:17.805Z",
   "rows": [
     {
       "vessel": "JAN",
@@ -232,9 +232,9 @@
       "category": "PREVISTE",
       "voyage_id": "202600389",
       "carrier": "MEDITERRANEAN SHIPPING CO. GENEVA",
-      "acceptance_flag": "1",
-      "acceptance_icon": "ACCETTA_CARICO",
-      "stop_cargo": "",
+      "acceptance_flag": "0",
+      "acceptance_icon": "NO_ACCETTA_CARICO",
+      "stop_cargo": "S",
       "external_depot": "",
       "opening": "2026-11-11 06:30",
       "closing": "2026-11-13 17:00",
