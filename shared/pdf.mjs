@@ -105,17 +105,47 @@ export function generateMonthlyPdf({ state, month, logoDataUrl, jsPDF = globalTh
     .filter(trip => typeof trip.adminNote === 'string' && trip.adminNote.trim())
     .sort((a, b) => a.date.localeCompare(b.date) || String(a.createdAt ?? '').localeCompare(String(b.createdAt ?? '')))
     .map(trip => [
-      [displayDate(trip.date), trip.container, trip.secondCity ? `${trip.city} / ${trip.secondCity}` : trip.city,
-        trip.secondClient ? `${trip.client} / ${trip.secondClient}` : trip.client].join(' - ') + ' = ' + trip.adminNote
+      displayDate(trip.date), trip.container,
+      trip.secondCity ? `${trip.city} / ${trip.secondCity}` : trip.city,
+      trip.secondClient ? `${trip.client} / ${trip.secondClient}` : trip.client,
+      trip.adminNote,
     ]);
   if (adminNotes.length) {
-    const y = (doc.lastAutoTable?.finalY ?? tableTop) + 10;
+    // Compact two-column note cards preserve the existing LTS PDF palette.
+    // A note is never truncated: autoTable may continue onto another page.
+    const noteCards = adminNotes.map(([date, container, city, client, note]) =>
+      `${date} · ${container}\n${city} · ${client}\nNota: ${note}`);
+    const cardRows = [];
+    const leftCount = Math.ceil(noteCards.length / 2);
+    for (let index = 0; index < leftCount; index++) {
+      cardRows.push([noteCards[index], noteCards[index + leftCount] ?? '']);
+    }
+    const previousTableEnd = doc.lastAutoTable?.finalY ?? tableTop;
+    const titleY = previousTableEnd + 6;
+    // Keep the title with its first card when the main table fills a page.
+    const startY = titleY + 3;
     doc.autoTable({
-      startY: y, margin: { top: tableTop, right: 11, bottom: 15, left: 11 },
-      head: [['NOTE PER L\'AMMINISTRAZIONE']], body: adminNotes,
-      theme: 'grid', showHead: 'everyPage', rowPageBreak: 'avoid',
-      styles: { font: 'helvetica', fontSize: 8.5, cellPadding: 2.5, overflow: 'linebreak', textColor: '#203942', lineColor: '#dbe5e9' },
-      headStyles: { fillColor: '#007e96', textColor: '#ffffff', fontStyle: 'bold' },
+      startY,
+      margin: { top: tableTop + 8, right: 11, bottom: 15, left: 11 },
+      head: [['NOTE PER L\'AMMINISTRAZIONE', '']],
+      body: cardRows,
+      theme: 'grid', showHead: 'firstPage', rowPageBreak: 'avoid',
+      styles: {
+        font: 'helvetica', fontSize: 6.4,
+        cellPadding: { top: 1, bottom: 1, left: 1.6, right: 1.6 },
+        overflow: 'linebreak', textColor: '#203942',
+        lineColor: '#dbe5e9', lineWidth: 0.15, valign: 'top',
+      },
+      headStyles: {
+        fillColor: '#007e96', textColor: '#ffffff',
+        fontStyle: 'bold', fontSize: 7, cellPadding: 1.4,
+      },
+      columnStyles: { 0: { cellWidth: 94 }, 1: { cellWidth: 94 } },
+      didParseCell: data => {
+        if (data.section === 'head' && data.column.index === 1) {
+          data.cell.text = [];
+        }
+      },
       willDrawPage: drawHeader,
     });
   }
