@@ -7,17 +7,18 @@ workflows:
       - booking-auth-transport
       - snapshot-publisher-contract
       - cloudflare-publisher-contract
-  # Browser tests run only on explicitly selected review/release branches.
-  # Important: main receives automated Porti data commits every 30 minutes.
-  # Do not schedule medium Docker Playwright on each data(porti) update.
+  # Browser tests on all non-main branches, then cheap file classification.
+  # main receives Porti data commits every 30 minutes and never starts medium Docker.
+  # A docs/snapshot-only feature branch exits the browser job before npm install.
   browser-release-parity:
     jobs:
       - browser-report-parity:
+          # Review all non-main branches; the first step inspects changes.
+          # In particular, data(porti) commits on main never start medium Docker.
           filters:
             branches:
-              only:
-                - /ci\/browser-parity-.*/
-                - /release\/.*/
+              ignore:
+                - main
 jobs:
   webapp-regression:
     docker:
@@ -88,6 +89,20 @@ jobs:
     resource_class: medium
     steps:
       - checkout
+      - run:
+          name: Skip non-app changes before downloading Playwright
+          command: |
+            set -eu
+            if node scripts/ci-browser-change-gate.mjs; then
+              echo "Playwright required: continue to both browsers."
+            else
+              status=$?
+              if [ "$status" -eq 20 ]; then
+                circleci-agent step halt
+              else
+                exit "$status"
+              fi
+            fi
       - run:
           name: Install matching, fixed Playwright Node package
           command: |
