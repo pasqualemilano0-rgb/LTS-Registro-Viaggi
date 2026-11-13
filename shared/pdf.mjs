@@ -105,17 +105,25 @@ export function generateMonthlyPdf({ state, month, logoDataUrl, jsPDF = globalTh
     .filter(trip => typeof trip.adminNote === 'string' && trip.adminNote.trim())
     .sort((a, b) => a.date.localeCompare(b.date) || String(a.createdAt ?? '').localeCompare(String(b.createdAt ?? '')))
     .map(trip => [
-      [displayDate(trip.date), trip.container, trip.secondCity ? `${trip.city} / ${trip.secondCity}` : trip.city,
-        trip.secondClient ? `${trip.client} / ${trip.secondClient}` : trip.client].join(' - ') + ' = ' + trip.adminNote
+      displayDate(trip.date), trip.container,
+      trip.secondCity ? `${trip.city} / ${trip.secondCity}` : trip.city,
+      trip.secondClient ? `${trip.client} / ${trip.secondClient}` : trip.client,
+      trip.adminNote,
     ]);
   if (adminNotes.length) {
-    const y = (doc.lastAutoTable?.finalY ?? tableTop) + 10;
+    const y = (doc.lastAutoTable?.finalY ?? tableTop) + 14;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9);
+    doc.setTextColor('#173846');
+    doc.text('NOTE PER L\'AMMINISTRAZIONE', 11, y - 4);
     doc.autoTable({
       startY: y, margin: { top: tableTop, right: 11, bottom: 15, left: 11 },
-      head: [['NOTE PER L\'AMMINISTRAZIONE']], body: adminNotes,
+      head: [['DATA', 'CONTAINER', 'CITTÀ', 'CLIENTE', 'NOTA']], body: adminNotes,
       theme: 'grid', showHead: 'everyPage', rowPageBreak: 'avoid',
-      styles: { font: 'helvetica', fontSize: 8.5, cellPadding: 2.5, overflow: 'linebreak', textColor: '#203942', lineColor: '#dbe5e9' },
-      headStyles: { fillColor: '#007e96', textColor: '#ffffff', fontStyle: 'bold' },
+      styles: { font: 'helvetica', fontSize: 8, cellPadding: { top: 1.6, bottom: 1.6, left: 2, right: 2 }, overflow: 'linebreak', textColor: '#203942', lineColor: '#dbe5e9', lineWidth: 0.15, valign: 'top', minCellHeight: 6.5 },
+      headStyles: { fillColor: '#007e96', textColor: '#ffffff', fontStyle: 'bold', fontSize: 8, cellPadding: 2 },
+      alternateRowStyles: { fillColor: '#f4f8fa' },
+      columnStyles: Object.fromEntries(widths.map((width, index) => [index, { cellWidth: width, ...(index === 1 ? { fontStyle: 'bold' } : {}) }])),
       willDrawPage: drawHeader,
     });
   }
