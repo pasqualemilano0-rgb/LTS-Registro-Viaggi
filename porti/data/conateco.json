@@ -1,7 +1,7 @@
 {
   "source": "https://api.conateco.it/ConatecoServicesApi/BerthForecast",
   "source_updated_at": null,
-  "acquired_at": "2026-11-13T14:30:17.805Z",
+  "acquired_at": "2026-11-13T15:00:16.623Z",
   "rows": [
     {
       "vessel": "JAN",
@@ -191,23 +191,6 @@
       "source_conflict": false
     },
     {
-      "vessel": "MSC ADONIS",
-      "voyage": "FD645E",
-      "eta": "2026-11-13 00:00",
-      "vessel_status": "PRE",
-      "category": "PRESENTI",
-      "voyage_id": "202600381",
-      "carrier": "MEDITERRANEAN SHIPPING CO. GENEVA",
-      "acceptance_flag": "0",
-      "acceptance_icon": "NO_ACCETTA_CARICO",
-      "stop_cargo": "S",
-      "external_depot": "",
-      "opening": "2026-11-11 06:30",
-      "closing": "2026-11-13 10:00",
-      "notes": "ACCETT.RETROPORTO 09/11 07:00",
-      "source_conflict": false
-    },
-    {
       "vessel": "JOLLY BLUE",
       "voyage": "371",
       "eta": "2026-11-13 12:30",
@@ -222,6 +205,23 @@
       "opening": "2026-11-07 06:30",
       "closing": "2026-11-12 12:00",
       "notes": "",
+      "source_conflict": false
+    },
+    {
+      "vessel": "MSC ADONIS",
+      "voyage": "FD645E",
+      "eta": "2026-11-14 00:00",
+      "vessel_status": "PRE",
+      "category": "PREVISTE",
+      "voyage_id": "202600381",
+      "carrier": "MEDITERRANEAN SHIPPING CO. GENEVA",
+      "acceptance_flag": "0",
+      "acceptance_icon": "NO_ACCETTA_CARICO",
+      "stop_cargo": "S",
+      "external_depot": "",
+      "opening": "2026-11-11 06:30",
+      "closing": "2026-11-13 10:00",
+      "notes": "ACCETT.RETROPORTO 09/11 07:00",
       "source_conflict": false
     },
     {
@@ -244,7 +244,7 @@
     {
       "vessel": "MSC SARA ELENA",
       "voyage": "NL642R",
-      "eta": "2026-11-14 00:00",
+      "eta": "2026-11-15 00:00",
       "vessel_status": "PRE",
       "category": "PREVISTE",
       "voyage_id": "202600380",
