@@ -1,7 +1,7 @@
 {
   "source": "https://www.salernocontainerterminal.com/ca/an/vessel_schedule.php",
   "source_updated_at": null,
-  "acquired_at": "2026-11-13T20:00:16.944Z",
+  "acquired_at": "2026-11-13T20:30:16.789Z",
   "rows": [
     {
       "vessel": "MIRIAM BORCHARD",
@@ -247,6 +247,6 @@
       "status": "PENDING"
     }
   ],
-  "updated_at": "2026-11-13T20:00:16.944Z",
+  "updated_at": "2026-11-13T20:30:16.789Z",
   "data_changed_at": "2026-11-13T17:30:16.751Z"
 }
