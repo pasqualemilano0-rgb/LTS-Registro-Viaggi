@@ -1,55 +1,55 @@
 # LTS Registro Viaggi
 
-Applicazione aziendale per la registrazione dei viaggi, la gestione di clienti e tariffe e la consultazione dei programmi portuali.
+**Piattaforma operativa per la gestione dei trasporti e delle attività logistiche.**
 
-**Accesso all'applicazione:** https://pasqualemilano0-rgb.github.io/LTS-Registro-Viaggi/
+LTS Registro Viaggi è un'applicazione web dedicata alla registrazione dei viaggi, all'organizzazione delle informazioni operative e alla consultazione dei programmi dei terminal portuali. Offre strumenti distinti per gli autisti e per il personale amministrativo, con accesso alle funzioni riservate in base alle autorizzazioni.
 
-**Area aziendale riservata:** https://pasqualemilano0-rgb.github.io/LTS-Registro-Viaggi/amministratore/
+## Accesso alla piattaforma
 
-**Informativa privacy:** https://pasqualemilano0-rgb.github.io/LTS-Registro-Viaggi/privacy/
+| Area | Collegamento |
+| --- | --- |
+| Applicazione | [Apri LTS Registro Viaggi](https://pasqualemilano0-rgb.github.io/LTS-Registro-Viaggi/) |
+| Area amministrativa | [Accedi al pannello amministratore](https://pasqualemilano0-rgb.github.io/LTS-Registro-Viaggi/amministratore/) |
+| Privacy | [Consulta l'informativa](https://pasqualemilano0-rgb.github.io/LTS-Registro-Viaggi/privacy/) |
 
-## Funzioni disponibili
+L'applicazione è utilizzabile tramite browser su smartphone, tablet e computer. Le funzioni disponibili dipendono dal profilo e dai permessi dell'utente.
 
-- Registro dei viaggi e riepiloghi mensili.
-- Gestione di clienti, tariffe e servizi aggiuntivi.
-- Consultazione operativa della sezione Porti.
-- Sincronizzazione e backup tramite le funzioni dell'app.
-- Report aziendali accessibili soltanto agli utenti autorizzati.
+## Funzionalità principali
 
-Il sito contiene l'interfaccia pubblica dell'applicazione. I dati personali, gli archivi degli autisti e le funzioni riservate richiedono autenticazione e autorizzazioni lato server.
+### Registro viaggi
+- Registrazione e consultazione dei viaggi.
+- Organizzazione delle attività per periodo.
+- Riepiloghi operativi e mensili.
 
-Le informazioni sui terminal portuali sono indicative: per l'accettazione di un carico fanno fede i sistemi ufficiali dei terminal.
+### Clienti, tariffe e servizi
+- Consultazione e gestione delle anagrafiche clienti.
+- Gestione delle tariffe e dei servizi aggiuntivi.
+- Verifica delle informazioni necessarie alla compilazione dei viaggi.
 
-Per assistenza, utilizzare i riferimenti indicati nell'applicazione o nell'informativa privacy.
+### Sezione Porti
+- Consultazione dei programmi operativi dei terminal supportati.
+- Accesso alle informazioni portuali disponibili nell'applicazione.
+- Strumenti di supporto alla pianificazione delle attività di trasporto.
 
+### Area amministrativa
+- Supervisione delle informazioni aziendali.
+- Strumenti di controllo e riepilogo.
+- Funzioni riservate agli utenti autorizzati.
 
-## Miglioramenti dashboard e qualità
+## Accesso e protezione dei dati
 
-- **Filtri operativi per l'amministratore:** indirizzi mancanti, possibili duplicati, clienti già condivisi e viaggi con tariffe o extra incompleti.
-- **Certificazione Google Maps rapida:** azione dalla card cliente personale; ogni unificazione richiede revisione e conferma esplicita, mantenendo audit e viaggi storici.
-- **Card compatte e accessibili:** stessa identità grafica LTS su smartphone e desktop.
-- **Trasparenza:** se il confronto con l'elenco condiviso non è disponibile, la dashboard non dichiara il cliente certificato.
+L'accesso alle funzioni riservate richiede autenticazione. Le autorizzazioni e i controlli sui dati protetti sono gestiti dai servizi applicativi; la disponibilità dell'interfaccia web non comporta accesso pubblico agli archivi aziendali.
 
-Il [piano completo per raggiungere il livello 10/10](./PIANO-LTS-10-10.md) distingue gli interventi già realizzati dai test su dispositivi reali e sui servizi protetti ancora necessari.
+Le informazioni relative a clienti, viaggi e attività operative devono essere trattate esclusivamente dagli utenti autorizzati, secondo le procedure aziendali e l'[informativa privacy](https://pasqualemilano0-rgb.github.io/LTS-Registro-Viaggi/privacy/).
 
-## Monitor LTS — solo amministratore
+## Avvertenze operative
 
-Il pannello tecnico **LTS Stato** è accessibile esclusivamente dal pannello
-`/amministratore/`, nella sezione **Sicurezza e accessi**, dopo la verifica online
-dell'account amministratore e dell'autenticazione MFA. Gli autisti non ricevono
-un collegamento operativo al monitor, e la vecchia pagina `/status/` rimanda
-all'accesso amministratore senza mostrare diagnostica.
+I programmi e le informazioni dei terminal portuali sono forniti come supporto alla consultazione e possono subire variazioni. Per prenotazioni, accettazione dei carichi, orari e disposizioni operative fanno sempre fede i sistemi e le comunicazioni ufficiali dei terminal.
 
-Il monitor periodico pubblico [GitHub Actions](https://github.com/pasqualemilano0-rgb/LTS-Registro-Viaggi/actions/workflows/lts-uptime-monitor.yml)
-continua a controllare in sola lettura sito, pagina di accesso admin,
-JavaScript e preflight del login. Non consulta credenziali, clienti o viaggi.
-I risultati di un repository GitHub pubblico restano per natura visibili
-su GitHub: per rendere riservati anche i log del monitor servirebbe spostare
-le verifiche in un'infrastruttura con controllo degli accessi lato server.
+## Assistenza
 
-L'area amministratore è già installabile come PWA separata. La vecchia PWA
-pubblica `LTS Stato` è stata ritirata: chi l'aveva installata deve rimuovere
-il vecchio collegamento; per l'accesso riservato usare l'app amministratore.
-Gli avvisi continuano tramite il monitor esterno configurato; la pagina
-amministrativa non installa un servizio push pubblico e non invia notifiche
-autonome con la finestra chiusa.
+Per richieste di supporto, problemi di accesso o segnalazioni operative, utilizzare i riferimenti di assistenza disponibili all'interno dell'applicazione.
+
+---
+
+© LTS Registro Viaggi. Uso delle funzionalità riservate consentito esclusivamente agli utenti autorizzati.
