@@ -1,7 +1,7 @@
 {
   "source": "https://www.salernocontainerterminal.com/ca/an/vessel_schedule.php",
   "source_updated_at": null,
-  "acquired_at": "2026-11-13T11:00:17.196Z",
+  "acquired_at": "2026-11-13T11:30:16.695Z",
   "rows": [
     {
       "vessel": "MIRIAM BORCHARD",
@@ -88,7 +88,7 @@
       "vessel": "MASTERY D",
       "voyage": "0926E",
       "eta": "15/11/2026 00:00",
-      "closing": "12/11/2026 17:00 CLOSED",
+      "closing": "14/11/2026 12:00",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
@@ -214,7 +214,7 @@
       "vessel": "OYKU A",
       "voyage": "535",
       "eta": "19/11/2026 00:00",
-      "closing": "16/11/2026 17:00",
+      "closing": "18/11/2026 17:00",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
@@ -247,6 +247,6 @@
       "status": "PENDING"
     }
   ],
-  "updated_at": "2026-11-13T11:00:17.196Z",
-  "data_changed_at": "2026-11-13T10:00:16.807Z"
+  "updated_at": "2026-11-13T11:30:16.695Z",
+  "data_changed_at": "2026-11-13T11:15:17.095Z"
 }
