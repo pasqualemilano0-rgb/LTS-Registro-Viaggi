@@ -1,7 +1,10 @@
 const BASE = "/LTS-Registro-Viaggi/";
 const PREFIX = "lts-iphone-pages-0aa8d087d02b-";
-const CACHE = PREFIX + '20261113-monthly-admin-pdf-v14';
+const CACHE = PREFIX + '20261113-monthly-admin-pdf-v14-kilometres-v15';
 const CORE = [
+  "/LTS-Registro-Viaggi/kilometres-client.mjs",
+  "/LTS-Registro-Viaggi/kilometres-ui.mjs",
+  "/LTS-Registro-Viaggi/shared/kilometres.mjs",
   "/LTS-Registro-Viaggi/account-access.mjs",
   "/LTS-Registro-Viaggi/app.css",
   "/LTS-Registro-Viaggi/visual-theme.css",
