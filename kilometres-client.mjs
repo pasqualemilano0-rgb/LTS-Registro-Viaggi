@@ -1,4 +1,4 @@
-import * as account from '/LTS-Registro-Viaggi/account-access.mjs';
+import * as account from './account-access.mjs';
 const ENDPOINT='https://otrqynkscpbeyuvdlgpg.supabase.co/functions/v1/lts-kilometres';
 /** No disk cache, offline writes or background retries. An ambiguous save reuses its request ID. */
 export async function kilometresRequest(action,data={},auth=account) {
@@ -19,5 +19,7 @@ export async function kilometresRequest(action,data={},auth=account) {
 }
 export async function kilometresForPdf(month) {
  const result=await kilometresRequest('list',{month});
- return result.authorized===true?result:null;
+ if(result.authorized===false)return null;
+ if(result.authorized!==true||!Array.isArray(result.entries)||result.month!==month)throw Error('Risposta CHILOMETRI non valida.');
+ return result;
 }
