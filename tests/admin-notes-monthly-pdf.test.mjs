@@ -52,6 +52,9 @@ test('monthly PDF places only administrative notes after trip rows',()=>{
  assert.equal(result.tripCount,2);
  assert.equal(calls.length,2);
  assert.equal(calls[0].body.length,2);
+ assert.equal(calls[0].theme,'plain');
+ assert.equal(calls[0].headStyles.fillColor,'#e4f4f9');
+ assert.equal(calls[0].alternateRowStyles.fillColor,'#f3f6f8');
  assert.equal(calls[1].body.length,1);
  assert.match(calls[1].head[0][0],/NOTE PER L'AMMINISTRAZIONE/);
  assert.equal(calls[1].body[0][0],'');
