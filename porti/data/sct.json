@@ -1,7 +1,7 @@
 {
   "source": "https://www.salernocontainerterminal.com/ca/an/vessel_schedule.php",
   "source_updated_at": null,
-  "acquired_at": "2026-11-14T22:30:16.719Z",
+  "acquired_at": "2026-11-14T23:00:16.515Z",
   "rows": [
     {
       "vessel": "CRISTINA A",
@@ -227,8 +227,17 @@
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
+    },
+    {
+      "vessel": "CMA CGM ABIDJAN",
+      "voyage": "MPS0J0W19",
+      "eta": "22/11/2026 00:00",
+      "closing": "21/11/2026 10:00",
+      "acceptance_dry": "CARGO NOT ACCEPTED",
+      "acceptance_reef": "CARGO NOT ACCEPTED",
+      "status": "PENDING"
     }
   ],
-  "updated_at": "2026-11-14T22:30:16.719Z",
-  "data_changed_at": "2026-11-14T11:00:17.194Z"
+  "updated_at": "2026-11-14T23:00:16.515Z",
+  "data_changed_at": "2026-11-14T23:00:16.515Z"
 }
