@@ -1,7 +1,7 @@
 {
   "source": "https://www.salernocontainerterminal.com/ca/an/vessel_schedule.php",
   "source_updated_at": null,
-  "acquired_at": "2026-11-14T09:30:16.602Z",
+  "acquired_at": "2026-11-14T10:00:16.836Z",
   "rows": [
     {
       "vessel": "MEDKON PERLA",
@@ -229,6 +229,6 @@
       "status": "PENDING"
     }
   ],
-  "updated_at": "2026-11-14T09:30:16.602Z",
+  "updated_at": "2026-11-14T10:00:16.836Z",
   "data_changed_at": "2026-11-14T09:00:16.882Z"
 }
