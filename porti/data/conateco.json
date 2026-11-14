@@ -1,7 +1,7 @@
 {
   "source": "https://api.conateco.it/ConatecoServicesApi/BerthForecast",
   "source_updated_at": null,
-  "acquired_at": "2026-11-14T07:00:16.950Z",
+  "acquired_at": "2026-11-14T07:30:17.020Z",
   "rows": [
     {
       "vessel": "JOLLY BLUE",
@@ -160,12 +160,12 @@
       "vessel": "JOLLY BLUE",
       "voyage": "371",
       "eta": "2026-11-13 12:30",
-      "vessel_status": "ARR",
-      "category": "ORMEGGIATE",
+      "vessel_status": "CHI",
+      "category": "PARTITE",
       "voyage_id": "202600384",
       "carrier": "LINEA I.MESSINA",
       "acceptance_flag": "0",
-      "acceptance_icon": "NO_ACCETTA_CARICO",
+      "acceptance_icon": "CHIUSA",
       "stop_cargo": "S",
       "external_depot": "",
       "opening": "2026-11-07 06:30",
@@ -244,7 +244,7 @@
     {
       "vessel": "RIJNBORG",
       "voyage": "094S",
-      "eta": "2026-11-16 00:00",
+      "eta": "2026-11-17 00:00",
       "vessel_status": "PRE",
       "category": "PREVISTE",
       "voyage_id": "202600377",
