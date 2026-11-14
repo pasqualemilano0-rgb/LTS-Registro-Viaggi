@@ -1,22 +1,13 @@
 {
   "source": "https://www.salernocontainerterminal.com/ca/an/vessel_schedule.php",
   "source_updated_at": null,
-  "acquired_at": "2026-11-14T10:30:16.603Z",
+  "acquired_at": "2026-11-14T11:00:17.194Z",
   "rows": [
-    {
-      "vessel": "MEDKON PERLA",
-      "voyage": "645E",
-      "eta": "14/11/2026 00:00",
-      "closing": "13/11/2026 17:00 CLOSED",
-      "acceptance_dry": "CARGO ACCEPTED",
-      "acceptance_reef": "CARGO ACCEPTED",
-      "status": "PENDING"
-    },
     {
       "vessel": "CRISTINA A",
       "voyage": "MAS31E26",
       "eta": "15/11/2026 00:00",
-      "closing": "14/11/2026 12:00",
+      "closing": "14/11/2026 12:00 CLOSED",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
@@ -43,7 +34,7 @@
       "vessel": "MASTERY D",
       "voyage": "0926E",
       "eta": "15/11/2026 00:00",
-      "closing": "14/11/2026 12:00",
+      "closing": "14/11/2026 12:00 CLOSED",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
@@ -89,6 +80,15 @@
       "voyage": "644N",
       "eta": "17/11/2026 00:00",
       "closing": "14/11/2026 10:00 CLOSED",
+      "acceptance_dry": "CARGO ACCEPTED",
+      "acceptance_reef": "CARGO ACCEPTED",
+      "status": "PENDING"
+    },
+    {
+      "vessel": "MEDKON PERLA",
+      "voyage": "645E",
+      "eta": "17/11/2026 00:00",
+      "closing": "16/11/2026 17:00",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
@@ -229,6 +229,6 @@
       "status": "PENDING"
     }
   ],
-  "updated_at": "2026-11-14T10:30:16.603Z",
-  "data_changed_at": "2026-11-14T09:00:16.882Z"
+  "updated_at": "2026-11-14T11:00:17.194Z",
+  "data_changed_at": "2026-11-14T11:00:17.194Z"
 }
