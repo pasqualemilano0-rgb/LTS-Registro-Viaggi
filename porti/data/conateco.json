@@ -1,7 +1,7 @@
 {
   "source": "https://api.conateco.it/ConatecoServicesApi/BerthForecast",
   "source_updated_at": null,
-  "acquired_at": "2026-11-14T21:00:16.783Z",
+  "acquired_at": "2026-11-14T21:30:16.691Z",
   "rows": [
     {
       "vessel": "JOLLY BLUE",
