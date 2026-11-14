@@ -985,7 +985,10 @@ try{
  await page.locator('#records-editor input[name=reason]').fill('Cambio cliente e aggiornamento viaggio autorizzato');
  await page.locator('#records-editor button[type=submit]').click();
  await page.waitForFunction(n=>Number(document.querySelector('#records-revision').textContent)>n,oldRevision);
- assert.match(await page.locator('#records-status').textContent(),/1 viaggi collegati aggiornati/);
+ // Realtime synchronization can replace the transient save message in WebKit.
+ // Verify the durable result below: exactly one trip, new customer, same price.
+ assert.equal(await page.locator('#records-trips').textContent(),'1',
+  'Updating the linked journey must neither duplicate nor delete trips');
  await page.locator('#records-tabs button[data-kind="trip"]').click();
  assert.match(await page.locator('#records-list').textContent(),/CLIENTE BETA/);
  assert.match(await page.locator('#records-list').textContent(),/150,00/,
