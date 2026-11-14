@@ -34,6 +34,7 @@ jobs:
             node --check sw.js
             node --test tests/*.test.mjs
             node tests/maps-redirect-diagnostic.mjs
+            node tests/qa-report-production-http-smoke.mjs
 
   booking-auth-transport:
     docker:
