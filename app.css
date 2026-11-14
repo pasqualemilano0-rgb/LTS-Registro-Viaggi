@@ -846,3 +846,6 @@ body.lts-driver-session-blocked dialog[open]{visibility:hidden!important;pointer
  background:#f5fafbfd;color:#17657a;box-shadow:0 7px 20px #143e4930;
  font-size:12px;font-weight:750;text-align:center;pointer-events:none;
 }
+
+/* Weekly kilometres: same register panels, scoped to the authorized feature. */
+.kilometres-panel{margin:16px 0;padding:18px}.kilometres-heading,.kilometres-row{display:flex;align-items:center;justify-content:space-between;gap:12px}.kilometres-heading strong{font-size:1.3rem;color:#007e96}.kilometres-history{display:grid;gap:8px;margin:16px 0}.kilometres-row{padding:10px 0;border-bottom:1px solid #dbe5e9;flex-wrap:wrap}.kilometres-row button{font-size:.8rem}.kilometres-form{display:flex;gap:12px;align-items:end;flex-wrap:wrap;margin:16px 0}.kilometres-form label{flex:1;min-width:180px}.kilometres-form input{display:block;width:100%;margin-top:6px;min-height:44px}.kilometres-panel .muted{font-size:.85rem;color:#536b75}.kilometres-panel button{min-height:44px}
