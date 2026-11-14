@@ -65,7 +65,7 @@ export function generateMonthlyPdf({ state, month, logoDataUrl, jsPDF = globalTh
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(9);
   const driverLines = doc.splitTextToSize(driver, 132);
-  const tableTop = Math.max(40, 26 + (driverLines.length - 1) * 9 * 1.1 / 2.83465 + 11);
+  const tableTop = Math.max(37, 29 + (driverLines.length - 1) * 9 * 1.1 / 2.83465 + 8);
   const fontSize = fitFont(doc, rows, widths, 272 - tableTop);
   const image = doc.getImageProperties(logoDataUrl);
   const drawHeader = () => {
@@ -80,22 +80,24 @@ export function generateMonthlyPdf({ state, month, logoDataUrl, jsPDF = globalTh
     doc.text(formatMonth(month), 11, 20);
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(9);
-    doc.text(driverLines, 11, 26, { lineHeightFactor: 1.1 });
-    doc.setDrawColor('#007e96');
+    doc.text(['Autista: ' + driver, 'Viaggi: ' + rows.length], 11, 25, { lineHeightFactor: 1.25 });
     doc.setLineWidth(0.65);
-    doc.line(11, tableTop - 4, 199, tableTop - 4);
+    doc.setDrawColor('#bb2043');
+    doc.line(11, tableTop - 4, 105, tableTop - 4);
+    doc.setDrawColor('#16a4c5');
+    doc.line(105, tableTop - 4, 199, tableTop - 4);
   };
   doc.autoTable({
     startY: tableTop,
     margin: { top: tableTop, right: 11, bottom: 15, left: 11 },
     head: [['DATA', 'CONTAINER', 'CITTÀ', 'CLIENTE', 'SERVIZI']],
     body: rows,
-    theme: 'grid',
+    theme: 'plain',
     showHead: 'everyPage',
     rowPageBreak: 'avoid',
-    styles: { font: 'helvetica', fontSize, cellPadding: { top: 1.6, bottom: 1.6, left: 2, right: 2 }, lineColor: '#dbe5e9', lineWidth: 0.15, textColor: '#203942', valign: 'top', overflow: 'linebreak', minCellHeight: 6.5 },
-    headStyles: { fillColor: '#007e96', textColor: '#ffffff', fontStyle: 'bold', fontSize: 8, cellPadding: 2 },
-    alternateRowStyles: { fillColor: '#f4f8fa' },
+    styles: { font: 'helvetica', fontSize, cellPadding: { top: 1.1, bottom: 1.1, left: 1.3, right: 1.3 }, lineWidth: 0, textColor: '#203942', valign: 'top', overflow: 'linebreak', minCellHeight: 5.5 },
+    headStyles: { fillColor: '#e4f4f9', textColor: '#086b84', fontStyle: 'bold', fontSize: 8, cellPadding: 1.5 },
+    alternateRowStyles: { fillColor: '#f3f6f8' },
     columnStyles: Object.fromEntries(widths.map((width, index) => [index, { cellWidth: width, ...(index === 1 ? { fontStyle: 'bold' } : {}) }])),
     willDrawPage: drawHeader,
   });
@@ -178,8 +180,8 @@ export function generateMonthlyPdf({ state, month, logoDataUrl, jsPDF = globalTh
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8);
     doc.setTextColor('#657983');
-    doc.text(`${rows.length} ${rows.length === 1 ? 'viaggio' : 'viaggi'} • ${formatMonth(month)}`, 11, 289);
-    doc.text(`Pagina ${page} di ${pages}`, 199, 289, { align: 'right' });
+    doc.text('LTS · Registro personale', 11, 289);
+    doc.text(`Pagina ${page} / ${pages}`, 199, 289, { align: 'right' });
   }
   return { blob: doc.output('blob'), fileName: `LTS-Viaggi-${month}.pdf`, pages, tripCount: rows.length };
 }
