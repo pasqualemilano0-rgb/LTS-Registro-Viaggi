@@ -1,7 +1,7 @@
 {
   "source": "https://www.salernocontainerterminal.com/ca/an/vessel_schedule.php",
   "source_updated_at": null,
-  "acquired_at": "2026-11-15T05:30:16.737Z",
+  "acquired_at": "2026-11-15T06:00:16.807Z",
   "rows": [
     {
       "vessel": "CRISTINA A",
@@ -238,6 +238,6 @@
       "status": "PENDING"
     }
   ],
-  "updated_at": "2026-11-15T05:30:16.737Z",
+  "updated_at": "2026-11-15T06:00:16.807Z",
   "data_changed_at": "2026-11-14T23:00:16.515Z"
 }
