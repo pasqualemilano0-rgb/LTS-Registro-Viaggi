@@ -1,7 +1,7 @@
 {
   "source": "https://api.conateco.it/ConatecoServicesApi/BerthForecast",
   "source_updated_at": null,
-  "acquired_at": "2026-11-15T23:00:16.638Z",
+  "acquired_at": "2026-11-15T23:30:16.644Z",
   "rows": [
     {
       "vessel": "Carla",
@@ -232,8 +232,8 @@
       "category": "PREVISTE",
       "voyage_id": "202600391",
       "carrier": "LINEA I.MESSINA",
-      "acceptance_flag": "0",
-      "acceptance_icon": "",
+      "acceptance_flag": "1",
+      "acceptance_icon": "ACCETTA_CARICO",
       "stop_cargo": "",
       "external_depot": "",
       "opening": "2026-11-16 06:30",
@@ -249,8 +249,8 @@
       "category": "PREVISTE",
       "voyage_id": "202600386",
       "carrier": "MEDITERRANEAN SHIPPING CO. GENEVA",
-      "acceptance_flag": "0",
-      "acceptance_icon": "",
+      "acceptance_flag": "1",
+      "acceptance_icon": "ACCETTA_CARICO",
       "stop_cargo": "",
       "external_depot": "",
       "opening": "2026-11-16 06:30",
