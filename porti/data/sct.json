@@ -1,7 +1,7 @@
 {
   "source": "https://www.salernocontainerterminal.com/ca/an/vessel_schedule.php",
   "source_updated_at": null,
-  "acquired_at": "2026-11-15T22:30:16.781Z",
+  "acquired_at": "2026-11-15T23:00:16.638Z",
   "rows": [
     {
       "vessel": "CRISTINA A",
@@ -233,11 +233,20 @@
       "voyage": "MPS0J0W19",
       "eta": "22/11/2026 00:00",
       "closing": "21/11/2026 10:00",
-      "acceptance_dry": "CARGO NOT ACCEPTED",
-      "acceptance_reef": "CARGO NOT ACCEPTED",
+      "acceptance_dry": "CARGO ACCEPTED",
+      "acceptance_reef": "CARGO ACCEPTED",
+      "status": "PENDING"
+    },
+    {
+      "vessel": "MAIKE D",
+      "voyage": "1426W",
+      "eta": "23/11/2026 08:00",
+      "closing": "21/11/2026 10:00",
+      "acceptance_dry": "CARGO ACCEPTED",
+      "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
     }
   ],
-  "updated_at": "2026-11-15T22:30:16.781Z",
-  "data_changed_at": "2026-11-14T23:00:16.515Z"
+  "updated_at": "2026-11-15T23:00:16.638Z",
+  "data_changed_at": "2026-11-15T23:00:16.638Z"
 }
