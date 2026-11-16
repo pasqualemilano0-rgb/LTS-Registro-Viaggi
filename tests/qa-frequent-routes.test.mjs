@@ -9,7 +9,8 @@ const start=app.indexOf('  const routeCounts=new Map();');
 const end=app.indexOf('  const quick=el(',start);
 assert.ok(start>=0&&end>start,'Frequent-route selection must remain testable');
 // Execute the actual selection block, with a deterministic sorted history.
-const select=new Function('D','state',app.slice(start,end)+'\nreturn frequentRoutes;');
+const selectRoutes=new Function('D','state','latestRoute',app.slice(start,end)+'\nreturn frequentRoutes;');
+const select=(D,state)=>selectRoutes(D,state,state.trips[0]||null);
 const D={normalizeText,sortTrips:trips=>trips};
 const trip=(client,city,secondClient='',secondCity='')=>({client,city,secondClient,secondCity});
 
@@ -25,10 +26,9 @@ test('repeated routes group normalized names and keep the latest representative'
   trip('UNICO','ROMA')
  ];
  const routes=select(D,{trips});
- assert.deepEqual(routes.map(({count})=>count),[3,2,2]);
- assert.equal(routes[0].trip,trips[0]);
- assert.equal(routes[1].trip,trips[3]);
- assert.equal(routes[2].trip,trips[5]);
+ assert.deepEqual(routes.map(({count})=>count),[2,2]);
+ assert.equal(routes[0].trip,trips[3]);
+ assert.equal(routes[1].trip,trips[5]);
 });
 
 test('ignore invalid routes, cap the sample at 100 and show at most 3 suggestions',()=>{
@@ -56,4 +56,12 @@ test('route shortcuts preserve second pickup but never copy container, fees or e
  for(const key of ['fareCents','extraCents','id'])assert.equal(Object.hasOwn(copied,key),false);
  assert.ok(app.includes("trip.client+' · '+trip.city+second+' ('+count+' viaggi)'"),
   'The UI must label different second pickups distinctly');
+});
+
+test('latest route is not repeated and the latest secondary pickup is visible',()=>{
+ const onlyRepeated=[trip('ACME','NAPOLI','DEPOSITO','CASERTA'),
+  trip('ACME','NAPOLI','DEPOSITO','CASERTA')];
+ assert.deepEqual(select(D,{trips:onlyRepeated}),[]);
+ assert.ok(app.includes("latestRoute.client+' · '+latestRoute.city+latestSecond"));
+ assert.ok(app.includes("role:'group','aria-label':'Percorsi più utilizzati'"));
 });

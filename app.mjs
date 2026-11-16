@@ -570,14 +570,23 @@ function renderInsert(main){
    if(item)item.count++;
    else routeCounts.set(key,{trip,count:1});
   }
-  const frequentRoutes=[...routeCounts.values()].filter(item=>item.count>1)
-   .sort((a,b)=>b.count-a.count).slice(0,3);
+  // The latest journey already has its own action: never suggest it twice.
+  const lastClient=D.normalizeText(latestRoute.client),lastCity=D.normalizeText(latestRoute.city);
+  const lastSecondClient=D.normalizeText(latestRoute.secondClient),lastSecondCity=D.normalizeText(latestRoute.secondCity);
+  const latestKey=JSON.stringify([lastClient,lastCity,
+   lastSecondClient&&lastSecondCity?lastSecondClient:'',
+   lastSecondClient&&lastSecondCity?lastSecondCity:'']);
+  const frequentRoutes=[...routeCounts.entries()]
+   .filter(([key,item])=>item.count>1&&key!==latestKey)
+   .sort((a,b)=>b[1].count-a[1].count).slice(0,3).map(([,item])=>item);
+  const latestSecond=lastSecondClient&&lastSecondCity
+   ?' + '+latestRoute.secondClient+' · '+latestRoute.secondCity:'';
   const quick=el('section',{class:'trip-quick-route','aria-label':'Inserimento rapido'},
-   el('div',{},el('strong',{},'Ultimo percorso'),el('p',{},latestRoute.client+' · '+latestRoute.city)),
+   el('div',{},el('strong',{},'Ultimo percorso'),el('p',{},latestRoute.client+' · '+latestRoute.city+latestSecond)),
    button('Ripeti ultimo percorso','secondary',()=>repeatRoute(latestRoute),'refresh',
     {class:'secondary-button trip-quick-route-action'}));
   if(frequentRoutes.length){
-   const frequent=el('div',{class:'trip-frequent-routes'},
+   const frequent=el('div',{class:'trip-frequent-routes',role:'group','aria-label':'Percorsi più utilizzati'},
     el('strong',{},'Percorsi più utilizzati'));
    for(const {trip,count} of frequentRoutes){
     const second=D.normalizeText(trip.secondClient)&&D.normalizeText(trip.secondCity)
