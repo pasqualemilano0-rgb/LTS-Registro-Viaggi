@@ -66,7 +66,7 @@ test('driver admin editor prevents stale owner and unsaved form races',()=>{
  ])assert.match(editor,pattern);
  assert.match(report,/lastView==='records'&&view!=='records'&&!records[.]canLeave\(\)/);
  assert.match(html,/admin[.]mjs[?]v=20261116-maps-diagnostics-v1/);
- assert.match(admin,/report[.]mjs[?]v=20261116-maps-diagnostics-v1/);
+ assert.match(admin,/report[.]mjs[?]v=20261116-localita-edit-v1/);
  assert.match(report,/driver-records[.]mjs[?]v=20261111-reefer-retired-v3/);
 });
 test('onboarding changes broadcast only a private data-free roster hint',()=>{

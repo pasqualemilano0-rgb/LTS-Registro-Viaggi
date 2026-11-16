@@ -33,7 +33,7 @@ test('Design file is versioned, mobile-first, touch accessible, and not privileg
  const html=read('amministratore/index.html'),css=read('amministratore/dashboard-unified-v11.css');
  assert.match(html,/dashboard-unified-v11\.css\?v=20261110-rates-visibility-v2/);
  assert.match(html,/admin\.mjs\?v=20261116-maps-diagnostics-v1/);
- assert.match(read('amministratore/admin.mjs'),/report\.mjs\?v=20261116-maps-diagnostics-v1/);
+ assert.match(read('amministratore/admin.mjs'),/report\.mjs\?v=20261116-localita-edit-v1/);
  assert.match(css,/@media\(max-width:1029px\)/);
  assert.match(css,/@media\(max-width:680px\)/);
  assert.match(css,/@media\(prefers-reduced-motion:reduce\)/);
