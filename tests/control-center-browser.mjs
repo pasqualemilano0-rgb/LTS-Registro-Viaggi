@@ -181,7 +181,7 @@ try{
  // Connectivity status must be explicit without wiping the already authorized view.
  await page.evaluate(()=>{Object.defineProperty(navigator,'onLine',{configurable:true,value:false});window.dispatchEvent(new Event('offline'));});
  await page.waitForFunction(()=>document.querySelector('.cc-sync')?.textContent.includes('Dispositivo offline'));
- assert.match(await page.locator('#control-center-home .cc-status').textContent(),/Connessione assente/);
+ assert.match(await page.locator('#control-center-home .cc-status-note').textContent(),/Connessione assente/);
  assert.equal(await page.locator('#cc-kpi-anomalies .cc-kpi-value').textContent(),'2');
  await page.evaluate(()=>{Object.defineProperty(navigator,'onLine',{configurable:true,value:true});window.dispatchEvent(new Event('online'));});
  await page.waitForFunction(()=>!document.querySelector('.cc-sync')?.textContent.includes('Dispositivo offline'));
