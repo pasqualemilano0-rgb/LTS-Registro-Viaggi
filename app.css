@@ -693,6 +693,9 @@ h1,h2,h3{letter-spacing:-.035em}
 .trip-quick-route>div{flex:1;min-width:0}.trip-quick-route strong{font-size:12px;font-weight:800;color:#24536a}
 .trip-quick-route p{font-size:11px;color:#5a798a;line-height:1.45;margin-top:3px;overflow-wrap:anywhere}
 .trip-quick-route-action{font-size:11px;min-height:43px;flex-shrink:0}
+/* Frequent routes occupy a separate row, with readable, tappable labels on mobile. */
+.trip-quick-route>.trip-frequent-routes{flex:1 0 100%;display:flex;flex-direction:column;align-items:stretch;gap:8px;min-width:0;padding-top:10px;border-top:1px solid #e1edf2}
+.trip-frequent-routes>.trip-quick-route-action{width:100%;max-width:100%;min-width:0;flex-shrink:1;justify-content:flex-start;text-align:left;white-space:normal;overflow-wrap:anywhere}
 .trip-estimate-breakdown{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:-3px 0 12px}
 .trip-estimate-breakdown>div{display:flex;flex-direction:column;gap:2px;min-width:0;background:#f5f9fb;padding:8px 10px;border:1px solid #e1edf2;border-radius:9px}
 .trip-estimate-breakdown span{font-size:10px;color:#5d7e8f}
