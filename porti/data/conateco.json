@@ -1,7 +1,7 @@
 {
   "source": "https://api.conateco.it/ConatecoServicesApi/BerthForecast",
   "source_updated_at": null,
-  "acquired_at": "2026-11-16T11:00:16.856Z",
+  "acquired_at": "2026-11-16T11:30:16.611Z",
   "rows": [
     {
       "vessel": "Carla",
@@ -270,7 +270,7 @@
       "acceptance_icon": "",
       "stop_cargo": "",
       "external_depot": "S",
-      "opening": "2026-11-17 06:30",
+      "opening": "2026-11-18 06:30",
       "closing": "2026-11-20 17:00",
       "notes": "ACCETT.RETROPORTO 13/11 14:00",
       "source_conflict": false
@@ -306,7 +306,7 @@
       "external_depot": "",
       "opening": "",
       "closing": "",
-      "notes": "",
+      "notes": "ACCETT. RETROPORTO 17/11 07.00",
       "source_conflict": false
     },
     {
@@ -323,7 +323,7 @@
       "external_depot": "",
       "opening": "",
       "closing": "",
-      "notes": "",
+      "notes": "ACCETT. RETROPORTO 18/11 07.00",
       "source_conflict": false
     },
     {
@@ -357,7 +357,7 @@
       "external_depot": "",
       "opening": "",
       "closing": "",
-      "notes": "LOAD DRAGON SERVICE",
+      "notes": "ACCETT. RETROPORTO 19/11 07.00 LOAD DRAGON SERVICE",
       "source_conflict": false
     },
     {
