@@ -1,7 +1,7 @@
 {
   "source": "https://api.conateco.it/ConatecoServicesApi/BerthForecast",
   "source_updated_at": null,
-  "acquired_at": "2026-11-16T08:00:16.729Z",
+  "acquired_at": "2026-11-16T08:30:16.546Z",
   "rows": [
     {
       "vessel": "Carla",
@@ -160,12 +160,12 @@
       "vessel": "MSC ADONIS",
       "voyage": "FD645E",
       "eta": "2026-11-14 09:10",
-      "vessel_status": "ARR",
-      "category": "ORMEGGIATE",
+      "vessel_status": "CHI",
+      "category": "PARTITE",
       "voyage_id": "202600381",
       "carrier": "MEDITERRANEAN SHIPPING CO. GENEVA",
       "acceptance_flag": "0",
-      "acceptance_icon": "NO_ACCETTA_CARICO",
+      "acceptance_icon": "CHIUSA",
       "stop_cargo": "S",
       "external_depot": "",
       "opening": "2026-11-11 06:30",

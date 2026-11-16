@@ -1,7 +1,7 @@
 {
   "source": "https://www.salernocontainerterminal.com/ca/an/vessel_schedule.php",
   "source_updated_at": null,
-  "acquired_at": "2026-11-16T08:00:16.729Z",
+  "acquired_at": "2026-11-16T08:30:16.546Z",
   "rows": [
     {
       "vessel": "CRISTINA A",
@@ -76,10 +76,10 @@
       "status": "PENDING"
     },
     {
-      "vessel": "XIN NAN TONG",
-      "voyage": "644N",
+      "vessel": "GREEN OCEAN",
+      "voyage": "647W",
       "eta": "17/11/2026 00:00",
-      "closing": "14/11/2026 10:00 CLOSED",
+      "closing": "16/11/2026 17:00",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
@@ -94,19 +94,10 @@
       "status": "PENDING"
     },
     {
-      "vessel": "LIVORNO EXPRESS",
-      "voyage": "88W47",
+      "vessel": "XIN NAN TONG",
+      "voyage": "644N",
       "eta": "17/11/2026 00:00",
-      "closing": "17/11/2026 17:00",
-      "acceptance_dry": "CARGO ACCEPTED",
-      "acceptance_reef": "CARGO ACCEPTED",
-      "status": "PENDING"
-    },
-    {
-      "vessel": "GREEN OCEAN",
-      "voyage": "647W",
-      "eta": "17/11/2026 00:00",
-      "closing": "16/11/2026 17:00",
+      "closing": "14/11/2026 10:00 CLOSED",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
@@ -121,10 +112,10 @@
       "status": "PENDING"
     },
     {
-      "vessel": "KARANFIL",
-      "voyage": "171126",
-      "eta": "17/11/2026 08:00",
-      "closing": "16/11/2026 17:00",
+      "vessel": "LIVORNO EXPRESS",
+      "voyage": "88W47",
+      "eta": "17/11/2026 00:00",
+      "closing": "17/11/2026 17:00",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
@@ -175,10 +166,10 @@
       "status": "PENDING"
     },
     {
-      "vessel": "RMS ROSE",
-      "voyage": "ROS1026E",
-      "eta": "20/11/2026 00:00",
-      "closing": "19/11/2026 17:00",
+      "vessel": "KARANFIL",
+      "voyage": "191126",
+      "eta": "19/11/2026 14:00",
+      "closing": "19/11/2026 12:00",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
@@ -186,6 +177,15 @@
     {
       "vessel": "CMA CGM GUILD",
       "voyage": "FMX070N19",
+      "eta": "20/11/2026 00:00",
+      "closing": "19/11/2026 17:00",
+      "acceptance_dry": "CARGO ACCEPTED",
+      "acceptance_reef": "CARGO ACCEPTED",
+      "status": "PENDING"
+    },
+    {
+      "vessel": "RMS ROSE",
+      "voyage": "ROS1026E",
       "eta": "20/11/2026 00:00",
       "closing": "19/11/2026 17:00",
       "acceptance_dry": "CARGO ACCEPTED",
@@ -247,6 +247,6 @@
       "status": "PENDING"
     }
   ],
-  "updated_at": "2026-11-16T08:00:16.729Z",
-  "data_changed_at": "2026-11-15T23:00:16.638Z"
+  "updated_at": "2026-11-16T08:30:16.546Z",
+  "data_changed_at": "2026-11-16T08:15:16.697Z"
 }

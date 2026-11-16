@@ -1,7 +1,7 @@
 {
   "source": "https://tfg.bucci.it/@/TFGW_TP_ETA",
-  "source_updated_at": "2026-11-13T19:30:19.000Z",
-  "acquired_at": "2026-11-16T08:00:16.729Z",
+  "source_updated_at": "2026-11-16T08:21:15.000Z",
+  "acquired_at": "2026-11-16T08:30:16.546Z",
   "rows": [
     {
       "vessel": "SUNAID X",
@@ -81,17 +81,6 @@
       "destination": "INTERNO PORTO"
     },
     {
-      "vessel": "CHRISTINA",
-      "arrival_voyage": "AGA060S19",
-      "departure_voyage": "AGA060S19",
-      "eta": "17/11/26",
-      "acceptance": "NON ACCETTA CARICO",
-      "custom_close_time": "ANNULLATA",
-      "fast_corridor_cut_off": "",
-      "gate_cut_off": "",
-      "destination": "INTERNO PORTO"
-    },
-    {
       "vessel": "X PRESS SAGARMALA",
       "arrival_voyage": "646E",
       "departure_voyage": "647W",
@@ -118,7 +107,7 @@
       "arrival_voyage": "AGA080S19",
       "departure_voyage": "AGA080S19",
       "eta": "23/11/26",
-      "acceptance": "NON ACCETTA CARICO",
+      "acceptance": "ACCETTA CARICO",
       "custom_close_time": "&nbsp;",
       "fast_corridor_cut_off": "",
       "gate_cut_off": "",
@@ -140,6 +129,17 @@
       "arrival_voyage": "647E",
       "departure_voyage": "648W",
       "eta": "26/11/26",
+      "acceptance": "NON ACCETTA CARICO",
+      "custom_close_time": "&nbsp;",
+      "fast_corridor_cut_off": "",
+      "gate_cut_off": "",
+      "destination": "INTERNO PORTO"
+    },
+    {
+      "vessel": "CHRISTINA",
+      "arrival_voyage": "AGA0A0S19",
+      "departure_voyage": "AGA0A0S19",
+      "eta": "30/11/26",
       "acceptance": "NON ACCETTA CARICO",
       "custom_close_time": "&nbsp;",
       "fast_corridor_cut_off": "",
