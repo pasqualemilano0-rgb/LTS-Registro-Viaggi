@@ -2,11 +2,12 @@ import * as account from '../account-access.mjs?v=20261107-realtime-v1';
 import realtimeConfig from '../runtime-config.mjs';
 import {createLtsRealtime} from '../realtime-client.mjs?v=20261107-roster-realtime-v1';
 import {STATUS_LABELS,driverSummary,filterDrivers,driverInitial} from './model.mjs?v=20261109-alpha-v1';
-import {setupReport} from './report.mjs?v=20261111-control-center-v1';
+import {setupReport} from './report.mjs?v=20261116-localita-edit-v1';
 import {mustRevalidateOnReturn} from '../shared/foreground-resume.mjs';
 import {setupSmartConsole} from './smart-console.mjs?v=20261111-control-center-v1';
 import {setupAdminStatus} from './admin-status.mjs';
 import {setupControlCenter} from './control-center-home.mjs?v=20261111-control-center-v1';
+import {setupUnifiedDiagnostics} from './unified-diagnostics.mjs?v=20261116-unified-v1';
 import {setupMapsApprovals} from './maps-approvals.mjs?v=20261111-control-center-v1';
 import {rememberPosition,readPosition,clearPosition} from './admin-position.mjs?v=20261110-audit-v1';
 
@@ -88,6 +89,10 @@ const controlCenter=setupControlCenter({account,
   return ok;
  }
 });
+const unifiedDiagnostics=setupUnifiedDiagnostics({account,
+ authorized:()=>account.isVerified()&&account.getRole()==='admin'&&
+  !dashboard.hidden&&!dashboard.inert&&!adminInlineResumeActive&&byId('mfa-panel').hidden&&byId('admin-resume-guard').hidden,
+ getReport:()=>companyView.peek()});
 let adminRealtime=null;
 function startAdminRealtime(){
  if(!account.isVerified()||account.getRole()!=='admin'||dashboard.hidden||
@@ -95,6 +100,7 @@ function startAdminRealtime(){
  adminRealtime?.stop();
  adminRealtime=createLtsRealtime({
   config:realtimeConfig.realtime,authenticate:account.getRealtimeCredentials,
+  onStatus:status=>unifiedDiagnostics.setRealtimeStatus(status),
   onChange:kind=>{
    if(dashboard.hidden||document.hidden||!account.isVerified()||
       account.getRole()!=='admin'||resumingDashboard)return;
@@ -235,7 +241,7 @@ function lock(message='Accedi come amministratore per continuare.'){
  hideResumeGuard();
  setPasswordVisibility(false);
  byId('switch-account').hidden=!account.hasSession();
- adminStatus.reset();
+ adminStatus.reset();unifiedDiagnostics.reset();
  mapsApprovals.reset();
  selectedInitial='';
  byId('search').value='';byId('status-filter').value='all';
