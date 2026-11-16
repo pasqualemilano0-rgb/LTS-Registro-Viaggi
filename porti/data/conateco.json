@@ -1,7 +1,7 @@
 {
   "source": "https://api.conateco.it/ConatecoServicesApi/BerthForecast",
   "source_updated_at": null,
-  "acquired_at": "2026-11-16T16:00:16.919Z",
+  "acquired_at": "2026-11-16T16:30:16.643Z",
   "rows": [
     {
       "vessel": "Carla",
@@ -244,7 +244,7 @@
     {
       "vessel": "MSC ESTHI",
       "voyage": "FD646E",
-      "eta": "2026-11-19 00:00",
+      "eta": "2026-11-20 00:00",
       "vessel_status": "PRE",
       "category": "PREVISTE",
       "voyage_id": "202600386",
@@ -389,8 +389,8 @@
       "acceptance_icon": "ACCETTA_CARICO",
       "stop_cargo": "",
       "external_depot": "",
-      "opening": "",
-      "closing": "",
+      "opening": "2026-11-16 16:00",
+      "closing": "2026-11-27 12:00",
       "notes": "",
       "source_conflict": false
     },
