@@ -190,9 +190,9 @@ test('critical customer/tariff and Maps SQL RPC bodies do not execute dynamic SQ
   const bodyStart=begin+3+start.length,endAt=sql.indexOf(end,bodyStart);
   assert(endAt>bodyStart,path+' terminator exists');
   const body=sql.slice(bodyStart,endAt);
-  assert.doesNotMatch(body,/\\bexecute\\s+(?!on\\b)|\\bformat\\s*\\(/i,
+  assert.doesNotMatch(body,/\bexecute\s+(?!on\b)|\bformat\s*\(/i,
    path+' must never construct SQL dynamically from customer input');
-  assert.match(sql,/revoke all on function[\\s\\S]*from public,\\s*anon,\\s*authenticated/i);
-  assert.match(sql,/grant execute on function[\\s\\S]*to service_role/i);
+  assert.match(sql,/revoke all on function[\s\S]*from public,\s*anon,\s*authenticated/i);
+  assert.match(sql,/grant execute on function[\s\S]*to service_role/i);
  }
 });
