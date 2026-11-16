@@ -564,7 +564,8 @@ function renderInsert(main){
   for(const trip of D.sortTrips(state.trips).slice(0,100)){
    const client=D.normalizeText(trip.client),city=D.normalizeText(trip.city);
    if(!client||!city)continue;
-   const key=JSON.stringify([client.toLocaleLowerCase('it-IT'),city.toLocaleLowerCase('it-IT')]);
+   const secondClient=D.normalizeText(trip.secondClient),secondCity=D.normalizeText(trip.secondCity);
+   const key=JSON.stringify([client,city,secondClient&&secondCity?secondClient:'',secondClient&&secondCity?secondCity:'']);
    const item=routeCounts.get(key);
    if(item)item.count++;
    else routeCounts.set(key,{trip,count:1});
@@ -578,9 +579,12 @@ function renderInsert(main){
   if(frequentRoutes.length){
    const frequent=el('div',{class:'trip-frequent-routes'},
     el('strong',{},'Percorsi più utilizzati'));
-   for(const {trip,count} of frequentRoutes)frequent.append(
-    button(trip.client+' · '+trip.city+' ('+count+' viaggi)','secondary',()=>repeatRoute(trip),'refresh',
+   for(const {trip,count} of frequentRoutes){
+    const second=D.normalizeText(trip.secondClient)&&D.normalizeText(trip.secondCity)
+     ?' + '+trip.secondClient+' · '+trip.secondCity:'';
+    frequent.append(button(trip.client+' · '+trip.city+second+' ('+count+' viaggi)','secondary',()=>repeatRoute(trip),'refresh',
      {class:'secondary-button trip-quick-route-action'}));
+   }
    quick.append(frequent);
   }
   form.append(quick);
