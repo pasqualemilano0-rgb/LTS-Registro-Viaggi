@@ -557,10 +557,34 @@ function renderInsert(main){
  form.append(el('div',{class:'section-hero insert-hero'},el('h1',{},editingId?'Modifica viaggio':'Inserisci viaggio'),date.wrap));
  // The most frequent workflow is a return trip: keep the shortcut above the form.
  const latestRoute=D.sortTrips(state.trips)[0]||null;
- if(!editingId&&latestRoute)form.append(el('section',{class:'trip-quick-route','aria-label':'Inserimento rapido'},
-  el('div',{},el('strong',{},'Percorso abituale'),el('p',{},latestRoute.client+' · '+latestRoute.city)),
-  button('Ripeti ultimo percorso','secondary',()=>repeatRoute(latestRoute),'refresh',
-   {class:'secondary-button trip-quick-route-action'})));
+ if(!editingId&&latestRoute){
+  // Offer the most-used routes from the existing personal trip history.
+  // Keep one representative trip per route; never auto-select or save it.
+  const routeCounts=new Map();
+  for(const trip of D.sortTrips(state.trips).slice(0,100)){
+   const client=D.normalizeText(trip.client),city=D.normalizeText(trip.city);
+   if(!client||!city)continue;
+   const key=JSON.stringify([client.toLocaleLowerCase('it-IT'),city.toLocaleLowerCase('it-IT')]);
+   const item=routeCounts.get(key);
+   if(item)item.count++;
+   else routeCounts.set(key,{trip,count:1});
+  }
+  const frequentRoutes=[...routeCounts.values()].filter(item=>item.count>1)
+   .sort((a,b)=>b.count-a.count).slice(0,3);
+  const quick=el('section',{class:'trip-quick-route','aria-label':'Inserimento rapido'},
+   el('div',{},el('strong',{},'Ultimo percorso'),el('p',{},latestRoute.client+' · '+latestRoute.city)),
+   button('Ripeti ultimo percorso','secondary',()=>repeatRoute(latestRoute),'refresh',
+    {class:'secondary-button trip-quick-route-action'}));
+  if(frequentRoutes.length){
+   const frequent=el('div',{class:'trip-frequent-routes'},
+    el('strong',{},'Percorsi più utilizzati'));
+   for(const {trip,count} of frequentRoutes)frequent.append(
+    button(trip.client+' · '+trip.city+' ('+count+' viaggi)','secondary',()=>repeatRoute(trip),'refresh',
+     {class:'secondary-button trip-quick-route-action'}));
+   quick.append(frequent);
+  }
+  form.append(quick);
+ }
  // Dashboard shortcut: reuse the same Google Maps import and confirmation path
  // as Clienti. Preserve the current unsaved journey before opening the dialog.
  if(!editingId)form.append(el('section',{class:'dashboard-maps-shortcut',
