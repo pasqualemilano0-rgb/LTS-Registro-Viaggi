@@ -136,14 +136,16 @@ export function setupControlCenter({account,authorized=()=>false,getRoster=()=>n
  function renderStatus(){
   nodes.error.textContent=error;nodes.error.hidden=!error;host.setAttribute('aria-busy',String(loading));
   const monthlyStale=getReport()?.stale===true;
+  const offline=navigator.onLine===false;
   const seen=stamp(model.insightsReportedAt||model.reportedAt);
-  nodes.sync.textContent=loading?'Aggiornamento discreto in corso…':error?'Ultimi dati confermati conservati':monthlyStale?'Riepilogo mensile da aggiornare':seen?'Dati verificati · '+seen:'Dati autorizzati in caricamento';
-  nodes.sync.dataset.state=loading?'loading':error||monthlyStale?'stale':seen?'ready':'loading';
+  nodes.sync.textContent=offline?'Dispositivo offline · nessun aggiornamento in corso':loading?'Aggiornamento discreto in corso…':error?'Ultimi dati confermati conservati':monthlyStale?'Riepilogo mensile da aggiornare':seen?'Dati verificati · '+seen:'Dati autorizzati in caricamento';
+  nodes.sync.dataset.state=offline?'stale':loading?'loading':error||monthlyStale?'stale':seen?'ready':'loading';
   const prior=showingPreviousScope(),shown=shownQuery();
   const range='dal '+dateLabel(shown.fromDate)+' al '+dateLabel(shown.toDate);
   const filterNames=[shown.driverId?model.options.drivers.find(d=>d.id===shown.driverId)?.name||'Autista selezionato':'Tutti gli autisti',shown.client||'Tutti i clienti',shown.city||'Tutte le località'].join(' · ');
   nodes.status.textContent=prior?'I nuovi filtri non sono ancora confermati. Sono mostrati gli ultimi dati verificati '+range+' · '+filterNames+'.':loading?'Aggiornamento delle analisi, senza interrompere la schermata.':model.scope.recordsComplete?'Analisi '+range+' · '+filterNames+'. Dati sincronizzati; gli elementi non ancora inviati dai telefoni non sono disponibili qui.':'Le schede mostrano soltanto i dati già verificati. Le analisi diventano disponibili al termine del caricamento.';
-  nodes.status.classList.toggle('cc-warning',model.partial||prior||monthlyStale);
+  nodes.status.classList.toggle('cc-warning',offline||model.partial||prior||monthlyStale);
+  if(offline)nodes.status.textContent+=' Connessione assente: i dati visualizzati potrebbero non essere aggiornati.';
   if(monthlyStale)nodes.status.textContent+=' Riepilogo mensile: mostrato l’ultimo dato disponibile; l’aggiornamento non è riuscito.';
   if(model.partial)nodes.status.textContent+=' Alcuni importi o archivi sono incompleti: i totali possono essere parziali.';
  }
@@ -281,6 +283,8 @@ export function setupControlCenter({account,authorized=()=>false,getRoster=()=>n
  for(const name of ['lts-admin-data-refreshed','lts-admin-roster-refreshed','lts-admin-customers-refreshed','lts-admin-approvals-refreshed'])window.addEventListener(name,scheduledRefresh);
  new MutationObserver(scheduledRefresh).observe(dashboard,{attributes:true,attributeFilter:['data-view','data-home-section','hidden','inert']});
  document.addEventListener('visibilitychange',()=>{if(!document.hidden)scheduledRefresh();});
+ window.addEventListener('offline',()=>{if(mounted&&permitted())renderStatus();});
+ window.addEventListener('online',()=>{if(mounted&&permitted()){renderStatus();scheduledRefresh();}});
  mount();
  return {refresh,reset,openCustomers};
 }
