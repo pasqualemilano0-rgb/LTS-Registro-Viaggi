@@ -159,7 +159,8 @@ test('Maps review requires a manually validated Comune when Google omits its cit
  const css=read('amministratore/company-rates.css');
  assert.match(page,/<input id="company-maps-city"[^>]*required>/);
  assert.match(page,/company-maps-city" name="city"/);
- assert.match(maps,/city[.]value=proposal[.]city/);
+ assert.match(maps,/city[.]value=selected[.]city/);
+ assert.match(maps,/approvedLocalityFromSharedMaps\(siteResult,proposal\)/);
  assert.match(maps,/const proposal=reviewedSite\(\)/);
  assert.match(maps,/save[.]disabled=true/);
  assert.match(maps,/city[.]addEventListener\('input'/);

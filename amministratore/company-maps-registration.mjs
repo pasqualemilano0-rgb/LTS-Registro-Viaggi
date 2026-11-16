@@ -3,6 +3,7 @@
  * Customer and fare use separate APIs: report partial success if pricing fails.
  */
 import {readMapsCustomer} from '../maps-reader-client.mjs';
+import {approvedLocalityFromSharedMaps} from './maps-free-locality.mjs?v=20261116-free-locality-v1';
 import {sharedMapsCustomers,saveSharedPricedCustomer} from '../shared-maps-client.mjs?v=20261110-atomic-v1';
 import {customerSiteRateKey} from './customer-overview-model.mjs?v=20261107-client-tariff-sync-v2';
 
@@ -30,22 +31,6 @@ export function matchingSite(customers,site){
  return (Array.isArray(customers)?customers:[]).find(row=>
   row.mapsUrl===site.mapsUrl||
   (customerSiteRateKey(row)+'\u0000'+normalize(row.address)===key))||null;
-}
-/** Zero-cost fallback: reuse only a uniquely verified LTS shared Maps site.
- * Never infer a Comune from CAP alone or from a different company/shortlink.
- */
-export function approvedLocalityFromSharedMaps(customers,proposal){
- if(!proposal||normalize(proposal.city)||!proposal.mapsUrl)return null;
- const idName=s=>normalize(s).replace(/[^\p{L}\p{N}]/gu,'');
- const postcode=s=>/\b\d{5}\b/u.exec(s||'')?.[0]||'';
- const matches=(Array.isArray(customers)?customers:[]).filter(row=>
-  row?.mapsUrl===proposal.mapsUrl&&idName(row.name)===idName(proposal.name)&&
-  (!postcode(proposal.address)||postcode(row.address)===postcode(proposal.address))&&
-  /^[\p{L}][\p{L}\p{M} .’'\-]{1,99}$/u.test(normalize(row.city)));
- if(matches.length!==1)return null;
- return {...proposal,city:normalize(matches[0].city),address:normalize(matches[0].address)||proposal.address,
-  warnings:[...(proposal.warnings||[]),
-   'Località recuperata dalla sede già verificata nell’elenco condiviso LTS.']};
 }
 export function matchingRate(rates,site){
  const key=customerSiteRateKey(site);
