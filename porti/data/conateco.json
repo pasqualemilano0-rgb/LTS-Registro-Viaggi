@@ -1,7 +1,7 @@
 {
   "source": "https://api.conateco.it/ConatecoServicesApi/BerthForecast",
   "source_updated_at": null,
-  "acquired_at": "2026-11-16T17:30:17.048Z",
+  "acquired_at": "2026-11-16T18:00:16.911Z",
   "rows": [
     {
       "vessel": "Carla",
