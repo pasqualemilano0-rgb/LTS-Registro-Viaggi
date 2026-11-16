@@ -1,7 +1,7 @@
 {
   "source": "https://www.salernocontainerterminal.com/ca/an/vessel_schedule.php",
   "source_updated_at": null,
-  "acquired_at": "2026-11-16T15:30:16.658Z",
+  "acquired_at": "2026-11-16T16:00:16.919Z",
   "rows": [
     {
       "vessel": "CRISTINA A",
@@ -79,7 +79,7 @@
       "vessel": "GREEN OCEAN",
       "voyage": "647W",
       "eta": "17/11/2026 00:00",
-      "closing": "16/11/2026 17:00",
+      "closing": "16/11/2026 17:00 CLOSED",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
@@ -88,7 +88,7 @@
       "vessel": "JUDITH BORCHARD",
       "voyage": "1076",
       "eta": "17/11/2026 00:00",
-      "closing": "16/11/2026 17:00",
+      "closing": "16/11/2026 17:00 CLOSED",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
@@ -97,7 +97,7 @@
       "vessel": "MEDKON PERLA",
       "voyage": "645E",
       "eta": "17/11/2026 00:00",
-      "closing": "16/11/2026 17:00",
+      "closing": "16/11/2026 17:00 CLOSED",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
@@ -247,6 +247,6 @@
       "status": "PENDING"
     }
   ],
-  "updated_at": "2026-11-16T15:30:16.658Z",
-  "data_changed_at": "2026-11-16T14:00:17.178Z"
+  "updated_at": "2026-11-16T16:00:16.919Z",
+  "data_changed_at": "2026-11-16T16:00:16.919Z"
 }
