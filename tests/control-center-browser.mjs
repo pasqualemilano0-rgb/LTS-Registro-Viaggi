@@ -182,7 +182,7 @@ try{
  const requestsBeforeOffline=await page.evaluate(()=>window.__ccQA.data.requests.length);
  await page.evaluate(()=>window.dispatchEvent(new Event('offline')));
  await page.waitForFunction(()=>document.querySelector('.cc-sync')?.textContent.includes('Dispositivo offline'));
- assert.match(await page.locator('#control-center-home .cc-status-note').textContent(),/Connessione assente/);
+ assert.match(await page.locator('#control-center-home .cc-toolbar > .cc-status-note').textContent(),/Connessione assente/);
  assert.equal(await page.locator('#cc-kpi-anomalies .cc-kpi-value').textContent(),'2');
  // Refresh attempts while offline must not make requests or erase authorized data.
  await page.evaluate(()=>window.__ccQA.home.refresh({forceInsights:true}));
