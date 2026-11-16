@@ -1,7 +1,7 @@
 import * as D from '/LTS-Registro-Viaggi/shared/domain.mjs';
 import { quickTripFromRoute } from '/LTS-Registro-Viaggi/shared/quick-trip.mjs';
 import {REGISTER_PAGE_SIZE,registerTripCounts,filterRegisterTrips,paginateRegisterTrips,stepRegisterMonth} from '/LTS-Registro-Viaggi/shared/register-explorer.mjs';
-import {TRIP_DRAFT_VERSION,tripDraftHasWork,possibleTripDuplicate,restoreTripEditorSnapshot} from '/LTS-Registro-Viaggi/shared/trip-editor-safety.mjs';
+import {TRIP_DRAFT_VERSION,tripDraftHasWork,possibleTripDuplicate,restoreTripEditorSnapshot,assertTripAdminNoteRetained} from '/LTS-Registro-Viaggi/shared/trip-editor-safety.mjs';
 import {unionStates,SyncConflictError} from '/LTS-Registro-Viaggi/shared/sync-merge.mjs';
 import {mustRevalidateOnReturn} from '/LTS-Registro-Viaggi/shared/foreground-resume.mjs';
 import {describeBackupConflict} from '/LTS-Registro-Viaggi/shared/backup-conflict-details.mjs';
@@ -724,11 +724,10 @@ function renderInsert(main){
    const clients=[{name:trip.client,city:trip.city},...(trip.secondClient?[{name:trip.secondClient,city:trip.secondCity}]:[])];
    for(const customer of clients)if(!next.customers.some(c=>c.name===customer.name))next=D.upsertCustomer(next,customer);
    await persist(next);
-   const persistedTrip=state.trips.find(saved=>saved.id===trip.id);
-   if((persistedTrip?.adminNote||'')!==trip.adminNote){
-    keepEditorScratchpad();
-    throw new Error('La nota per amministrazione non è stata conservata dal registro sincronizzato. La bozza resta disponibile: non considerare il viaggio aggiornato e non generare il PDF finché il problema non è risolto.');
-   }
+   // Keep the editor draft when a local/server-normalized result silently drops
+   // the administrative note. A pending offline copy is not claimed as online.
+   try{assertTripAdminNoteRetained(state.trips,trip);}
+   catch(noteError){keepEditorScratchpad();throw noteError;}
    const pending=store.getSyncInfo?.().pending;
    const savedDate=draft.date;
    month=savedDate.slice(0,7);registerQuery='';registerFilter='all';registerLimit=REGISTER_PAGE_SIZE;

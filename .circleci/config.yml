@@ -34,6 +34,7 @@ jobs:
             node --check sw.js
             node --test tests/*.test.mjs
             node tests/maps-redirect-diagnostic.mjs
+            node tests/qa-report-production-http-smoke.mjs
 
   booking-auth-transport:
     docker:
@@ -53,6 +54,16 @@ jobs:
             node --test tests/test_porti_maintenance.mjs tests/leaked-password-protection.test.mjs
             node --test tests/qa-ci-transport-retirement.test.mjs
             node --test tests/qa-driver-refresh-vault-freshness.test.mjs tests/qa-tfg-auth-network-session-retry.test.mjs tests/qa-tfg-booking-stage-diagnostics.test.mjs tests/qa-tfg-booking-offline-diagnostics.test.mjs tests/qa-porti-android-auth-transport-diagnostics.test.mjs tests/qa-account-release.test.mjs tests/qa-regression-contract.test.mjs tests/qa-no-auto-publish.test.mjs
+
+      - run:
+          name: Preserve read-only deployed transport checks on relevant changes
+          command: |
+            set -eu
+            bash -n scripts/qa-porti-auth-transport.sh
+            git diff --name-only HEAD^ HEAD -- scripts/qa-porti-auth-transport.sh .github/workflows/porti-auth-transport-diagnostic.yml .circleci/config.yml account-access.mjs porti/app.js > /tmp/lts-transport-changed-paths
+            if test -s /tmp/lts-transport-changed-paths; then
+              bash scripts/qa-porti-auth-transport.sh
+            fi
 
   snapshot-publisher-contract:
     docker:
