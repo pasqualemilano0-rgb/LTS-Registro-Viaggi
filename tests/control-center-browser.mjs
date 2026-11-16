@@ -74,7 +74,7 @@ try{
  await page.waitForFunction(()=>document.querySelector('[data-diagnostic="ci"] .lts-diag-value')?.textContent==='Controlli CI superati');
  assert.match(await page.locator('[data-diagnostic="sync"]').textContent(),/Lettura aziendale recente/);
  assert.match(await page.locator('[data-diagnostic="booking"]').textContent(),/non verificato/i);
- assert.match(await page.locator('#lts-diag-status').textContent(),/Verifica/);
+ assert.match(await page.locator('#lts-diag-status').textContent(),/Controllo completato|Verifica parziale/);
  note('diagnostic classifies source freshness and CI without treating Booking as verified');
  const values=await page.evaluate(()=>Object.fromEntries(['driversTotal','driversActive','tripsToday','tripsMonth','faresMonthCents','companyCustomers','anomalies','pendingApprovals'].map(id=>[id,document.getElementById('cc-kpi-'+id)?.textContent])));
  assert.match(values.driversTotal,/2/);assert.match(values.driversActive,/1/);assert.match(values.companyCustomers,/2/);assert.match(values.pendingApprovals,/1/);
