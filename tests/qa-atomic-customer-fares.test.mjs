@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {readFileSync} from 'node:fs';
+import {readFileSync,readdirSync} from 'node:fs';
 import {runInNewContext} from 'node:vm';
 
 const read=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
@@ -194,5 +194,20 @@ test('critical customer/tariff and Maps SQL RPC bodies do not execute dynamic SQ
    path+' must never construct SQL dynamically from customer input');
   assert.match(sql,/revoke all on function[\s\S]*from public,\s*anon,\s*authenticated/i);
   assert.match(sql,/grant execute on function[\s\S]*to service_role/i);
+ }
+});
+
+
+test('all public Supabase SQL migrations reject dynamic SQL construction by default',()=>{
+ const folder=new URL('../supabase/migrations/',import.meta.url);
+ const names=readdirSync(folder).filter(name=>name.endsWith('.sql'));
+ assert(names.length>=5,'Expected the actual public Supabase migration collection');
+ for(const name of names){
+  const body=readFileSync(new URL(name,folder),'utf8')
+   .replace(/\/\*[\s\S]*?\*\//g,'')
+   .replace(/--[^\n]*/g,'')
+   .replace(/\b(?:grant|revoke)\s+(?:all|execute)[^;]*;/gi,'');
+  assert.doesNotMatch(body,/\bexecute\s+(?:format\s*\(|concat\s*\(|'|v_[a-z_]\w*|p_[a-z_]\w*)/i,
+   'Unreviewed dynamic SQL in '+name);
  }
 });
