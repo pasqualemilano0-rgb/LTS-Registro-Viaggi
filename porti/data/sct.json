@@ -1,7 +1,7 @@
 {
   "source": "https://www.salernocontainerterminal.com/ca/an/vessel_schedule.php",
   "source_updated_at": null,
-  "acquired_at": "2026-11-16T17:00:16.605Z",
+  "acquired_at": "2026-11-16T17:30:17.048Z",
   "rows": [
     {
       "vessel": "CRISTINA A",
@@ -35,15 +35,6 @@
       "voyage": "0926E",
       "eta": "15/11/2026 00:00",
       "closing": "14/11/2026 12:00 CLOSED",
-      "acceptance_dry": "CARGO ACCEPTED",
-      "acceptance_reef": "CARGO ACCEPTED",
-      "status": "PENDING"
-    },
-    {
-      "vessel": "MSC ELENI",
-      "voyage": "CD646A",
-      "eta": "15/11/2026 00:00",
-      "closing": "17/11/2026 17:00",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
@@ -123,6 +114,15 @@
     {
       "vessel": "SARA BORCHARD",
       "voyage": "0476",
+      "eta": "18/11/2026 00:00",
+      "closing": "17/11/2026 17:00",
+      "acceptance_dry": "CARGO ACCEPTED",
+      "acceptance_reef": "CARGO ACCEPTED",
+      "status": "PENDING"
+    },
+    {
+      "vessel": "MSC ELENI",
+      "voyage": "CD646A",
       "eta": "18/11/2026 00:00",
       "closing": "17/11/2026 17:00",
       "acceptance_dry": "CARGO ACCEPTED",
@@ -247,6 +247,6 @@
       "status": "PENDING"
     }
   ],
-  "updated_at": "2026-11-16T17:00:16.605Z",
-  "data_changed_at": "2026-11-16T16:00:16.919Z"
+  "updated_at": "2026-11-16T17:30:17.048Z",
+  "data_changed_at": "2026-11-16T17:30:17.048Z"
 }
