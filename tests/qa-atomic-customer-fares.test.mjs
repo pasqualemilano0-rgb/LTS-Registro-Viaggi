@@ -147,3 +147,52 @@ test('legacy special-route tariffs remain available without fabricated Maps site
  assert.match(handler,/Existing dashboard-created company fares are also shared customer choices/);
  assert.match(handler,/const fallback=manualProjection\(\{name:fare.client,city:fare.city/);
 });
+
+
+test('SQL injection-looking customer fields remain literal RPC values, not SQL commands',async()=>{
+ const name="CLIENTE TEST'; DROP TABLE PUBLIC.LTS_COMPANY_TARIFFS; --";
+ const notes="CONTROLLO SQL ' OR '1'='1 --";
+ const h=harness();
+ const res=await h.post({...manual,name,notes});
+ assert.equal(res.status,201);
+ const rpc=h.calls.filter(entry=>entry.type==='rpc');
+ assert.equal(rpc.length,1);
+ assert.equal(rpc[0].name,'lts_company_register_priced_customer');
+ assert.equal(rpc[0].args.p_name,name);
+ assert.equal(rpc[0].args.p_notes,notes);
+ assert.equal(rpc[0].args.p_city,'NAPOLI');
+ // This is a simulated HTTP/RPC test, NOT a live database exploit attempt.
+});
+
+test('malformed SQL injection fields fail validation before any database RPC',async()=>{
+ const hostile=[
+  {...manual,source:"manual'; DROP TABLE x;--"},
+  {...manual,cents:"0 OR 1=1"},
+  {...manual,expectedRevision:"0; DROP TABLE x;--"},
+  {...manual,name:{'$ne':null}}
+ ];
+ for(const input of hostile){
+  const h=harness();
+  const res=await h.post(input);
+  assert.equal(res.status,422);
+  assert.equal(h.calls.some(x=>x.type==='rpc'),false);
+ }
+});
+
+test('critical customer/tariff and Maps SQL RPC bodies do not execute dynamic SQL',()=>{
+ for(const [path,start,end] of [
+  ['supabase/migrations/20261110083900_lts_company_atomic_customer_tariff.sql','$fn$','$fn$'],
+  ['supabase/migrations/20261110070000_lts_maps_approvals.sql','$$','$$']
+ ]){
+  const sql=read(path);
+  const begin=sql.toLowerCase().indexOf('as '+start.toLowerCase());
+  assert(begin>=0,path+' function block exists');
+  const bodyStart=begin+3+start.length,endAt=sql.indexOf(end,bodyStart);
+  assert(endAt>bodyStart,path+' terminator exists');
+  const body=sql.slice(bodyStart,endAt);
+  assert.doesNotMatch(body,/\\bexecute\\s+(?!on\\b)|\\bformat\\s*\\(/i,
+   path+' must never construct SQL dynamically from customer input');
+  assert.match(sql,/revoke all on function[\\s\\S]*from public,\\s*anon,\\s*authenticated/i);
+  assert.match(sql,/grant execute on function[\\s\\S]*to service_role/i);
+ }
+});
