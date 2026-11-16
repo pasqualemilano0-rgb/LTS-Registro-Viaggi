@@ -1,7 +1,7 @@
 {
   "source": "https://api.conateco.it/ConatecoServicesApi/BerthForecast",
   "source_updated_at": null,
-  "acquired_at": "2026-11-16T23:00:16.742Z",
+  "acquired_at": "2026-11-16T23:30:16.709Z",
   "rows": [
     {
       "vessel": "MSC ROSSELLA II",
