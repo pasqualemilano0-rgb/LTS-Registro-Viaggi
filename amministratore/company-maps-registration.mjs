@@ -63,7 +63,7 @@ export function setupCompanyMaps(account,{onSaved=async()=>{}}={}){
   existing=proposal?matchingSite(siteRows,proposal):null;
   rate=proposal?matchingRate(rateRows,existing||proposal):null;
   warning.textContent=(selected?.warnings||[]).filter(text=>
-   proposal||!text.includes('La città non è disponibile nel link')).join(' ');
+   !proposal||!text.includes('La città non è disponibile nel link')).join(' ');
   if(!proposal){
    duplicate.textContent='Località obbligatoria: indica il Comune verificato prima di salvare.';
    save.disabled=true;

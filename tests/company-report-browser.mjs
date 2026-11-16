@@ -283,7 +283,7 @@ export const decideMapsApproval=async()=>{throw new Error('Nessuna richiesta di 
 const mockMapsReader=String.raw`
 export const readMapsCustomer=async(link)=>{
  if(link==='https://maps.app.goo.gl/newDepot')
-  return {name:'CLIENTE DELTA',city:'CASERTA',address:'VIA PORTO 8, CASERTA',mapsUrl:link,warnings:[]};
+  return {name:'CLIENTE DELTA',city:'',address:'VIA PORTO 8, CASERTA',mapsUrl:link,warnings:['La città non è disponibile nel link: completala manualmente.']};
  if(link==='https://maps.app.goo.gl/exampleC')
   return {name:'CLIENTE GAMMA',city:'ROMA',address:'VIA INDUSTRIA 25, ROMA',mapsUrl:link,warnings:[]};
  return {name:'CLIENTE ALFA',city:'NAPOLI',address:'VIA TEST 1, NAPOLI',mapsUrl:link,warnings:[]};
@@ -1011,6 +1011,13 @@ try{
  await page.locator('#company-maps-read').click();
  await page.waitForFunction(()=>!document.querySelector('#company-maps-preview').hidden);
  assert.equal(await page.locator('#company-maps-name').textContent(),'CLIENTE DELTA');
+ assert.equal(await page.locator('#company-maps-city').inputValue(),'');
+ assert.equal(await page.locator('#company-maps-save').isDisabled(),true,
+  'A missing Maps locality must never be published as an empty city');
+ await page.locator('#company-maps-city').fill('CASERTA');
+ assert.equal(await page.locator('#company-maps-save').isEnabled(),true,
+  'Administrator can review and enter the town explicitly');
+ assert.doesNotMatch(await page.locator('#company-maps-warning').textContent(),/completala manualmente/i);
  await page.locator('#company-maps-amount').fill('95,50');
  await page.locator('#company-maps-save').click();
  await page.waitForFunction(()=>document.querySelector('#company-maps-status').textContent.includes('Cliente Google Maps e tariffa salvati insieme'));
