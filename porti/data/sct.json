@@ -1,7 +1,7 @@
 {
   "source": "https://www.salernocontainerterminal.com/ca/an/vessel_schedule.php",
   "source_updated_at": null,
-  "acquired_at": "2026-11-16T12:00:16.757Z",
+  "acquired_at": "2026-11-16T12:30:16.768Z",
   "rows": [
     {
       "vessel": "CRISTINA A",
@@ -193,15 +193,6 @@
       "status": "PENDING"
     },
     {
-      "vessel": "MAERSK IDAHO",
-      "voyage": "646W",
-      "eta": "20/11/2026 00:00",
-      "closing": "19/11/2026 17:00",
-      "acceptance_dry": "CARGO ACCEPTED",
-      "acceptance_reef": "CARGO ACCEPTED",
-      "status": "PENDING"
-    },
-    {
       "vessel": "CONTSHIP ERA",
       "voyage": "94E",
       "eta": "21/11/2026 00:00",
@@ -224,6 +215,15 @@
       "voyage": "GMH0626",
       "eta": "21/11/2026 00:00",
       "closing": "20/11/2026 17:00",
+      "acceptance_dry": "CARGO ACCEPTED",
+      "acceptance_reef": "CARGO ACCEPTED",
+      "status": "PENDING"
+    },
+    {
+      "vessel": "MAERSK IDAHO",
+      "voyage": "646W",
+      "eta": "21/11/2026 12:00",
+      "closing": "19/11/2026 17:00",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
@@ -256,6 +256,6 @@
       "status": "PENDING"
     }
   ],
-  "updated_at": "2026-11-16T12:00:16.757Z",
-  "data_changed_at": "2026-11-16T12:00:16.757Z"
+  "updated_at": "2026-11-16T12:30:16.768Z",
+  "data_changed_at": "2026-11-16T12:30:16.768Z"
 }
