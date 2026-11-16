@@ -36,7 +36,7 @@ test('Diagnostic view is MFA-gated, read-only, and does not call private Booking
  const js=readFileSync(new URL('../amministratore/unified-diagnostics.mjs',import.meta.url),'utf8');
  assert.match(js,/session[?]\.mfa_enrolled!==true[|][|]session[?]\.mfa_verified!==true/);
  assert.match(js,/account[.]verifySession[(][)]/);
- assert.match(js,/getRole[?][.] [(]?[)]?===/); // authenticated role check
+ assert.match(js,/getRole[?][.]\(\)==='admin'/); // authenticated role check
  assert.match(js,/lts-account-locked/);
  assert.doesNotMatch(js,/Bearer |service_role|SUPABASE_SERVICE_ROLE_KEY|localStorage|sessionStorage|booking\\W+fetch/i);
  assert.match(js,/credentials:'omit'/);
