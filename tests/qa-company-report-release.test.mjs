@@ -194,7 +194,7 @@ test('admin can register Google Maps sites with a company tariff and edit audite
  assert.match(maps,/await saveSharedPricedCustomer\(\{/);
  assert.match(maps,/expectedRevision:rate[?][.]revision[?][?]0/);
  assert.doesNotMatch(maps,/await account[.]companyTariffs\('save'/);
- assert.match(maps,/matchingSite\(siteResult,proposal\)/);
+ assert.match(maps,/matchingSite\(siteRows,proposal\)/);
  assert.match(extras,/account[.]companyTariffs\('list'/);
  assert.match(extras,/account[.]companyTariffs\('extra-save'/);
  assert.match(extras,/expectedRevision:shown[.]revision/);
