@@ -178,6 +178,14 @@ try{
  await page.evaluate(()=>{const q=window.__ccQA;Object.assign(q.data,{owner:'account:33333333-3333-4333-8333-333333333333',defer:false,offline:false,report:q.report,roster:q.roster,customers:q.customers,approvals:q.approvals});q.home.reset();q.home.refresh();});
  await page.waitForFunction(()=>document.querySelector('#cc-kpi-anomalies .cc-kpi-value').textContent==='2');
  assert.equal(await page.locator('#cc-quick-actions [data-action="security"]').count(),0,'Own shortcut preferences return only for their owner');
+ // Connectivity status must be explicit without wiping the already authorized view.
+ await page.evaluate(()=>{Object.defineProperty(navigator,'onLine',{configurable:true,value:false});window.dispatchEvent(new Event('offline'));});
+ await page.waitForFunction(()=>document.querySelector('.cc-sync')?.textContent.includes('Dispositivo offline'));
+ assert.match(await page.locator('#control-center-home .cc-status').textContent(),/Connessione assente/);
+ assert.equal(await page.locator('#cc-kpi-anomalies .cc-kpi-value').textContent(),'2');
+ await page.evaluate(()=>{Object.defineProperty(navigator,'onLine',{configurable:true,value:true});window.dispatchEvent(new Event('online'));});
+ await page.waitForFunction(()=>!document.querySelector('.cc-sync')?.textContent.includes('Dispositivo offline'));
+ note('offline and online status transitions preserve authorized dashboard data');
  const beforeDemotion=await page.evaluate(()=>window.__ccQA.data.calls.length);
  await page.evaluate(()=>{const q=window.__ccQA;q.data.role='driver';window.dispatchEvent(new Event('lts-admin-data-refreshed'));});
  await page.waitForFunction(()=>[...document.querySelectorAll('.cc-kpi-value')].every(node=>node.textContent==='—'));
