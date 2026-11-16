@@ -148,7 +148,6 @@ test('legacy special-route tariffs remain available without fabricated Maps site
  assert.match(handler,/const fallback=manualProjection\(\{name:fare.client,city:fare.city/);
 });
 
-
 test('SQL injection-looking customer fields remain literal RPC values, not SQL commands',async()=>{
  const name="CLIENTE TEST'; DROP TABLE PUBLIC.LTS_COMPANY_TARIFFS; --";
  const notes="CONTROLLO SQL ' OR '1'='1 --";
