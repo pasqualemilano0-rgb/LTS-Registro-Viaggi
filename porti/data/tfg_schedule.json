@@ -1,19 +1,8 @@
 {
   "source": "https://tfg.bucci.it/@/TFGW_TP_ETA",
-  "source_updated_at": "2026-11-13T19:30:19.000Z",
-  "acquired_at": "2026-11-14T09:00:16.882Z",
+  "source_updated_at": "2026-11-16T11:53:01.000Z",
+  "acquired_at": "2026-11-16T12:00:16.757Z",
   "rows": [
-    {
-      "vessel": "X PRESS SAGARMALA",
-      "arrival_voyage": "644E",
-      "departure_voyage": "645W",
-      "eta": "05/11/26 19:00",
-      "acceptance": "NAVE CHIUSA",
-      "custom_close_time": "05/11/26 15:00:00",
-      "fast_corridor_cut_off": "05/11/2610:00:00",
-      "gate_cut_off": "",
-      "destination": "INTERNO PORTO"
-    },
     {
       "vessel": "SUNAID X",
       "arrival_voyage": "018",
@@ -84,20 +73,9 @@
       "vessel": "ADRASTOS",
       "arrival_voyage": "0HWLCE1MA",
       "departure_voyage": "0HWLCE1MA",
-      "eta": "17/11/26",
+      "eta": "18/11/26",
       "acceptance": "ACCETTA CARICO",
-      "custom_close_time": "&nbsp;",
-      "fast_corridor_cut_off": "",
-      "gate_cut_off": "",
-      "destination": "INTERNO PORTO"
-    },
-    {
-      "vessel": "CHRISTINA",
-      "arrival_voyage": "AGA060S19",
-      "departure_voyage": "AGA060S19",
-      "eta": "17/11/26",
-      "acceptance": "NON ACCETTA CARICO",
-      "custom_close_time": "ANNULLATA",
+      "custom_close_time": "17/11/26 15:00:00",
       "fast_corridor_cut_off": "",
       "gate_cut_off": "",
       "destination": "INTERNO PORTO"
@@ -117,7 +95,7 @@
       "vessel": "SUNAID X",
       "arrival_voyage": "019",
       "departure_voyage": "019",
-      "eta": "20/11/26",
+      "eta": "21/11/26",
       "acceptance": "ACCETTA CARICO",
       "custom_close_time": "&nbsp;",
       "fast_corridor_cut_off": "",
@@ -129,7 +107,7 @@
       "arrival_voyage": "AGA080S19",
       "departure_voyage": "AGA080S19",
       "eta": "23/11/26",
-      "acceptance": "NON ACCETTA CARICO",
+      "acceptance": "ACCETTA CARICO",
       "custom_close_time": "&nbsp;",
       "fast_corridor_cut_off": "",
       "gate_cut_off": "",
@@ -158,9 +136,31 @@
       "destination": "INTERNO PORTO"
     },
     {
+      "vessel": "CHRISTINA",
+      "arrival_voyage": "AGA0A0S19",
+      "departure_voyage": "AGA0A0S19",
+      "eta": "30/11/26",
+      "acceptance": "NON ACCETTA CARICO",
+      "custom_close_time": "&nbsp;",
+      "fast_corridor_cut_off": "",
+      "gate_cut_off": "",
+      "destination": "INTERNO PORTO"
+    },
+    {
       "vessel": "ARGENTINIAN",
       "arrival_voyage": "0HWLGE1MA",
       "departure_voyage": "0HWLGE1MA",
+      "eta": "01/12/26",
+      "acceptance": "NON ACCETTA CARICO",
+      "custom_close_time": "&nbsp;",
+      "fast_corridor_cut_off": "",
+      "gate_cut_off": "",
+      "destination": "INTERNO PORTO"
+    },
+    {
+      "vessel": "SUNAID X",
+      "arrival_voyage": "020",
+      "departure_voyage": "020",
       "eta": "01/12/26",
       "acceptance": "NON ACCETTA CARICO",
       "custom_close_time": "&nbsp;",

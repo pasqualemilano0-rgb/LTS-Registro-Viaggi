@@ -52,11 +52,12 @@ function fitFont(doc, rows, widths, availableHeight) {
 
 /** No currency or tariff snapshots are sent to jsPDF, including PDF metadata. */
 export function generateMonthlyPdf({ state, month, logoDataUrl, kilometres = null, accountId = null, jsPDF = globalThis.jspdf?.jsPDF }) {
-  const kmAllowed = kilometres?.authorized===true && typeof accountId==='string' && kilometres.driverId===accountId.replace(/^account:/,'');
-  if(kilometres?.authorized===true&&!kmAllowed)throw new Error('Identità CHILOMETRI non valida.');
-  if(kmAllowed && (kilometres?.authorized!==true || kilometres.driverId!==accountId.replace(/^account:/,'') || kilometres.month!==month))
-    throw new Error('Aggiorna i CHILOMETRI prima di generare il PDF.');
-  const kmRows = kmAllowed ? monthlyKilometres(kilometres.entries,month) : [];
+  // The original register layout and its row heights are never modified.
+  const kmAuthorized = kilometres?.authorized===true;
+  const driverId=typeof accountId==='string'&&accountId.startsWith('account:')?accountId.slice(8):null;
+  if(kmAuthorized&&(!driverId||kilometres.driverId!==driverId||kilometres.month!==month))
+    throw new Error('Identità o mese CHILOMETRI non validi. Aggiorna il registro.');
+  const kmRows=kmAuthorized?monthlyKilometres(kilometres.entries,month):[];
   const rows = reportRows(state, month);
   if (!rows.length) throw new Error('Non ci sono viaggi nel mese selezionato.');
   if (rows.length > 5000) throw new Error('Il mese contiene oltre 5.000 viaggi: genera il resoconto da un computer.');
@@ -72,7 +73,7 @@ export function generateMonthlyPdf({ state, month, logoDataUrl, kilometres = nul
   doc.setFontSize(9);
   const driverLines = doc.splitTextToSize(driver, 132);
   const tableTop = Math.max(37, 29 + (driverLines.length - 1) * 9 * 1.1 / 2.83465 + 8);
-  const fontSize = kmAllowed ? 7.5 : fitFont(doc, rows, widths, 272 - tableTop);
+  const fontSize = fitFont(doc, rows, widths, 272 - tableTop);
   const image = doc.getImageProperties(logoDataUrl);
   const drawHeader = () => {
     const logoWidth = 39;
@@ -101,7 +102,7 @@ export function generateMonthlyPdf({ state, month, logoDataUrl, kilometres = nul
     theme: 'plain',
     showHead: 'everyPage',
     rowPageBreak: 'avoid',
-    styles: { font: 'helvetica', fontSize, cellPadding: { top: kmAllowed ? 0.25 : 1.1, bottom: kmAllowed ? 0.25 : 1.1, left: 1.3, right: 1.3 }, lineWidth: 0, textColor: '#203942', valign: 'top', overflow: 'linebreak', minCellHeight: kmAllowed ? 3.5 : 5.5 },
+    styles: { font: 'helvetica', fontSize, cellPadding: { top: 1.1, bottom: 1.1, left: 1.3, right: 1.3 }, lineWidth: 0, textColor: '#203942', valign: 'top', overflow: 'linebreak', minCellHeight: 5.5 },
     headStyles: { fillColor: '#e4f4f9', textColor: '#086b84', fontStyle: 'bold', fontSize: 8, cellPadding: 1.5 },
     alternateRowStyles: { fillColor: '#f3f6f8' },
     columnStyles: Object.fromEntries(widths.map((width, index) => [index, { cellWidth: width, ...(index === 1 ? { fontStyle: 'bold' } : {}) }])),
@@ -180,15 +181,24 @@ export function generateMonthlyPdf({ state, month, logoDataUrl, kilometres = nul
       willDrawPage: drawHeader,
     });
   }
-  if(kmAllowed) {
-    const y=(doc.lastAutoTable?.finalY??tableTop)+5;
-    doc.autoTable({startY:y,margin:{top:tableTop,right:11,bottom:15,left:11},
-      head:[['CHILOMETRI',...kmRows.map(row=>weekLabel(row.weekStart)),'TOTALE MESE']],
-      body:[['Settimana del venerdì',...kmRows.map(row=>row.km.toLocaleString('it-IT')+' km'),kilometresTotal(kmRows,month).toLocaleString('it-IT')+' km']],
-      theme:'plain',styles:{font:'helvetica',fontSize:6.8,cellPadding:1.4,textColor:'#203942'},
-      headStyles:{fillColor:'#e4f4f9',textColor:'#086b84',fontStyle:'bold'},
-      bodyStyles:{fillColor:'#f3f6f8'},willDrawPage:drawHeader});
-    if(doc.getNumberOfPages()!==1)throw new Error('Tutti i dati non entrano in una sola pagina A4 leggibile. Nessun dato è stato eliminato: richiedi la verifica dell’impaginazione.');
+  if(kmAuthorized) {
+    // A separate summary follows the complete trip table and administration notes.
+    // A new page is allowed; never compress the published register typography.
+    const startY=(doc.lastAutoTable?.finalY??tableTop)+7;
+    const weeklyRows=kmRows.map(row=>[weekLabel(row.weekStart),row.km.toLocaleString('it-IT')+' km']);
+    weeklyRows.push(['TOTALE MESE',kilometresTotal(kmRows,month).toLocaleString('it-IT')+' km']);
+    doc.autoTable({
+      startY,
+      margin:{top:tableTop+8,right:11,bottom:15,left:11},
+      head:[['CHILOMETRI · SETTIMANE','DISTANZA']],
+      body:weeklyRows,
+      theme:'plain',showHead:'firstPage',rowPageBreak:'avoid',
+      styles:{font:'helvetica',fontSize:8,cellPadding:1.5,textColor:'#203942',minCellHeight:5.5},
+      headStyles:{fillColor:'#e4f4f9',textColor:'#086b84',fontStyle:'bold',fontSize:8},
+      alternateRowStyles:{fillColor:'#f3f6f8'},
+      columnStyles:{0:{cellWidth:115},1:{cellWidth:73}},
+      willDrawPage:drawHeader
+    });
   }
   const pages = doc.getNumberOfPages();
   for (let page = 1; page <= pages; page++) {

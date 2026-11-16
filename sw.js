@@ -1,10 +1,11 @@
 const BASE = "/LTS-Registro-Viaggi/";
 const PREFIX = "lts-iphone-pages-0aa8d087d02b-";
-const CACHE = PREFIX + '20261113-monthly-admin-pdf-v14-kilometres-v15';
+const CACHE = PREFIX + '20261113-monthly-admin-pdf-v14-km-safe-v16';
 const CORE = [
   "/LTS-Registro-Viaggi/kilometres-client.mjs",
   "/LTS-Registro-Viaggi/kilometres-ui.mjs",
   "/LTS-Registro-Viaggi/shared/kilometres.mjs",
+  "/LTS-Registro-Viaggi/amministratore/kilometres-admin.mjs",
   "/LTS-Registro-Viaggi/account-access.mjs",
   "/LTS-Registro-Viaggi/app.css",
   "/LTS-Registro-Viaggi/visual-theme.css",
@@ -83,6 +84,7 @@ const PORT_BASE = BASE + 'porti/';
 // not keep serving stale login controls after a secure release. Offline fallback
 // still uses only the current static cache; personal records are never cached.
 const NETWORK_FIRST_CODE = new Set([
+  BASE + 'kilometres-client.mjs', BASE + 'kilometres-ui.mjs', BASE + 'shared/kilometres.mjs', BASE + 'amministratore/kilometres-admin.mjs',
   BASE + 'push-client.mjs',
   BASE + 'app.css', BASE + 'visual-theme.css',
   BASE + 'app.mjs', BASE + 'driver-session-guard.mjs', BASE + 'porti-access.mjs', BASE + 'account-access.mjs', BASE + 'driver-session-vault.mjs',

@@ -932,14 +932,13 @@ function renderRegister(main){
   el('span',{},'Mostra')));
  if(trips.some(trip=>D.saturdayAllowanceStatus(trip,amountContext).status==='included'))
   main.append(el('p',{class:'saturday-summary-note'},'SABATO TRASFERTA è conteggiato una sola volta per data. Le trasferte di tutti i viaggi si sommano.'));
- mountKilometres(main,month,{onChange:()=>{pdfReport=null;}});
  const pdf=el('button',{type:'button',class:'pdf-button',disabled:!trips.length,on:{click:async()=>{
   pdf.disabled=true;
   try{
    const module=await import('/LTS-Registro-Viaggi/shared/pdf.mjs');const logo=await module.loadPdfLogo();
    const owner=accountAccess.getAccountId();
    const kilometres=await kilometresForPdf(month);
-   if(owner!==accountAccess.getAccountId())throw Error('Account cambiato.');
+   if(owner!==accountAccess.getAccountId())throw new Error('Account cambiato. Riapri il Registro.');
    pdfReport=module.generateMonthlyPdf({state,month,logoDataUrl:logo,kilometres,accountId:owner});
    render();toast('PDF del mese pronto: aprilo o condividilo.');
   }catch(err){toast(err.message||'Impossibile creare il PDF.',true);pdf.disabled=false;}
@@ -1022,6 +1021,8 @@ function renderRegister(main){
     ' · '+page.visible.length+' di '+page.total;
  }
  updateRegisterList();
+ // Weekly kilometres belong below the register, never inside individual trips.
+ mountKilometres(main,month,{onChange:()=>{pdfReport=null;}});
  refreshView=()=>{if(tab==='register')render();};
 
 }
