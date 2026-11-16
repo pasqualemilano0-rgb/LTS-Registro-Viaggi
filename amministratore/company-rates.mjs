@@ -1,7 +1,7 @@
 /** Protected company tariff editor, linked to the shared Google Maps site catalog.
  * Customer records remain read-only. No driver archive or historical trip is rewritten. */
 import {tariffLinkedCustomerSites,customerSiteRateKey,hasUsableAddress} from './customer-overview-model.mjs?v=20261107-client-tariff-sync-v2';
-import {setupCompanyMaps} from './company-maps-registration.mjs?v=20261110-atomic-v1';
+import {setupCompanyMaps} from './company-maps-registration.mjs?v=20261116-localita-edit-v1';
 import {setupCompanyManual} from './company-manual-registration.mjs?v=20261110-atomic-v1';
 import {saveSharedPricedCustomer} from '../shared-maps-client.mjs?v=20261110-atomic-v1';
 
