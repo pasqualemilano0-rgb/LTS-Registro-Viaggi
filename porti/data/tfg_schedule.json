@@ -1,7 +1,7 @@
 {
   "source": "https://tfg.bucci.it/@/TFGW_TP_ETA",
-  "source_updated_at": "2026-11-16T11:22:22.000Z",
-  "acquired_at": "2026-11-16T11:30:16.611Z",
+  "source_updated_at": "2026-11-16T11:53:01.000Z",
+  "acquired_at": "2026-11-16T12:00:16.757Z",
   "rows": [
     {
       "vessel": "SUNAID X",
@@ -150,6 +150,17 @@
       "vessel": "ARGENTINIAN",
       "arrival_voyage": "0HWLGE1MA",
       "departure_voyage": "0HWLGE1MA",
+      "eta": "01/12/26",
+      "acceptance": "NON ACCETTA CARICO",
+      "custom_close_time": "&nbsp;",
+      "fast_corridor_cut_off": "",
+      "gate_cut_off": "",
+      "destination": "INTERNO PORTO"
+    },
+    {
+      "vessel": "SUNAID X",
+      "arrival_voyage": "020",
+      "departure_voyage": "020",
       "eta": "01/12/26",
       "acceptance": "NON ACCETTA CARICO",
       "custom_close_time": "&nbsp;",
