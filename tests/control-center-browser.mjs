@@ -11,6 +11,7 @@ const playwright=createRequire(import.meta.url)((process.env.LTS_BROWSER_PLAYWRI
 const engine=process.env.LTS_BROWSER_ENGINE==='webkit'?'webkit':'chromium';
 const fixture=String.raw`
 import {setupControlCenter} from '/amministratore/control-center-home.mjs';
+import {setupUnifiedDiagnostics} from '/amministratore/unified-diagnostics.mjs';
 const today='2026-11-11',day=(offset)=>new Date(Date.parse(today+'T12:00:00Z')+offset*86400000).toISOString().slice(0,10);
 const D1='11111111-1111-4111-8111-111111111111',D2='22222222-2222-4222-8222-222222222222';
 const records=Array.from({length:45},(_,i)=>({id:'trip-'+i,driverId:i%2?D2:D1,driverName:i%2?'Lucia Bianchi':'Mario Rossi',date:day(-(i%30)),container:'TEST'+String(i).padStart(7,'0'),client:i===42?'<img src=x onerror=alert(1)>':i%3?'CLIENTE ALFA':'CLIENTE BETA',city:i%2?'ROMA':'NAPOLI',amountCents:1000+i,totalCents:1000+i,missingTariff:i===3,updatedAt:day(-(i%30))+'T08:00:00Z',services:[],note:'NOTA RISERVATA'}));
@@ -22,7 +23,7 @@ const roster=[{phone:'+393331111111',firstName:'Mario',lastName:'Rossi',status:'
 const customers={customers:[{id:'site1',name:'CLIENTE ALFA',city:'NAPOLI',address:'VIA TEST 1',updatedAt:'2026-11-11T08:00:00Z'},{id:'site2',name:'CLIENTE BETA',city:'ROMA',address:'VIA TEST 2'}],unpriced:0};
 const approvals=[{id:'approval1',name:'CLIENTE PROPOSTO',city:'CASERTA',driver:'Mario Rossi',submittedAt:'2026-11-11T09:00:00Z'}];
 const data={owner:'account:33333333-3333-4333-8333-333333333333',authorized:true,role:'admin',report,roster,customers,approvals,calls:[],requests:[],pending:[],defer:false,offline:false};
-const account={getAccountId:()=>data.owner,isVerified:()=>data.authorized,getRole:()=>data.role,hasSession:()=>true,companyInsights:async q=>{
+const account={getAccountId:()=>data.owner,isVerified:()=>data.authorized,getRole:()=>data.role,hasSession:()=>true,verifySession:async()=>({mfa_enrolled:true,mfa_verified:true}),companyInsights:async q=>{
  data.requests.push(structuredClone(q));
  const items=records.filter(x=>(!q.driverId||x.driverId===q.driverId)&&x.date>=q.fromDate&&x.date<=q.toDate&&(!q.client||x.client===q.client)&&(!q.city||x.city===q.city));
  const monthly=Array.from({length:12},(_,i)=>{const date=new Date(Date.UTC(2026,10-(11-i),1));const month=date.toISOString().slice(0,7);return {month,...sum(records.filter(x=>x.date.startsWith(month)&&(!q.driverId||x.driverId===q.driverId)))};});
@@ -34,11 +35,12 @@ const account={getAccountId:()=>data.owner,isVerified:()=>data.authorized,getRol
 }};
 const capture=(action,payload)=>data.calls.push({action,payload:payload??null});
 const home=setupControlCenter({account,authorized:()=>data.authorized&&data.role==='admin'&&!document.getElementById('dashboard').hidden&&!document.getElementById('dashboard').inert,getRoster:()=>data.roster,getReport:()=>data.report,getCustomers:()=>data.customers,getApprovals:()=>data.approvals,openView:(view,filters)=>capture(view,filters),openTrip:row=>capture('trip',row),openCustomer:row=>capture('customer',row),openApprovals:id=>capture('approvals',id),setReportFilters:filters=>{capture('reportFilters',filters);const month=filters.month||data.report?.month||report.month,driverId=filters.driverId||null,items=records.filter(x=>x.date.startsWith(month)&&(!driverId||x.driverId===driverId));data.report={...report,month,driverId,summary:{...sum(items),knownTotalCents:sum(items).totalCents},chart:chart(items),trips:items.slice(0,2)};}});
-window.__ccQA={data,home,records,monthItems,sum,report,roster,customers,approvals};
+const diagnostics=setupUnifiedDiagnostics({account,authorized:()=>data.authorized&&data.role==='admin'&&!document.getElementById('dashboard').hidden,getReport:()=>data.report});
+window.__ccQA={data,home,diagnostics,records,monthItems,sum,report,roster,customers,approvals};
 home.refresh();
 window.__ccReady=true;
 `;
-const shell=`<!doctype html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/amministratore/admin.css"><link rel="stylesheet" href="/amministratore/control-center-home.css"></head><body><main class="container"><div id="dashboard" data-view="overview"><section id="report-panel"><section id="control-center-home"></section></section></div></main><script type="module" src="/fixture.mjs"></script></body></html>`;
+const shell=`<!doctype html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/amministratore/admin.css"><link rel="stylesheet" href="/amministratore/control-center-home.css"><link rel="stylesheet" href="/amministratore/unified-diagnostics.css"></head><body><main class="container"><section id="mfa-panel" hidden></section><div id="admin-resume-guard" hidden></div><div id="dashboard" data-view="overview"><section id="report-panel"><section id="control-center-home"></section></section></div></main><script type="module" src="/fixture.mjs"></script></body></html>`;
 const mime={'.html':'text/html','.mjs':'text/javascript','.css':'text/css','.png':'image/png','.webp':'image/webp','.svg':'image/svg+xml'};
 let outside=0;
 const server=createServer(async(req,res)=>{
@@ -56,11 +58,24 @@ try{
  browser=await playwright[engine].launch(engine==='webkit'?{headless:true}:{headless:true,args:['--no-sandbox'],...(process.env.LTS_BROWSER_EXECUTABLE?{executablePath:process.env.LTS_BROWSER_EXECUTABLE}:{})});
  const context=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true});
  await context.route('**/*',route=>{if(new URL(route.request().url()).origin===origin)return route.continue();outside++;return route.abort();});
+ await context.route('https://api.github.com/repos/pasqualemilano0-rgb/LTS-Registro-Viaggi/commits/main/status',route=>route.fulfill({
+  status:200,contentType:'application/json',
+  body:JSON.stringify({sha:'a'.repeat(40),statuses:[{context:'ci/circleci: webapp-regression',state:'success'}]})
+ }));
  await context.addInitScript(()=>{const NativeDate=Date;class FixedDate extends NativeDate{constructor(...args){super(...(args.length?args:['2026-11-11T10:00:00Z']));}static now(){return new NativeDate('2026-11-11T10:00:00Z').getTime();}}window.Date=FixedDate;});
  const page=await context.newPage();page.on('pageerror',error=>{errors.push(String(error));console.error('BROWSER_ERROR',String(error));});let dialogs=0;page.on('dialog',async dialog=>{dialogs++;await dialog.dismiss();});
  await page.goto(origin+'/fixture',{waitUntil:'networkidle'});await page.waitForFunction(()=>window.__ccReady);
  await page.waitForFunction(()=>document.getElementById('cc-kpi-anomalies')?.textContent.includes('2'));
  assert.equal(await page.locator('.cc-kpi').count(),8);note('eight KPI cards use confirmed sources');
+ assert.equal(await page.locator('#lts-unified-diagnostics').count(),1,'Only one unified diagnostic panel');
+ assert.match(await page.locator('[data-diagnostic="booking"]').textContent(),/non verificato/i);
+ assert.match(await page.locator('[data-diagnostic="ci"]').textContent(),/Non verificato/);
+ await page.locator('#lts-diag-refresh').click();
+ await page.waitForFunction(()=>document.querySelector('[data-diagnostic="ci"] .lts-diag-value')?.textContent==='Controlli CI superati');
+ assert.match(await page.locator('[data-diagnostic="sync"]').textContent(),/Lettura aziendale recente/);
+ assert.match(await page.locator('[data-diagnostic="booking"]').textContent(),/non verificato/i);
+ assert.match(await page.locator('#lts-diag-status').textContent(),/Verifica/);
+ note('diagnostic classifies source freshness and CI without treating Booking as verified');
  const values=await page.evaluate(()=>Object.fromEntries(['driversTotal','driversActive','tripsToday','tripsMonth','faresMonthCents','companyCustomers','anomalies','pendingApprovals'].map(id=>[id,document.getElementById('cc-kpi-'+id)?.textContent])));
  assert.match(values.driversTotal,/2/);assert.match(values.driversActive,/1/);assert.match(values.companyCustomers,/2/);assert.match(values.pendingApprovals,/1/);
  const expectedMonthly=await page.evaluate(()=>{const q=window.__ccQA;return {today:q.monthItems.filter(x=>x.date==='2026-11-11').length,trips:q.monthItems.length,money:new Intl.NumberFormat('it-IT',{style:'currency',currency:'EUR'}).format(q.sum(q.monthItems).totalCents/100)};});
@@ -183,6 +198,7 @@ try{
  await page.waitForFunction(()=>[...document.querySelectorAll('.cc-kpi-value')].every(node=>node.textContent==='—'));
  assert(!/Mario Rossi|CLIENTE ALFA|TEST000/.test(await page.locator('#control-center-home').textContent()));
  await page.locator('#cc-quick-actions button').first().click();assert.equal(await page.evaluate(()=>window.__ccQA.data.calls.length),beforeDemotion);
+ assert.match(await page.locator('[data-diagnostic="sync"]').textContent(),/Non verificato/);
  note('role demotion clears private data and blocks administrative actions');
  await page.evaluate(()=>{const q=window.__ccQA;q.data.role='admin';q.home.refresh();});
  await page.waitForFunction(()=>document.querySelector('#cc-kpi-anomalies .cc-kpi-value').textContent==='2');
