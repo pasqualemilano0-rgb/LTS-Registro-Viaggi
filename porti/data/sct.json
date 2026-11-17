@@ -1,13 +1,13 @@
 {
   "source": "https://www.salernocontainerterminal.com/ca/an/vessel_schedule.php",
   "source_updated_at": null,
-  "acquired_at": "2026-11-17T15:30:16.709Z",
+  "acquired_at": "2026-11-17T16:00:17.878Z",
   "rows": [
     {
       "vessel": "BERNHARD SCHULTE",
       "voyage": "275W",
       "eta": "16/11/2026 00:00",
-      "closing": "17/11/2026 17:00",
+      "closing": "17/11/2026 17:00 CLOSED",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
@@ -16,7 +16,7 @@
       "vessel": "LIVORNO EXPRESS",
       "voyage": "88W47",
       "eta": "17/11/2026 00:00",
-      "closing": "17/11/2026 17:00",
+      "closing": "17/11/2026 17:00 CLOSED",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
@@ -25,7 +25,7 @@
       "vessel": "GREEN OCEAN",
       "voyage": "647W",
       "eta": "17/11/2026 00:00",
-      "closing": "17/11/2026 17:00",
+      "closing": "17/11/2026 17:00 CLOSED",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
@@ -52,7 +52,7 @@
       "vessel": "MSC ELENI",
       "voyage": "CD646A",
       "eta": "18/11/2026 00:00",
-      "closing": "17/11/2026 17:00",
+      "closing": "17/11/2026 17:00 CLOSED",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
@@ -70,7 +70,7 @@
       "vessel": "ADRASTOS",
       "voyage": "0HWLCE1MA",
       "eta": "18/11/2026 00:00",
-      "closing": "17/11/2026 17:00",
+      "closing": "17/11/2026 17:00 CLOSED",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
@@ -79,7 +79,7 @@
       "vessel": "SARA BORCHARD",
       "voyage": "0476",
       "eta": "18/11/2026 00:00",
-      "closing": "17/11/2026 17:00",
+      "closing": "17/11/2026 17:00 CLOSED",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
@@ -88,7 +88,7 @@
       "vessel": "VENTO DI MELTEMI",
       "voyage": "599",
       "eta": "18/11/2026 08:00",
-      "closing": "17/11/2026 17:00",
+      "closing": "17/11/2026 17:00 CLOSED",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
@@ -265,6 +265,6 @@
       "status": "PENDING"
     }
   ],
-  "updated_at": "2026-11-17T15:30:16.709Z",
-  "data_changed_at": "2026-11-17T13:00:17.130Z"
+  "updated_at": "2026-11-17T16:00:17.878Z",
+  "data_changed_at": "2026-11-17T16:00:17.878Z"
 }
