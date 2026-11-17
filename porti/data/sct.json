@@ -1,22 +1,13 @@
 {
   "source": "https://www.salernocontainerterminal.com/ca/an/vessel_schedule.php",
   "source_updated_at": null,
-  "acquired_at": "2026-11-17T11:00:16.830Z",
+  "acquired_at": "2026-11-17T11:30:16.650Z",
   "rows": [
     {
       "vessel": "BERNHARD SCHULTE",
       "voyage": "275W",
       "eta": "16/11/2026 00:00",
       "closing": "17/11/2026 17:00",
-      "acceptance_dry": "CARGO ACCEPTED",
-      "acceptance_reef": "CARGO ACCEPTED",
-      "status": "PENDING"
-    },
-    {
-      "vessel": "GRANDE ANGOLA",
-      "voyage": "GRA0726",
-      "eta": "16/11/2026 08:00",
-      "closing": "14/11/2026 10:00 CLOSED",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
@@ -124,6 +115,15 @@
       "vessel": "NAAMA BORCHARD",
       "voyage": "0139",
       "eta": "19/11/2026 00:00",
+      "closing": "18/11/2026 17:00",
+      "acceptance_dry": "CARGO ACCEPTED",
+      "acceptance_reef": "CARGO ACCEPTED",
+      "status": "PENDING"
+    },
+    {
+      "vessel": "GRANDE ANGOLA",
+      "voyage": "GRA0726",
+      "eta": "19/11/2026 08:00",
       "closing": "18/11/2026 17:00",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
@@ -265,6 +265,6 @@
       "status": "PENDING"
     }
   ],
-  "updated_at": "2026-11-17T11:00:16.830Z",
-  "data_changed_at": "2026-11-17T11:00:16.830Z"
+  "updated_at": "2026-11-17T11:30:16.650Z",
+  "data_changed_at": "2026-11-17T11:30:16.650Z"
 }
