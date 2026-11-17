@@ -356,6 +356,7 @@ test('dedicated admin console loads only verified administrative transport',asyn
  assert.match(adminHtml,/src="\.\/admin[.]mjs\?v=20261116-localita-edit-v1"/);
  assert.match(adminJs,/import \* as account from '\.\.\/account-access[.]mjs\?v=20261107-realtime-v1'/);
  assert.match(adminJs,/await account[.]verifySession\(\)/);
+ assert.match(adminJs,/setupUnifiedDiagnostics/);
  assert.match(adminJs,/account[.]getRole\(\)!=='admin'/);
  assert.ok(adminJs.includes("account.manageDrivers('list')"));
  assert.ok(adminJs.includes("'remove-activated'"));
