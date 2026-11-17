@@ -3,6 +3,7 @@
  * Customer and fare use separate APIs: report partial success if pricing fails.
  */
 import {readMapsCustomer} from '../maps-reader-client.mjs';
+import {approvedLocalityFromSharedMaps} from './maps-free-locality.mjs?v=20261116-free-locality-v1';
 import {sharedMapsCustomers,saveSharedPricedCustomer} from '../shared-maps-client.mjs?v=20261110-atomic-v1';
 import {customerSiteRateKey} from './customer-overview-model.mjs?v=20261107-client-tariff-sync-v2';
 
@@ -43,19 +44,58 @@ export function setupCompanyMaps(account,{onSaved=async()=>{}}={}){
   city=byId('company-maps-city'),address=byId('company-maps-address'),
   warning=byId('company-maps-warning'),amount=byId('company-maps-amount'),
   status=byId('company-maps-status'),duplicate=byId('company-maps-duplicate');
- let selected=null,existing=null,rate=null,seq=0,busy=false;
+ let selected=null,existing=null,rate=null,siteRows=[],rateRows=[],seq=0,busy=false;
  const authorized=()=>account.isVerified()&&account.getRole()==='admin'&&
   !byId('dashboard').hidden&&byId('dashboard').dataset.view==='rates';
  function feedback(message,error=false){
   status.textContent=message;status.dataset.error=String(error);
  }
+ // Google Maps often returns a street address without a reliable town.
+ // Require a human-reviewed locality; never guess from the postcode or a road label.
+ function reviewedSite(){
+  if(!selected)return null;
+  const locality=normalize(city.value);
+  if(locality.length<2||locality.length>100||
+   !/^[\p{L}][\p{L}\p{M} .’'\-]*$/u.test(locality))return null;
+  return {...selected,city:locality};
+ }
+ function updatePreview({initial=false}={}){
+  const proposal=reviewedSite();
+  existing=proposal?matchingSite(siteRows,proposal):null;
+  rate=proposal?matchingRate(rateRows,existing||proposal):null;
+  warning.textContent=(selected?.warnings||[]).filter(text=>
+   !proposal||!text.includes('La città non è disponibile nel link')).join(' ');
+  if(!proposal){
+   duplicate.textContent='Località obbligatoria: indica il Comune verificato prima di salvare.';
+   save.disabled=true;
+   feedback('Completa la località (Comune) prima di pubblicare cliente e tariffa.',true);
+   return;
+  }
+  if(existing&&normalize(existing.city)!==proposal.city){
+   duplicate.textContent='Questo link Google Maps è già associato alla località '+existing.city+
+    '. Correggi la località o gestisci la sede già registrata.';
+   save.disabled=true;
+   feedback('Non è possibile cambiare la località di una sede già condivisa da questo modulo.',true);
+   return;
+  }
+  duplicate.textContent=existing
+   ?'Sede già nell’elenco condiviso: non sarà duplicata.'
+   :'Nuova sede: verrà aggiunta all’elenco clienti aziendali.';
+  if(rate){
+   if(initial)amount.value=euro(rate.cents);
+   duplicate.textContent+=' Tariffa esistente: '+euro(rate.cents)+
+    ' €. Se la cambi verrà richiesta una conferma.';
+  }else if(initial)amount.value='';
+  save.disabled=false;
+  feedback('Località verificata: controlla indirizzo e tariffa, poi salva.');
+ }
  function reset(){
-  seq++;selected=null;existing=null;rate=null;
+  seq++;selected=null;existing=null;rate=null;siteRows=[];rateRows=[];
   form.reset();preview.hidden=true;read.disabled=busy;url.disabled=busy;save.disabled=true;
   warning.textContent='';duplicate.textContent='';feedback('Incolla un link Google Maps per iniziare.');
  }
  function invalidate(){
-  seq++;selected=null;existing=null;rate=null;
+  seq++;selected=null;existing=null;rate=null;siteRows=[];rateRows=[];
   preview.hidden=true;save.disabled=true;duplicate.textContent='';
   feedback('Link modificato: premi Leggi Google Maps per verificare la sede.');
  }
@@ -74,20 +114,11 @@ export function setupCompanyMaps(account,{onSaved=async()=>{}}={}){
    if(token!==seq||!authorized()||url.value.trim()!==link)return;
    if(!Array.isArray(siteResult)||!Array.isArray(rateResult?.tariffs))
     throw new Error('Non è stato possibile verificare l’elenco clienti e le tariffe.');
-   selected=proposal;
-   existing=matchingSite(siteResult,proposal);
-   rate=matchingRate(rateResult.tariffs,existing||proposal);
-   name.textContent=proposal.name;city.textContent=proposal.city;address.textContent=proposal.address;
-   warning.textContent=(proposal.warnings||[]).join(' ');
-   duplicate.textContent=existing
-    ?'Sede già nell’elenco condiviso: non sarà duplicata.'
-    :'Nuova sede: verrà aggiunta all’elenco clienti aziendali.';
-   if(rate){
-    amount.value=euro(rate.cents);
-    duplicate.textContent+=' Tariffa esistente: '+euro(rate.cents)+' €. Se la cambi verrà richiesta una conferma.';
-   }else amount.value='';
-   preview.hidden=false;save.disabled=false;
-   feedback('Verifica i dati della sede, indica la tariffa e conferma il salvataggio.');
+   const known=approvedLocalityFromSharedMaps(siteResult,proposal);
+   selected=known||proposal;siteRows=siteResult;rateRows=rateResult.tariffs;
+   name.textContent=selected.name;city.value=selected.city;address.textContent=selected.address;
+   preview.hidden=false;
+   updatePreview({initial:true});
   }catch(error){
    if(token===seq&&authorized())feedback(error?.message||'Verifica Google Maps non riuscita.',true);
   }finally{if(token===seq)read.disabled=false;}
@@ -95,14 +126,19 @@ export function setupCompanyMaps(account,{onSaved=async()=>{}}={}){
  async function submit(event){
   event.preventDefault();
   if(busy||!authorized()||!selected||save.disabled)return;
+  const proposal=reviewedSite();
+  if(!proposal){feedback('Completa la località (Comune) prima di salvare.',true);city.focus();return;}
+  if(existing&&normalize(existing.city)!==proposal.city){
+   feedback('La località non coincide con quella già condivisa per questo link Google Maps.',true);return;
+  }
   let cents;
   try{cents=parseEuro(amount.value);}
   catch(error){feedback(error.message,true);return;}
   if(rate&&rate.cents!==cents&&!window.confirm(
-   'Esiste già una tariffa per '+selected.name+' · '+selected.city+
+   'Esiste già una tariffa per '+proposal.name+' · '+proposal.city+
    '. Sostituire '+euro(rate.cents)+' € con '+euro(cents)+' € per i nuovi viaggi?'))return;
-  busy=true;save.disabled=true;read.disabled=true;url.disabled=true;
-  const proposal=selected,accountId=account.getAccountId(),saveToken=seq;
+  busy=true;save.disabled=true;read.disabled=true;url.disabled=true;city.disabled=true;
+  const accountId=account.getAccountId(),saveToken=seq;
   let confirmed=null;
   try{
    // The Edge endpoint revalidates MFA and writes the site AND price together.
@@ -129,11 +165,15 @@ export function setupCompanyMaps(account,{onSaved=async()=>{}}={}){
      'Cliente e tariffa NON pubblicati. ')+
     (error?.message||'Rileggi la sede prima di riprovare.'),true);
   }finally{
-   busy=false;read.disabled=false;url.disabled=false;
-   if(saveToken===seq)save.disabled=!selected;
+   busy=false;read.disabled=false;url.disabled=false;city.disabled=false;
+   if(saveToken===seq)save.disabled=!reviewedSite();
   }
  }
  url.addEventListener('input',invalidate);
+ city.addEventListener('input',()=>{
+  if(!selected||busy)return;
+  updatePreview();
+ });
  read.addEventListener('click',()=>void inspect());
  form.addEventListener('submit',event=>void submit(event));
  reset();
