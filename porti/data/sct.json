@@ -1,13 +1,13 @@
 {
   "source": "https://www.salernocontainerterminal.com/ca/an/vessel_schedule.php",
   "source_updated_at": null,
-  "acquired_at": "2026-11-17T10:30:17.231Z",
+  "acquired_at": "2026-11-17T11:00:16.830Z",
   "rows": [
     {
       "vessel": "BERNHARD SCHULTE",
       "voyage": "275W",
       "eta": "16/11/2026 00:00",
-      "closing": "14/11/2026 10:00 CLOSED",
+      "closing": "17/11/2026 17:00",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
@@ -16,15 +16,6 @@
       "vessel": "GRANDE ANGOLA",
       "voyage": "GRA0726",
       "eta": "16/11/2026 08:00",
-      "closing": "14/11/2026 10:00 CLOSED",
-      "acceptance_dry": "CARGO ACCEPTED",
-      "acceptance_reef": "CARGO ACCEPTED",
-      "status": "PENDING"
-    },
-    {
-      "vessel": "XIN NAN TONG",
-      "voyage": "644N",
-      "eta": "17/11/2026 00:00",
       "closing": "14/11/2026 10:00 CLOSED",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
@@ -40,17 +31,17 @@
       "status": "PENDING"
     },
     {
-      "vessel": "JUDITH BORCHARD",
-      "voyage": "1076",
+      "vessel": "XIN NAN TONG",
+      "voyage": "644N",
       "eta": "17/11/2026 00:00",
-      "closing": "16/11/2026 17:00 CLOSED",
+      "closing": "18/11/2026 17:00",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
     },
     {
-      "vessel": "GREEN OCEAN",
-      "voyage": "647W",
+      "vessel": "JUDITH BORCHARD",
+      "voyage": "1076",
       "eta": "17/11/2026 00:00",
       "closing": "16/11/2026 17:00 CLOSED",
       "acceptance_dry": "CARGO ACCEPTED",
@@ -67,8 +58,17 @@
       "status": "PENDING"
     },
     {
-      "vessel": "ADRASTOS",
-      "voyage": "0HWLCE1MA",
+      "vessel": "GREEN OCEAN",
+      "voyage": "647W",
+      "eta": "17/11/2026 00:00",
+      "closing": "17/11/2026 17:00",
+      "acceptance_dry": "CARGO ACCEPTED",
+      "acceptance_reef": "CARGO ACCEPTED",
+      "status": "PENDING"
+    },
+    {
+      "vessel": "MSC ELENI",
+      "voyage": "CD646A",
       "eta": "18/11/2026 00:00",
       "closing": "17/11/2026 17:00",
       "acceptance_dry": "CARGO ACCEPTED",
@@ -85,19 +85,19 @@
       "status": "PENDING"
     },
     {
-      "vessel": "K-RIVER",
-      "voyage": "0926W",
+      "vessel": "ADRASTOS",
+      "voyage": "0HWLCE1MA",
       "eta": "18/11/2026 00:00",
-      "closing": "17/11/2026 14:00",
+      "closing": "17/11/2026 17:00",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
     },
     {
-      "vessel": "MSC ELENI",
-      "voyage": "CD646A",
+      "vessel": "K-RIVER",
+      "voyage": "0926W",
       "eta": "18/11/2026 00:00",
-      "closing": "17/11/2026 17:00",
+      "closing": "17/11/2026 14:00",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
@@ -211,6 +211,15 @@
       "status": "PENDING"
     },
     {
+      "vessel": "MEDKON NLS",
+      "voyage": "325",
+      "eta": "24/11/2026 00:00",
+      "closing": "23/11/2026 17:00",
+      "acceptance_dry": "CARGO ACCEPTED",
+      "acceptance_reef": "CARGO ACCEPTED",
+      "status": "PENDING"
+    },
+    {
       "vessel": "RACHEL BORCHARD",
       "voyage": "1034",
       "eta": "24/11/2026 00:00",
@@ -229,8 +238,8 @@
       "status": "PENDING"
     },
     {
-      "vessel": "MEDKON NLS",
-      "voyage": "325",
+      "vessel": "MSC KILIMANJARO IV",
+      "voyage": "CD647A",
       "eta": "24/11/2026 00:00",
       "closing": "23/11/2026 17:00",
       "acceptance_dry": "CARGO ACCEPTED",
@@ -238,12 +247,12 @@
       "status": "PENDING"
     },
     {
-      "vessel": "MSC KILIMANJARO IV",
-      "voyage": "CD647A",
+      "vessel": "GLASGOW EXPRESS",
+      "voyage": "52W48",
       "eta": "24/11/2026 00:00",
-      "closing": "23/11/2026 17:00",
-      "acceptance_dry": "CARGO ACCEPTED",
-      "acceptance_reef": "CARGO ACCEPTED",
+      "closing": "24/11/2026 17:00",
+      "acceptance_dry": "CARGO NOT ACCEPTED",
+      "acceptance_reef": "CARGO NOT ACCEPTED",
       "status": "PENDING"
     },
     {
@@ -256,6 +265,6 @@
       "status": "PENDING"
     }
   ],
-  "updated_at": "2026-11-17T10:30:17.231Z",
-  "data_changed_at": "2026-11-16T23:00:16.742Z"
+  "updated_at": "2026-11-17T11:00:16.830Z",
+  "data_changed_at": "2026-11-17T11:00:16.830Z"
 }
