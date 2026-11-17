@@ -1,7 +1,7 @@
 {
   "source": "https://api.conateco.it/ConatecoServicesApi/BerthForecast",
   "source_updated_at": null,
-  "acquired_at": "2026-11-17T11:30:16.650Z",
+  "acquired_at": "2026-11-17T12:00:17.259Z",
   "rows": [
     {
       "vessel": "MSC ROSSELLA II",
@@ -237,7 +237,7 @@
       "stop_cargo": "",
       "external_depot": "",
       "opening": "2026-11-16 06:30",
-      "closing": "2026-11-18 17:00",
+      "closing": "2026-11-20 17:00",
       "notes": "",
       "source_conflict": false
     },
