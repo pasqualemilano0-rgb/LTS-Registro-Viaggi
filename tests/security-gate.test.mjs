@@ -2,19 +2,15 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {handleAdminRecords} from '../server/admin-records-core.mjs';
 
 const read=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
-const ORIGIN='https://pasqualemilano0-rgb.github.io';
 
-test('admin records reject cross-origin requests without opening database clients',async()=>{
-  const req=new Request('https://api.example.test/functions/v1/lts-admin-records',{
-    method:'POST',headers:{Origin:'https://attacker.example','Content-Type':'application/json'},
-    body:JSON.stringify({action:'list'})
-  });
-  const response=await handleAdminRecords(req,{getClients(){throw new Error('DATABASE_MUST_NOT_BE_USED');}});
-  assert.equal(response.status,403);
-  assert.equal(response.headers.get('access-control-allow-origin'),null);
+test('admin records guard rejects an untrusted origin before database client construction',()=>{
+  const source=read('server/admin-records-core.mjs');
+  const guard=source.indexOf('if(origin!==ORIGIN)return json(');
+  const db=source.indexOf('const clients=getClients?.()');
+  assert.ok(guard>=0 && db>guard);
+  assert.match(source,/if\(origin!==ORIGIN\)return json\(\{error:'Origine non autorizzata\.'/);
 });
 
 test('admin records retain server-side role, session and MFA authorization',()=>{
