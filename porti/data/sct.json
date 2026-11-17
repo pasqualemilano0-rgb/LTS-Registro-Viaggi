@@ -1,7 +1,7 @@
 {
   "source": "https://www.salernocontainerterminal.com/ca/an/vessel_schedule.php",
   "source_updated_at": null,
-  "acquired_at": "2026-11-17T16:00:17.878Z",
+  "acquired_at": "2026-11-17T16:30:16.666Z",
   "rows": [
     {
       "vessel": "BERNHARD SCHULTE",
@@ -265,6 +265,6 @@
       "status": "PENDING"
     }
   ],
-  "updated_at": "2026-11-17T16:00:17.878Z",
+  "updated_at": "2026-11-17T16:30:16.666Z",
   "data_changed_at": "2026-11-17T16:00:17.878Z"
 }
