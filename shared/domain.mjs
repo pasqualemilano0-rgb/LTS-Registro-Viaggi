@@ -121,6 +121,8 @@ export function validateTrip(input) {
   draft.container = normalizeContainer(draft.container);
   if (!validDate(input.date)) errors.date = 'Scegli una data valida.';
   draft.date = input.date;
+  if (input.fareMode !== undefined && !['single','double'].includes(input.fareMode)) errors.fareMode='Modalità tariffaria non valida.';
+  if (input.fareMode === 'single' && !(draft.secondClient && draft.secondCity)) errors.fareMode='Lo scarico a tariffa unica richiede due sedi.';
   if (Boolean(draft.secondClient) !== Boolean(draft.secondCity)) {
     if (!draft.secondClient) errors.secondClient = 'Inserisci il cliente della seconda presa.';
     if (!draft.secondCity) errors.secondCity = 'Inserisci la località della seconda presa.';
@@ -175,7 +177,9 @@ export function createTrip(input, state, existing = null) {
     id: id(existing?.id ?? input.id ?? newId()),
     fareCents: checkCents(findTariff(state, trip.client, trip.city)?.cents ?? (sameFirst ? existing.fareCents : null), 'Trasferta', true),
     secondFareCents: trip.secondCity ? checkCents(findTariff(state, trip.secondClient, trip.secondCity)?.cents ?? (sameSecond ? existing.secondFareCents : null), 'Seconda trasferta', true) : null,
-    sumPickupFares: Boolean(trip.secondCity),
+    // Legacy multi-stop journeys always sum both fares; explicit single-mode
+    // is available only when the admin-approved frontend validates the pair.
+    sumPickupFares: Boolean(trip.secondCity) && input.fareMode !== 'single',
     extraCents,
     createdAt: timestamp(existing?.createdAt, now),
     updatedAt: now,
