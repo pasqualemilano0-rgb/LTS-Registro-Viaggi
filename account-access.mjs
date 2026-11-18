@@ -483,7 +483,7 @@ export async function companyInsights({month,driverId=null,compareDriverId=null,
 /** Admin-only central base tariffs, protected again by the backend MFA/session checks. */
 export async function companyTariffs(action='list',data={}){
  if(!isVerified()||getRole()!=='admin')throw new Error('Accesso amministratore richiesto.');
- if(!['list','save','extra-save'].includes(action))throw new Error('Operazione tariffa non valida.');
+ if(!['list','save','extra-save','multi-save'].includes(action))throw new Error('Operazione tariffa non valida.');
  const payload={action,...data};
  return withSessionRetry(
   ()=>api('tariffsEndpoint',payload,readStored()?.access_token),
@@ -527,7 +527,14 @@ export async function driverCompanyCatalog(){
     !(row.cents===null||(Number.isSafeInteger(row.cents)&&row.cents>=0&&row.cents<=99999999))||
     !Number.isSafeInteger(row.revision)||row.revision<1))
   throw new Error('Tariffario servizi extra aziendale incompleto.');
- return {tariffs:result.tariffs,extraRates:extras};
+ const multiStopRates=result?.multiStopRates??[];
+ if(!Array.isArray(multiStopRates)||multiStopRates.length>500||
+  multiStopRates.some(row=>!row||typeof row.id!=='string'||typeof row.client!=='string'||
+    typeof row.city!=='string'||typeof row.secondClient!=='string'||
+    typeof row.secondCity!=='string'||!Number.isSafeInteger(row.cents)||
+    row.cents<0||row.cents>99999999||typeof row.enabled!=='boolean'))
+  throw new Error('Tariffario scarichi multipli non valido.');
+ return {tariffs:result.tariffs,extraRates:extras,multiStopRates};
 }
 
 /** Administrator-only per-driver personal records. On the server:
