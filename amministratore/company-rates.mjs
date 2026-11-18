@@ -4,6 +4,7 @@ import {tariffLinkedCustomerSites,customerSiteRateKey,hasUsableAddress} from './
 import {setupCompanyMaps} from './company-maps-registration.mjs?v=20261110-atomic-v1';
 import {setupCompanyManual} from './company-manual-registration.mjs?v=20261110-atomic-v1';
 import {saveSharedPricedCustomer} from '../shared-maps-client.mjs?v=20261110-atomic-v1';
+import {setupCompanyMultiStopRates} from './company-multi-stop.mjs?v=20261118-multi-stop-v1';
 
 const get=id=>document.getElementById(id);
 const node=(tag,cls,value)=>{const n=document.createElement(tag);if(cls)n.className=cls;n.textContent=String(value??'');return n;};
@@ -40,6 +41,7 @@ export function setupCompanyRates(account){
  let ratesLoaded=false,sitesLoaded=false,sitesExpanded=false;
  const maps=setupCompanyMaps(account,{onSaved:async()=>{await load();}});
  const manual=setupCompanyManual(account,{onSaved:async()=>{await load();}});
+ const multi=setupCompanyMultiStopRates(account,{onSaved:async()=>{await load();}});
  const authorized=()=>account.isVerified()&&account.getRole()==='admin'&&
   !get('dashboard').hidden&&(
    get('dashboard').dataset.view==='rates'||
@@ -149,7 +151,7 @@ export function setupCompanyRates(account){
   renderRates(term);renderSites();
  }
  function reset(){
-  maps.reset();manual.reset();
+  maps.reset();manual.reset();multi.reset();
   generation++;rows=[];sites=[];ratesLoaded=false;sitesLoaded=false;sitesExpanded=false;
   busy=false;search.value='';list.replaceChildren();sitesList.replaceChildren();
   clearForm();customerChoices();
@@ -183,6 +185,7 @@ export function setupCompanyRates(account){
    ratesLoaded!==validRates||sitesLoaded!==validCustomers;
   rows=nextRates;ratesLoaded=validRates;
   sites=nextSites;sitesLoaded=validCustomers;
+  multi.update(validRates?rateResult.value?.multiStopRates:null,nextSites,validRates,validCustomers);
   if(changed||!silent){
    customerChoices();render();
   }
