@@ -42,6 +42,35 @@ create table if not exists public.lts_payroll_device_unlocks (
   constraint lts_payroll_unlock_expiry check(expires_at > created_at)
 );
 
+-- Database-backed enrollment rate limit. Never permit unlimited password attempts
+-- simply because the caller possesses an already authenticated LTS session.
+create table if not exists public.lts_payroll_enroll_limits (
+  user_id uuid primary key references auth.users(id),
+  window_started_at timestamptz not null default now(),
+  attempts int not null default 0 check (attempts between 0 and 100000)
+);
+create or replace function public.lts_payroll_claim_enroll_attempt(p_user uuid)
+returns boolean language plpgsql security invoker
+set search_path=''
+as $$
+declare v_attempts int;
+begin
+ insert into public.lts_payroll_enroll_limits(user_id,window_started_at,attempts)
+ values(p_user,now(),1)
+ on conflict(user_id) do update set
+  attempts=case when public.lts_payroll_enroll_limits.window_started_at <
+     now()-interval '15 minutes' then 1
+     else public.lts_payroll_enroll_limits.attempts+1 end,
+  window_started_at=case when public.lts_payroll_enroll_limits.window_started_at <
+     now()-interval '15 minutes' then now()
+     else public.lts_payroll_enroll_limits.window_started_at end
+ returning attempts into v_attempts;
+ return v_attempts<=5;
+end;
+$$;
+revoke all on function public.lts_payroll_claim_enroll_attempt(uuid) from public,anon,authenticated;
+grant execute on function public.lts_payroll_claim_enroll_attempt(uuid) to service_role;
+
 -- Consume a one-time challenge atomically, bound to the verified Supabase session.
 -- A replay returns NULL, and all server verifications fail closed.
 create or replace function public.lts_payroll_consume_webauthn_challenge(
@@ -65,6 +94,8 @@ grant execute on function public.lts_payroll_consume_webauthn_challenge(uuid,uui
  to service_role;
 
 alter table public.lts_payroll_passkeys enable row level security;
+alter table public.lts_payroll_enroll_limits enable row level security;
+revoke all on public.lts_payroll_enroll_limits from anon,authenticated;
 alter table public.lts_payroll_webauthn_challenges enable row level security;
 alter table public.lts_payroll_device_unlocks enable row level security;
 revoke all on public.lts_payroll_passkeys from anon,authenticated;
