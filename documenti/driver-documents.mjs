@@ -43,6 +43,9 @@ function showDeviceGate(enrolled){
 }
 async function authenticate(){
  if(deviceBusy)return;
+ if(unlockTimer){clearTimeout(unlockTimer);unlockTimer=null;}
+ // Revoke any previously granted unlock, including before account re-validation.
+ void api.lockDocuments().catch(()=>{});
  $('content').hidden=true;$('locked').hidden=true;$('device-gate').hidden=true;
  api.clearDeviceUnlock();
  try{
@@ -75,6 +78,13 @@ async function doUnlock(){
  finally{deviceBusy=false;$('unlock-device').disabled=false;}
 }
 $('unlock-device').addEventListener('click',()=>void doUnlock());
+$('setup-another-device').addEventListener('click',()=>{
+ if(deviceBusy)return;
+ $('unlock-panel').hidden=true;
+ $('device-setup-form').hidden=false;
+ $('device-description').textContent='Per autorizzare un nuovo dispositivo, reinserisci la password LTS e crea una passkey.';
+ $('device-password').focus();
+});
 $('device-setup-form').addEventListener('submit',async event=>{
  event.preventDefault();if(deviceBusy)return;
  deviceBusy=true;$('device-register').disabled=true;note('');
