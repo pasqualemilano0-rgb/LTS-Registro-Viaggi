@@ -51,6 +51,33 @@ alter table public.lts_payroll_audit force row level security;
 revoke all on public.lts_payroll_audit from public,anon,authenticated;
 grant select,insert on public.lts_payroll_audit to service_role;
 
+-- Atomically change status and record the action; service-role callers only.
+create or replace function public.lts_payroll_transition(p_id uuid,p_actor uuid,p_next text)
+returns text language plpgsql security invoker set search_path = ''
+as $
+declare result text;
+begin
+ if p_next not in ('published','revoked') then
+  raise exception 'Invalid payroll transition';
+ end if;
+ update public.lts_payroll_documents
+ set status = p_next,
+     published_at = case when p_next='published' then now() else published_at end,
+     revoked_at = case when p_next='revoked' then now() else null end
+ where id=p_id and status=case when p_next='published' then 'draft' else 'published' end
+ returning status into result;
+ if result is null then
+  raise exception 'Payroll transition conflict' using errcode='P0002';
+ end if;
+ insert into public.lts_payroll_audit(document_id,actor_id,action)
+ values (p_id,p_actor,case when p_next='published' then 'publish' else 'revoke' end);
+ return result;
+end;
+$;
+revoke all on function public.lts_payroll_transition(uuid,uuid,text)
+ from public,anon,authenticated;
+grant execute on function public.lts_payroll_transition(uuid,uuid,text) to service_role;
+
 -- No anon/authenticated storage.objects policies: all file operations
 -- must go through lts-payroll Edge Function after online auth and ACL checks.
 insert into storage.buckets (id,name,public,file_size_limit,allowed_mime_types)
