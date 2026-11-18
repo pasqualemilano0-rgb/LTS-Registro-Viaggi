@@ -224,15 +224,10 @@ async function setStatus(db: ReturnType<typeof pair>["admin"], user: {id:string,
  if (!existing || existing.status !== (next === "published" ? "draft" : "published"))
   throw { status: 409 };
  await validDriver(db, existing.employee_id);
- const now = new Date().toISOString();
- const update = next === "published"
-  ? { status: "published", published_at: now }
-  : { status: "revoked", revoked_at: now };
- const { data, error } = await db.from("lts_payroll_documents").update(update)
-  .eq("id", id).eq("status", existing.status).select("id").maybeSingle();
- if (error) throw { status: 503 };
- if (!data) throw { status: 409 };
- await audit(db, id, user.id, next === "published" ? "publish" : "revoke");
+ const { data: changed, error } = await db.rpc("lts_payroll_transition", {
+  p_id: id, p_actor: user.id, p_next: next
+ });
+ if (error || changed !== next) throw { status: 409 };
  return { id, status: next };
 }
 async function download(db: ReturnType<typeof pair>["admin"], user: {id:string,role:string}, id: string, origin: string|null) {
