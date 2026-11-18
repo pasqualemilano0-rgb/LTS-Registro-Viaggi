@@ -19,6 +19,7 @@ export function quickTripFromRoute(trip, date) {
     secondClient: second ? secondClient : '',
     secondCity: second ? secondCity : '',
     second,
+    fareMode:'double', // A repeated route must reauthorize a single fare; never inherit it.
     // Extra, amounts, old notes, identities and timestamps are never inherited.
     services: [],
     note: '',
