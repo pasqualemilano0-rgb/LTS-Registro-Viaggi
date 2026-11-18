@@ -66,3 +66,15 @@ Codice proposto su ramo feature; **non installato né verificato end-to-end**, *
 - Nuovi file: documenti/device-passkey.mjs, supabase/functions/lts-payroll/device-unlock.mjs, supabase/migrations/20261118_payroll_device_unlock.sql, tests/qa-payroll-device-lock.test.mjs.
 - QA prima di produzione: Android Chrome, iOS Safari, assenza WebAuthn, Face ID/PIN annullato, dispositivo nuovo, password errata e throttling, riutilizzo challenge, JWT revocato/rubato, accesso tra due autisti A/B, blocco background e dopo 3 minuti, download offline, RLS, Storage, CORS, regression Booking TFG/Porti.
 - STATO: soltanto PR di sviluppo. Nessun deploy o modifica a Supabase di produzione, nessun PDF reale caricato. Non pubblicare senza QA end-to-end.
+
+
+## Accesso amministrativo a due aree (18 novembre 2026)
+
+- Nella pagina amministratore, **prima del login manuale**, vengono offerte due scelte: **AREA LOGISTICA** e **AREA AMMINISTRATIVA**.
+- **AREA LOGISTICA** apre il modulo di accesso già usato da LTS Control Center, con credenziali, controlli ruolo, MFA, logistica, Porti, autisti, tariffe, viaggi e clienti inalterati.
+- **AREA AMMINISTRATIVA** porta a /amministratore/buste-paga/ con login e MFA distinti; per ora comprende CEDOLINO, CU e ALTRI DOCUMENTI. Non concede automaticamente diritti payroll dalla scelta del pulsante.
+- La selezione è una scelta di navigazione nel frontend, non un ruolo, un login unico o un modo per aggirare i controlli server. Se esiste già una sessione amministrativa verificata, rimane il normale ripristino rapido della dashboard LTS.
+- Il pulsante Torna alla scelta delle aree cancella il campo password e gli eventuali errori del form logistico; il logout della dashboard ripresenta la selezione.
+- Nuovi file amministratore/admin-area-choice.mjs, amministratore/admin-area-choice.css e tests/qa-admin-area-choice.test.mjs. Modificato solo il markup di accesso in amministratore/index.html; non modifica il motore di login amministratore in admin.mjs.
+- Test statici/sintetici per le due opzioni, la separazione del login payroll con MFA e i click della scelta; da confermare comportamento su mobile/desktop e CircleCI al commit finale.
+- **PR #193 IN BOZZA: non pubblicare né usare dati reali prima di tutti i collaudi payroll, WebAuthn e autorizzazioni.**
