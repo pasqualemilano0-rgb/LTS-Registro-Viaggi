@@ -73,10 +73,10 @@ async function showPdf(item, button) {
   const viewer = dialog("Documento PDF");
   const link = node("a", "lts-payroll-download", "Scarica PDF");
   link.href = url; link.download = "LTS-" + item.category + "-" + item.document_year + ".pdf";
-  const frame = node("iframe", "lts-payroll-preview");
-  frame.src = url; frame.title = "Anteprima del documento PDF";
-  frame.setAttribute("referrerpolicy", "no-referrer");
-  viewer.append(link, frame);
+  const preview = node("a", "lts-payroll-download", "Visualizza PDF");
+  preview.href = url; preview.target = "_blank"; preview.rel = "noopener noreferrer";
+  viewer.append(preview, link, node("p", "lts-payroll-message",
+    "Apri il PDF in una nuova scheda oppure scaricalo. Alcuni telefoni supportano soltanto il download."));
   viewer.addEventListener("close", () => URL.revokeObjectURL(url), { once: true });
  } catch (error) { window.alert(statusText(error)); }
  finally { button.disabled = false; }
