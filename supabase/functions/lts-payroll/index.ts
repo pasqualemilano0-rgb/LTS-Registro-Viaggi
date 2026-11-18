@@ -146,7 +146,7 @@ async function upload(req,db,actor){
  }catch{fail(400);}
  const file=form.get('file');
  if(!(file instanceof File)||file.size<10||file.size>MAX_FILE||
-    !/\.pdf$/i.test(file.name)||file.type!=='application/pdf')fail(400,'Solo PDF fino a 8 MB.');
+    !/\.pdf$/i.test(file.name)||(file.type&&file.type!=='application/pdf'))fail(400,'Solo PDF fino a 8 MB.');
  const driverId=await activeDriver(db,String(form.get('driverId')||''));
  const category=String(form.get('category')||'');
  const year=Number(form.get('year'));
@@ -177,7 +177,7 @@ async function upload(req,db,actor){
   sha256_hex:hash,state:'draft'
  }).select('id').single();
  if(writeErr||!created){await storage.remove([path]);fail(503,'Documento non registrato.');}
- await audit(db,id,actor.userId,'upload');
+ // Audit inserted atomically by lts_payroll_write_audit trigger.
  return {id,state:'draft'};
 }
 async function publish(db,actor,id){
@@ -188,11 +188,11 @@ async function publish(db,actor,id){
  if(!doc||doc.state!=='draft')fail(409,'Documento non pubblicabile.');
  await activeDriver(db,doc.driver_id);
  const {data,error}=await db.from('lts_payroll_documents')
-  .update({state:'published',published_at:new Date().toISOString()})
+  .update({state:'published',published_by:actor.userId,published_at:new Date().toISOString()})
   .eq('id',id).eq('state','draft').select('id').maybeSingle();
  if(error)fail(503);
  if(!data)fail(409);
- await audit(db,id,actor.userId,'publish');
+ // Audit inserted atomically by lts_payroll_write_audit trigger.
  return {id,state:'published'};
 }
 async function download(db,actor,id){
