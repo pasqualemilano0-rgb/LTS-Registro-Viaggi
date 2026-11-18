@@ -19,7 +19,7 @@
   <link rel="stylesheet" href="./dashboard-v6.css?v=20261104-mobile-v7">
   <link rel="stylesheet" href="./smart-console.css?v=20261108-smart-v2">
   <link rel="stylesheet" href="./customer-overview.css?v=20261107-manual-shared-v1">
-  <link rel="stylesheet" href="./company-rates.css?v=20261107-manual-shared-v1">
+  <link rel="stylesheet" href="./company-rates.css?v=20261118-multi-stop-v1">
   <link rel="stylesheet" href="./driver-records.css?v=20261110-duplicate-guard-v2">
   <link rel="stylesheet" href="../visual-theme.css?v=20261108-rc3-v1">
   <link rel="stylesheet" href="./admin-login-refreshed.css?v=20261110-seamless-resume-v2">
@@ -404,6 +404,30 @@
               <button type="button" id="company-sites-more" class="button outline" hidden>Mostra altre sedi</button>
               <p class="company-sites-help">Clienti manuali e trasferte operative possono non avere un indirizzo Maps. La tariffa sarà visibile agli autisti solo dopo il salvataggio.</p>
             </section>
+          </section>
+          <section id="company-multi-stop" class="company-rates-editor" aria-labelledby="company-multi-title">
+            <h2 id="company-multi-title">Scarico multiplo — una tariffa</h2>
+            <p class="company-rates-note">Un container, due clienti e due località. Il viaggio è pagato con un solo importo deciso qui dall’amministratore. La funzione esistente con due tariffe non viene modificata.</p>
+            <form id="company-multi-form" autocomplete="off">
+              <h3 id="company-multi-form-title">Autorizza scarico multiplo</h3>
+              <datalist id="company-multi-customers"></datalist>
+              <datalist id="company-multi-cities-a"></datalist>
+              <datalist id="company-multi-cities-b"></datalist>
+              <div class="company-multi-fields">
+                <label>Primo cliente<input id="company-multi-client" list="company-multi-customers" maxlength="500" required></label>
+                <label>Prima località<input id="company-multi-city" list="company-multi-cities-a" maxlength="500" required></label>
+                <label>Secondo cliente<input id="company-multi-second-client" list="company-multi-customers" maxlength="500" required></label>
+                <label>Seconda località<input id="company-multi-second-city" list="company-multi-cities-b" maxlength="500" required></label>
+                <label>Tariffa unica (€)<input id="company-multi-amount" inputmode="decimal" maxlength="14" placeholder="Es. 200,00" required></label>
+              </div>
+              <label class="company-multi-toggle"><input id="company-multi-active" type="checkbox" checked> Autorizza agli autisti la tariffa unica per questa coppia</label>
+              <div class="company-rates-actions">
+                <button id="company-multi-save" type="submit" class="button primary" disabled>Salva tariffa unica</button>
+                <button id="company-multi-cancel" type="button" class="button outline" hidden>Annulla modifica</button>
+              </div>
+            </form>
+            <p id="company-multi-status" class="company-rates-note" role="status" aria-live="polite"></p>
+            <div id="company-multi-list" class="company-multi-list" aria-label="Coppie di clienti con tariffa unica"></div>
           </section>
           <section id="company-extras" class="company-rates-editor" aria-labelledby="company-extras-title">
             <h2 id="company-extras-title">Tariffe servizi extra aziendali</h2>
