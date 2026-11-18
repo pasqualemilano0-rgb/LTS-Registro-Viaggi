@@ -6,6 +6,7 @@
 import {createClient} from 'npm:@supabase/supabase-js@2.118.0';
 import {checkLtsSession} from './lts-session.mjs';
 import {requireAdminMfa} from './lts-admin-mfa.mjs';
+import {deviceAction,requireDocumentUnlock} from './device-unlock.mjs';
 
 const ORIGIN='https://pasqualemilano0-rgb.github.io';
 const BUCKET='lts-payroll-private';
@@ -71,12 +72,12 @@ async function authorized(req,api){
  if(ae)fail(503);
  if(!access||access.enabled!==true||access.removed_at||
    !['driver','admin'].includes(access.role))fail(403);
- await checkLtsSession(api.db,match[1],userId);
+ const sessionId=await checkLtsSession(api.db,match[1],userId);
  if(access.role==='admin'){
   const mfa=await requireAdminMfa(api.db,match[1],userId);
   if(!mfa?.enrolled||!mfa?.verified)fail(428);
  }
- return {userId,role:access.role};
+ return {userId,role:access.role,sessionId};
 }
 function mustAdmin(actor){if(actor.role!=='admin')fail(403);}
 function validId(v){if(!UUID.test(v||''))fail(400);return v;}
@@ -249,6 +250,12 @@ Deno.serve(async req=>{
   if((req.headers.get('content-type')||'').startsWith('multipart/form-data;'))
    return json(await upload(req,api.db,actor),201);
   const input=await objectBody(req);
+  if(typeof input.action==='string'&&input.action.startsWith('passkey-'))
+   return json(await deviceAction(input.action,api,actor,input));
+  // A valid LTS JWT alone CANNOT read payroll metadata or files.
+  // Require a short-lived server-verified WebAuthn step-up on every driver operation.
+  if(actor.role==='driver'&&['list','download','acknowledge'].includes(input.action))
+   await requireDocumentUnlock(api,actor,input.unlockToken);
   if(input.action==='drivers'){
    mustAdmin(actor);
    return json({drivers:await roster(api.db)});
@@ -259,11 +266,11 @@ Deno.serve(async req=>{
   if(input.action==='acknowledge')return json(await acknowledge(api.db,actor,input.id));
   fail(400);
  }catch(e){
-  const status=[400,401,403,404,409,413,415,428,503].includes(e?.status)?e.status:503;
+  const status=[400,401,403,404,409,413,415,423,428,503].includes(e?.status)?e.status:503;
   const messages={400:'Richiesta non valida.',401:'Effettua nuovamente l’accesso.',
    403:'Accesso non autorizzato.',404:'Documento o autista non disponibile.',
    409:'Documento già presente o modificato.',413:'File troppo grande.',
-   415:'Formato non supportato.',428:'MFA amministratore richiesta.',
+   415:'Formato non supportato.',423:'Sblocca I MIEI DOCUMENTI dal dispositivo.',428:'MFA amministratore richiesta.',
    503:'Servizio documenti temporaneamente non disponibile.'};
   return json({error:e?.message||messages[status]},status);
  }
