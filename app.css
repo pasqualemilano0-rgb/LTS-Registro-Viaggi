@@ -846,3 +846,13 @@ body.lts-driver-session-blocked dialog[open]{visibility:hidden!important;pointer
  background:#f5fafbfd;color:#17657a;box-shadow:0 7px 20px #143e4930;
  font-size:12px;font-weight:750;text-align:center;pointer-events:none;
 }
+
+/* Multi-stop journey: driver's choice only between admin-approved price modes. */
+.trip-fare-mode{display:grid;gap:7px;margin:10px 0 15px;padding:14px 15px;
+ background:#f1fafb;border:1px solid #bcdfe4;border-radius:14px}
+.trip-fare-mode .field-label{display:grid;gap:8px;color:#244c59;font-size:13px;font-weight:800}
+.trip-fare-mode-select{display:block;width:100%;min-height:47px;min-width:0;
+ border:1px solid #98c8d2;border-radius:10px;padding:10px 12px;font:inherit;font-size:15px;
+ color:#123c50;background:#fff}
+.trip-fare-mode-select:focus-visible{outline:3px solid #5ab7c7;outline-offset:2px}
+.trip-fare-mode .field-hint{font-size:12px;line-height:1.5;margin:0;color:#466d7c}
