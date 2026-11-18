@@ -33,6 +33,15 @@ function display(doc){
  details.append(element('strong','',doc.label));
  const month=doc.document_month?months[doc.document_month-1]+' ':'';
  details.append(element('small','',month+doc.document_year+' · '+doc.original_filename));
+ if(doc.category==='cedolino'){
+  const when=text=>new Intl.DateTimeFormat('it-IT',{dateStyle:'short',timeStyle:'short'}).format(new Date(text));
+  const receiptStatus=doc.acknowledged_at
+   ?'Ricezione confermata il '+when(doc.acknowledged_at)
+   :doc.first_accessed_at
+    ?'Primo accesso PDF registrato il '+when(doc.first_accessed_at)
+    :'Non risulta ancora un accesso al PDF';
+  details.append(element('small','',receiptStatus));
+ }
  const actions=element('div','actions');
  const button=element('button','outline','Scarica PDF');
  button.type='button';
@@ -41,10 +50,34 @@ function display(doc){
   try{
    const file=await api.download(doc.id);
    api.savePdf(file,doc.original_filename);
+   // Refresh server-side first-access timestamp. The receipt action remains optional.
+   await load();
   }catch(error){note(error.message||'Download non disponibile.',true);}
   finally{button.disabled=false;}
  });
- actions.append(button);row.append(details,actions);
+ actions.append(button);
+ if(doc.category==='cedolino'&&!doc.acknowledged_at){
+  const confirm=element('button','outline','Ho ricevuto il cedolino');
+  confirm.type='button';confirm.disabled=!doc.first_accessed_at;
+  confirm.title=doc.first_accessed_at
+   ?'Conferma volontaria di ricezione; non è una firma né una prova del pagamento.'
+   :'Apri prima il PDF. Non è obbligatorio confermarne la ricezione.';
+  confirm.addEventListener('click',async()=>{
+   if(!window.confirm('Confermo soltanto di aver ricevuto il cedolino PDF. '+
+      'NON confermo il pagamento dello stipendio, né la correttezza degli importi. Proseguire?'))return;
+   confirm.disabled=true;note('');
+   try{
+    await api.acknowledge(doc.id);
+    await load();
+    note('Ricezione del cedolino confermata. Non equivale alla firma o alla prova di pagamento.');
+   }catch(error){note(error.message||'Conferma non registrata.',true);}
+   finally{confirm.disabled=false;}
+  });
+  actions.append(confirm);
+ }else if(doc.category==='cedolino'){
+  actions.append(element('span','status published','Ricezione confermata'));
+ }
+ row.append(details,actions);
  return row;
 }
 async function load(append=false){
