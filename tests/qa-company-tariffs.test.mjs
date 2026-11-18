@@ -95,8 +95,10 @@ test('driver trip creation and preview use the central company catalog on first 
  assert.match(app,/refreshCompanyRates\(/);
  assert.match(app,/companyRatesLoaded/);
  assert.match(app,/D[.]createTrip\(draft,\{[.][.][.]state,tariffs:\[\]\},existing\)/);
- assert.match(app,/trip[.]fareCents=companyFareSnapshot\(/);
- assert.match(app,/trip[.]secondFareCents=trip[.]secondCity\?companyFareSnapshot\(/);
+ assert.match(app,/trip[.]fareCents=isSingle\\?decision[.]cents:companyFareSnapshot\\(/);
+ assert.match(app,/trip[.]secondFareCents=isSingle\\?null:\\(trip[.]secondCity\\?companyFareSnapshot\\(/);
+ assert.match(app,/trip[.]sumPickupFares=Boolean\\(trip[.]secondCity&&!isSingle\\)/);
+ assert.match(app,/singleFareDecision\\(/);
  assert.match(app,/candidate=\{[.][.][.]draft/);
  assert.match(app,/await Promise[.]all\(\[store[.]syncPending\(\),refreshCompanyRates/);
  assert.match(access,/export async function driverCompanyTariffs\(/);
