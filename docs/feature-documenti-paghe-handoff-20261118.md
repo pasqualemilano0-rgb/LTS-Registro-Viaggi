@@ -78,3 +78,15 @@ Codice proposto su ramo feature; **non installato né verificato end-to-end**, *
 - Nuovi file amministratore/admin-area-choice.mjs, amministratore/admin-area-choice.css e tests/qa-admin-area-choice.test.mjs. Modificato solo il markup di accesso in amministratore/index.html; non modifica il motore di login amministratore in admin.mjs.
 - Test statici/sintetici per le due opzioni, la separazione del login payroll con MFA e i click della scelta; da confermare comportamento su mobile/desktop e CircleCI al commit finale.
 - **PR #193 IN BOZZA: non pubblicare né usare dati reali prima di tutti i collaudi payroll, WebAuthn e autorizzazioni.**
+
+
+## Restyling di accesso approvato — Napoli, Porto e logo LTS originale
+
+- La grafica del selettore amministratore è stata ridisegnata su riferimento visivo caricato dall'utente: logo aziendale rosso e azzurro, città di Napoli, Vesuvio, porto, navi e camion.
+- Integrità logo: `assets/lts-logo.png` è esattamente il logo ufficiale fornito dall'utente (Git blob SHA-1 `168228cfb22738ed74a3115fc47d361b635f9308`), non il vecchio mockup argentato.
+- L'interfaccia conserva le scelte AREA LOGISTICA e AREA AMMINISTRATIVA, accessi separati e MFA, impaginazione a due colonne su desktop e card verticali su smartphone.
+- Assets grafici locali già versionati: `assets/admin-hero-napoli.svg`, `assets/admin-card-logistica.svg`, `assets/admin-card-amministrativa.svg` (Napoli/Porto/Vesuvio/camion in vettoriale), senza URL di fotografie esterne.
+- Le foto originali dell'anteprima utente sono state preparate come file WebP ottimizzati nel pacchetto di consegna della chat; i file binari fotografici **non sono inclusi nella PR**. Sono previsti come sostituzione finale degli SVG, con commit binario verificabile.
+- Modifiche a `amministratore/index.html` e `amministratore/admin-area-choice.css` limitate alla schermata di accesso; la CSS usa `body:has(#login-panel:not([hidden]) #admin-area-choice:not([hidden]))` per non modificare topbar/dashboard quando il login è già riuscito.
+- `tests/qa-admin-area-choice.test.mjs` verifica logo ufficiale, immagini locali, mobile e isolamento della dashboard. `tests/company-report-browser.mjs` apre prima AREA LOGISTICA per mantenere il collaudo di visibilità password.
+- Non unire né distribuire la PR #193 finché non passano i test browser e i collaudi di Supabase/WebAuthn/permessi documentali.
