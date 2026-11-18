@@ -49,3 +49,20 @@ Codice proposto su ramo feature; **non installato né verificato end-to-end**, *
 - La pagina documenti admin impone **login separato** anche se una sessione LTS precedente esiste nella scheda, riutilizzando password e MFA del progetto.
 - Test statici aggiunti in `tests/qa-payroll-documents.test.mjs`; servono ancora test DB con due autisti fittizi, idempotenza, blocco account revocati e verifica UX su browser/mobile.
 - Non pubblicare prima di concordare con consulente del lavoro e responsabile privacy se la tracciatura adottata è sufficiente per dimostrare la consegna nel contesto aziendale. Nessuna firma obbligatoria è prevista.
+
+
+## Estensione: sblocco dispositivo / passkey per I MIEI DOCUMENTI
+
+- Ambito: tutte le categorie CEDOLINO, CU e ALTRI DOCUMENTI. La UI rimane bloccata; anche il backend impedisce list/download/acknowledge senza WebAuthn.
+- Tecnologia: WebAuthn/passkey, userVerification required. Sistema operativo e browser scelgono Face ID, impronta o PIN. Non si raccolgono dati biometrici, fotografie o PIN.
+- Prima registrazione: account autista LTS già verificato più reinserimento password LTS validata dal backend Supabase Auth per lo stesso user_id. Rate limit server 5 tentativi ogni 15 minuti.
+- Nuovo telefono: pulsante Registra nuova passkey nella schermata protetta, sempre con reimmissione della password LTS. Massimo cinque passkey attive.
+- Origin WebAuthn: https://pasqualemilano0-rgb.github.io; RP ID pasqualemilano0-rgb.github.io. Libreria server pin npm:@simplewebauthn/server@13.3.0.
+- Challenge WebAuthn a consumo singolo e validità 90 secondi, legata a user_id e session_id LTS. Il server verifica firma, challenge, RP ID, origin e UV.
+- Sblocco: token casuale di 32 byte, conservato soltanto nella memoria della pagina; SHA-256 sul server, legato alla sessione e alla passkey non revocata. Scadenza lato server entro 3 minuti.
+- Protezione: blocco UI e cancellazione elenco immediati quando app va in background, sessione scade, browser ripristina pagina; richiesta di revoca sblocco lato server.
+- Nessuna via alternativa a password-only se il dispositivo non supporta WebAuthn con sblocco schermo. L'admin mantiene password/MFA già previste.
+- Nota privacy: il blocco protegge soltanto l'area LTS, non i PDF già scaricati nella cartella Download del dispositivo.
+- Nuovi file: documenti/device-passkey.mjs, supabase/functions/lts-payroll/device-unlock.mjs, supabase/migrations/20261118_payroll_device_unlock.sql, tests/qa-payroll-device-lock.test.mjs.
+- QA prima di produzione: Android Chrome, iOS Safari, assenza WebAuthn, Face ID/PIN annullato, dispositivo nuovo, password errata e throttling, riutilizzo challenge, JWT revocato/rubato, accesso tra due autisti A/B, blocco background e dopo 3 minuti, download offline, RLS, Storage, CORS, regression Booking TFG/Porti.
+- STATO: soltanto PR di sviluppo. Nessun deploy o modifica a Supabase di produzione, nessun PDF reale caricato. Non pubblicare senza QA end-to-end.
