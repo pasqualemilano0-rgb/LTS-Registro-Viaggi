@@ -16,8 +16,12 @@ create table if not exists public.lts_payroll_documents (
   state text not null default 'draft' check (state in ('draft','published','archived')),
   created_at timestamptz not null default now(),
   published_at timestamptz,
+  first_accessed_at timestamptz,
+  acknowledged_at timestamptz,
   archived_at timestamptz,
   constraint payroll_month_required check (category <> 'cedolino' or document_month is not null),
+  constraint payroll_receipt_consistent check ((state <> 'draft' or (first_accessed_at is null and acknowledged_at is null)) and
+    (acknowledged_at is null or (category='cedolino' and first_accessed_at is not null and published_at is not null))),
   constraint payroll_publication_consistent check (
     (state='draft' and published_at is null and archived_at is null)
     or (state='published' and published_at is not null and archived_at is null)
@@ -33,7 +37,7 @@ create table if not exists public.lts_payroll_audit (
   id bigint generated always as identity primary key,
   document_id uuid not null references public.lts_payroll_documents(id),
   actor_id uuid not null references auth.users(id),
-  event text not null check (event in ('upload','publish','archive','download')),
+  event text not null check (event in ('upload','publish','archive','download','first_access','acknowledge')),
   happened_at timestamptz not null default now()
 );
 create index if not exists lts_payroll_audit_document
@@ -44,7 +48,7 @@ create index if not exists lts_payroll_audit_document
 create or replace function public.lts_payroll_write_audit()
 returns trigger language plpgsql security invoker
 set search_path = ''
-as $
+as $$
 begin
   if tg_op = 'INSERT' then
     insert into public.lts_payroll_audit (document_id, actor_id, event)
@@ -56,14 +60,58 @@ begin
     insert into public.lts_payroll_audit (document_id, actor_id, event)
       values (new.id, new.published_by, 'publish');
   end if;
+  if tg_op = 'UPDATE' then
+    if old.first_accessed_at is null and new.first_accessed_at is not null then
+      insert into public.lts_payroll_audit (document_id, actor_id, event)
+        values (new.id, new.driver_id, 'first_access');
+    end if;
+    if old.acknowledged_at is null and new.acknowledged_at is not null then
+      insert into public.lts_payroll_audit (document_id, actor_id, event)
+        values (new.id, new.driver_id, 'acknowledge');
+    end if;
+  end if;
   return new;
 end;
-$;
+$$;
 revoke all on function public.lts_payroll_write_audit() from public, anon, authenticated;
 drop trigger if exists lts_payroll_write_audit_trg on public.lts_payroll_documents;
 create trigger lts_payroll_write_audit_trg
-after insert or update of state on public.lts_payroll_documents
+after insert or update of state, first_accessed_at, acknowledged_at on public.lts_payroll_documents
 for each row execute function public.lts_payroll_write_audit();
+
+-- Server-only RPCs; driver_id is supplied exclusively after verified JWT and role checks.
+-- Database timestamps are idempotent and do not rely on the device clock.
+create or replace function public.lts_payroll_mark_first_access(p_document_id uuid,p_driver_id uuid)
+returns timestamptz language plpgsql security invoker
+set search_path=''
+as $$
+declare v_at timestamptz;
+begin
+ update public.lts_payroll_documents
+ set first_accessed_at=coalesce(first_accessed_at,now())
+ where id=p_document_id and driver_id=p_driver_id and state='published'
+ returning first_accessed_at into v_at;
+ return v_at;
+end;
+$$;
+create or replace function public.lts_payroll_acknowledge(p_document_id uuid,p_driver_id uuid)
+returns timestamptz language plpgsql security invoker
+set search_path=''
+as $$
+declare v_at timestamptz;
+begin
+ update public.lts_payroll_documents
+ set acknowledged_at=coalesce(acknowledged_at,now())
+ where id=p_document_id and driver_id=p_driver_id and category='cedolino'
+   and state='published' and first_accessed_at is not null
+ returning acknowledged_at into v_at;
+ return v_at;
+end;
+$$;
+revoke all on function public.lts_payroll_mark_first_access(uuid,uuid) from public,anon,authenticated;
+revoke all on function public.lts_payroll_acknowledge(uuid,uuid) from public,anon,authenticated;
+grant execute on function public.lts_payroll_mark_first_access(uuid,uuid) to service_role;
+grant execute on function public.lts_payroll_acknowledge(uuid,uuid) to service_role;
 
 alter table public.lts_payroll_documents enable row level security;
 alter table public.lts_payroll_audit enable row level security;
