@@ -1,7 +1,7 @@
 {
   "source": "https://api.conateco.it/ConatecoServicesApi/BerthForecast",
   "source_updated_at": null,
-  "acquired_at": "2026-11-18T02:30:16.536Z",
+  "acquired_at": "2026-11-18T03:00:17.102Z",
   "rows": [
     {
       "vessel": "CONTSHIP JOY",
