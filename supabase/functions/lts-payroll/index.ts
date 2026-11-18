@@ -110,7 +110,7 @@ async function listDocs(db,actor,q){
  const offset=Number(q.offset??0);
  if(!Number.isSafeInteger(offset)||offset<0||offset>100000)fail(400);
  let query=db.from('lts_payroll_documents')
-  .select('id,driver_id,category,document_year,document_month,label,original_filename,file_size,state,created_at,published_at')
+  .select('id,driver_id,category,document_year,document_month,label,original_filename,file_size,state,created_at,published_at,first_accessed_at,acknowledged_at')
   .order('created_at',{ascending:false}).range(offset,offset+49);
  if(actor.role==='driver'){
   query=query.eq('driver_id',actor.userId).eq('state','published');
@@ -205,10 +205,30 @@ async function download(db,actor,id){
  if(actor.role==='admin'&&data.state==='archived')fail(403);
  const {data:file,error:readErr}=await db.storage.from(BUCKET).download(data.object_path);
  if(readErr||!file)fail(503,'PDF non disponibile.');
+ if(actor.role==='driver'){
+  // The file has reached the server, not necessarily the recipient's device.
+  // Timestamp comes exclusively from a restricted DB RPC; never from client data.
+  const {data:at,error:accessError}=await db.rpc('lts_payroll_mark_first_access',{
+   p_document_id:id,p_driver_id:actor.userId
+  });
+  if(accessError)fail(503,'Impossibile registrare l’accesso al PDF.');
+  if(!at)fail(409,'Documento non più disponibile.');
+ }
  await audit(db,id,actor.userId,'download');
  return new Response(file,{status:200,headers:{...cors,'Content-Type':'application/pdf',
   'Content-Disposition':'attachment; filename="LTS-documento.pdf"',
   'Content-Security-Policy':'sandbox'}});
+}
+/** Voluntary receipt acknowledgement, not a signature, wage payment, or approval of amounts. */
+async function acknowledge(db,actor,id){
+ if(actor.role!=='driver')fail(403);
+ validId(id);
+ const {data:at,error}=await db.rpc('lts_payroll_acknowledge',{
+  p_document_id:id,p_driver_id:actor.userId
+ });
+ if(error)fail(503,'Conferma non registrata. Riprova.');
+ if(!at)fail(409,'Apri prima il tuo cedolino PDF per confermarne la ricezione.');
+ return {id,acknowledgedAt:at};
 }
 Deno.serve(async req=>{
  if(req.headers.get('origin')!==ORIGIN)return json({error:'Origine non autorizzata.'},403);
@@ -236,6 +256,7 @@ Deno.serve(async req=>{
   if(input.action==='list')return json({documents:await listDocs(api.db,actor,input)});
   if(input.action==='publish')return json(await publish(api.db,actor,input.id));
   if(input.action==='download')return await download(api.db,actor,input.id);
+  if(input.action==='acknowledge')return json(await acknowledge(api.db,actor,input.id));
   fail(400);
  }catch(e){
   const status=[400,401,403,404,409,413,415,428,503].includes(e?.status)?e.status:503;
