@@ -1,7 +1,7 @@
 {
   "source": "https://www.salernocontainerterminal.com/ca/an/vessel_schedule.php",
   "source_updated_at": null,
-  "acquired_at": "2026-11-18T19:00:16.819Z",
+  "acquired_at": "2026-11-18T19:30:17.160Z",
   "rows": [
     {
       "vessel": "LIVORNO EXPRESS",
@@ -94,18 +94,18 @@
       "status": "PENDING"
     },
     {
-      "vessel": "XIN NAN TONG",
-      "voyage": "644N",
-      "eta": "18/11/2026 18:00",
+      "vessel": "NAAMA BORCHARD",
+      "voyage": "0139",
+      "eta": "18/11/2026 15:00",
       "closing": "18/11/2026 17:00 CLOSED",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
     },
     {
-      "vessel": "NAAMA BORCHARD",
-      "voyage": "0139",
-      "eta": "19/11/2026 00:00",
+      "vessel": "XIN NAN TONG",
+      "voyage": "644N",
+      "eta": "18/11/2026 18:00",
       "closing": "18/11/2026 17:00 CLOSED",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
@@ -319,6 +319,6 @@
       "status": "PENDING"
     }
   ],
-  "updated_at": "2026-11-18T19:00:16.819Z",
-  "data_changed_at": "2026-11-18T16:00:17.018Z"
+  "updated_at": "2026-11-18T19:30:17.160Z",
+  "data_changed_at": "2026-11-18T19:15:16.521Z"
 }
