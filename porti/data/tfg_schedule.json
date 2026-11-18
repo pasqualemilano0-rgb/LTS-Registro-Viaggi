@@ -1,7 +1,7 @@
 {
   "source": "https://tfg.bucci.it/@/TFGW_TP_ETA",
-  "source_updated_at": "2026-11-16T11:53:01.000Z",
-  "acquired_at": "2026-11-17T05:00:16.804Z",
+  "source_updated_at": "2026-11-18T09:43:54.000Z",
+  "acquired_at": "2026-11-18T11:30:17.097Z",
   "rows": [
     {
       "vessel": "SUNAID X",
@@ -73,10 +73,10 @@
       "vessel": "ADRASTOS",
       "arrival_voyage": "0HWLCE1MA",
       "departure_voyage": "0HWLCE1MA",
-      "eta": "18/11/26",
+      "eta": "19/11/26 06:00",
       "acceptance": "ACCETTA CARICO",
-      "custom_close_time": "17/11/26 15:00:00",
-      "fast_corridor_cut_off": "",
+      "custom_close_time": "18/11/26 15:00:00",
+      "fast_corridor_cut_off": "18/11/2611:00:00",
       "gate_cut_off": "",
       "destination": "INTERNO PORTO"
     },
@@ -84,9 +84,9 @@
       "vessel": "X PRESS SAGARMALA",
       "arrival_voyage": "646E",
       "departure_voyage": "647W",
-      "eta": "19/11/26",
+      "eta": "19/11/26 20:00",
       "acceptance": "ACCETTA CARICO",
-      "custom_close_time": "&nbsp;",
+      "custom_close_time": "19/11/26 15:00:00",
       "fast_corridor_cut_off": "",
       "gate_cut_off": "",
       "destination": "INTERNO PORTO"
@@ -95,7 +95,7 @@
       "vessel": "SUNAID X",
       "arrival_voyage": "019",
       "departure_voyage": "019",
-      "eta": "21/11/26",
+      "eta": "22/11/26",
       "acceptance": "ACCETTA CARICO",
       "custom_close_time": "&nbsp;",
       "fast_corridor_cut_off": "",
