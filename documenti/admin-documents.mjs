@@ -151,7 +151,7 @@ $('login-form').addEventListener('submit',async event=>{
 });
 $('mfa-form').addEventListener('submit',async event=>{
  event.preventDefault();if(loading)return;busy(true);notice('');
- try{await account.verifyAdminTotp($('mfa-code').value.trim(),$('mfa-factor').value||null);await check();}
+ try{await account.verifyAdminTotp($('mfa-code').value.trim(),$('mfa-factor').value||null);busy(false);await check();}
  catch(error){$('mfa-code').value='';notice(error.message||'Verifica MFA fallita.',true);}
  finally{busy(false);}
 });
