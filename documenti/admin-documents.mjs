@@ -206,6 +206,14 @@ setInterval(()=>{
   void refreshRoster().then(()=>refreshDocs());
  }
 },60000);
+// Hide private metadata immediately when the browser moves to the background.
+document.addEventListener('visibilitychange',()=>{
+ if(document.hidden){$('workspace').inert=true;return;}
+ if(!$('workspace').hidden){
+  void check().finally(()=>{$('workspace').inert=false;});
+ }
+});
+
 // Always display an independent payroll login, even when LTS Admin is already open.
 protect();
 window.addEventListener('pageshow',event=>{if(event.persisted)protect();});
