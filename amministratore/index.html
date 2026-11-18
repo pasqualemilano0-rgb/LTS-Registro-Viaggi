@@ -23,11 +23,13 @@
   <link rel="stylesheet" href="./driver-records.css?v=20261110-duplicate-guard-v2">
   <link rel="stylesheet" href="../visual-theme.css?v=20261108-rc3-v1">
   <link rel="stylesheet" href="./admin-login-refreshed.css?v=20261110-seamless-resume-v2">
+  <link rel="stylesheet" href="./admin-area-choice.css?v=20261118-v1">
   <link rel="stylesheet" href="./control-center-v10.css?v=20261110-maps-approval-v1">
   <link rel="stylesheet" href="./dashboard-unified-v11.css?v=20261110-rates-visibility-v2">
   <link rel="stylesheet" href="./control-center-home.css?v=20261111-control-center-v1">
   <link rel="stylesheet" href="./control-center-integration.css?v=20261111-control-center-v1">
   <script type="module" src="./admin.mjs?v=20261111-control-center-v1"></script>
+  <script type="module" src="./admin-area-choice.mjs?v=20261118-v1"></script>
   <script type="module" src="./install-pwa.mjs?v=20261108-admin-pwa-v1"></script>
   <script type="module" src="./dashboard-mobile-nav.mjs?v=20261111-control-center-v1"></script>
 </head>
@@ -47,15 +49,36 @@
   <main class="container">
     <div id="notice" class="notice" role="status" aria-live="polite" hidden></div>
     <div id="admin-resume-inline" class="admin-resume-inline" role="status" aria-live="polite" hidden></div>
-    <section id="login-panel" class="login-wrap admin-login-modern" aria-labelledby="login-title">
+    <section id="login-panel" class="login-wrap admin-login-modern" aria-label="Accesso amministratore LTS">
       <div class="admin-login-identity">
         <span class="intro-icon" aria-hidden="true"><svg width="27" height="27" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="m9 12 2 2 4-4"/></svg></span>
         <span class="admin-login-identity-label">LTS <small>CONTROL CENTER</small></span>
         <span class="admin-login-secure"><span aria-hidden="true">●</span> Protetto</span>
       </div>
-      <p class="eyebrow">AREA AMMINISTRATORE</p>
-      <h1 id="login-title">Bentornato nel pannello LTS</h1>
-      <p class="intro-copy">Accedi per gestire autisti, viaggi e attività aziendali in un unico spazio.</p>
+      <div id="admin-area-choice" aria-labelledby="admin-area-title">
+        <p class="eyebrow">ACCESSO AMMINISTRATORE</p>
+        <h1 id="admin-area-title">Scegli la tua area</h1>
+        <p class="intro-copy">Due sezioni riservate, con accessi separati e protezioni LTS.</p>
+        <div class="admin-area-grid">
+          <button id="select-area-logistica" type="button" class="admin-area-tile" aria-controls="admin-logistica-login">
+            <span class="admin-area-tile-icon" aria-hidden="true">▣</span>
+            <span class="admin-area-tile-title">AREA LOGISTICA</span>
+            <span class="admin-area-tile-desc">Autisti, registro viaggi, clienti, tariffe e Porti.</span>
+            <span class="admin-area-tile-link" aria-hidden="true">Accedi →</span>
+          </button>
+          <a id="select-area-amministrativa" class="admin-area-tile" href="./buste-paga/" aria-label="AREA AMMINISTRATIVA — gestione cedolini, CU e altri documenti, accesso riservato">
+            <span class="admin-area-tile-icon" aria-hidden="true">▤</span>
+            <span class="admin-area-tile-title">AREA AMMINISTRATIVA</span>
+            <span class="admin-area-tile-desc">Cedolini, Certificazione Unica e documenti riservati ai dipendenti.</span>
+            <span class="admin-area-tile-link" aria-hidden="true">Accedi →</span>
+          </a>
+        </div>
+        <p class="admin-area-choice-hint">La scelta non concede permessi: ogni area richiede un accesso amministratore verificato.</p>
+      </div>
+      <div id="admin-logistica-login" hidden>
+      <p class="eyebrow">AREA LOGISTICA</p>
+      <h1 id="login-title">Accesso area logistica</h1>
+      <p class="intro-copy">Accedi per gestire autisti, viaggi, clienti, tariffe e operazioni logistiche.</p>
       <form id="login-form" class="stack" autocomplete="on">
         <label for="login-phone">Numero di cellulare <small>+39 automatico</small>
           <input id="login-phone" type="tel" inputmode="tel" autocomplete="username" placeholder="3XXXXXXXXX" maxlength="40" required>
@@ -66,10 +89,12 @@
             <button id="login-password-toggle" type="button" aria-pressed="false" aria-label="Mostra password">Mostra</button>
           </span>
         </label>
-        <button class="button primary admin-login-submit" type="submit"><span class="admin-login-submit-label">Accedi al pannello</span><span aria-hidden="true">→</span></button>
+        <button class="button primary admin-login-submit" type="submit"><span class="admin-login-submit-label">Accedi all’area logistica</span><span aria-hidden="true">→</span></button>
       </form>
       <p id="login-error" class="error-message" role="alert" hidden></p>
       <p class="admin-login-trust"><span aria-hidden="true">◈</span> Accesso protetto e verifica in due passaggi</p>
+        <button id="admin-area-back" class="text-button admin-area-back" type="button">← Torna alla scelta delle aree</button>
+      </div>
       <div class="login-footer"><button id="switch-account" class="text-button" type="button" hidden>Esci dalla sessione precedente</button><a href="../">← Torna al Registro Viaggi</a></div>
     </section>
 
