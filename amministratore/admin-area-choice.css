@@ -1,55 +1,212 @@
-/* Access entry selection only. Does not alter authenticated LTS dashboard views. */
+/* LTS Admin selector — source of truth: approved Napoli / Porto / camion mockup
+   Applies ONLY before choosing an area; the existing logistics form and
+   authenticated Control Center dashboard retain all of their original styles.
+*/
+:root{--lts-entry-navy:#062f4b;--lts-entry-deep:#002b46;--lts-entry-cyan:#00a8e8;--lts-entry-red:#ed1029}
 #admin-area-choice[hidden],#admin-logistica-login[hidden]{display:none!important}
+body:has(#admin-area-choice:not([hidden])){
+ background:
+  linear-gradient(90deg,rgba(0,39,66,.42),rgba(0,39,66,.04) 40%,rgba(0,39,66,.45)),
+  url("./media/camion-porto.webp") left center / 42% auto no-repeat,
+  url("./media/napoli-vesuvio.webp") right center / 42% auto no-repeat,
+  #002e4b;
+ min-height:100dvh;
+}
+body:has(#admin-area-choice:not([hidden])) .topbar{display:none!important}
+body:has(#admin-area-choice:not([hidden])) .container{
+ width:100%;max-width:none;padding:0 18px 34px;
+ min-height:100dvh;display:flex;flex-direction:column;align-items:center;
+}
+body:has(#admin-area-choice:not([hidden])) #notice{width:min(100%,690px);margin-top:8px}
+body:has(#admin-area-choice:not([hidden])) #admin-resume-inline{display:none}
 #login-panel.admin-login-modern:has(#admin-area-choice:not([hidden])){
- width:min(100%,650px);
+ width:min(100%,690px);max-width:690px;
+ margin:14px auto 0;padding:0;
+ overflow:hidden;background:#fff;border:1px solid #c6d9e3;
+ border-radius:27px;box-shadow:0 24px 80px rgba(0,15,39,.30);
 }
-#admin-area-choice .intro-copy{margin-bottom:22px}
-.admin-area-grid{
- display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;
+#login-panel:has(#admin-area-choice:not([hidden])) > .admin-login-identity{display:none!important}
+#admin-area-choice{margin:0;color:var(--lts-entry-deep)}
+#admin-area-choice *{box-sizing:border-box}
+#admin-area-choice .admin-area-hero{
+ position:relative;isolation:isolate;min-height:215px;
+ display:flex;align-items:center;flex-direction:column;justify-content:flex-start;
+ background:
+  linear-gradient(180deg,rgba(0,37,59,.89) 0%,rgba(0,49,76,.46) 52%,rgba(0,52,78,.08) 100%),
+  url("./media/napoli-vesuvio.webp") center 35% /cover,
+  linear-gradient(140deg,#003b58,#00a8e8);
+ overflow:hidden;padding:8px 15px 20px;
 }
-#login-panel .admin-area-tile{
- display:flex;flex-direction:column;align-items:flex-start;gap:12px;
- text-decoration:none;appearance:none;border:1.5px solid #d8e7eb;
- border-radius:19px;padding:22px 19px;min-width:0;min-height:222px;
- background:linear-gradient(140deg,#ffffff,#f5fafb);color:#163e4c;
- font:inherit;text-align:left;cursor:pointer;transition:transform .14s,border-color .14s,box-shadow .14s;
+#admin-area-choice .admin-area-hero::after{
+ content:"";position:absolute;bottom:-1px;left:-8%;width:116%;height:38px;
+ border-top:7px solid var(--lts-entry-red);
+ border-radius:60% 62% 0 0 / 100% 100% 0 0;
+ background:linear-gradient(90deg,#fff,#f8fbfd);
+ transform:rotate(-2deg);z-index:-1;
 }
-#login-panel .admin-area-tile:hover,
-#login-panel .admin-area-tile:focus-visible{
- border-color:#128797;box-shadow:0 8px 24px rgba(0,108,130,.13);
- transform:translateY(-2px)
+#admin-area-choice .admin-area-original-logo{
+ display:block;position:relative;z-index:1;
+ width:clamp(210px,43vw,295px);max-width:75%;height:auto;max-height:125px;
+ object-fit:contain;filter:drop-shadow(0 3px 7px rgba(0,0,0,.35));
 }
-#login-panel .admin-area-tile:focus-visible,
-#login-panel .admin-area-back:focus-visible{outline:3px solid #48adc0;outline-offset:3px}
-.admin-area-tile-icon{
- display:grid;place-items:center;width:49px;height:49px;
- border-radius:14px;background:#e2f3f4;color:#067386;
- font-size:28px;line-height:1;
+#admin-area-choice .admin-area-hero-tagline{
+ margin:0;position:relative;z-index:1;color:#fff;font-size:10px;
+ font-weight:900;letter-spacing:.18em;text-shadow:0 2px 5px #002e4c
 }
-.admin-area-tile-title{font-size:14px;font-weight:900;letter-spacing:.035em;line-height:1.25}
-.admin-area-tile-desc{font-size:12px;line-height:1.55;color:#637d88;flex:1}
-.admin-area-tile-link{font-size:12px;font-weight:800;color:#087487}
-#login-panel .admin-area-choice-hint{
- margin:18px 0 0;font-size:11px;color:#67818b;line-height:1.55;text-align:center
+#admin-area-choice .admin-area-hero-tagline span{color:var(--lts-entry-red);margin:0 5px}
+#admin-area-choice .admin-area-hero-location{
+ position:absolute;left:18px;bottom:42px;z-index:1;
+ background:rgba(0,35,55,.70);color:#fff;border:1px solid rgba(255,255,255,.6);
+ border-radius:30px;padding:5px 10px;font-size:9px;font-weight:850;
+ letter-spacing:.12em;
 }
-#login-panel .admin-area-back{
- margin:16px auto 0;text-align:center;display:block;
- background:transparent;border:0;color:#087487;font-weight:750;cursor:pointer
+#admin-area-choice .admin-area-content{padding:3px clamp(18px,4.5vw,32px) 12px;background:#fff}
+#admin-area-choice .admin-area-title-strip{
+ width:100%;min-height:78px;margin:-1px auto 6px;
+ display:flex;align-items:center;justify-content:center;gap:13px;
+ color:var(--lts-entry-deep);
+}
+#admin-area-choice .admin-area-shield{
+ display:grid;place-items:center;flex:none;width:52px;height:58px;
+ color:#fff;background:linear-gradient(150deg,#007a9d,var(--lts-entry-deep));
+ clip-path:polygon(50% 0,94% 15%,94% 61%,80% 81%,50% 100%,20% 81%,6% 61%,6% 15%);
+ filter:drop-shadow(0 2px 4px rgba(0,36,61,.15))
+}
+#admin-area-choice .admin-area-title-text{
+ display:flex;flex-direction:column;justify-content:center;padding-left:13px;
+ border-left:4px solid var(--lts-entry-red);
+}
+#admin-area-choice .admin-area-title-text strong{
+ font-size:clamp(24px,4.2vw,32px);font-weight:950;line-height:1.08;
+ letter-spacing:-.035em;white-space:nowrap;color:#092e49
+}
+#admin-area-choice .admin-area-title-text small{
+ font-size:10px;font-weight:950;letter-spacing:.21em;margin-top:5px;color:#17455c
+}
+#admin-area-choice .admin-area-overline{
+ margin:7px auto 9px;text-align:center;display:flex;align-items:center;justify-content:center;
+ gap:9px;white-space:normal;color:#173b52;font-size:12px;font-weight:750;
+}
+#admin-area-choice .admin-area-red-dot{color:var(--lts-entry-red)}
+#admin-area-choice h1#admin-area-title{
+ margin:10px auto 19px;text-align:center;font-size:clamp(19px,3.8vw,27px);
+ font-weight:950;line-height:1.18;letter-spacing:-.02em;
+ color:#072c46;
+}
+#admin-area-choice h1#admin-area-title::after{
+ content:"";display:block;width:68px;height:4px;margin:10px auto 0;
+ border-radius:100px;background:var(--lts-entry-red);
+}
+#admin-area-choice .admin-area-grid{display:grid;grid-template-columns:1fr;gap:13px}
+#login-panel #admin-area-choice .admin-area-tile{
+ display:grid;grid-template-columns:43% 1fr;grid-template-rows:1fr;
+ min-height:143px;margin:0;padding:0;align-items:stretch;
+ color:#09314b;background:linear-gradient(115deg,#fff,#f6faff);
+ border:1.5px solid #b7d2e3;border-radius:20px;
+ overflow:hidden;text-decoration:none;
+ text-align:left;font-family:inherit;appearance:none;cursor:pointer;
+ box-shadow:0 6px 14px rgba(12,46,70,.12);
+ transition:transform .13s,box-shadow .13s,border-color .13s;
+}
+#login-panel #admin-area-choice .admin-area-tile:hover{
+ transform:translateY(-2px);border-color:var(--lts-entry-cyan);
+ box-shadow:0 9px 19px rgba(0,71,111,.18)
+}
+#login-panel #admin-area-choice .admin-area-tile:focus-visible,
+#login-panel .admin-area-back:focus-visible{
+ outline:3px solid var(--lts-entry-cyan);outline-offset:3px
+}
+#admin-area-choice .admin-area-tile-photo{
+ position:relative;display:block;min-height:140px;
+ background-color:#1e7292;background-position:center;background-size:cover;
+}
+#admin-area-choice .admin-area-tile-photo::after{
+ content:"";position:absolute;inset:auto 0 0;display:block;height:7px;
+ background:linear-gradient(90deg,#fff 0 9%,var(--lts-entry-red) 9% 100%);
+ border-radius:80% 0 0 0;
+}
+#admin-area-choice .admin-area-tile-photo-logistica{
+ background-image:url("./media/camion-porto.webp");
+ background-position:51% 58%;
+}
+#admin-area-choice .admin-area-tile-photo-amministrativa{
+ background-image:url("./media/napoli-vesuvio.webp");
+ background-position:50% 42%;
+}
+#admin-area-choice .admin-area-tile-body{
+ display:flex;position:relative;flex-direction:column;align-items:flex-start;
+ justify-content:center;gap:7px;min-width:0;padding:13px 25px 12px 14px;
+}
+#admin-area-choice .admin-area-tile-icon{
+ width:40px;height:40px;flex:none;display:grid;place-items:center;
+ background:linear-gradient(145deg,#006c92,#002a46);border-radius:10px;
+ color:#fff;box-shadow:0 4px 8px rgba(0,38,61,.16);
+}
+#admin-area-choice .admin-area-tile-text{display:flex;flex-direction:column;gap:5px;min-width:0}
+#admin-area-choice .admin-area-tile-title{
+ display:block;font-weight:950;font-size:clamp(13px,3vw,18px);
+ line-height:1.12;color:#082c46;letter-spacing:-.01em;
+ overflow-wrap:normal;hyphens:auto;
+}
+#admin-area-choice .admin-area-tile-desc{
+ display:block;flex:none;font-size:clamp(11px,2.3vw,13px);font-weight:600;
+ color:#405d70;line-height:1.32
+}
+#admin-area-choice .admin-area-tile-link{
+ position:absolute;right:5px;top:calc(50% - 12px);
+ display:grid;place-items:center;color:#004366;width:24px;height:24px;
+}
+#admin-area-choice .admin-area-choice-hint{
+ margin:14px auto 0;max-width:550px;text-align:center;
+ color:#577485;font-size:10px;font-weight:600;line-height:1.5
+}
+#admin-area-choice .admin-area-tricolor{
+ display:flex;width:100%;height:15px;margin-top:6px;background:var(--lts-entry-deep);
+ align-items:center;justify-content:center;overflow:hidden;
+}
+#admin-area-choice .admin-area-tricolor i{width:42px;height:6px;display:block;transform:skew(-28deg)}
+#admin-area-choice .admin-area-tricolor i:nth-child(1){background:#04a767}
+#admin-area-choice .admin-area-tricolor i:nth-child(2){background:#fff}
+#admin-area-choice .admin-area-tricolor i:nth-child(3){background:var(--lts-entry-red)}
+#login-panel:has(#admin-area-choice:not([hidden])) .login-footer{
+ border:0;background:#002e4b;padding:12px 20px;margin:0;
+}
+#login-panel:has(#admin-area-choice:not([hidden])) .login-footer a{
+ color:#e7f4fa!important;font-size:12px
+}
+@media(min-width:840px){
+ #admin-area-choice .admin-area-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ #login-panel #admin-area-choice .admin-area-tile{
+  grid-template-columns:1fr;grid-template-rows:142px 1fr;min-height:285px
+ }
+ #admin-area-choice .admin-area-tile-photo{min-height:142px}
+ #admin-area-choice .admin-area-tile-body{min-height:140px;padding:16px 34px 16px 17px}
 }
 @media(max-width:560px){
- #login-panel.admin-login-modern:has(#admin-area-choice:not([hidden])){padding:24px 20px}
- .admin-area-grid{grid-template-columns:1fr;gap:11px}
- #login-panel .admin-area-tile{
-  min-height:0;padding:17px 17px 16px;gap:8px;border-radius:15px;
-  display:grid;grid-template-columns:48px minmax(0,1fr);
-  column-gap:13px;grid-template-rows:auto auto auto;
+ body:has(#admin-area-choice:not([hidden])){background:#00334b}
+ body:has(#admin-area-choice:not([hidden])) .container{padding:0;min-height:100dvh}
+ #login-panel.admin-login-modern:has(#admin-area-choice:not([hidden])){
+  width:100%;max-width:none;margin:0;border:0;border-radius:0;box-shadow:none
  }
- .admin-area-tile-icon{grid-row:1/4;align-self:center}
- .admin-area-tile-title{grid-column:2;grid-row:1}
- .admin-area-tile-desc{grid-column:2;grid-row:2}
- .admin-area-tile-link{grid-column:2;grid-row:3}
+ #admin-area-choice .admin-area-hero{min-height:201px}
+ #admin-area-choice .admin-area-hero-location{font-size:8px;bottom:39px}
+ #admin-area-choice .admin-area-content{padding:4px 12px 16px}
+ #admin-area-choice .admin-area-title-strip{min-height:65px}
+ #admin-area-choice .admin-area-shield{width:43px;height:49px}
+ #admin-area-choice .admin-area-title-text strong{font-size:clamp(21px,6.1vw,28px)}
+ #admin-area-choice .admin-area-title-text small{font-size:8px;letter-spacing:.13em}
+ #admin-area-choice .admin-area-overline{font-size:11px;gap:6px}
+ #admin-area-choice h1#admin-area-title{font-size:21px;margin:8px auto 14px}
+ #login-panel #admin-area-choice .admin-area-tile{
+  grid-template-columns:43% 1fr;min-height:139px;border-radius:18px
+ }
+ #admin-area-choice .admin-area-tile-photo{min-height:137px}
+ #admin-area-choice .admin-area-tile-body{gap:7px;padding:12px 24px 12px 12px}
+ #admin-area-choice .admin-area-tile-icon{width:34px;height:34px}
+ #admin-area-choice .admin-area-tile-title{font-size:clamp(12px,3.4vw,16px)}
+ #admin-area-choice .admin-area-tile-desc{font-size:11px}
 }
 @media(prefers-reduced-motion:reduce){
- #login-panel .admin-area-tile{transition:none}
- #login-panel .admin-area-tile:hover{transform:none}
+ #login-panel #admin-area-choice .admin-area-tile{transition:none}
+ #login-panel #admin-area-choice .admin-area-tile:hover{transform:none}
 }
