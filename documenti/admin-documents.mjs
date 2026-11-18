@@ -143,6 +143,8 @@ $('login-form').addEventListener('submit',async event=>{
   if(account.hasSession())account.signOut();
   const result=await account.login(form.elements.phone.value.trim(),password);
   if(result.role!=='admin'){account.signOut();throw Error('Accesso riservato all’amministratore.');}
+  // The dedicated sign-in is complete; unblock the initial protected data loads.
+  busy(false);
   await check();
  }catch(error){protect();notice(error.message||'Accesso non riuscito.',true);}
  finally{busy(false);}
@@ -204,4 +206,6 @@ setInterval(()=>{
   void refreshRoster().then(()=>refreshDocs());
  }
 },60000);
-if(account.hasSession())void check();else protect();
+// Always display an independent payroll login, even when LTS Admin is already open.
+protect();
+window.addEventListener('pageshow',event=>{if(event.persisted)protect();});
