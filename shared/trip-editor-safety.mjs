@@ -10,7 +10,7 @@ export function tripDraftHasWork(draft,editingId=null,currentDate=''){
  if(!draft||typeof draft!=='object')return false;
  return Boolean(text(draft.container).trim()||text(draft.client).trim()||
   text(draft.city).trim()||text(draft.secondClient).trim()||text(draft.secondCity).trim()||
-  text(draft.note,2000).trim()||draft.second||
+  text(draft.note,2000).trim()||text(draft.adminNote,2000).trim()||draft.second||
   (Array.isArray(draft.services)&&draft.services.length)||
   (draft.date&&draft.date!==currentDate));
 }
@@ -34,7 +34,7 @@ export function restoreTripEditorSnapshot(snapshot,trips){
  const draft={
   date:source.date,container:text(source.container),client:text(source.client),city:text(source.city),
   secondClient:text(source.secondClient),secondCity:text(source.secondCity),
-  second:Boolean(source.second),note:text(source.note,2000),
+  second:Boolean(source.second),note:text(source.note,2000),adminNote:text(source.adminNote,2000),
   services:Array.isArray(source.services)?[...new Set(source.services.filter(key=>allowedServices.has(key)))]:[],
   noteOpen:Boolean(source.noteOpen),servicesOpen:Boolean(source.servicesOpen)
  };

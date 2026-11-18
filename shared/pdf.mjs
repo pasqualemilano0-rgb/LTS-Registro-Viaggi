@@ -65,7 +65,7 @@ export function generateMonthlyPdf({ state, month, logoDataUrl, jsPDF = globalTh
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(9);
   const driverLines = doc.splitTextToSize(driver, 132);
-  const tableTop = Math.max(40, 26 + (driverLines.length - 1) * 9 * 1.1 / 2.83465 + 11);
+  const tableTop = Math.max(37, 29 + (driverLines.length - 1) * 9 * 1.1 / 2.83465 + 8);
   const fontSize = fitFont(doc, rows, widths, 272 - tableTop);
   const image = doc.getImageProperties(logoDataUrl);
   const drawHeader = () => {
@@ -80,33 +80,108 @@ export function generateMonthlyPdf({ state, month, logoDataUrl, jsPDF = globalTh
     doc.text(formatMonth(month), 11, 20);
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(9);
-    doc.text(driverLines, 11, 26, { lineHeightFactor: 1.1 });
-    doc.setDrawColor('#007e96');
+    doc.text(['Autista: ' + driver, 'Viaggi: ' + rows.length], 11, 25, { lineHeightFactor: 1.25 });
     doc.setLineWidth(0.65);
-    doc.line(11, tableTop - 4, 199, tableTop - 4);
+    doc.setDrawColor('#bb2043');
+    doc.line(11, tableTop - 4, 105, tableTop - 4);
+    doc.setDrawColor('#16a4c5');
+    doc.line(105, tableTop - 4, 199, tableTop - 4);
   };
   doc.autoTable({
     startY: tableTop,
     margin: { top: tableTop, right: 11, bottom: 15, left: 11 },
     head: [['DATA', 'CONTAINER', 'CITTÀ', 'CLIENTE', 'SERVIZI']],
     body: rows,
-    theme: 'grid',
+    theme: 'plain',
     showHead: 'everyPage',
     rowPageBreak: 'avoid',
-    styles: { font: 'helvetica', fontSize, cellPadding: { top: 1.6, bottom: 1.6, left: 2, right: 2 }, lineColor: '#dbe5e9', lineWidth: 0.15, textColor: '#203942', valign: 'top', overflow: 'linebreak', minCellHeight: 6.5 },
-    headStyles: { fillColor: '#007e96', textColor: '#ffffff', fontStyle: 'bold', fontSize: 8, cellPadding: 2 },
-    alternateRowStyles: { fillColor: '#f4f8fa' },
+    styles: { font: 'helvetica', fontSize, cellPadding: { top: 1.1, bottom: 1.1, left: 1.3, right: 1.3 }, lineWidth: 0, textColor: '#203942', valign: 'top', overflow: 'linebreak', minCellHeight: 5.5 },
+    headStyles: { fillColor: '#e4f4f9', textColor: '#086b84', fontStyle: 'bold', fontSize: 8, cellPadding: 1.5 },
+    alternateRowStyles: { fillColor: '#f3f6f8' },
     columnStyles: Object.fromEntries(widths.map((width, index) => [index, { cellWidth: width, ...(index === 1 ? { fontStyle: 'bold' } : {}) }])),
     willDrawPage: drawHeader,
   });
+  // Only explicitly designated administrative notes appear after the trip table.
+  // Existing private trip.note values and all monetary data remain excluded.
+  const adminNotes = monthlyTrips(state, month)
+    .filter(trip => typeof trip.adminNote === 'string' && trip.adminNote.trim())
+    .sort((a, b) => a.date.localeCompare(b.date) || String(a.createdAt ?? '').localeCompare(String(b.createdAt ?? '')))
+    .map(trip => [
+      displayDate(trip.date), trip.container,
+      trip.secondCity ? `${trip.city} / ${trip.secondCity}` : trip.city,
+      trip.secondClient ? `${trip.client} / ${trip.secondClient}` : trip.client,
+      trip.adminNote,
+    ]);
+  if (adminNotes.length) {
+    // Compact two-column note cards preserve the existing LTS PDF palette.
+    // A note is never truncated: autoTable may continue onto another page.
+    const noteCards = adminNotes.map(([date, container, city, client, note]) => ({ date, container, city, client, note }));
+    const leftCount = Math.ceil(noteCards.length / 2);
+    const cardRows = Array.from({ length: leftCount }, (_, index) => [noteCards[index], noteCards[index + leftCount] ?? null]);
+    const previousTableEnd = doc.lastAutoTable?.finalY ?? tableTop;
+    const titleY = previousTableEnd + 6;
+    // Keep the title with its first card when the main table fills a page.
+    const startY = titleY + 3;
+    doc.autoTable({
+      startY,
+      margin: { top: tableTop + 8, right: 11, bottom: 15, left: 11 },
+      head: [['NOTE PER L\'AMMINISTRAZIONE', '']],
+      body: cardRows.map(row => row.map(() => '')),
+      theme: 'grid', showHead: 'firstPage', rowPageBreak: 'avoid',
+      styles: {
+        font: 'helvetica', fontSize: 6.4,
+        cellPadding: { top: 1, bottom: 1, left: 1.6, right: 1.6 },
+        overflow: 'linebreak', textColor: '#203942',
+        lineColor: '#dbe5e9', lineWidth: 0.15, valign: 'top',
+      },
+      headStyles: {
+        fillColor: '#007e96', textColor: '#ffffff',
+        fontStyle: 'bold', fontSize: 7, cellPadding: 1.4,
+      },
+      columnStyles: { 0: { cellWidth: 94 }, 1: { cellWidth: 94 } },
+      didParseCell: data => {
+        if (data.section === 'head' && data.column.index === 1) data.cell.text = [];
+        if (data.section !== 'body') return;
+        const card = cardRows[data.row.index]?.[data.column.index];
+        if (!card) return;
+        doc.setFontSize(7);
+        const placeLines = doc.splitTextToSize(`${card.city} · ${card.client}`, 90);
+        const noteLines = doc.splitTextToSize(`Nota: ${card.note}`, 90);
+        data.cell.styles.minCellHeight = Math.max(11, 4 + 3.1 + placeLines.length * 2.8 + noteLines.length * 3.2);
+      },
+      didDrawCell: data => {
+        if (data.section !== 'body') return;
+        const card = cardRows[data.row.index]?.[data.column.index];
+        if (!card) return;
+        const x = data.cell.x + 1.7;
+        let y = data.cell.y + 3.1;
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(7.4);
+        doc.setTextColor('#173846');
+        doc.text(`${card.date} · ${card.container}`, x, y);
+        y += 3.1;
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(6.4);
+        doc.setTextColor('#203942');
+        const placeLines = doc.splitTextToSize(`${card.city} · ${card.client}`, 90);
+        doc.text(placeLines, x, y);
+        y += placeLines.length * 2.8;
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(7.2);
+        doc.setTextColor('#006c82');
+        doc.text(doc.splitTextToSize(`Nota: ${card.note}`, 90), x, y);
+      },
+      willDrawPage: drawHeader,
+    });
+  }
   const pages = doc.getNumberOfPages();
   for (let page = 1; page <= pages; page++) {
     doc.setPage(page);
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8);
     doc.setTextColor('#657983');
-    doc.text(`${rows.length} ${rows.length === 1 ? 'viaggio' : 'viaggi'} • ${formatMonth(month)}`, 11, 289);
-    doc.text(`Pagina ${page} di ${pages}`, 199, 289, { align: 'right' });
+    doc.text('LTS · Registro personale', 11, 289);
+    doc.text(`Pagina ${page} / ${pages}`, 199, 289, { align: 'right' });
   }
   return { blob: doc.output('blob'), fileName: `LTS-Viaggi-${month}.pdf`, pages, tripCount: rows.length };
 }
