@@ -62,7 +62,8 @@ test('separate admin login and three driver document categories are connected to
  assert.match(driver,/cache: "no-store"/);
  assert.match(driver,/setInterval[\s\S]*60000/);
  assert.match(sw,/payroll\/driver[.]mjs/);
- assert.match(home,/frame-src 'self' blob:/);
+ assert.match(home,/frame-src 'self';/);
+ assert.match(driver,/preview[.]target = "_blank"/);
  assert.match(adminMain,/href="[.][.]\/paghe-amministrazione\/"/);
  for(const client of [app,driver,admin,adminHtml,sw])
   assert.doesNotMatch(client,/SUPABASE_SERVICE_ROLE_KEY|sb_secret_[A-Za-z0-9]+/);
