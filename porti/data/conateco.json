@@ -1,7 +1,7 @@
 {
   "source": "https://api.conateco.it/ConatecoServicesApi/BerthForecast",
   "source_updated_at": null,
-  "acquired_at": "2026-11-18T09:30:17.244Z",
+  "acquired_at": "2026-11-18T10:00:16.829Z",
   "rows": [
     {
       "vessel": "CONTSHIP JOY",
@@ -306,7 +306,7 @@
       "external_depot": "",
       "opening": "",
       "closing": "",
-      "notes": "ACCETT. RETROPORTO 19/11 07.00 LOAD DRAGON SERVICE",
+      "notes": "ACCETT. RETROPORTO 20/11 07.00 LOAD DRAGON SERVICE",
       "source_conflict": false
     },
     {
