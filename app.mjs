@@ -1,5 +1,6 @@
 import * as D from '/LTS-Registro-Viaggi/shared/domain.mjs';
 import { quickTripFromRoute } from '/LTS-Registro-Viaggi/shared/quick-trip.mjs';
+import {createLazyCustomerChoices} from '/LTS-Registro-Viaggi/shared/ui-performance.mjs';
 import {REGISTER_PAGE_SIZE,registerTripCounts,filterRegisterTrips,paginateRegisterTrips,stepRegisterMonth} from '/LTS-Registro-Viaggi/shared/register-explorer.mjs';
 import {TRIP_DRAFT_VERSION,tripDraftHasWork,possibleTripDuplicate,restoreTripEditorSnapshot} from '/LTS-Registro-Viaggi/shared/trip-editor-safety.mjs';
 import {unionStates,SyncConflictError} from '/LTS-Registro-Viaggi/shared/sync-merge.mjs';
@@ -576,6 +577,11 @@ function renderInsert(main){
  const client=decorateTripField(field('Cliente','client',draft.client,{placeholder:'Nome cliente',required:true,maxlength:500}),'users');
  const city=decorateTripField(field('Località','city',draft.city,{placeholder:'Es. Napoli',list:cityListId,required:true,maxlength:500}),'pin');
  const hint=el('p',{class:'field-hint',id:'tariff-hint'});city.wrap.append(hint);
+ // Rebuild the combined directory at most once per form, not on every keypress.
+ // A company catalog update or an in-place archive refresh invalidates it.
+ const customerChoicesCache=createLazyCustomerChoices(()=>combinedTripCustomerChoices({
+  personal:state.customers,trips:state.trips,shared:companyCustomers
+ }));
  const suggestionRefreshes=[];
  form.append(el('div',{class:'trip-fields'},container.wrap,tripCustomerAutocomplete(client,city),city.wrap),datalist(customerListId,[...state.customers.map(c=>c.name),...state.trips.map(t=>t.client),...companyCustomers.map(c=>c.name)]));
  let cities=datalist(cityListId,citySuggestions(draft.client));form.append(cities);
@@ -612,8 +618,7 @@ function renderInsert(main){
   function draw(){
    const query=input.value.trim();
    if(!query||document.activeElement!==input){hide();return;}
-   const all=combinedTripCustomerChoices({personal:state.customers,trips:state.trips,shared:companyCustomers});
-   choices=filterTripCustomerChoices(all,query,12);active=-1;
+   choices=filterTripCustomerChoices(customerChoicesCache.get(),query,12);active=-1;
    if(!choices.length){hide();return;}
    menu.replaceChildren(...choices.map((customer,index)=>el('button',{type:'button',id:menu.id+'-'+index,role:'option','aria-selected':'false',class:'trip-client-suggestion',on:{pointerdown:event=>{event.preventDefault();pick(customer);},click:()=>pick(customer)}},el('strong',{},customer.name),el('span',{},customer.city||'Località da completare'),customer.address?el('small',{},customer.address):null)));
    menu.hidden=false;input.setAttribute('aria-expanded','true');
@@ -627,7 +632,10 @@ function renderInsert(main){
   });
   suggestionRefreshes.push(draw);return holder;
  }
- refreshTripCustomerSuggestions=()=>{for(const draw of suggestionRefreshes)draw();};
+ refreshTripCustomerSuggestions=()=>{
+  customerChoicesCache.invalidate();
+  for(const draw of suggestionRefreshes)draw();
+ };
  const noteInput=el('textarea',{id:'trip-note',name:'note',value:draft.note||'',maxlength:2000,rows:3,autocapitalize:'characters',spellcheck:'false',placeholder:'Scrivi una nota per questo viaggio'});
  const noteEditor=el('section',{class:'trip-note-editor',id:'trip-note-editor',hidden:!draft.noteOpen},el('label',{class:'field-label',for:'trip-note'},'Nota del viaggio',el('span',{class:'optional'},'Facoltativa')),noteInput,el('p',{class:'trip-note-help'},icon('lock'),'Visibile solo nell’app · esclusa dal PDF mensile'));
  const noteSymbol=el('span',{class:'plus-disc','aria-hidden':'true'},draft.noteOpen?'−':'+');
