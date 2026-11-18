@@ -1,0 +1,55 @@
+/* Access entry selection only. Does not alter authenticated LTS dashboard views. */
+#admin-area-choice[hidden],#admin-logistica-login[hidden]{display:none!important}
+#login-panel.admin-login-modern:has(#admin-area-choice:not([hidden])){
+ width:min(100%,650px);
+}
+#admin-area-choice .intro-copy{margin-bottom:22px}
+.admin-area-grid{
+ display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;
+}
+#login-panel .admin-area-tile{
+ display:flex;flex-direction:column;align-items:flex-start;gap:12px;
+ text-decoration:none;appearance:none;border:1.5px solid #d8e7eb;
+ border-radius:19px;padding:22px 19px;min-width:0;min-height:222px;
+ background:linear-gradient(140deg,#ffffff,#f5fafb);color:#163e4c;
+ font:inherit;text-align:left;cursor:pointer;transition:transform .14s,border-color .14s,box-shadow .14s;
+}
+#login-panel .admin-area-tile:hover,
+#login-panel .admin-area-tile:focus-visible{
+ border-color:#128797;box-shadow:0 8px 24px rgba(0,108,130,.13);
+ transform:translateY(-2px)
+}
+#login-panel .admin-area-tile:focus-visible,
+#login-panel .admin-area-back:focus-visible{outline:3px solid #48adc0;outline-offset:3px}
+.admin-area-tile-icon{
+ display:grid;place-items:center;width:49px;height:49px;
+ border-radius:14px;background:#e2f3f4;color:#067386;
+ font-size:28px;line-height:1;
+}
+.admin-area-tile-title{font-size:14px;font-weight:900;letter-spacing:.035em;line-height:1.25}
+.admin-area-tile-desc{font-size:12px;line-height:1.55;color:#637d88;flex:1}
+.admin-area-tile-link{font-size:12px;font-weight:800;color:#087487}
+#login-panel .admin-area-choice-hint{
+ margin:18px 0 0;font-size:11px;color:#67818b;line-height:1.55;text-align:center
+}
+#login-panel .admin-area-back{
+ margin:16px auto 0;text-align:center;display:block;
+ background:transparent;border:0;color:#087487;font-weight:750;cursor:pointer
+}
+@media(max-width:560px){
+ #login-panel.admin-login-modern:has(#admin-area-choice:not([hidden])){padding:24px 20px}
+ .admin-area-grid{grid-template-columns:1fr;gap:11px}
+ #login-panel .admin-area-tile{
+  min-height:0;padding:17px 17px 16px;gap:8px;border-radius:15px;
+  display:grid;grid-template-columns:48px minmax(0,1fr);
+  column-gap:13px;grid-template-rows:auto auto auto;
+ }
+ .admin-area-tile-icon{grid-row:1/4;align-self:center}
+ .admin-area-tile-title{grid-column:2;grid-row:1}
+ .admin-area-tile-desc{grid-column:2;grid-row:2}
+ .admin-area-tile-link{grid-column:2;grid-row:3}
+}
+@media(prefers-reduced-motion:reduce){
+ #login-panel .admin-area-tile{transition:none}
+ #login-panel .admin-area-tile:hover{transform:none}
+}
