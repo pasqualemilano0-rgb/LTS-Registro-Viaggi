@@ -1,7 +1,7 @@
 {
   "source": "https://tfg.bucci.it/@/TFGW_TP_ETA",
-  "source_updated_at": "2026-11-17T13:25:13.000Z",
-  "acquired_at": "2026-11-18T09:00:16.618Z",
+  "source_updated_at": "2026-11-18T09:43:54.000Z",
+  "acquired_at": "2026-11-18T11:30:17.097Z",
   "rows": [
     {
       "vessel": "SUNAID X",
@@ -76,7 +76,7 @@
       "eta": "19/11/26 06:00",
       "acceptance": "ACCETTA CARICO",
       "custom_close_time": "18/11/26 15:00:00",
-      "fast_corridor_cut_off": "",
+      "fast_corridor_cut_off": "18/11/2611:00:00",
       "gate_cut_off": "",
       "destination": "INTERNO PORTO"
     },
