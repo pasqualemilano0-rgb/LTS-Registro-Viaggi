@@ -34,7 +34,8 @@ export function restoreTripEditorSnapshot(snapshot,trips){
  const draft={
   date:source.date,container:text(source.container),client:text(source.client),city:text(source.city),
   secondClient:text(source.secondClient),secondCity:text(source.secondCity),
-  second:Boolean(source.second),note:text(source.note,2000),adminNote:text(source.adminNote,2000),
+  second:Boolean(source.second),fareMode:source.fareMode==='single'?'single':'double',
+  note:text(source.note,2000),adminNote:text(source.adminNote,2000),
   services:Array.isArray(source.services)?[...new Set(source.services.filter(key=>allowedServices.has(key)))]:[],
   noteOpen:Boolean(source.noteOpen),servicesOpen:Boolean(source.servicesOpen)
  };
