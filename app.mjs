@@ -325,6 +325,7 @@ function receiveState(record,{source}={}){
  const changedIdentity=Boolean(user?.id&&record.user?.id!==user.id);
  const previous=state;state=D.validateState(record.state);refreshDraftCustomers(previous,state);user=record.user||null;pdfReport=null;
  if(changedIdentity){
+  companyMultiStopRates=[];companyMultiStopRatesLoaded=false;
   draft=newDraft();draftBaselineDate=draft.date;editingId=null;editingBaseline=null;tripDraftRecoveryMessage='';
   lastDeletedTrip=null;registerQuery='';registerFilter='all';registerLimit=REGISTER_PAGE_SIZE;document.querySelectorAll('dialog').forEach(dialog=>dialog.close());render();
   // initialize() owns first-time account onboarding. Avoid opening two
@@ -2082,6 +2083,7 @@ function renderAccountGate(message=''){
  companyCustomersError='';
  companyCustomerSearch='';customerDirectoryScope='all';customerDirectoryLimit=24;companyCustomersLoaded=false;companyCustomersRequest++;
  companyRates=[];companyRatesLoaded=false;
+ companyMultiStopRates=[];companyMultiStopRatesLoaded=false;
  companyExtraRates=[];companyExtrasLoaded=false;companyRatesRequest++;
  const hasPreviousSession=accountAccess.hasSession();
  const recovery=hasPreviousSession?el('div',{class:'account-session-recovery'},
