@@ -1,212 +1,250 @@
-/* LTS Admin selector — source of truth: approved Napoli / Porto / camion mockup
-   Applies ONLY before choosing an area; the existing logistics form and
-   authenticated Control Center dashboard retain all of their original styles.
-*/
-:root{--lts-entry-navy:#062f4b;--lts-entry-deep:#002b46;--lts-entry-cyan:#00a8e8;--lts-entry-red:#ed1029}
+/*
+ * LTS CONTROL CENTER — authentic LTS branding, Napoli/Porto/truck photographic
+ * selector. Scoped to the chooser: MFA and the logistics dashboard are untouched.
+ */
 #admin-area-choice[hidden],#admin-logistica-login[hidden]{display:none!important}
-body:has(#admin-area-choice:not([hidden])){
- background:
-  linear-gradient(90deg,rgba(0,39,66,.42),rgba(0,39,66,.04) 40%,rgba(0,39,66,.45)),
-  url("./media/camion-porto.webp") left center / 42% auto no-repeat,
-  url("./media/napoli-vesuvio.webp") right center / 42% auto no-repeat,
-  #002e4b;
+body:has(#admin-area-choice:not([hidden])) {
+ background:linear-gradient(135deg,#05254e,#073560 45%,#08254e);
  min-height:100dvh;
 }
 body:has(#admin-area-choice:not([hidden])) .topbar{display:none!important}
 body:has(#admin-area-choice:not([hidden])) .container{
- width:100%;max-width:none;padding:0 18px 34px;
- min-height:100dvh;display:flex;flex-direction:column;align-items:center;
+ max-width:1160px!important;width:100%;min-height:100dvh;
+ padding:0!important;margin:0 auto!important;
 }
-body:has(#admin-area-choice:not([hidden])) #notice{width:min(100%,690px);margin-top:8px}
-body:has(#admin-area-choice:not([hidden])) #admin-resume-inline{display:none}
-#login-panel.admin-login-modern:has(#admin-area-choice:not([hidden])){
- width:min(100%,690px);max-width:690px;
- margin:14px auto 0;padding:0;
- overflow:hidden;background:#fff;border:1px solid #c6d9e3;
- border-radius:27px;box-shadow:0 24px 80px rgba(0,15,39,.30);
+body:has(#admin-area-choice:not([hidden])) #login-panel.admin-login-modern{
+ width:100%;max-width:none!important;padding:0!important;
+ margin:0 auto!important;border:0!important;border-radius:0!important;
+ background:#fff!important;box-shadow:0 20px 70px rgba(0,0,0,.26)!important;
+ overflow:hidden;
 }
-#login-panel:has(#admin-area-choice:not([hidden])) > .admin-login-identity{display:none!important}
-#admin-area-choice{margin:0;color:var(--lts-entry-deep)}
-#admin-area-choice *{box-sizing:border-box}
-#admin-area-choice .admin-area-hero{
- position:relative;isolation:isolate;min-height:215px;
- display:flex;align-items:center;flex-direction:column;justify-content:flex-start;
- background:
-  linear-gradient(180deg,rgba(0,37,59,.89) 0%,rgba(0,49,76,.46) 52%,rgba(0,52,78,.08) 100%),
-  url("./media/napoli-vesuvio.webp") center 35% /cover,
-  linear-gradient(140deg,#003b58,#00a8e8);
- overflow:hidden;padding:8px 15px 20px;
+body:has(#admin-area-choice:not([hidden])) #login-panel>.admin-login-identity{display:none!important}
+body:has(#admin-area-choice:not([hidden])) #login-panel>.login-footer{
+ margin:0!important;border:0!important;background:#082750;
+ padding:9px 16px 15px!important
 }
-#admin-area-choice .admin-area-hero::after{
- content:"";position:absolute;bottom:-1px;left:-8%;width:116%;height:38px;
- border-top:7px solid var(--lts-entry-red);
- border-radius:60% 62% 0 0 / 100% 100% 0 0;
- background:linear-gradient(90deg,#fff,#f8fbfd);
- transform:rotate(-2deg);z-index:-1;
+body:has(#admin-area-choice:not([hidden])) #login-panel>.login-footer a{
+ color:#fff!important;font-size:11px;opacity:.9
 }
-#admin-area-choice .admin-area-original-logo{
- display:block;position:relative;z-index:1;
- width:clamp(210px,43vw,295px);max-width:75%;height:auto;max-height:125px;
- object-fit:contain;filter:drop-shadow(0 3px 7px rgba(0,0,0,.35));
+body:has(#admin-area-choice:not([hidden])) #notice{
+ margin:0;border-radius:0;position:relative;z-index:3
 }
-#admin-area-choice .admin-area-hero-tagline{
- margin:0;position:relative;z-index:1;color:#fff;font-size:10px;
- font-weight:900;letter-spacing:.18em;text-shadow:0 2px 5px #002e4c
+
+#admin-area-choice{--lts-navy:#062b59;--lts-blue:#0b3972;--lts-cyan:#00a9e7;
+ --lts-red:#ef082f;--lts-white:#fff;background:#fff;color:var(--lts-navy)}
+.lts-choice-brand{
+ position:relative;isolation:isolate;background:
+ linear-gradient(125deg,rgba(7,46,95,.93),rgba(1,22,52,.98) 60%,rgba(10,57,112,.97));
+ min-height:155px;display:flex;flex-direction:column;align-items:center;
+ justify-content:center;gap:0;padding:16px 20px 13px;overflow:hidden;
 }
-#admin-area-choice .admin-area-hero-tagline span{color:var(--lts-entry-red);margin:0 5px}
-#admin-area-choice .admin-area-hero-location{
- position:absolute;left:18px;bottom:42px;z-index:1;
- background:rgba(0,35,55,.70);color:#fff;border:1px solid rgba(255,255,255,.6);
- border-radius:30px;padding:5px 10px;font-size:9px;font-weight:850;
- letter-spacing:.12em;
+.lts-choice-brand:before,.lts-choice-brand:after{
+ content:"";position:absolute;top:-18%;height:140%;width:70px;transform:skewX(-31deg);
+ background:linear-gradient(90deg,#fff 0 26%,var(--lts-red) 26% 65%,#fff 65% 73%,var(--lts-blue) 73%);
+ opacity:.95;z-index:-1;pointer-events:none
 }
-#admin-area-choice .admin-area-content{padding:3px clamp(18px,4.5vw,32px) 12px;background:#fff}
-#admin-area-choice .admin-area-title-strip{
- width:100%;min-height:78px;margin:-1px auto 6px;
- display:flex;align-items:center;justify-content:center;gap:13px;
- color:var(--lts-entry-deep);
+.lts-choice-brand:before{left:5px}.lts-choice-brand:after{right:5px;transform:skewX(31deg) scaleX(-1)}
+.lts-choice-brand img{
+ display:block;max-width:min(420px,70%);width:100%;height:124px;
+ object-fit:contain;filter:drop-shadow(0 3px 6px rgba(0,0,0,.22));
 }
-#admin-area-choice .admin-area-shield{
- display:grid;place-items:center;flex:none;width:52px;height:58px;
- color:#fff;background:linear-gradient(150deg,#007a9d,var(--lts-entry-deep));
- clip-path:polygon(50% 0,94% 15%,94% 61%,80% 81%,50% 100%,20% 81%,6% 61%,6% 15%);
- filter:drop-shadow(0 2px 4px rgba(0,36,61,.15))
+.lts-choice-brand p{
+ margin:-6px 0 0;color:#fff;font-size:clamp(10px,1.4vw,15px);
+ letter-spacing:.19em;font-style:italic;font-weight:800;text-align:center;
+ text-shadow:0 2px 8px rgba(0,0,0,.35)
 }
-#admin-area-choice .admin-area-title-text{
- display:flex;flex-direction:column;justify-content:center;padding-left:13px;
- border-left:4px solid var(--lts-entry-red);
+.lts-choice-brand p span{color:var(--lts-red);margin:0 .7em;font-size:.8em}
+.lts-choice-hero{
+ position:relative;background:#0e4879 url('../assets/login-harbor.svg') center/cover;
+ aspect-ratio:3.65/1;overflow:hidden;border-top:1px solid rgba(255,255,255,.26)
 }
-#admin-area-choice .admin-area-title-text strong{
- font-size:clamp(24px,4.2vw,32px);font-weight:950;line-height:1.08;
- letter-spacing:-.035em;white-space:nowrap;color:#092e49
+.lts-choice-hero img{display:block;width:100%;height:100%;object-fit:cover;object-position:center}
+.lts-choice-hero:after{
+ content:"";position:absolute;inset:auto 0 0;height:14px;
+ background:linear-gradient(92deg,#ef052f 0 38%,#fff 38% 65%,#05a4e6 65% 100%);
+ clip-path:polygon(0 10%,25% 90%,50% 2%,75% 80%,100% 5%,100% 100%,0 100%);
 }
-#admin-area-choice .admin-area-title-text small{
- font-size:10px;font-weight:950;letter-spacing:.21em;margin-top:5px;color:#17455c
+.lts-choice-hero-caption{
+ position:absolute;right:20px;top:13px;padding:7px 10px;border-radius:40px;
+ font-size:11px;font-weight:800;letter-spacing:.05em;
+ background:rgba(2,26,60,.72);color:#fff;
+ box-shadow:0 2px 10px rgba(0,0,0,.15)
 }
-#admin-area-choice .admin-area-overline{
- margin:7px auto 9px;text-align:center;display:flex;align-items:center;justify-content:center;
- gap:9px;white-space:normal;color:#173b52;font-size:12px;font-weight:750;
+.lts-choice-titlebar{
+ position:relative;display:flex;align-items:center;justify-content:center;
+ gap:24px;min-height:132px;padding:18px 26px 18px;
+ border-radius:0 0 25px 25px;
+ border-bottom:3px solid #dbe7f0;
+ background:linear-gradient(145deg,#fff,#f6f9fd);
+ box-shadow:0 8px 19px rgba(6,34,70,.13);z-index:1;
 }
-#admin-area-choice .admin-area-red-dot{color:var(--lts-entry-red)}
-#admin-area-choice h1#admin-area-title{
- margin:10px auto 19px;text-align:center;font-size:clamp(19px,3.8vw,27px);
- font-weight:950;line-height:1.18;letter-spacing:-.02em;
- color:#072c46;
+.lts-choice-titlebar:before{
+ content:"";width:5px;height:66px;background:var(--lts-red);border-radius:8px
 }
-#admin-area-choice h1#admin-area-title::after{
- content:"";display:block;width:68px;height:4px;margin:10px auto 0;
- border-radius:100px;background:var(--lts-entry-red);
+.lts-choice-shield{display:grid;place-items:center;order:-1;flex:none}
+.lts-choice-titletext{display:flex;flex-direction:column;gap:1px;min-width:0}
+.lts-choice-titletext strong{
+ font-size:clamp(27px,5vw,54px);letter-spacing:-.04em;line-height:1.03;
+ font-weight:950;color:#082b5c
 }
-#admin-area-choice .admin-area-grid{display:grid;grid-template-columns:1fr;gap:13px}
+.lts-choice-titletext small{
+ font-size:clamp(12px,2.45vw,26px);font-weight:750;letter-spacing:.12em;color:#16416c
+}
+.lts-choice-selection{padding:29px clamp(18px,4vw,52px) 27px}
+#admin-area-choice #admin-area-title{
+ margin:0 auto 22px!important;text-align:center;
+ color:var(--lts-navy);font-size:clamp(23px,3.5vw,37px);
+ letter-spacing:-.045em;line-height:1.19;font-weight:900;
+}
+#admin-area-choice #admin-area-title:before,
+#admin-area-choice #admin-area-title:after{
+ content:"";display:inline-block;width:clamp(18px,7vw,95px);height:5px;
+ background:var(--lts-red);border-radius:5px;vertical-align:middle;margin:0 16px
+}
+#admin-area-choice .admin-area-grid{
+ display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+ gap:24px;margin:0 auto;max-width:1010px
+}
 #login-panel #admin-area-choice .admin-area-tile{
- display:grid;grid-template-columns:43% 1fr;grid-template-rows:1fr;
- min-height:143px;margin:0;padding:0;align-items:stretch;
- color:#09314b;background:linear-gradient(115deg,#fff,#f6faff);
- border:1.5px solid #b7d2e3;border-radius:20px;
- overflow:hidden;text-decoration:none;
- text-align:left;font-family:inherit;appearance:none;cursor:pointer;
- box-shadow:0 6px 14px rgba(12,46,70,.12);
- transition:transform .13s,box-shadow .13s,border-color .13s;
+ position:relative;overflow:hidden;display:flex;flex-direction:column;align-items:center;
+ text-align:center;border:2px solid #7cb4dc;border-radius:28px;
+ background:linear-gradient(155deg,#fff 60%,#f5faff);color:var(--lts-navy);
+ box-shadow:0 12px 24px rgba(13,47,86,.16);
+ font:inherit;text-decoration:none;appearance:none;
+ width:100%;min-width:0;min-height:0;
+ padding:0 0 22px;margin:0;cursor:pointer;
+ transition:box-shadow .16s,border-color .16s,transform .16s;
 }
-#login-panel #admin-area-choice .admin-area-tile:hover{
- transform:translateY(-2px);border-color:var(--lts-entry-cyan);
- box-shadow:0 9px 19px rgba(0,71,111,.18)
+#login-panel #admin-area-choice .admin-area-tile:hover,
+#login-panel #admin-area-choice .admin-area-tile:focus-visible{
+ border-color:var(--lts-red);
+ box-shadow:0 12px 28px rgba(13,47,86,.25);transform:translateY(-2px)
 }
-#login-panel #admin-area-choice .admin-area-tile:focus-visible,
-#login-panel .admin-area-back:focus-visible{
- outline:3px solid var(--lts-entry-cyan);outline-offset:3px
+#login-panel #admin-area-choice .admin-area-tile:focus-visible{
+ outline:3px solid var(--lts-cyan);outline-offset:3px
 }
-#admin-area-choice .admin-area-tile-photo{
- position:relative;display:block;min-height:140px;
- background-color:#1e7292;background-position:center;background-size:cover;
+#admin-area-choice .admin-area-photo{
+ position:relative;width:100%;aspect-ratio:2.8/1;display:block;
+ overflow:hidden;background:#d8eaf6 url('../assets/login-harbor.svg') center/cover
 }
-#admin-area-choice .admin-area-tile-photo::after{
- content:"";position:absolute;inset:auto 0 0;display:block;height:7px;
- background:linear-gradient(90deg,#fff 0 9%,var(--lts-entry-red) 9% 100%);
- border-radius:80% 0 0 0;
+#admin-area-choice .admin-area-photo img{
+ display:block;width:100%;height:100%;object-fit:cover;object-position:center;
+ transition:transform .2s
 }
-#admin-area-choice .admin-area-tile-photo-logistica{
- background-image:url("./media/camion-porto.webp");
- background-position:51% 58%;
+#admin-area-choice .admin-area-tile:hover .admin-area-photo img{transform:scale(1.035)}
+#admin-area-choice .admin-area-photo:after{
+ content:"";position:absolute;inset:auto 0 -1px;
+ height:23px;background:#fff;border-top:6px solid var(--lts-red);
+ border-radius:55% 53% 0 0 / 90% 90% 0 0;
+ transform:rotate(-3deg) scale(1.05);
 }
-#admin-area-choice .admin-area-tile-photo-amministrativa{
- background-image:url("./media/napoli-vesuvio.webp");
- background-position:50% 42%;
+#login-panel #admin-area-choice .admin-area-tile-icon{
+ position:relative;z-index:1;display:grid;place-items:center;
+ background:linear-gradient(160deg,#0c4e8c,#062452);
+ border:4px solid #fff;border-radius:21px;
+ width:77px;height:77px;flex:0 0 77px;
+ margin:-15px auto 4px;color:#fff;
+ box-shadow:0 5px 14px rgba(7,39,83,.24)
 }
-#admin-area-choice .admin-area-tile-body{
- display:flex;position:relative;flex-direction:column;align-items:flex-start;
- justify-content:center;gap:7px;min-width:0;padding:13px 25px 12px 14px;
+#admin-area-choice .admin-area-mini-lock{
+ position:absolute;right:-10px;bottom:-4px;
+ display:grid;place-items:center;width:29px;height:29px;
+ font-size:0;border:3px solid white;border-radius:50%;
+ background:var(--lts-red);box-shadow:0 1px 5px #061b37a8
 }
-#admin-area-choice .admin-area-tile-icon{
- width:40px;height:40px;flex:none;display:grid;place-items:center;
- background:linear-gradient(145deg,#006c92,#002a46);border-radius:10px;
- color:#fff;box-shadow:0 4px 8px rgba(0,38,61,.16);
+#admin-area-choice .admin-area-mini-lock:before{
+ content:"";position:absolute;top:5px;width:10px;height:9px;
+ border:2px solid #fff;border-radius:5px 5px 0 0
 }
-#admin-area-choice .admin-area-tile-text{display:flex;flex-direction:column;gap:5px;min-width:0}
-#admin-area-choice .admin-area-tile-title{
- display:block;font-weight:950;font-size:clamp(13px,3vw,18px);
- line-height:1.12;color:#082c46;letter-spacing:-.01em;
- overflow-wrap:normal;hyphens:auto;
+#admin-area-choice .admin-area-mini-lock:after{
+ content:"";position:absolute;bottom:5px;width:13px;height:9px;background:#fff;border-radius:2px
 }
-#admin-area-choice .admin-area-tile-desc{
- display:block;flex:none;font-size:clamp(11px,2.3vw,13px);font-weight:600;
- color:#405d70;line-height:1.32
+#login-panel #admin-area-choice .admin-area-tile-title{
+ display:block;flex:0;font-size:clamp(24px,3vw,38px);font-weight:950;
+ line-height:1.03;letter-spacing:-.035em;color:#092b5b;
+ max-width:100%;padding:0 10px;overflow-wrap:anywhere
 }
-#admin-area-choice .admin-area-tile-link{
- position:absolute;right:5px;top:calc(50% - 12px);
- display:grid;place-items:center;color:#004366;width:24px;height:24px;
+#admin-area-choice .admin-area-tile-title:after{
+ content:"";display:block;width:100px;height:5px;margin:13px auto 0;
+ background:var(--lts-red);border-radius:5px
 }
+#login-panel #admin-area-choice .admin-area-tile-desc{
+ display:block;flex:1;margin:14px auto 21px;max-width:345px;
+ padding:0 17px;font-size:clamp(14px,1.7vw,18px);
+ line-height:1.4;color:#17365b;font-weight:540
+}
+#login-panel #admin-area-choice .admin-area-tile-link{
+ display:flex;justify-content:center;align-items:center;gap:12px;
+ width:calc(100% - 42px);min-height:65px;margin-top:auto;
+ background:linear-gradient(180deg,#1260a3,#062450);
+ color:#fff;border:3px solid var(--lts-red);border-radius:18px;
+ box-shadow:inset 0 3px 1px #ffffff33,0 3px 7px #0e335b2a;
+ font-size:clamp(22px,2.6vw,28px);line-height:1.1;font-weight:900
+}
+#admin-area-choice .admin-area-tile-link>span{font-size:1.35em;line-height:.75}
 #admin-area-choice .admin-area-choice-hint{
- margin:14px auto 0;max-width:550px;text-align:center;
- color:#577485;font-size:10px;font-weight:600;line-height:1.5
+ margin:19px 0 0;text-align:center;color:#53677d;font-size:12px;line-height:1.45
 }
-#admin-area-choice .admin-area-tricolor{
- display:flex;width:100%;height:15px;margin-top:6px;background:var(--lts-entry-deep);
- align-items:center;justify-content:center;overflow:hidden;
+.lts-choice-footer{
+ display:flex;justify-content:center;align-items:center;gap:0;height:32px;
+ border-top:2px solid #fff;background:linear-gradient(#073568,#062650);
 }
-#admin-area-choice .admin-area-tricolor i{width:42px;height:6px;display:block;transform:skew(-28deg)}
-#admin-area-choice .admin-area-tricolor i:nth-child(1){background:#04a767}
-#admin-area-choice .admin-area-tricolor i:nth-child(2){background:#fff}
-#admin-area-choice .admin-area-tricolor i:nth-child(3){background:var(--lts-entry-red)}
-#login-panel:has(#admin-area-choice:not([hidden])) .login-footer{
- border:0;background:#002e4b;padding:12px 20px;margin:0;
+.lts-choice-footer span{height:2px;width:25%;background:#fff;opacity:.85}
+.lts-choice-footer i,.lts-choice-footer b,.lts-choice-footer em{
+ display:block;height:10px;width:50px;transform:skew(-37deg);
+ border:1px solid #fff
 }
-#login-panel:has(#admin-area-choice:not([hidden])) .login-footer a{
- color:#e7f4fa!important;font-size:12px
+.lts-choice-footer i{background:#009a55}.lts-choice-footer b{background:#fff}
+.lts-choice-footer em{background:#f30023}
+
+/* Existing Area Logistica form and MFA retain their original styling. */
+#login-panel #admin-area-back{display:block;margin:16px auto 0;text-align:center;
+ border:0;background:none;color:#087487;font-weight:800;cursor:pointer}
+#login-panel #admin-area-back:focus-visible{outline:3px solid var(--lts-cyan);outline-offset:3px}
+
+@media(max-width:700px){
+ .lts-choice-brand{min-height:125px;padding:7px 18px}
+ .lts-choice-brand img{height:107px;max-width:310px}
+ .lts-choice-brand p{font-size:10px;letter-spacing:.12em}
+ .lts-choice-titlebar{min-height:98px;gap:12px;padding:16px 14px}
+ .lts-choice-titlebar:before{height:53px;width:4px}
+ .lts-choice-shield svg{width:42px;height:50px}
+ #admin-area-choice #admin-area-title:before,
+ #admin-area-choice #admin-area-title:after{margin:0 7px}
+ #admin-area-choice .admin-area-grid{gap:12px}
+ #login-panel #admin-area-choice .admin-area-tile{border-radius:17px;padding-bottom:14px}
+ #login-panel #admin-area-choice .admin-area-tile-icon{width:60px;height:60px;flex-basis:60px;border-radius:16px}
+ #login-panel #admin-area-choice .admin-area-tile-icon svg{width:35px;height:35px}
+ #login-panel #admin-area-choice .admin-area-tile-title{font-size:clamp(17px,3.5vw,29px)}
+ #login-panel #admin-area-choice .admin-area-tile-desc{padding:0 7px;margin:12px auto 15px;font-size:clamp(12px,2.4vw,16px)}
+ #login-panel #admin-area-choice .admin-area-tile-link{min-height:48px;width:calc(100% - 20px);border-radius:11px;font-size:19px}
+ .lts-choice-selection{padding:20px 14px}
 }
-@media(min-width:840px){
- #admin-area-choice .admin-area-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
- #login-panel #admin-area-choice .admin-area-tile{
-  grid-template-columns:1fr;grid-template-rows:142px 1fr;min-height:285px
- }
- #admin-area-choice .admin-area-tile-photo{min-height:142px}
- #admin-area-choice .admin-area-tile-body{min-height:140px;padding:16px 34px 16px 17px}
-}
-@media(max-width:560px){
- body:has(#admin-area-choice:not([hidden])){background:#00334b}
- body:has(#admin-area-choice:not([hidden])) .container{padding:0;min-height:100dvh}
- #login-panel.admin-login-modern:has(#admin-area-choice:not([hidden])){
-  width:100%;max-width:none;margin:0;border:0;border-radius:0;box-shadow:none
- }
- #admin-area-choice .admin-area-hero{min-height:201px}
- #admin-area-choice .admin-area-hero-location{font-size:8px;bottom:39px}
- #admin-area-choice .admin-area-content{padding:4px 12px 16px}
- #admin-area-choice .admin-area-title-strip{min-height:65px}
- #admin-area-choice .admin-area-shield{width:43px;height:49px}
- #admin-area-choice .admin-area-title-text strong{font-size:clamp(21px,6.1vw,28px)}
- #admin-area-choice .admin-area-title-text small{font-size:8px;letter-spacing:.13em}
- #admin-area-choice .admin-area-overline{font-size:11px;gap:6px}
- #admin-area-choice h1#admin-area-title{font-size:21px;margin:8px auto 14px}
- #login-panel #admin-area-choice .admin-area-tile{
-  grid-template-columns:43% 1fr;min-height:139px;border-radius:18px
- }
- #admin-area-choice .admin-area-tile-photo{min-height:137px}
- #admin-area-choice .admin-area-tile-body{gap:7px;padding:12px 24px 12px 12px}
- #admin-area-choice .admin-area-tile-icon{width:34px;height:34px}
- #admin-area-choice .admin-area-tile-title{font-size:clamp(12px,3.4vw,16px)}
- #admin-area-choice .admin-area-tile-desc{font-size:11px}
+@media(max-width:480px){
+ .lts-choice-brand{min-height:112px;padding:5px 10px 9px}
+ .lts-choice-brand:before,.lts-choice-brand:after{width:32px}
+ .lts-choice-brand img{height:87px;max-width:250px}
+ .lts-choice-brand p{font-size:8px;letter-spacing:.11em;margin:-3px 0 0}
+ .lts-choice-brand p span{margin:0 .25em}
+ .lts-choice-hero{aspect-ratio:3.0/1}
+ .lts-choice-hero-caption{font-size:9px;right:8px;top:7px;padding:5px 7px}
+ .lts-choice-titlebar{min-height:77px;gap:10px;padding:10px 8px}
+ .lts-choice-titlebar:before{height:42px;width:3px}
+ .lts-choice-shield svg{width:32px;height:39px}
+ .lts-choice-titletext strong{font-size:clamp(23px,6.2vw,30px)}
+ .lts-choice-titletext small{font-size:clamp(10px,3.4vw,15px);letter-spacing:.09em}
+ #admin-area-choice #admin-area-title{font-size:21px;margin-bottom:14px!important}
+ #admin-area-choice #admin-area-title:before,
+ #admin-area-choice #admin-area-title:after{display:none}
+ #admin-area-choice .admin-area-grid{grid-template-columns:1fr;max-width:360px;gap:14px}
+ #admin-area-choice .admin-area-photo{aspect-ratio:3.1/1}
+ #login-panel #admin-area-choice .admin-area-tile-title{font-size:29px}
+ #login-panel #admin-area-choice .admin-area-tile-desc{font-size:14px;margin:10px auto 15px}
+ #login-panel #admin-area-choice .admin-area-tile-link{width:calc(100% - 32px)}
 }
 @media(prefers-reduced-motion:reduce){
  #login-panel #admin-area-choice .admin-area-tile{transition:none}
+ #admin-area-choice .admin-area-photo img{transition:none}
  #login-panel #admin-area-choice .admin-area-tile:hover{transform:none}
+ #admin-area-choice .admin-area-tile:hover .admin-area-photo img{transform:none}
 }
