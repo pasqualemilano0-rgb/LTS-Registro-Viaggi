@@ -1,7 +1,7 @@
 {
   "source": "https://www.salernocontainerterminal.com/ca/an/vessel_schedule.php",
   "source_updated_at": null,
-  "acquired_at": "2026-11-18T19:30:17.160Z",
+  "acquired_at": "2026-11-18T20:00:16.844Z",
   "rows": [
     {
       "vessel": "LIVORNO EXPRESS",
@@ -319,6 +319,6 @@
       "status": "PENDING"
     }
   ],
-  "updated_at": "2026-11-18T19:30:17.160Z",
+  "updated_at": "2026-11-18T20:00:16.844Z",
   "data_changed_at": "2026-11-18T19:15:16.521Z"
 }
