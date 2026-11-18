@@ -3,30 +3,30 @@
  * selector. Scoped to the chooser: MFA and the logistics dashboard are untouched.
  */
 #admin-area-choice[hidden],#admin-logistica-login[hidden]{display:none!important}
-body:has(#admin-area-choice:not([hidden])) {
+body:has(#login-panel:not([hidden]) #admin-area-choice:not([hidden])) {
  background:linear-gradient(135deg,#05254e,#073560 45%,#08254e);
  min-height:100dvh;
 }
-body:has(#admin-area-choice:not([hidden])) .topbar{display:none!important}
-body:has(#admin-area-choice:not([hidden])) .container{
+body:has(#login-panel:not([hidden]) #admin-area-choice:not([hidden])) .topbar{display:none!important}
+body:has(#login-panel:not([hidden]) #admin-area-choice:not([hidden])) .container{
  max-width:1160px!important;width:100%;min-height:100dvh;
  padding:0!important;margin:0 auto!important;
 }
-body:has(#admin-area-choice:not([hidden])) #login-panel.admin-login-modern{
+body:has(#login-panel:not([hidden]) #admin-area-choice:not([hidden])) #login-panel.admin-login-modern{
  width:100%;max-width:none!important;padding:0!important;
  margin:0 auto!important;border:0!important;border-radius:0!important;
  background:#fff!important;box-shadow:0 20px 70px rgba(0,0,0,.26)!important;
  overflow:hidden;
 }
-body:has(#admin-area-choice:not([hidden])) #login-panel>.admin-login-identity{display:none!important}
-body:has(#admin-area-choice:not([hidden])) #login-panel>.login-footer{
+body:has(#login-panel:not([hidden]) #admin-area-choice:not([hidden])) #login-panel>.admin-login-identity{display:none!important}
+body:has(#login-panel:not([hidden]) #admin-area-choice:not([hidden])) #login-panel>.login-footer{
  margin:0!important;border:0!important;background:#082750;
  padding:9px 16px 15px!important
 }
-body:has(#admin-area-choice:not([hidden])) #login-panel>.login-footer a{
+body:has(#login-panel:not([hidden]) #admin-area-choice:not([hidden])) #login-panel>.login-footer a{
  color:#fff!important;font-size:11px;opacity:.9
 }
-body:has(#admin-area-choice:not([hidden])) #notice{
+body:has(#login-panel:not([hidden]) #admin-area-choice:not([hidden])) #notice{
  margin:0;border-radius:0;position:relative;z-index:3
 }
 
