@@ -85,7 +85,7 @@ function renderAssignments() {
   const row = document.createElement("div"); row.className = "assignment";
   const label = document.createElement("strong"); label.textContent = file.name + " · " + Math.ceil(file.size / 1024) + " KB";
   const driverLabel = document.createElement("label"); driverLabel.textContent = "Destinatario da verificare";
-  const select = chooseDriver(byId("driver-filter").value);
+  const select = chooseDriver();
   select.required = true; driverLabel.append(select);
   const state = document.createElement("span"); state.setAttribute("role", "status");
   row.append(label, driverLabel, state); output.append(row);
@@ -154,7 +154,7 @@ async function refreshAll() {
    filter.append(option);
   }
   filter.value = drivers.some(x => x.id === previous) ? previous : "";
-  renderDocuments(); renderAssignments();
+  renderDocuments();
   listStatus.textContent = "Sincronizzati " + documents.length + " documenti e " + drivers.length + " autisti.";
  } catch (error) { listStatus.textContent = fail(error); }
  finally { control.disabled = false; }
@@ -209,7 +209,7 @@ byId("logout").addEventListener("click", async () => {
  if (!result.revoked) loginError.textContent = "Accesso chiuso localmente. Revoca online non confermata.";
 });
 byId("refresh").addEventListener("click", refreshAll);
-byId("driver-filter").addEventListener("change", () => { renderDocuments(); renderAssignments(); });
+byId("driver-filter").addEventListener("change", renderDocuments);
 byId("files").addEventListener("change", renderAssignments);
 byId("category").addEventListener("change", () => {
  const cat = byId("category").value, month = byId("month");
