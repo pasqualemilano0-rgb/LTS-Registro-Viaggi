@@ -64,6 +64,14 @@ test('editing unchanged historical multi-stop retains paid amount even if admin 
   ...existing,secondCity:'AVELLINO'}}).allowed,false);
 });
 
+test('switching historical single fare back to double does not reuse combined fare as first stop',()=>{
+ const app=read('app.mjs');
+ assert.ok(app.includes('const sameFirst=Boolean(existing&&existing.sumPickupFares!==false'));
+ assert.ok(app.includes('const sameSecond=Boolean(existing&&existing.sumPickupFares!==false'));
+ assert.ok(app.includes('const sameFirst=existing&&existing.sumPickupFares!==false'));
+ assert.ok(app.includes('const sameSecond=existing&&existing.sumPickupFares!==false'));
+});
+
 test('PDF keeps a single container row, both customers and places, no prices',()=>{
  const trip=createTrip({...draft,fareMode:'single'},emptyState());
  trip.fareCents=20000;trip.secondFareCents=null;
