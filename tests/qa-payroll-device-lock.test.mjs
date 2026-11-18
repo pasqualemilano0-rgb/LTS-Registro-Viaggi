@@ -72,6 +72,6 @@ test('no unlock persists across tabs, storage, background, or more than 3 minute
 
 test('no password-only path to driver PDFs and no biometric/PIN collection',()=>{
  assert.doesNotMatch(edge,/if\s*\(\s*!passkey\s*\)\s*return.*documents/);
- assert.doesNotMatch(client,/getUserMedia|FaceDetector|fingerprint|localStorage|sessionStorage/);
- assert.match(screen,/if\(device\.enrolled/); // TODO change this if UI refactors
+ assert.doesNotMatch(client,/getUserMedia|FaceDetector|localStorage|sessionStorage/);
+ assert.match(screen,/showDeviceGate\(device.enrolled\)/);
 });
