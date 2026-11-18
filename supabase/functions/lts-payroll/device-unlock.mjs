@@ -60,6 +60,11 @@ async function verifyPasswordReentry(publicClient,privateClient,actor,password){
  // A stolen LTS session alone must not enroll an attacker's passkey.
  // Require actual LTS password again, checked against Supabase Auth; fail closed.
  if(typeof password!=='string'||password.length<12||password.length>128)fail(400,'Inserisci la password del tuo account LTS.');
+ const {data:allowed,error:limitError}=await privateClient.rpc('lts_payroll_claim_enroll_attempt',{
+  p_user:actor.userId
+ });
+ if(limitError||typeof allowed!=='boolean')fail(503);
+ if(!allowed)fail(429,'Troppi tentativi. Riprova più tardi.');
  const {data:lookup,error:lookupError}=await privateClient.auth.admin.getUserById(actor.userId);
  if(lookupError||!lookup?.user?.email)fail(503);
  const {data:verified,error:passwordError}=await publicClient.auth.signInWithPassword({
