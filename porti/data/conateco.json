@@ -1,7 +1,7 @@
 {
   "source": "https://api.conateco.it/ConatecoServicesApi/BerthForecast",
   "source_updated_at": null,
-  "acquired_at": "2026-11-18T12:30:16.515Z",
+  "acquired_at": "2026-11-18T13:00:16.838Z",
   "rows": [
     {
       "vessel": "CONTSHIP JOY",
@@ -191,23 +191,6 @@
       "source_conflict": false
     },
     {
-      "vessel": "MSC ESTHI",
-      "voyage": "FD646E",
-      "eta": "2026-11-20 00:00",
-      "vessel_status": "PRE",
-      "category": "PREVISTE",
-      "voyage_id": "202600386",
-      "carrier": "MEDITERRANEAN SHIPPING CO. GENEVA",
-      "acceptance_flag": "1",
-      "acceptance_icon": "ACCETTA_CARICO",
-      "stop_cargo": "",
-      "external_depot": "",
-      "opening": "2026-11-16 06:30",
-      "closing": "2026-11-20 17:00",
-      "notes": "",
-      "source_conflict": false
-    },
-    {
       "vessel": "MSC BRITTANY",
       "voyage": "NL643R",
       "eta": "2026-11-21 00:00",
@@ -225,18 +208,18 @@
       "source_conflict": false
     },
     {
-      "vessel": "MSC HARMONY III",
-      "voyage": "AC647A",
-      "eta": "2026-11-22 00:00",
+      "vessel": "MSC ESTHI",
+      "voyage": "FD646E",
+      "eta": "2026-11-21 00:00",
       "vessel_status": "PRE",
       "category": "PREVISTE",
-      "voyage_id": "202600387",
+      "voyage_id": "202600386",
       "carrier": "MEDITERRANEAN SHIPPING CO. GENEVA",
       "acceptance_flag": "1",
       "acceptance_icon": "ACCETTA_CARICO",
       "stop_cargo": "",
       "external_depot": "",
-      "opening": "2026-11-12 12:00",
+      "opening": "2026-11-16 06:30",
       "closing": "2026-11-20 17:00",
       "notes": "",
       "source_conflict": false
@@ -259,20 +242,20 @@
       "source_conflict": false
     },
     {
-      "vessel": "MSC ABIDJAN",
-      "voyage": "NL644R",
+      "vessel": "MSC HARMONY III",
+      "voyage": "AC647A",
       "eta": "2026-11-25 00:00",
       "vessel_status": "PRE",
       "category": "PREVISTE",
-      "voyage_id": "202600394",
+      "voyage_id": "202600387",
       "carrier": "MEDITERRANEAN SHIPPING CO. GENEVA",
-      "acceptance_flag": "0",
-      "acceptance_icon": "",
+      "acceptance_flag": "1",
+      "acceptance_icon": "ACCETTA_CARICO",
       "stop_cargo": "",
       "external_depot": "",
-      "opening": "",
-      "closing": "",
-      "notes": "ACCETT. RETROPORTO 18/11 07.00",
+      "opening": "2026-11-12 12:00",
+      "closing": "2026-11-24 17:00",
+      "notes": "",
       "source_conflict": false
     },
     {
@@ -290,6 +273,23 @@
       "opening": "",
       "closing": "",
       "notes": "",
+      "source_conflict": false
+    },
+    {
+      "vessel": "MSC ABIDJAN",
+      "voyage": "NL644R",
+      "eta": "2026-11-26 00:00",
+      "vessel_status": "PRE",
+      "category": "PREVISTE",
+      "voyage_id": "202600394",
+      "carrier": "MEDITERRANEAN SHIPPING CO. GENEVA",
+      "acceptance_flag": "0",
+      "acceptance_icon": "",
+      "stop_cargo": "",
+      "external_depot": "",
+      "opening": "",
+      "closing": "",
+      "notes": "ACCETT. RETROPORTO 18/11 07.00",
       "source_conflict": false
     },
     {
