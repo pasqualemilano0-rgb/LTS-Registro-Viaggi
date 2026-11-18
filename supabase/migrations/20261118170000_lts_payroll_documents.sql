@@ -54,7 +54,7 @@ grant select,insert on public.lts_payroll_audit to service_role;
 -- Atomically change status and record the action; service-role callers only.
 create or replace function public.lts_payroll_transition(p_id uuid,p_actor uuid,p_next text)
 returns text language plpgsql security invoker set search_path = ''
-as $
+as $payroll$
 declare result text;
 begin
  if p_next not in ('published','revoked') then
@@ -73,7 +73,7 @@ begin
  values (p_id,p_actor,case when p_next='published' then 'publish' else 'revoke' end);
  return result;
 end;
-$;
+$payroll$;
 revoke all on function public.lts_payroll_transition(uuid,uuid,text)
  from public,anon,authenticated;
 grant execute on function public.lts_payroll_transition(uuid,uuid,text) to service_role;
