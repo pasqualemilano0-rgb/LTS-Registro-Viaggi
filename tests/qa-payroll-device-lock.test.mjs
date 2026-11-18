@@ -62,7 +62,7 @@ test('no unlock persists across tabs, storage, background, or more than 3 minute
  assert.match(screen,/document\.addEventListener\('visibilitychange'/);
  assert.match(screen,/if\(document\.hidden\)\{if\(!deviceBusy\)lockArea\(\);\}/);
  assert.match(screen,/unlockTimer=setTimeout\(\(\)=>lockArea\(\),result\.expiresInMs\)/);
- assert.match(screen,/const result=await api\.deviceStatus\(\)/);
+ assert.match(screen,/const device=await api\.deviceStatus\(\)/);
  assert.match(screen,/const credential=await passkey\.verifyPasskey\(options\)/);
  assert.match(screen,/const credential=await passkey\.createPasskey\(options\)/);
  assert.match(html,/id="device-gate"/);
