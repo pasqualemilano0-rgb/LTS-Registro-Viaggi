@@ -82,6 +82,14 @@ function renderRow(doc){
  const driver=roster.find(x=>x.id===doc.driver_id);
  information.append(node('small','',metadata(doc)+(driver?' · '+driver.name:'')));
  information.append(node('small','',doc.original_filename));
+ const format=stamp=>new Intl.DateTimeFormat('it-IT',{dateStyle:'short',timeStyle:'short'}).format(new Date(stamp));
+ const tracking=doc.state==='draft'?'Bozza: non ancora disponibile al dipendente'
+  :doc.acknowledged_at?'Ricezione confermata il '+format(doc.acknowledged_at)
+  :doc.first_accessed_at?
+    'Primo accesso PDF il '+format(doc.first_accessed_at)+
+      (doc.category==='cedolino'?' · conferma facoltativa non effettuata':'')
+  :'Pubblicato il '+(doc.published_at?format(doc.published_at):'—')+' · nessun accesso PDF registrato';
+ information.append(node('small','',tracking));
  const actions=node('div','actions');
  actions.append(node('span','status '+doc.state,doc.state==='published'?'Pubblicato':'Bozza'));
  const download=node('button','outline','PDF');
