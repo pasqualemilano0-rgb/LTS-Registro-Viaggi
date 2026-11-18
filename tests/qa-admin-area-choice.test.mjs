@@ -13,7 +13,7 @@ const style=source('amministratore/admin-area-choice.css');
 test('admin access first offers two exact areas while preserving original logistics login',()=>{
  assert.match(login,/id="admin-area-choice"/);
  assert.match(login,/id="select-area-logistica"/);
- assert.match(login,/>AREA<br>LOGISTICA<\/span>);
+ assert.match(login,/>AREA<br>LOGISTICA<\/span>/);
  assert.match(login,/id="select-area-amministrativa"/);
  assert.match(login,/>AREA<br>AMMINISTRATIVA<\/span>/);
  assert.match(login,/id="admin-logistica-login" hidden/);
