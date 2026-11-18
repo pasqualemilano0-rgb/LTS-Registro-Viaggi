@@ -36,6 +36,7 @@ export const upload=(file,{driverId,category,year,month,label})=>{
  return request(form,{multipart:true});
 };
 export const download=id=>request({action:'download',id},{pdf:true});
+export const acknowledge=id=>request({action:'acknowledge',id});
 export function savePdf(blob,filename='LTS-documento.pdf'){
  const safe=String(filename).replace(/[^a-zA-Z0-9._-]/g,'_').slice(0,120);
  const url=URL.createObjectURL(blob);
