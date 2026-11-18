@@ -54,3 +54,44 @@ test('separate login page and LTS link exist without secrets',()=>{
  }
  assert.match(transport,/cache:'no-store'/);
 });
+
+
+test('SQL migration uses valid paired dollar delimiters and atomic audit triggers',()=>{
+ const begins=(sql.match(/\bas \$\$/g)||[]).length;
+ const ends=(sql.match(/\$\$;/g)||[]).length;
+ assert.equal(begins,3,'audit and two restricted event RPC bodies');
+ assert.equal(ends,3,'PL/pgSQL bodies must be closed');
+ assert.match(sql,/after insert or update of state, first_accessed_at, acknowledged_at/);
+ assert.match(sql,/values \(new\.id, new\.driver_id, 'first_access'\)/);
+ assert.match(sql,/values \(new\.id, new\.driver_id, 'acknowledge'\)/);
+ assert.match(sql,/revoke all on function public\.lts_payroll_mark_first_access\(uuid,uuid\) from public,anon,authenticated/);
+ assert.match(sql,/revoke all on function public\.lts_payroll_acknowledge\(uuid,uuid\) from public,anon,authenticated/);
+ assert.match(sql,/grant execute on function public\.lts_payroll_acknowledge\(uuid,uuid\) to service_role/);
+});
+
+test('first document access is authenticated, owner-scoped, published-only and server timed',()=>{
+ assert.match(api,/if\(actor\.role==='driver'\)\{\s*\/\/ The file has reached the server/);
+ assert.match(api,/await db\.rpc\('lts_payroll_mark_first_access'/);
+ assert.match(api,/p_document_id:id,p_driver_id:actor\.userId/);
+ assert.match(sql,/first_accessed_at=coalesce\(first_accessed_at,now\(\)\)/);
+ assert.match(sql,/where id=p_document_id and driver_id=p_driver_id and state='published'/);
+});
+
+test('receipt acknowledgement is voluntary, restricted to the employee and not proof of payment',()=>{
+ assert.match(api,/async function acknowledge\(db,actor,id\)\{\s*if\(actor\.role!=='driver'\)fail\(403\)/);
+ assert.match(api,/await db\.rpc\('lts_payroll_acknowledge'/);
+ assert.match(sql,/acknowledged_at=coalesce\(acknowledged_at,now\(\)\)/);
+ assert.match(sql,/category='cedolino'\s+and state='published' and first_accessed_at is not null/);
+ assert.match(driver,/api\.acknowledge\(doc\.id\)/);
+ assert.match(driver,/NON confermo il pagamento dello stipendio/);
+ assert.match(driver,/confirm\.disabled=!doc\.first_accessed_at/);
+ assert.match(admin,/Ricezione confermata il/);
+ assert.match(text('documenti/index.html'),/non conferma né il pagamento dello stipendio/);
+});
+
+test('admin payroll page requires distinct login despite existing LTS session',()=>{
+ assert.match(admin,/Always display an independent payroll login/);
+ assert.match(admin,/^protect\(\);/m);
+ assert.match(admin,/account\.verifyAdminTotp/);
+ assert.match(admin,/busy\(false\);\s*await check\(\);/);
+});
