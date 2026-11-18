@@ -734,6 +734,16 @@ function renderInsert(main){
    const existing=state.trips.find(t=>t.id===editingId)||null;
    if(editingId&&tripEditVersion(existing)!==editingBaseline)throw new Error('Il viaggio è stato aggiornato o eliminato su un altro dispositivo. La bozza è conservata: annulla la modifica e riapri il viaggio aggiornato dal Registro.');
    const isSingle=Boolean(draft.second&&draft.fareMode==='single');
+   // Recheck the admin catalog online for a new single fare; never trust stale permissions.
+   // Unchanged historical single-fare trips retain their original paid snapshot.
+   const existingDecision=singleFareDecision({rows:companyMultiStopRates,loaded:companyMultiStopRatesLoaded,
+    client:draft.client,city:draft.city,secondClient:draft.secondClient,secondCity:draft.secondCity,existing});
+   if(isSingle&&!existingDecision.historical){
+    companyMultiStopRatesLoaded=false;
+    let verified=false;
+    try{verified=await refreshCompanyRates({quiet:false});}catch{}
+    if(!verified)throw new Error('Verifica online della tariffa unica non riuscita. Riprova con una connessione stabile.');
+   }
    const decision=singleFareDecision({rows:companyMultiStopRates,loaded:companyMultiStopRatesLoaded,
     client:draft.client,city:draft.city,secondClient:draft.secondClient,secondCity:draft.secondCity,existing});
    if(isSingle&&!decision.allowed)
