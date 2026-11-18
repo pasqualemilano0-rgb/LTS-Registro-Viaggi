@@ -98,3 +98,12 @@ test('approved branding uses the exact original logo, Napoli porto and camion lo
  assert.match(style,/--lts-navy:#062b59/);
  assert.match(style,/@media\(max-width:480px\)/);
 });
+
+
+test('visual selector never affects authenticated logistics dashboard or MFA',()=>{
+ assert.match(style,/body:has\(#login-panel:not\(\[hidden\]\) #admin-area-choice:not\(\[hidden\]\)\) \.topbar/);
+ assert.doesNotMatch(style,/body:has\(#admin-area-choice:not\(\[hidden\]\)\)/);
+ assert.match(login,/id="dashboard" hidden/);
+ assert.match(login,/id="mfa-panel"/);
+ assert.match(style,/#admin-area-choice\[hidden\]/);
+});
