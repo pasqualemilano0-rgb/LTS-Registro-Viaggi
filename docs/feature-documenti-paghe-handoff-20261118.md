@@ -38,3 +38,14 @@
 
 ## Stato
 Codice proposto su ramo feature; **non installato né verificato end-to-end**, **nessun PDF personale caricato**, nessun deploy Supabase o merge. Richiesta approvazione tecnica e privacy prima del go-live.
+
+## Estensione: tracciabilità e ricevuta volontaria (18 novembre 2026)
+- Tre eventi **distinti**: `published_at` (pubblicazione amministrativa), `first_accessed_at` (PDF recuperato dal server su richiesta dell'autista), `acknowledged_at` (tocco esplicito «Ho ricevuto il cedolino»).
+- `first_accessed_at` non prova la lettura né l'arrivo del file sul dispositivo: è un evento del servizio dopo il download Storage ed è registrato prima della consegna HTTP completa.
+- `acknowledged_at` è facoltativo e disponibile soltanto per `CEDOLINO` dopo il primo accesso; non è una firma elettronica del lavoratore, non prova il pagamento e non costituisce accettazione degli importi.
+- Le date sono scritte dal **database**, mai ricevute dal browser; eventi iniziali idempotenti mediante RPC `lts_payroll_mark_first_access` / `lts_payroll_acknowledge`, consentite esclusivamente a service_role dopo i controlli Edge JWT/sessione/ruolo.
+- Il trigger `lts_payroll_write_audit` registra primo accesso e conferma in modo atomico; i nuovi eventi sono persistenti nella tabella di audit separata dal registro viaggi.
+- L'area admin mostra la cronologia sintetica per PDF; non indica «pagato» o «firmato».
+- La pagina documenti admin impone **login separato** anche se una sessione LTS precedente esiste nella scheda, riutilizzando password e MFA del progetto.
+- Test statici aggiunti in `tests/qa-payroll-documents.test.mjs`; servono ancora test DB con due autisti fittizi, idempotenza, blocco account revocati e verifica UX su browser/mobile.
+- Non pubblicare prima di concordare con consulente del lavoro e responsabile privacy se la tracciatura adottata è sufficiente per dimostrare la consegna nel contesto aziendale. Nessuna firma obbligatoria è prevista.
