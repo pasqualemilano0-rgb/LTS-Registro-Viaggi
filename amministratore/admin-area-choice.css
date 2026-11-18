@@ -248,3 +248,54 @@ body:has(#login-panel:not([hidden]) #admin-area-choice:not([hidden])) #notice{
  #login-panel #admin-area-choice .admin-area-tile:hover{transform:none}
  #admin-area-choice .admin-area-tile:hover .admin-area-photo img{transform:none}
 }
+
+
+/* Approvazione grafica 18/11: Napoli panoramica e schede compatte su smartphone.
+   Queste regole non modificano i moduli credenziali/MFA già esistenti. */
+#admin-area-choice .admin-area-tile:last-child .admin-area-photo img{
+ object-position:center 28%;
+}
+@media(max-width:480px){
+ #admin-area-choice .admin-area-grid{max-width:420px;gap:13px}
+ #login-panel #admin-area-choice .admin-area-tile{
+  display:grid;grid-template-columns:42% minmax(0,1fr);grid-template-rows:42px auto 1fr 24px;
+  align-items:start;text-align:left;min-height:157px;padding:0!important;gap:0;
+  border-radius:19px;
+ }
+ #admin-area-choice .admin-area-photo{
+  grid-column:1;grid-row:1/5;height:100%;min-height:157px;width:100%;
+  aspect-ratio:auto;margin:0;border-right:3px solid #fff;
+ }
+ #admin-area-choice .admin-area-photo img{height:100%;object-fit:cover}
+ #admin-area-choice .admin-area-photo:after{
+  height:9px;border-top:4px solid var(--lts-red);
+  border-radius:60% 40% 0 0 / 100% 80% 0 0;transform:none
+ }
+ #login-panel #admin-area-choice .admin-area-tile-icon{
+  grid-column:2;grid-row:1;width:36px;height:36px;flex:0 0 36px;
+  margin:6px 0 0 12px;border:2px solid #fff;border-radius:10px;
+ }
+ #login-panel #admin-area-choice .admin-area-tile-icon svg{width:24px;height:24px}
+ #admin-area-choice .admin-area-mini-lock{width:20px;height:20px;right:-8px;bottom:-6px}
+ #admin-area-choice .admin-area-mini-lock:before{width:7px;height:7px;top:3px}
+ #admin-area-choice .admin-area-mini-lock:after{width:9px;height:6px;bottom:3px}
+ #login-panel #admin-area-choice .admin-area-tile-title{
+  grid-column:2;grid-row:2;display:block;width:100%;
+  margin:6px 0 0!important;padding:0 24px 0 12px!important;
+  font-size:clamp(14px,4vw,18px)!important;font-weight:950;line-height:1.04;text-align:left;
+  letter-spacing:-.025em;word-break:normal;overflow-wrap:break-word;
+ }
+ #admin-area-choice .admin-area-tile-title:after{display:none}
+ #login-panel #admin-area-choice .admin-area-tile-desc{
+  grid-column:2;grid-row:3;max-width:none;width:100%;
+  margin:5px 0 0!important;padding:0 12px!important;
+  font-size:11px!important;line-height:1.27;text-align:left;font-weight:650
+ }
+ #login-panel #admin-area-choice .admin-area-tile-link{
+  grid-column:2;grid-row:4;display:flex;justify-content:flex-start;
+  width:auto!important;min-height:0!important;margin:0!important;padding:0 12px!important;
+  background:transparent!important;border:0!important;border-radius:0!important;
+  box-shadow:none!important;color:#005486;font-size:11px!important;font-weight:900
+ }
+ #admin-area-choice .admin-area-tile-link>span{font-size:19px}
+}
