@@ -266,11 +266,11 @@ Deno.serve(async req=>{
   if(input.action==='acknowledge')return json(await acknowledge(api.db,actor,input.id));
   fail(400);
  }catch(e){
-  const status=[400,401,403,404,409,413,415,423,428,503].includes(e?.status)?e.status:503;
+  const status=[400,401,403,404,409,413,415,423,428,429,503].includes(e?.status)?e.status:503;
   const messages={400:'Richiesta non valida.',401:'Effettua nuovamente l’accesso.',
    403:'Accesso non autorizzato.',404:'Documento o autista non disponibile.',
    409:'Documento già presente o modificato.',413:'File troppo grande.',
-   415:'Formato non supportato.',423:'Sblocca I MIEI DOCUMENTI dal dispositivo.',428:'MFA amministratore richiesta.',
+   415:'Formato non supportato.',423:'Sblocca I MIEI DOCUMENTI dal dispositivo.',428:'MFA amministratore richiesta.',429:'Troppi tentativi di attivazione. Riprova più tardi.',
    503:'Servizio documenti temporaneamente non disponibile.'};
   return json({error:e?.message||messages[status]},status);
  }
