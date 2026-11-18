@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {runInNewContext} from 'node:vm';
+import {createHash} from 'node:crypto';
 
 const source=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
 const login=source('amministratore/index.html');
@@ -12,9 +13,9 @@ const style=source('amministratore/admin-area-choice.css');
 test('admin access first offers two exact areas while preserving original logistics login',()=>{
  assert.match(login,/id="admin-area-choice"/);
  assert.match(login,/id="select-area-logistica"/);
- assert.match(login,/>\s*AREA LOGISTICA\s*</);
+ assert.match(login,/>AREA<br>LOGISTICA<\/span>);
  assert.match(login,/id="select-area-amministrativa"/);
- assert.match(login,/>\s*AREA AMMINISTRATIVA\s*</);
+ assert.match(login,/>AREA<br>AMMINISTRATIVA<\/span>/);
  assert.match(login,/id="admin-logistica-login" hidden/);
  assert.match(login,/id="login-form"/);
  assert.match(login,/id="mfa-panel"/);
@@ -36,7 +37,7 @@ test('area amministrativa points to independent login and preserves MFA requirem
  assert.match(payroll,/AREA AMMINISTRATIVA RISERVATA/);
  assert.match(payroll,/Accedi con l'account amministratore LTS/);
  assert.match(style,/#admin-area-choice\[hidden\],#admin-logistica-login\[hidden\]\{display:none!important\}/);
- assert.match(style,/@media\(max-width:560px\)/);
+ assert.match(style,/@media\(max-width:480px\)/);
 });
 
 test('selection changes only presentation and allows returning without exposing password',()=>{
@@ -76,4 +77,24 @@ test('selection changes only presentation and allows returning without exposing 
  button.listeners.click();
  handlers.pageshow({persisted:true});
  assert.equal(nodes.get('admin-area-choice').hidden,false);
+});
+
+
+test('approved branding uses the exact original logo, Napoli porto and camion local assets',()=>{
+ const raw=readFileSync(new URL('../assets/lts-logo.png',import.meta.url));
+ const gitBlobSha=createHash('sha1').update(Buffer.from('blob '+raw.byteLength+'\0')).update(raw).digest('hex');
+ assert.equal(gitBlobSha,'168228cfb22738ed74a3115fc47d361b635f9308',
+   'Do not replace the user-supplied original LTS red/cyan logo.');
+ assert.match(login,/src="\.\.\/assets\/lts-logo\.png"/);
+ assert.match(login,/src="\.\.\/assets\/admin-hero-napoli\.svg"/);
+ assert.match(login,/src="\.\.\/assets\/admin-card-logistica\.svg"/);
+ assert.match(login,/src="\.\.\/assets\/admin-card-amministrativa\.svg"/);
+ const hero=source('assets/admin-hero-napoli.svg');
+ assert.match(hero,/PORTO DI NAPOLI/);
+ assert.match(hero,/Vesuvio|Napoli/);
+ assert.match(hero,/truck|Camion|camion/);
+ assert.match(style,/--lts-red:#ef082f/);
+ assert.match(style,/--lts-cyan:#00a9e7/);
+ assert.match(style,/--lts-navy:#062b59/);
+ assert.match(style,/@media\(max-width:480px\)/);
 });
