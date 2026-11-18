@@ -1,20 +1,11 @@
 {
   "source": "https://www.salernocontainerterminal.com/ca/an/vessel_schedule.php",
   "source_updated_at": null,
-  "acquired_at": "2026-11-18T06:00:16.517Z",
+  "acquired_at": "2026-11-18T06:30:16.480Z",
   "rows": [
     {
       "vessel": "LIVORNO EXPRESS",
       "voyage": "88W47",
-      "eta": "17/11/2026 00:00",
-      "closing": "17/11/2026 17:00 CLOSED",
-      "acceptance_dry": "CARGO ACCEPTED",
-      "acceptance_reef": "CARGO ACCEPTED",
-      "status": "PENDING"
-    },
-    {
-      "vessel": "GREEN OCEAN",
-      "voyage": "647W",
       "eta": "17/11/2026 00:00",
       "closing": "17/11/2026 17:00 CLOSED",
       "acceptance_dry": "CARGO ACCEPTED",
@@ -35,6 +26,15 @@
       "voyage": "645E",
       "eta": "17/11/2026 00:00",
       "closing": "16/11/2026 17:00 CLOSED",
+      "acceptance_dry": "CARGO ACCEPTED",
+      "acceptance_reef": "CARGO ACCEPTED",
+      "status": "PENDING"
+    },
+    {
+      "vessel": "GREEN OCEAN",
+      "voyage": "647W",
+      "eta": "17/11/2026 06:00",
+      "closing": "17/11/2026 17:00 CLOSED",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
@@ -301,6 +301,6 @@
       "status": "PENDING"
     }
   ],
-  "updated_at": "2026-11-18T06:00:16.517Z",
-  "data_changed_at": "2026-11-17T23:00:16.875Z"
+  "updated_at": "2026-11-18T06:30:16.480Z",
+  "data_changed_at": "2026-11-18T06:30:16.480Z"
 }
