@@ -91,6 +91,20 @@ test('draft recovery keeps selection but repeat-route never inherits single fare
  assert.equal(quickTripFromRoute({...draft,sumPickupFares:false},'2026-11-19').fareMode,'double');
 });
 
+test('new single fares recheck live admin approval before writing; historical snapshots stay editable',()=>{
+ const app=read('app.mjs');
+ const position=app.indexOf('const existingDecision=singleFareDecision(');
+ const recheck=app.indexOf('if(isSingle&&!existingDecision.historical)',position);
+ const refresh=app.indexOf('await refreshCompanyRates({quiet:false})',recheck);
+ const finalDecision=app.indexOf('const decision=singleFareDecision(',refresh);
+ const write=app.indexOf('await persist(next)',finalDecision);
+ assert.ok(position>=0&&recheck>position&&refresh>recheck&&finalDecision>refresh&&write>finalDecision);
+ assert.ok(app.slice(recheck,finalDecision).includes('companyMultiStopRatesLoaded=false'));
+ assert.ok(app.slice(recheck,finalDecision).includes('if(!verified)throw new Error('));
+ // A disabled route must not reappear as an approved new fare.
+ assert.equal(singleFareDecision({rows:[{...pair,enabled:false}],loaded:true,...draft}).allowed,false);
+});
+
 test('admin-only backend writes, fail-closed migration and driver source checks',()=>{
  const handler=read('supabase/functions/lts-company-tariffs/tariff-handler.mjs');
  const sql=read('supabase/migrations/20261118102700_lts_multi_stop_single_fares.sql');
