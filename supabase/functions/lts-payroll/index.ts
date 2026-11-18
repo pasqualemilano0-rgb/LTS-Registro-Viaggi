@@ -200,10 +200,10 @@ async function drivers(db: ReturnType<typeof pair>["admin"]) {
  const { data: names, error: ne } = await db.from("lts_pending_drivers")
   .select("auth_user_id,first_name,last_name").in("auth_user_id", [...ids]).is("removed_at", null).limit(500);
  if (ne) throw { status: 503 };
- return (names || []).filter((x: {auth_user_id:string}) => ids.has(x.auth_user_id))
-  .map((x: {auth_user_id:string,first_name:string,last_name:string}) => ({
-   id: x.auth_user_id, name: (x.first_name + " " + x.last_name).trim()
-  })).sort((a: {name:string}, b: {name:string}) => a.name.localeCompare(b.name, "it"));
+ const found = new Map((names || []).map((x: {auth_user_id:string,first_name:string,last_name:string}) =>
+  [x.auth_user_id, (x.first_name + " " + x.last_name).trim()]));
+ return [...ids].map(id => ({ id, name: found.get(id) || ("Autista " + id.slice(-6)) }))
+  .sort((a, b) => a.name.localeCompare(b.name, "it"));
 }
 async function list(db: ReturnType<typeof pair>["admin"], user: {id:string,role:string}) {
  let query = db.from("lts_payroll_documents")
@@ -282,7 +282,8 @@ Deno.serve(async req => {
   }
   throw { status: 400 };
  } catch (err) {
-  const status = [400, 401, 403, 404, 405, 409, 413, 415, 428].includes(err?.status) ? err.status : 503;
+  const reported = (err as { status?: number } | null)?.status;
+  const status = typeof reported === "number" && [400, 401, 403, 404, 405, 409, 413, 415, 428].includes(reported) ? reported : 503;
   const message = ({
    400: "Dati non validi.", 401: "Accedi al tuo account.", 403: "Accesso non autorizzato.",
    404: "Documento non disponibile.", 409: "Dati cambiati: aggiorna l'elenco.",
