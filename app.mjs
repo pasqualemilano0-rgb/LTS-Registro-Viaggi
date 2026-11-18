@@ -13,6 +13,7 @@ import {createLtsRealtime} from '/LTS-Registro-Viaggi/realtime-client.mjs';
 import {sharedMapsEnabled,sharedMapsCustomers,saveSharedMapsCustomer} from '/LTS-Registro-Viaggi/shared-maps-client.mjs?v=20261110-maps-approval-v1';
 import {readMapsCustomer} from '/LTS-Registro-Viaggi/maps-reader-client.mjs';
 import {companyFareSnapshot} from '/LTS-Registro-Viaggi/shared/company-fares.mjs';
+import {singleFareDecision} from '/LTS-Registro-Viaggi/shared/multi-stop-fares.mjs';
 import {companyExtraSnapshot} from '/LTS-Registro-Viaggi/shared/company-extras.mjs';
 import {mapsLinkForCompanySync,filterSharedCustomers} from '/LTS-Registro-Viaggi/shared/maps-company-routing.mjs';
 import {dedupedCustomerDirectory,matchingSharedCustomer,canonicalPersonalCustomer} from '/LTS-Registro-Viaggi/shared/customer-site-matches.mjs';
@@ -27,6 +28,8 @@ let state = D.emptyState();
 let companyCustomers=[]; // In-memory shared list, never part of personal archive/backup.
 let companyRates=[]; // Complete corporate catalog, even if a personal rate overrides a route.
 let companyRatesLoaded=false;
+let companyMultiStopRates=[]; // Server-authorized ordered two-stop routes.
+let companyMultiStopRatesLoaded=false;
 let companyExtraRates=[]; // One shared extra list across ALL drivers.
 let companyExtrasLoaded=false;
 let companyRatesRequest=0;
@@ -120,7 +123,7 @@ window.addEventListener('appinstalled',()=>{installPrompt=null;document.querySel
 standaloneMode.addEventListener?.('change',updateInstallButtons);
 const tabs = [{id:'insert',label:'Inserisci viaggio',icon:'addTrip'},{id:'register',label:'Registro viaggi',icon:'calendar'},{id:'customers',label:'Clienti',icon:'users'},{id:'tariffs',label:'Tariffe',icon:'wallet'},{id:'porti',label:'Porti',icon:'ship'}];
 
-function newDraft() { return {date:today(),client:'',city:'',container:'',secondClient:'',secondCity:'',services:[],second:false,note:'',adminNote:'',noteOpen:false,servicesOpen:false}; }
+function newDraft() { return {date:today(),client:'',city:'',container:'',secondClient:'',secondCity:'',services:[],second:false,fareMode:'double',note:'',adminNote:'',noteOpen:false,servicesOpen:false}; }
 const editorVersion = value => JSON.stringify(value ?? null);
 function requireCurrentEditor(expected,current,label){
  if(expected!==editorVersion(current))throw new Error(`${label} è stato aggiornato o eliminato su un altro dispositivo. I dati del modulo sono conservati: chiudi e riapri la scheda aggiornata prima di salvare.`);
@@ -346,11 +349,13 @@ async function refreshCompanyRates({quiet=true}={}){
   if(owner!==accountAccess.getAccountId()||request!==companyRatesRequest)return false;
   const updated=catalog.tariffs.map(item=>({id:'company:'+item.id,customerId:null,
    client:D.normalizeText(item.client),city:D.normalizeText(item.city),cents:item.cents}));
-  const changed=!companyRatesLoaded||!companyExtrasLoaded||
+  const changed=!companyRatesLoaded||!companyExtrasLoaded||!companyMultiStopRatesLoaded||
    JSON.stringify(updated)!==JSON.stringify(companyRates)||
-   JSON.stringify(catalog.extraRates)!==JSON.stringify(companyExtraRates);
+   JSON.stringify(catalog.extraRates)!==JSON.stringify(companyExtraRates)||
+   JSON.stringify(catalog.multiStopRates)!==JSON.stringify(companyMultiStopRates);
   companyRates=updated;companyRatesLoaded=true;
   companyExtraRates=catalog.extraRates;companyExtrasLoaded=true;
+  companyMultiStopRates=catalog.multiStopRates;companyMultiStopRatesLoaded=true;
   if(changed&&(tab==='tariffs'||tab==='customers')&&refreshView)refreshView();
   if(changed&&tab==='insert')refreshTripFareEstimate?.();
   return true;
@@ -579,14 +584,21 @@ function renderInsert(main){
  const suggestionRefreshes=[];
  form.append(el('div',{class:'trip-fields'},container.wrap,tripCustomerAutocomplete(client,city),city.wrap),datalist(customerListId,[...state.customers.map(c=>c.name),...state.trips.map(t=>t.client),...companyCustomers.map(c=>c.name)]));
  let cities=datalist(cityListId,citySuggestions(draft.client));form.append(cities);
- const add=el('button',{type:'button',class:'add-pickup trip-option','aria-label':draft.second?'Rimuovi seconda presa':'Aggiungi una seconda presa','aria-expanded':String(Boolean(draft.second)),on:{click:()=>{collect();draft.second=!draft.second;if(!draft.second){draft.secondClient='';draft.secondCity='';}keepEditorScratchpad();render();}}},icon('pin'),el('span',{class:'tile-label'},'Seconda presa'),el('span',{class:'plus-disc','aria-hidden':'true'},draft.second?'−':'+'));
+ const add=el('button',{type:'button',class:'add-pickup trip-option','aria-label':draft.second?'Rimuovi seconda presa':'Aggiungi una seconda presa','aria-expanded':String(Boolean(draft.second)),on:{click:()=>{collect();draft.second=!draft.second;if(!draft.second){draft.secondClient='';draft.secondCity='';draft.fareMode='double';}keepEditorScratchpad();render();}}},icon('pin'),el('span',{class:'tile-label'},'Seconda presa'),el('span',{class:'plus-disc','aria-hidden':'true'},draft.second?'−':'+'));
  const options=el('div',{class:'trip-options','aria-label':'Opzioni del viaggio'},add);form.append(options);
- let secondClient=null,secondCity=null;
+ let secondClient=null,secondCity=null,fareSelect=null,singleOption=null,singleFareNote=null;
  if(draft.second){
   secondClient=field('Cliente','secondClient',draft.secondClient,{placeholder:'Cliente seconda presa',required:true,maxlength:500});
   secondCity=field('Località','secondCity',draft.secondCity,{placeholder:'Città seconda presa',list:'second-cities',required:true,maxlength:500});
   form.append(el('section',{class:'second-pickup'},el('div',{class:'pickup-heading'},'Seconda presa · stesso container'),tripCustomerAutocomplete(secondClient,secondCity,true),secondCity.wrap,datalist('second-cities',citySuggestions(draft.secondClient))));
   secondClient.input.addEventListener('change',()=>{autofillCity(secondClient.input,secondCity.input);updateEstimate();});
+  singleOption=el('option',{value:'single'},'1 tariffa unica — solo se autorizzata dall’amministratore');
+  fareSelect=el('select',{name:'fareMode',class:'trip-fare-mode-select','aria-label':'Modalità di pagamento della seconda presa'},
+   el('option',{value:'double'},'2 tariffe — modalità esistente'),singleOption);
+  fareSelect.value=draft.fareMode==='single'?'single':'double';
+  singleFareNote=el('p',{class:'field-hint',role:'status','aria-live':'polite'},'');
+  form.append(el('div',{class:'trip-fare-mode'},el('label',{class:'field-label'},'Tariffazione di questo container',fareSelect),singleFareNote));
+  fareSelect.addEventListener('change',()=>{collect();updateEstimate();keepEditorScratchpad();});
  }
  /** Client suggestions appear beneath the existing input, without another search field. */
  function tripCustomerAutocomplete(clientField,cityField,second=false){
@@ -654,7 +666,7 @@ function renderInsert(main){
  const draftStatus=el('p',{id:'trip-draft-state',class:'trip-draft-state',role:'status','aria-live':'polite'},'Le modifiche vengono conservate sul dispositivo durante la compilazione.');
  const syncDetail=el('p',{id:'trip-save-hint',class:'trip-save-hint',role:'status','aria-live':'polite'});
  form.append(save,draftStatus,syncDetail,el('p',{class:'privacy-footnote'},icon('lock'),'Le note viaggio restano private; solo le note per amministrazione sono riportate nel PDF.'));
- function collect(){draft={date:date.input.value,container:container.input.value,client:client.input.value,city:city.input.value,secondClient:secondClient?.input.value||'',secondCity:secondCity?.input.value||'',services:[...form.querySelectorAll('[name=service]:checked')].map(n=>n.value).concat(retiredReeferInEdit?['reefer']:[]),second:draft.second,note:noteInput.value,adminNote:adminNoteInput.value,noteOpen:Boolean(draft.noteOpen),servicesOpen:Boolean(draft.servicesOpen)};}
+ function collect(){draft={date:date.input.value,container:container.input.value,client:client.input.value,city:city.input.value,secondClient:secondClient?.input.value||'',secondCity:secondCity?.input.value||'',services:[...form.querySelectorAll('[name=service]:checked')].map(n=>n.value).concat(retiredReeferInEdit?['reefer']:[]),second:draft.second,fareMode:fareSelect?.value||'double',note:noteInput.value,adminNote:adminNoteInput.value,noteOpen:Boolean(draft.noteOpen),servicesOpen:Boolean(draft.servicesOpen)};}
  let missingEstimateTariffs=false;
  function updateEstimate(){
   collect();
@@ -662,6 +674,18 @@ function renderInsert(main){
   const existing=state.trips.find(trip=>trip.id===editingId)||null;
   const sameFirst=existing&&D.normalizeText(existing.client)===D.normalizeText(draft.client)&&D.normalizeText(existing.city)===D.normalizeText(draft.city);
   const sameSecond=existing&&D.normalizeText(existing.secondClient)===D.normalizeText(draft.secondClient)&&D.normalizeText(existing.secondCity)===D.normalizeText(draft.secondCity);
+  const singleDecision=singleFareDecision({rows:companyMultiStopRates,loaded:companyMultiStopRatesLoaded,
+   client:draft.client,city:draft.city,secondClient:draft.secondClient,secondCity:draft.secondCity,existing});
+  const single=Boolean(draft.second&&draft.fareMode==='single');
+  if(singleOption){
+   singleOption.disabled=!singleDecision.allowed;
+   singleOption.textContent=singleDecision.allowed
+    ?'1 tariffa unica — '+D.formatMoney(singleDecision.cents)
+    :'1 tariffa unica — da autorizzare in amministrazione';
+   singleFareNote.textContent=singleDecision.allowed
+    ?'Due clienti, un container: importo unico fissato dall’amministratore.'
+    :'La tariffa unica è disponibile soltanto per coppie di sedi autorizzate.';
+  }
   const extraCents=D.emptyExtraRates();
   for(const service of draft.services)
    extraCents[service]=companyExtraSnapshot(companyExtraRates,companyExtrasLoaded,service,{
@@ -670,22 +694,22 @@ function renderInsert(main){
   // Build a read-only candidate even while required fields are incomplete.
   // Replace the edited trip so its own daily allowance is not counted twice.
   const candidate={...draft,id:estimateId,createdAt:existing?.createdAt||estimateCreatedAt,
-   fareCents:companyFareSnapshot(companyRates,companyRatesLoaded,draft.client,draft.city,{unchanged:Boolean(sameFirst),previous:existing?.fareCents}),
-   secondFareCents:draft.second&&draft.secondCity?companyFareSnapshot(companyRates,companyRatesLoaded,draft.secondClient,draft.secondCity,{unchanged:Boolean(sameSecond),previous:existing?.secondFareCents}):null,
-   sumPickupFares:Boolean(draft.second&&draft.secondCity),extraCents};
+   fareCents:single?(singleDecision.allowed?singleDecision.cents:null):companyFareSnapshot(companyRates,companyRatesLoaded,draft.client,draft.city,{unchanged:Boolean(sameFirst),previous:existing?.fareCents}),
+   secondFareCents:single?null:(draft.second&&draft.secondCity?companyFareSnapshot(companyRates,companyRatesLoaded,draft.secondClient,draft.secondCity,{unchanged:Boolean(sameSecond),previous:existing?.secondFareCents}):null),
+   sumPickupFares:Boolean(draft.second&&draft.secondCity&&!single),extraCents};
   const previewContext=D.buildTripAmountContext([...state.trips.filter(trip=>trip.id!==editingId),candidate]);
   const amount=D.tripAmounts(candidate,previewContext);const saturday=D.saturdayAllowanceStatus(candidate,previewContext);
-  hint.textContent=firstTariff?`Tariffa aziendale · ${D.formatMoney(firstTariff.cents)}`:'';
-  estimate.replaceChildren(el('span',{},icon('wallet'),draft.second?'Trasferte + extra':'Trasferta + extra'),draft.client&&draft.city?el('strong',{},D.formatMoney(amount.totalCents)):el('small',{},'Scegli cliente e città'));
+  hint.textContent=single?'Tariffa unica per due clienti':(firstTariff?`Tariffa aziendale · ${D.formatMoney(firstTariff.cents)}`:'');
+  estimate.replaceChildren(el('span',{},icon('wallet'),single?'Tariffa unica + extra':(draft.second?'Trasferte + extra':'Trasferta + extra')),draft.client&&draft.city?el('strong',{},D.formatMoney(amount.totalCents)):el('small',{},'Scegli cliente e città'));
   estimateBreakdown.replaceChildren(
-   el('div',{},el('span',{},'Prima presa'),el('strong',{},draft.client&&draft.city?D.formatMoney(candidate.fareCents):'—')),
-   ...(draft.second?[el('div',{},el('span',{},'Seconda presa'),el('strong',{},draft.secondClient&&draft.secondCity?D.formatMoney(candidate.secondFareCents):'—'))]:[]),
+   el('div',{},el('span',{},single?'Tariffa unica per due sedi':'Prima presa'),el('strong',{},draft.client&&draft.city?D.formatMoney(candidate.fareCents):'—')),
+   ...(draft.second?[el('div',{},el('span',{},'Seconda presa'),el('strong',{},single?'Inclusa nella tariffa unica':(draft.secondClient&&draft.secondCity?D.formatMoney(candidate.secondFareCents):'—')))]:[]),
    el('div',{},el('span',{},'Servizi extra'),el('strong',{},D.formatMoney(amount.extraCents)))
   );
   saturdayNote.textContent=saturdayNoteText(saturday.status);saturdayNote.hidden=saturday.status==='none';saturdayNote.dataset.saturdayStatus=saturday.status;
-  const hasAny=Boolean(draft.client||draft.city||draft.services.length);const unknown=(candidate.fareCents===null&&Boolean(draft.client&&draft.city))||(draft.second&&candidate.secondFareCents===null&&Boolean(draft.secondClient&&draft.secondCity))||draft.services.some(key=>extraCents[key]===null&&!(key==='sabatoTrasferta'&&saturday.status==='included'));
+  const hasAny=Boolean(draft.client||draft.city||draft.services.length);const unknown=(candidate.fareCents===null&&Boolean(draft.client&&draft.city))||(!single&&draft.second&&candidate.secondFareCents===null&&Boolean(draft.secondClient&&draft.secondCity))|| (single&&!singleDecision.allowed)||draft.services.some(key=>extraCents[key]===null&&!(key==='sabatoTrasferta'&&saturday.status==='included'));
   missingEstimateTariffs=Boolean(hasAny&&unknown);
-  missing.textContent=missingEstimateTariffs?'Alcune tariffe non sono impostate. Prima del salvataggio dovrai confermare il totale parziale.':'';
+  missing.textContent=single&&!singleDecision.allowed?'Tariffa unica non autorizzata: impossibile salvare questa modalità.':(missingEstimateTariffs?'Alcune tariffe non sono impostate. Prima del salvataggio dovrai confermare il totale parziale.':'');
   missing.style.marginBottom=missing.textContent?'16px':'0';
  }
  for(const {input}of[date,container,client,city,...(secondClient?[secondClient,secondCity]:[])])input.addEventListener('input',()=>{collect();updateEstimate();});
@@ -708,12 +732,20 @@ function renderInsert(main){
   try{
    const existing=state.trips.find(t=>t.id===editingId)||null;
    if(editingId&&tripEditVersion(existing)!==editingBaseline)throw new Error('Il viaggio è stato aggiornato o eliminato su un altro dispositivo. La bozza è conservata: annulla la modifica e riapri il viaggio aggiornato dal Registro.');
+   const isSingle=Boolean(draft.second&&draft.fareMode==='single');
+   const decision=singleFareDecision({rows:companyMultiStopRates,loaded:companyMultiStopRatesLoaded,
+    client:draft.client,city:draft.city,secondClient:draft.secondClient,secondCity:draft.secondCity,existing});
+   if(isSingle&&!decision.allowed)
+    throw new Error('Tariffa unica non autorizzata per questi clienti. Aggiorna il tariffario o scegli due tariffe.');
+   if(isSingle&&decision.cents===null&&!decision.historical)
+    throw new Error('La tariffa unica non è impostata. Contatta l’amministratore.');
    const trip=D.createTrip(draft,{...state,tariffs:[]},existing);
    attemptedTrip=trip;
    const sameFirst=Boolean(existing&&D.normalizeText(existing.client)===trip.client&&D.normalizeText(existing.city)===trip.city);
    const sameSecond=Boolean(existing&&D.normalizeText(existing.secondClient)===trip.secondClient&&D.normalizeText(existing.secondCity)===trip.secondCity);
-   trip.fareCents=companyFareSnapshot(companyRates,companyRatesLoaded,trip.client,trip.city,{unchanged:sameFirst,previous:existing?.fareCents});
-   trip.secondFareCents=trip.secondCity?companyFareSnapshot(companyRates,companyRatesLoaded,trip.secondClient,trip.secondCity,{unchanged:sameSecond,previous:existing?.secondFareCents}):null;
+   trip.fareCents=isSingle?decision.cents:companyFareSnapshot(companyRates,companyRatesLoaded,trip.client,trip.city,{unchanged:sameFirst,previous:existing?.fareCents});
+   trip.secondFareCents=isSingle?null:(trip.secondCity?companyFareSnapshot(companyRates,companyRatesLoaded,trip.secondClient,trip.secondCity,{unchanged:sameSecond,previous:existing?.secondFareCents}):null);
+   trip.sumPickupFares=Boolean(trip.secondCity&&!isSingle);
    // Override legacy private defaults: company extras are identical for all drivers.
    // Previously saved service amounts are snapshots and are never repriced here.
    for(const service of trip.services)
@@ -778,7 +810,7 @@ function autofillCity(client,city){if(!city.value.trim()){const normalized=D.nor
 function editTrip(trip,{focusNote=false}={}){
  const apply=()=>{
   editingId=trip.id;editingBaseline=tripEditVersion(trip);
-  draft={...trip,services:[...trip.services],second:Boolean(trip.secondClient||trip.secondCity),note:trip.note||'',adminNote:trip.adminNote||'',noteOpen:focusNote||Boolean(trip.note),servicesOpen:true};
+  draft={...trip,services:[...trip.services],second:Boolean(trip.secondClient||trip.secondCity),fareMode:trip.sumPickupFares===false?'single':'double',note:trip.note||'',adminNote:trip.adminNote||'',noteOpen:focusNote||Boolean(trip.note),servicesOpen:true};
   keepEditorScratchpad();navigate('insert',{keepDraft:true});
   if(focusNote)document.querySelector('#trip-note')?.focus();
  };
