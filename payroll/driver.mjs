@@ -73,9 +73,9 @@ async function showPdf(item, button) {
   const viewer = dialog("Documento PDF");
   const link = node("a", "lts-payroll-download", "Scarica PDF");
   link.href = url; link.download = "LTS-" + item.category + "-" + item.document_year + ".pdf";
-  const frame = node("object", "lts-payroll-preview");
-  frame.data = url; frame.type = "application/pdf";
-  frame.append(node("p", "", "Anteprima non disponibile su questo dispositivo. Usa Scarica PDF."));
+  const frame = node("iframe", "lts-payroll-preview");
+  frame.src = url; frame.title = "Anteprima del documento PDF";
+  frame.setAttribute("referrerpolicy", "no-referrer");
   viewer.append(link, frame);
   viewer.addEventListener("close", () => URL.revokeObjectURL(url), { once: true });
  } catch (error) { window.alert(statusText(error)); }
@@ -133,6 +133,8 @@ export function openPayrollDocuments() {
  const onVisibility = () => { if (document.visibilityState === "visible" && dlg.open) void load(); };
  document.addEventListener("visibilitychange", onVisibility);
  dlg.addEventListener("close", () => document.removeEventListener("visibilitychange", onVisibility), { once: true });
+ const timer = setInterval(() => { if(dlg.open && document.visibilityState === "visible") void load(); }, 60000);
+ dlg.addEventListener("close", () => clearInterval(timer), { once: true });
  dlg.append(tabs, refresh, message, list);
  const cssId = "lts-payroll-style";
  if (!document.getElementById(cssId)) {
