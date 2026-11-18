@@ -18,5 +18,5 @@ export function singleFareDecision({rows,loaded,client,city,secondClient,secondC
  const historical=Boolean(existing&&existing.sumPickupFares===false&&existing.secondCity&&
   key(existing.client,existing.city)===key(client,city)&&
   key(existing.secondClient,existing.secondCity)===key(secondClient,secondCity));
- return {allowed:Boolean(pair)||historical,cents:pair?.cents??(historical?existing.fareCents:null),historical:historical&&!pair,route:pair};
+ return {allowed:Boolean(pair)||historical,cents:historical?existing.fareCents:pair?.cents??null,historical:historical&&!pair,route:pair};
 }
