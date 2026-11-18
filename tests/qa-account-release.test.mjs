@@ -53,8 +53,8 @@ test('installed PWA refreshes current data and update assets without dropping un
  const worker=read('sw.js');
  for(const source of [main]){
   assert.match(source,/setInterval\(pollArchive, 2000\)/);
-  assert.match(source,/addEventListener\('focus', refreshSoon\)/);
-  assert.match(source,/addEventListener\('pageshow', refreshSoon\)/);
+  assert.match(source,/addEventListener\('focus', passiveRefreshSoon\)/);
+  assert.match(source,/addEventListener\('pageshow', passiveRefreshSoon\)/);
   assert.match(source,/if \(!active \|\| blocked \|\| refreshing \|\| document[.]hidden/);
  }
  for(const source of [mainApp]){
@@ -573,7 +573,9 @@ test('online catalog sync never reconstructs a currently edited trip',()=>{
  assert.doesNotMatch(fn,/\brender\(\);/);
 });
 test('drivers use Maps customer suggestions but cannot set individual transfer fares',()=>{
- assert.match(app,/combinedTripCustomerChoices\(\{personal:state[.]customers,trips:state[.]trips,shared:companyCustomers\}\)/);
+ assert.match(app,/createLazyCustomerChoices\(\(\)=>combinedTripCustomerChoices\(\{/);
+ assert.match(app,/personal:state[.]customers,trips:state[.]trips,shared:companyCustomers/);
+ assert.match(app,/customerChoicesCache[.]invalidate\(\)/);
  assert.match(app,/companyFareSnapshot\(companyRates,companyRatesLoaded/);
  assert.match(app,/Le trasferte sono uguali per tutti gli autisti/);
  assert.doesNotMatch(app,/function tariffDialog\(/);
