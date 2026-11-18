@@ -88,6 +88,12 @@ function fixture({adminMfa=true}={}){
   createClient:(_url,key)=>key.startsWith('public-key')?publicClient:db,
   checkLtsSession:async (_db,token)=>{if(token===tokens.revoked)throw {status:403};},
   requireAdminMfa:async()=>({enrolled:adminMfa,verified:adminMfa}),
+  deviceAction:async action=>({enrolled:action==='passkey-status'}),
+  // Synthetic stub checks the second factor independently of JWT validation.
+  // Full credential-signature verification needs a separate WebAuthn integration test.
+  requireDocumentUnlock:async (_api,_actor,token)=>{
+   if(token!=='synthetic-device-verified')throw {status:423};
+  },
   Deno:deno,Request,Response,Blob,File,TextDecoder,TextEncoder,crypto,atob,
   console
  },{timeout:2000});
@@ -95,7 +101,7 @@ function fixture({adminMfa=true}={}){
  async function call(token,action,options={}){
   const request=new Request(endpoint,{method:'POST',headers:{
    'Origin':ORIGIN,'Authorization':'Bearer '+token,'Content-Type':'application/json'
-  },body:JSON.stringify({action,...options})});
+  },body:JSON.stringify({action,unlockToken:'synthetic-device-verified',...options})});
   const response=await handler(request);
   return {status:response.status,data:response.headers.get('content-type')?.includes('json')?
     await response.json():await response.arrayBuffer()};
@@ -134,4 +140,15 @@ test('revoked JWT and admin without enrolled MFA are denied all document actions
  assert.equal((await x.call(tokens.revoked,'download',{id:docA})).status,403);
  assert.equal((await x.call(tokens.admin,'drivers')).status,428);
  assert.equal((await x.call(tokens.admin,'download',{id:docA})).status,428);
+});
+
+
+test('valid LTS JWT without device step-up cannot list, read, or acknowledge payroll',async()=>{
+ const x=fixture();
+ for(const action of ['list','download','acknowledge']){
+  const extra=action==='list'?{}:{id:docA};
+  assert.equal((await x.call(tokens.a,action,{...extra,unlockToken:null})).status,423);
+ }
+ assert.equal(x.docs[0].first_accessed_at,null);
+ assert.equal(x.docs[0].acknowledged_at,null);
 });
