@@ -673,8 +673,8 @@ function renderInsert(main){
   collect();
   const firstTariff=companyRatesLoaded?D.findTariff({tariffs:companyRates},draft.client,draft.city):null;
   const existing=state.trips.find(trip=>trip.id===editingId)||null;
-  const sameFirst=existing&&D.normalizeText(existing.client)===D.normalizeText(draft.client)&&D.normalizeText(existing.city)===D.normalizeText(draft.city);
-  const sameSecond=existing&&D.normalizeText(existing.secondClient)===D.normalizeText(draft.secondClient)&&D.normalizeText(existing.secondCity)===D.normalizeText(draft.secondCity);
+  const sameFirst=existing&&existing.sumPickupFares!==false&&D.normalizeText(existing.client)===D.normalizeText(draft.client)&&D.normalizeText(existing.city)===D.normalizeText(draft.city);
+  const sameSecond=existing&&existing.sumPickupFares!==false&&D.normalizeText(existing.secondClient)===D.normalizeText(draft.secondClient)&&D.normalizeText(existing.secondCity)===D.normalizeText(draft.secondCity);
   const singleDecision=singleFareDecision({rows:companyMultiStopRates,loaded:companyMultiStopRatesLoaded,
    client:draft.client,city:draft.city,secondClient:draft.secondClient,secondCity:draft.secondCity,existing});
   const single=Boolean(draft.second&&draft.fareMode==='single');
@@ -742,8 +742,8 @@ function renderInsert(main){
     throw new Error('La tariffa unica non è impostata. Contatta l’amministratore.');
    const trip=D.createTrip(draft,{...state,tariffs:[]},existing);
    attemptedTrip=trip;
-   const sameFirst=Boolean(existing&&D.normalizeText(existing.client)===trip.client&&D.normalizeText(existing.city)===trip.city);
-   const sameSecond=Boolean(existing&&D.normalizeText(existing.secondClient)===trip.secondClient&&D.normalizeText(existing.secondCity)===trip.secondCity);
+   const sameFirst=Boolean(existing&&existing.sumPickupFares!==false&&D.normalizeText(existing.client)===trip.client&&D.normalizeText(existing.city)===trip.city);
+   const sameSecond=Boolean(existing&&existing.sumPickupFares!==false&&D.normalizeText(existing.secondClient)===trip.secondClient&&D.normalizeText(existing.secondCity)===trip.secondCity);
    trip.fareCents=isSingle?decision.cents:companyFareSnapshot(companyRates,companyRatesLoaded,trip.client,trip.city,{unchanged:sameFirst,previous:existing?.fareCents});
    trip.secondFareCents=isSingle?null:(trip.secondCity?companyFareSnapshot(companyRates,companyRatesLoaded,trip.secondClient,trip.secondCity,{unchanged:sameSecond,previous:existing?.secondFareCents}):null);
    trip.sumPickupFares=Boolean(trip.secondCity&&!isSingle);
