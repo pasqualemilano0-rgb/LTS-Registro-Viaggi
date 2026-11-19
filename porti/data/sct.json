@@ -1,7 +1,7 @@
 {
   "source": "https://www.salernocontainerterminal.com/ca/an/vessel_schedule.php",
   "source_updated_at": null,
-  "acquired_at": "2026-11-19T07:00:16.509Z",
+  "acquired_at": "2026-11-19T07:30:16.623Z",
   "rows": [
     {
       "vessel": "MSC ELENI",
@@ -301,6 +301,6 @@
       "status": "PENDING"
     }
   ],
-  "updated_at": "2026-11-19T07:00:16.509Z",
+  "updated_at": "2026-11-19T07:30:16.623Z",
   "data_changed_at": "2026-11-19T06:30:16.738Z"
 }
