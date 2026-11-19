@@ -1,7 +1,7 @@
 {
   "source": "https://www.salernocontainerterminal.com/ca/an/vessel_schedule.php",
   "source_updated_at": null,
-  "acquired_at": "2026-11-19T06:00:16.606Z",
+  "acquired_at": "2026-11-19T06:30:16.738Z",
   "rows": [
     {
       "vessel": "MSC ELENI",
@@ -238,8 +238,8 @@
       "status": "PENDING"
     },
     {
-      "vessel": "MIRIAM BORCHARD",
-      "voyage": "1046",
+      "vessel": "ECO OSTRO",
+      "voyage": "648W",
       "eta": "25/11/2026 00:00",
       "closing": "24/11/2026 17:00",
       "acceptance_dry": "CARGO ACCEPTED",
@@ -256,8 +256,8 @@
       "status": "PENDING"
     },
     {
-      "vessel": "ECO OSTRO",
-      "voyage": "648W",
+      "vessel": "MIRIAM BORCHARD",
+      "voyage": "1046",
       "eta": "25/11/2026 00:00",
       "closing": "24/11/2026 17:00",
       "acceptance_dry": "CARGO ACCEPTED",
@@ -290,8 +290,17 @@
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
+    },
+    {
+      "vessel": "AMELIE BORCHARD",
+      "voyage": "0209",
+      "eta": "26/11/2026 08:00",
+      "closing": "25/11/2026 17:00",
+      "acceptance_dry": "CARGO ACCEPTED",
+      "acceptance_reef": "CARGO ACCEPTED",
+      "status": "PENDING"
     }
   ],
-  "updated_at": "2026-11-19T06:00:16.606Z",
-  "data_changed_at": "2026-11-18T23:00:16.743Z"
+  "updated_at": "2026-11-19T06:30:16.738Z",
+  "data_changed_at": "2026-11-19T06:30:16.738Z"
 }
