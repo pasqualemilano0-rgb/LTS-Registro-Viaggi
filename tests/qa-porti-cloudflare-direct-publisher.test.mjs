@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {FEEDS,vet,readAll,publish,PublishRejected,BASE} from '../cloudflare/public-snapshot-publisher/index.mjs';
+import {FEEDS,vet,readAll,publish,hasRecoveryPoint,PublishRejected,BASE} from '../cloudflare/public-snapshot-publisher/index.mjs';
 
 const NOW=Date.parse('2026-11-12T17:20:00Z');
 const NEW='2026-11-12T17:15:00.000Z',OLD='2026-11-11T21:00:00.000Z';
@@ -160,4 +160,48 @@ test('public preview route remains inaccessible outside explicitly enabled QA',a
   assert.equal(res.status,404);
   res=await worker.fetch(req,{PUBLISH_ENABLED:'yes',QA_PREVIEW_ENABLED:'yes'});
   assert.equal(res.status,404);
+});
+
+test('KV pagination: an empty tombstone page does not hide real recovery points',async()=>{
+  const f=fixture(),queries=[],store=kv(f);
+  store.list=async options=>{
+    queries.push({...options});
+    if(!options.cursor)return{keys:[],list_complete:false,cursor:options.prefix+'after-tombstone'};
+    return{keys:[{name:options.prefix+'2026-11-12T17:00:00.000Z'}],list_complete:true};
+  };
+  const vetted=await readAll({SCHEDULES_KV:store},NOW,f.previous);
+  assert.deepEqual(Object.keys(vetted),['cnt','tfg','sct']);
+  assert.equal(queries.length,6);
+  assert.ok(queries.every(q=>q.limit===100));
+  for(const term of Object.keys(FEEDS)){
+    const termQueries=queries.filter(q=>q.prefix==='backup:v1:'+term+':');
+    assert.equal(termQueries.length,2);
+    assert.equal(termQueries[1].cursor,termQueries[0].prefix+'after-tombstone');
+  }
+});
+test('KV recovery gate rejects unrelated keys and a genuinely absent recovery point',async()=>{
+  const f=fixture(),store=kv(f);
+  store.list=async()=>({keys:[{name:'backup:v1:wrong:2026-11-12'}],list_complete:true});
+  assert.equal(await hasRecoveryPoint(store,'cnt'),false);
+  await assert.rejects(readAll({SCHEDULES_KV:store},NOW,f.previous),
+    {message:'RECOVERY_POINT_MISSING_cnt'});
+});
+test('KV recovery gate fails closed on repeated cursors, malformed pages, and too many pages',async()=>{
+  const store={list:async()=>({keys:[],list_complete:false,cursor:'repeat'})};
+  await assert.rejects(hasRecoveryPoint(store,'cnt'),{message:'RECOVERY_POINT_LIST_INVALID_cnt'});
+  store.list=async()=>({keys:null,list_complete:true});
+  await assert.rejects(hasRecoveryPoint(store,'cnt'),{message:'RECOVERY_POINT_LIST_INVALID_cnt'});
+  let n=0;
+  store.list=async()=>({keys:[],list_complete:false,cursor:'p'+(++n)});
+  await assert.rejects(hasRecoveryPoint(store,'cnt'),{message:'RECOVERY_POINT_LIST_INCOMPLETE_cnt'});
+  assert.equal(n,10);
+});
+test('missing backup across all KV pages prevents every GitHub write',async()=>{
+  const f=fixture(),g=fakeGit(f.previous),store=kv(f);
+  store.list=async({cursor})=>cursor
+    ?{keys:[],list_complete:true}:{keys:[],list_complete:false,cursor:'last'};
+  await assert.rejects(publish({
+    PUBLISH_ENABLED:'yes',GITHUB_PUBLIC_CONTENTS_TOKEN:'dummy-test-token-with-length',SCHEDULES_KV:store
+  },{now:NOW,fetcher:g.fetch}),{message:'RECOVERY_POINT_MISSING_cnt'});
+  assert.ok(g.calls.every(c=>c.method==='GET'));
 });
