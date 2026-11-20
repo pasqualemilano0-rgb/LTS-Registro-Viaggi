@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src https://otrqynkscpbeyuvdlgpg.supabase.co; font-src 'self'; form-action 'self'; base-uri 'none'; object-src 'none'; frame-ancestors 'none'">
+<meta name="referrer" content="no-referrer">
+<title>LTS · Paghe amministrazione</title>
+<link rel="stylesheet" href="./style.css">
+<script type="module" src="./app.mjs"></script>
+</head>
+<body>
+<header class="topbar">
+  <a href="../" class="brand">LTS <small>REGISTRO VIAGGI</small></a>
+  <span>Area riservata · Documenti del personale</span>
+  <a href="../amministratore/" class="return">Amministrazione LTS</a>
+</header>
+<main>
+<section class="panel login" id="login-panel" aria-labelledby="login-title">
+  <p class="eyebrow">ACCESSO SEPARATO</p>
+  <h1 id="login-title">Paghe Amministrazione</h1>
+  <p>Accedi con l'account amministratore LTS. È richiesta anche la verifica Authenticator: non sono previste credenziali condivise.</p>
+  <form id="login-form">
+    <label>Numero di telefono <input id="phone" type="tel" autocomplete="username" required placeholder="+39…"></label>
+    <label>Password <input id="password" type="password" autocomplete="current-password" required></label>
+    <button class="primary" type="submit">Accedi alle paghe</button>
+  </form>
+  <p id="login-error" class="error" role="alert"></p>
+</section>
+<section class="panel login" id="mfa-panel" hidden aria-labelledby="mfa-title">
+  <p class="eyebrow">DOPPIA VERIFICA</p>
+  <h1 id="mfa-title">Codice Authenticator</h1>
+  <p>Per proteggere i cedolini inserisci il codice temporaneo del tuo secondo fattore.</p>
+  <form id="mfa-form">
+    <label id="factor-wrap" hidden>Authenticator <select id="factor"></select></label>
+    <label>Codice a 6 cifre <input id="mfa" type="text" inputmode="numeric" autocomplete="one-time-code" minlength="6" maxlength="6" pattern="[0-9]{6}" required></label>
+    <button class="primary" type="submit">Verifica e apri</button>
+  </form>
+  <p id="mfa-error" class="error" role="alert"></p>
+  <button id="mfa-cancel" class="text-button">Torna all'accesso</button>
+</section>
+<section id="workspace" hidden aria-label="Gestione documenti">
+  <div class="hero">
+    <div><p class="eyebrow">PAGHE · LTS</p><h1>Gestione documenti</h1>
+     <p>CEDOLINO · CU · ALTRI DOCUMENTI — archivio privato per account autista.</p>
+    </div>
+    <div class="hero-actions"><button id="refresh" type="button">Aggiorna</button><button id="logout" type="button">Esci</button></div>
+  </div>
+  <div class="columns">
+    <section class="panel" aria-labelledby="upload-title">
+      <h2 id="upload-title">Carica PDF</h2>
+      <p>Seleziona uno o più PDF e conferma l'autista per ogni file. I file sono inizialmente bozze invisibili ai dipendenti.</p>
+      <form id="upload-form">
+        <label>Categoria <select id="category" required>
+          <option value="CEDOLINO">CEDOLINO</option>
+          <option value="CU">CU</option>
+          <option value="ALTRI">ALTRI DOCUMENTI</option>
+        </select></label>
+        <div class="period">
+          <label>Anno <input id="year" type="number" min="2000" max="2100" required></label>
+          <label id="month-wrap">Mese <select id="month">
+            <option value="">Seleziona mese</option>
+            <option value="1">Gennaio</option><option value="2">Febbraio</option>
+            <option value="3">Marzo</option><option value="4">Aprile</option>
+            <option value="5">Maggio</option><option value="6">Giugno</option>
+            <option value="7">Luglio</option><option value="8">Agosto</option>
+            <option value="9">Settembre</option><option value="10">Ottobre</option>
+            <option value="11">Novembre</option><option value="12">Dicembre</option>
+          </select></label>
+        </div>
+        <label>Seleziona file PDF (max 8 MB ciascuno)
+         <input id="files" type="file" accept=".pdf,application/pdf" multiple required>
+        </label>
+        <div id="file-assignments" class="file-assignments"></div>
+        <button class="primary" id="upload-submit" type="submit">Carica come bozze</button>
+      </form>
+      <p id="upload-status" role="status" class="message"></p>
+    </section>
+    <section class="panel" aria-labelledby="documents-title">
+      <div class="list-heading"><div><h2 id="documents-title">Documenti archiviati</h2><p>Solo l'amministratore può pubblicare o revocare un documento.</p></div></div>
+      <label>Filtra per autista <select id="driver-filter"><option value="">Tutti gli autisti</option></select></label>
+      <p id="list-status" role="status" class="message">Effettua l'accesso.</p>
+      <div id="documents" class="documents"></div>
+    </section>
+  </div>
+</section>
+</main>
+<footer>Nessun PDF viene pubblicato automaticamente. Accessi e download sono verificati dal server.</footer>
+</body>
+</html>

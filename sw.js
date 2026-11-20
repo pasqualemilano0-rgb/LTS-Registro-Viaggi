@@ -83,6 +83,8 @@ const NETWORK_FIRST_CODE = new Set([
   BASE + 'push-client.mjs',
   BASE + 'app.css', BASE + 'visual-theme.css',
   BASE + 'app.mjs', BASE + 'driver-session-guard.mjs', BASE + 'porti-access.mjs', BASE + 'account-access.mjs', BASE + 'driver-session-vault.mjs',
+  BASE + 'payroll/driver.mjs', BASE + 'payroll/driver.css',
+  BASE + 'paghe-amministrazione/index.html', BASE + 'paghe-amministrazione/app.mjs', BASE + 'paghe-amministrazione/style.css',
   BASE + 'runtime-config.mjs', BASE + 'client-store.mjs', BASE + 'realtime-client.mjs', BASE + 'porti/app.js',
   BASE + 'shared/trip-customer-choices.mjs', BASE + 'shared/trip-editor-safety.mjs', BASE + 'shared/register-explorer.mjs', BASE + 'shared/maps-company-routing.mjs',
   BASE + 'shared/customer-site-matches.mjs', BASE + 'shared/foreground-resume.mjs', BASE + 'shared/backup-conflict-details.mjs', BASE + 'shared/sync-merge.mjs', BASE + 'shared-maps-client.mjs',
