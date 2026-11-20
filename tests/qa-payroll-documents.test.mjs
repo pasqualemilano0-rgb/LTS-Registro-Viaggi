@@ -1,0 +1,97 @@
+/**
+ * Static safety gates only. These DO NOT substitute for QA integration tests
+ * against real JWTs, Supabase Storage, and two isolated driver accounts.
+ */
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+
+const text=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
+const sql=text('supabase/migrations/20261118_private_payroll_documents.sql');
+const api=text('supabase/functions/lts-payroll/index.ts');
+const driver=text('documenti/driver-documents.mjs');
+const admin=text('documenti/admin-documents.mjs');
+const transport=text('documenti/document-api.mjs');
+const profile=text('app.mjs');
+const adminIndex=text('amministratore/index.html');
+
+test('DB defaults to draft; private bucket and no public table grants',()=>{
+ assert.match(sql,/state text not null default 'draft'/);
+ assert.match(sql,/enable row level security/);
+ assert.match(sql,/revoke all on public\.lts_payroll_documents from anon, authenticated/);
+ assert.match(sql,/lts-payroll-private','lts-payroll-private',false/);
+ assert.doesNotMatch(sql,/create policy .* to (anon|authenticated)/i);
+});
+
+test('every Edge operation validates JWT and live session; admin MFA enforced',()=>{
+ assert.match(api,/auth\.getUser\(match\[1\]\)/);
+ assert.match(api,/await checkLtsSession\(/);
+ assert.match(api,/await requireAdminMfa\(/);
+ assert.match(api,/if\(!mfa\?\.enrolled\|\|!mfa\?\.verified\)/);
+ assert.match(api,/mustAdmin\(actor\)/);
+ assert.match(api,/\.eq\('driver_id',actor\.userId\)\.eq\('state','published'\)/);
+ assert.match(api,/data\.driver_id!==actor\.userId\|\|data\.state!=='published'/);
+ assert.match(api,/MAX_FILE=8388608/);
+ assert.match(api,/Content-Disposition':'attachment/);
+});
+
+test('server publishes deliberately, never at upload',()=>{
+ assert.match(api,/state:'draft'/);
+ assert.match(api,/if\(input\.action==='publish'\)/);
+ assert.match(api,/\.eq\('id',id\)\.eq\('state','draft'\)/);
+ assert.match(admin,/window\.confirm\('Pubblicare/);
+ assert.match(admin,/Caricare .*PDF come BOZZE/);
+});
+
+test('separate login page and LTS link exist without secrets',()=>{
+ assert.match(text('amministratore/buste-paga/index.html'),/id="login-form"/);
+ assert.match(text('amministratore/buste-paga/index.html'),/id="mfa-form"/);
+ assert.match(adminIndex,/href="\.\/buste-paga\/"/);
+ assert.match(profile,/I MIEI DOCUMENTI/);
+ assert.match(driver,/category='cedolino'/);
+ for(const file of [transport,admin,driver]){
+  assert.doesNotMatch(file,/service_role|SUPABASE_SERVICE_ROLE_KEY|sb_secret_/);
+ }
+ assert.match(transport,/cache:'no-store'/);
+});
+
+
+test('SQL migration uses valid paired dollar delimiters and atomic audit triggers',()=>{
+ const begins=(sql.match(/\bas \$\$/g)||[]).length;
+ const ends=(sql.match(/\$\$;/g)||[]).length;
+ assert.equal(begins,3,'audit and two restricted event RPC bodies');
+ assert.equal(ends,3,'PL/pgSQL bodies must be closed');
+ assert.match(sql,/after insert or update of state, first_accessed_at, acknowledged_at/);
+ assert.match(sql,/values \(new\.id, new\.driver_id, 'first_access'\)/);
+ assert.match(sql,/values \(new\.id, new\.driver_id, 'acknowledge'\)/);
+ assert.match(sql,/revoke all on function public\.lts_payroll_mark_first_access\(uuid,uuid\) from public,anon,authenticated/);
+ assert.match(sql,/revoke all on function public\.lts_payroll_acknowledge\(uuid,uuid\) from public,anon,authenticated/);
+ assert.match(sql,/grant execute on function public\.lts_payroll_acknowledge\(uuid,uuid\) to service_role/);
+});
+
+test('first document access is authenticated, owner-scoped, published-only and server timed',()=>{
+ assert.match(api,/if\(actor\.role==='driver'\)\{\s*\/\/ The file has reached the server/);
+ assert.match(api,/await db\.rpc\('lts_payroll_mark_first_access'/);
+ assert.match(api,/p_document_id:id,p_driver_id:actor\.userId/);
+ assert.match(sql,/first_accessed_at=coalesce\(first_accessed_at,now\(\)\)/);
+ assert.match(sql,/where id=p_document_id and driver_id=p_driver_id and state='published'/);
+});
+
+test('receipt acknowledgement is voluntary, restricted to the employee and not proof of payment',()=>{
+ assert.match(api,/async function acknowledge\(db,actor,id\)\{\s*if\(actor\.role!=='driver'\)fail\(403\)/);
+ assert.match(api,/await db\.rpc\('lts_payroll_acknowledge'/);
+ assert.match(sql,/acknowledged_at=coalesce\(acknowledged_at,now\(\)\)/);
+ assert.match(sql,/category='cedolino'\s+and state='published' and first_accessed_at is not null/);
+ assert.match(driver,/api\.acknowledge\(doc\.id\)/);
+ assert.match(driver,/NON confermo il pagamento dello stipendio/);
+ assert.match(driver,/confirm\.disabled=!doc\.first_accessed_at/);
+ assert.match(admin,/Ricezione confermata il/);
+ assert.match(text('documenti/index.html'),/non conferma né il pagamento dello stipendio/);
+});
+
+test('admin payroll page requires distinct login despite existing LTS session',()=>{
+ assert.match(admin,/Always display an independent payroll login/);
+ assert.match(admin,/^protect\(\);/m);
+ assert.match(admin,/account\.verifyAdminTotp/);
+ assert.match(admin,/busy\(false\);\s*await check\(\);/);
+});

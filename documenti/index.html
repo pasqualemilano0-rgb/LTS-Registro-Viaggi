@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="it"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1,viewport-fit=cover">
+<meta name="referrer" content="no-referrer"><meta name="robots" content="noindex,nofollow,noarchive">
+<meta http-equiv="Cache-Control" content="no-store">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src https://otrqynkscpbeyuvdlgpg.supabase.co; form-action 'self'; base-uri 'none'; object-src 'none'; frame-ancestors 'none'">
+<meta name="theme-color" content="#006f89">
+<link rel="icon" href="../assets/icon-192.png">
+<link rel="stylesheet" href="./documents.css">
+<script type="module" src="./driver-documents.mjs"></script>
+<title>LTS · I miei documenti</title></head>
+<body>
+<header class="lts-header"><a class="lts-brand" href="../"><img src="../assets/lts-logo.png" alt="LTS" width="52" height="46"><span>I miei documenti<small>Area personale riservata</small></span></a><a class="back" href="../">Il tuo profilo</a></header>
+<main class="shell">
+<div id="notice" class="notice" role="status" aria-live="polite" hidden></div>
+<section id="locked" class="login-card" hidden><h1>Accesso richiesto</h1><p>Accedi al tuo account autista LTS per consultare i documenti. I PDF non sono salvati dall’app, ma i file scaricati rimangono sul tuo dispositivo.</p><a href="../" class="primary link-button">Accedi a LTS</a></section>
+<section id="device-gate" class="login-card" aria-labelledby="device-title" hidden>
+  <p class="eyebrow">ACCESSO PROTETTO</p>
+  <h1 id="device-title">Sblocca i tuoi documenti</h1>
+  <p id="device-description">La busta paga, la CU e gli altri documenti sono accessibili soltanto dopo la verifica del dispositivo.</p>
+  <div id="unlock-panel">
+    <button id="unlock-device" type="button" class="primary">Sblocca con Face ID, impronta o PIN</button>
+    <p class="hint">Sarà il telefono a proporti il metodo disponibile. Lo sblocco scade dopo 3 minuti o quando esci dall'app. I PDF già scaricati non vengono protetti da questo blocco.</p>
+    <button id="setup-another-device" type="button" class="text-button">Hai cambiato telefono? Registra una nuova passkey</button>
+  </div>
+  <form id="device-setup-form" class="fields" hidden>
+    <p>Prima attivazione: conferma la tua password LTS e registra una passkey con lo sblocco schermo del telefono.</p>
+    <label for="device-password">Password account LTS
+      <input id="device-password" type="password" autocomplete="current-password" minlength="12" maxlength="128" required>
+    </label>
+    <button id="device-register" type="submit" class="primary">Attiva sblocco dispositivo</button>
+    <p class="hint">Puoi registrare nuovamente una passkey su un nuovo telefono dopo esserti autenticato con l'account LTS e la password.</p>
+  </form>
+  <a class="text-button" href="../">Torna al tuo profilo</a>
+</section>
+<section id="content" hidden>
+ <div class="heading"><div><p class="eyebrow">LTS · IL TUO PROFILO</p><h1>I MIEI DOCUMENTI</h1><p>Solo i documenti pubblicati per il tuo account.</p></div><button type="button" id="refresh" class="outline">Aggiorna</button></div>
+ <nav class="category-nav" aria-label="Categorie documenti">
+  <button type="button" class="category selected" data-category="cedolino" aria-pressed="true">CEDOLINO</button>
+  <button type="button" class="category" data-category="cu" aria-pressed="false">CU</button>
+  <button type="button" class="category" data-category="altri" aria-pressed="false">ALTRI DOCUMENTI</button>
+ </nav>
+ <div class="filters"><label>Anno<select id="year"><option value="">Tutti gli anni</option></select></label></div>
+ <div class="panel"><h2 id="category-title">CEDOLINO</h2><p class="hint">La conferma «Ho ricevuto il cedolino» è facoltativa. Non è una firma e non conferma né il pagamento dello stipendio né la correttezza degli importi.</p><div id="documents" class="document-list" aria-live="polite"></div>
+ <button type="button" id="more" class="outline" hidden>Carica altri</button></div>
+</section></main>
+</body></html>
