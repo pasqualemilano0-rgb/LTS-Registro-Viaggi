@@ -46,7 +46,9 @@ test('name-first ranking, city-preserving duplicates and result cap',()=>{
 });
 test('input suggestions call dedicated matcher; customer directory still uses full-field search',()=>{
  const app=readFileSync(new URL('../app.mjs',import.meta.url),'utf8');
- assert.match(app,/choices=filterTripCustomerChoices\(all,query,12\)/);
+ assert.match(app,/choices=filterTripCustomerChoices\(customerChoicesCache[.]get\(\),query,12\)/);
+ assert.match(app,/createLazyCustomerChoices\(\(\)=>combinedTripCustomerChoices\(\{/);
+ assert.match(app,/customerChoicesCache[.]invalidate\(\)/);
  assert.doesNotMatch(app,/choices=filterSharedCustomers\(all,query\)/);
  assert.match(app,/const found=filterSharedCustomers\(directory.shared,companyCustomerSearch\)/);
 });

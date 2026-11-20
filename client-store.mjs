@@ -3,6 +3,7 @@ import { mergeStates, unionStates, resolveMergeStates } from '/LTS-Registro-Viag
 import runtime from '/LTS-Registro-Viaggi/runtime-config.mjs';
 import * as account from '/LTS-Registro-Viaggi/account-access.mjs';
 import * as realtime from '/LTS-Registro-Viaggi/realtime-client.mjs';
+import {createPassiveWakeGate} from '/LTS-Registro-Viaggi/shared/ui-performance.mjs';
 
 const DB_NAME = 'lts-registro-iphone-v1';
 const listeners = new Set();
@@ -796,14 +797,21 @@ function refreshSoon() {
   refreshing = true;
   syncPending().catch(() => {}).finally(() => { refreshing = false; });
 }
+// Focus, pageshow and visibilitychange can fire in the same Android wake.
+// Coalesce those passive sync attempts only; online/other-tab changes stay immediate.
+const allowPassiveWakeRefresh=createPassiveWakeGate({gapMs:1500});
+function passiveRefreshSoon(){
+ if(!active||blocked||refreshing||document.hidden||navigator.onLine===false)return;
+ if(allowPassiveWakeRefresh())refreshSoon();
+}
 channel?.addEventListener('message', event => {
   if (event.data?.userId === active?.user.id) refreshSoon();
 });
 window.addEventListener('storage', event => { if (event.key === CHANGE_KEY) refreshSoon(); });
 window.addEventListener('online', refreshSoon);
-window.addEventListener('focus', refreshSoon);
-window.addEventListener('pageshow', refreshSoon);
-document.addEventListener('visibilitychange', () => { if (!document.hidden) refreshSoon(); });
+window.addEventListener('focus', passiveRefreshSoon);
+window.addEventListener('pageshow', passiveRefreshSoon);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) passiveRefreshSoon(); });
 // Near-live while a verified account is open and online; background tabs do not poll.
 setInterval(pollArchive, 2000);
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('/LTS-Registro-Viaggi/sw.js', { scope: "/LTS-Registro-Viaggi/" }).catch(() => {});
