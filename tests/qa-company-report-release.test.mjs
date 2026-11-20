@@ -14,7 +14,7 @@ test('dashboard accessibile solo dal pannello admin, CSP e versioni coerenti',()
    'pro-city','pro-container','pro-compare-driver','pro-alerts','pro-alert-count',
    'pro-export-pdf','pro-export-xlsx','pro-records'])
    assert.match(html,new RegExp('id="'+id+'"'));
- assert.match(html,/admin\.mjs\?v=20261111-control-center-v1/);
+ assert.match(html,/admin\.mjs\?v=20261116-localita-edit-v1/);
  assert.match(html,/admin\.css\?v=20261109-alpha-v1/);
  assert.match(js,/account-access\.mjs\?v=20261107-realtime-v1/);
  assert.match(js,/setupReport\(account\)/);
@@ -26,7 +26,7 @@ test('dashboard accessibile solo dal pannello admin, CSP e versioni coerenti',()
  assert.match(report,/function driverProfile\(/);
  assert.match(report,/function driverDirectory\(/);
  assert.match(report,/function renderAmountChart\(/);
- assert.match(js,/report\.mjs\?v=20261111-control-center-v1/);
+ assert.match(js,/report\.mjs\?v=20261116-localita-edit-v1/);
  assert.match(report,/setupInsights\(account\)/);
  const advanced=read('amministratore/report-insights.mjs');
  const exportsModule=read('amministratore/report-export.mjs');
@@ -153,6 +153,28 @@ test('panoramica clienti apre la tariffa della sede Google Maps senza duplicare 
  assert.doesNotMatch(editor,/saveSharedMapsCustomer|state[.]customers|localStorage|innerHTML/);
 });
 
+test('Maps review requires a manually validated Comune when Google omits its city',()=>{
+ const page=read('amministratore/index.html');
+ const maps=read('amministratore/company-maps-registration.mjs');
+ const css=read('amministratore/company-rates.css');
+ assert.match(page,/<input id="company-maps-city"[^>]*required>/);
+ assert.match(page,/company-maps-city" name="city"/);
+ assert.match(maps,/city[.]value=selected[.]city/);
+ assert.match(maps,/approvedLocalityFromSharedMaps\(siteResult,proposal\)/);
+ assert.match(maps,/const proposal=reviewedSite\(\)/);
+ assert.match(maps,/save[.]disabled=true/);
+ assert.match(maps,/city[.]addEventListener\('input'/);
+ assert.match(maps,/city:locality/);
+ assert.match(maps,/matchingSite\(siteRows,proposal\)/);
+ assert.match(maps,/matchingRate\(rateRows,existing\|\|proposal\)/);
+ assert.match(maps,/if\(existing&&normalize\(existing[.]city\)!==proposal[.]city\)/);
+ assert.match(maps,/city[.]disabled=true/);
+ assert.match(maps,/city[.]disabled=false/);
+ assert.match(css,/#company-maps-city:focus-visible/);
+ assert.doesNotMatch(maps,/city[.]textContent=proposal[.]city/);
+ assert.doesNotMatch(maps,/saveSharedMapsCustomer\(/);
+});
+
 test('admin can register Google Maps sites with a company tariff and edit audited per-driver extras',()=>{
  const page=read('amministratore/index.html');
  const report=read('amministratore/report.mjs');
@@ -173,7 +195,7 @@ test('admin can register Google Maps sites with a company tariff and edit audite
  assert.match(maps,/await saveSharedPricedCustomer\(\{/);
  assert.match(maps,/expectedRevision:rate[?][.]revision[?][?]0/);
  assert.doesNotMatch(maps,/await account[.]companyTariffs\('save'/);
- assert.match(maps,/matchingSite\(siteResult,proposal\)/);
+ assert.match(maps,/matchingSite\(siteRows,proposal\)/);
  assert.match(extras,/account[.]companyTariffs\('list'/);
  assert.match(extras,/account[.]companyTariffs\('extra-save'/);
  assert.match(extras,/expectedRevision:shown[.]revision/);

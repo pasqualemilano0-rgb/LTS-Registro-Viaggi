@@ -1,0 +1,16 @@
+/* Single read-only diagnostic surface inside the authenticated Control Center. */
+.lts-diag{padding:18px;background:#f6fbfd;border:1px solid #d5e7ec;border-radius:18px;display:grid;gap:12px}
+.lts-diag-head{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap}
+.lts-diag-head h2{font-size:19px;margin:3px 0;color:#113f50}
+.lts-diag-eyebrow{font-size:10px;color:#276b80;font-weight:800;letter-spacing:.12em;margin:0}
+.lts-diag-intro,.lts-diag-status{font-size:13px;color:#526b76;margin:0;line-height:1.5}
+.lts-diag-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.lts-diag-item{display:grid;gap:5px;padding:13px;background:#fff;border:1px solid #e0eaed;border-radius:12px;min-width:0}
+.lts-diag-item h3{font-size:12px;color:#476374;margin:0}
+.lts-diag-value{font-size:15px;color:#455969;overflow-wrap:anywhere}
+.lts-diag-ok{color:#147459}
+.lts-diag-warning{color:#9c6411}
+.lts-diag-unknown{color:#657582}
+.lts-diag-detail{font-size:12px;color:#506977;line-height:1.45;margin:0;overflow-wrap:anywhere}
+.lts-diag-time{font-size:11px;color:#607583}
+@media(max-width:680px){.lts-diag{padding:14px}.lts-diag-grid{grid-template-columns:1fr}}
