@@ -110,6 +110,51 @@ async function save(db,input,adminId){
  if(result.error||!result.data)throw {status:503};
  return projection(result.data);
 }
+// The read-only driver catalog includes only active pairs. Admins can edit disabled pairs.
+const pairProjection=row=>({id:row.id,client:row.client,city:row.city,
+ secondClient:row.second_client,secondCity:row.second_city,
+ cents:row.cents,enabled:row.enabled,revision:row.revision,updatedAt:row.updated_at});
+async function listMultiStop(db,admin){
+ const {data,error}=await db.from('lts_company_multi_stop_fares')
+  .select('id,client,city,second_client,second_city,cents,enabled,revision,updated_at')
+  .order('client').order('city').limit(501);
+ if(error||!Array.isArray(data)||data.length>500)throw {status:503};
+ return data.filter(row=>admin||row.enabled).map(pairProjection);
+}
+async function saveMultiStop(db,input,adminId){
+ if(input.action!=='multi-save'||!Number.isSafeInteger(input.cents)||
+  input.cents<0||input.cents>99999999||
+  (input.enabled!==undefined&&typeof input.enabled!=='boolean'))
+  throw {status:422,error:'Importo o autorizzazione non validi.'};
+ const client=normalize(input.client,'Primo cliente',2);
+ const city=normalize(input.city,'Prima località');
+ const secondClient=normalize(input.secondClient,'Secondo cliente',2);
+ const secondCity=normalize(input.secondCity,'Seconda località');
+ if(client===secondClient&&city===secondCity)
+  throw {status:422,error:'Le due sedi devono essere diverse.'};
+ const data={cents:input.cents,enabled:input.enabled!==false,
+  updated_at:new Date().toISOString(),updated_by:adminId};
+ const existing=input.id!==undefined;
+ if(existing&&(!UUID.test(input.id)||!Number.isSafeInteger(input.expectedRevision)||input.expectedRevision<1))
+  throw {status:422,error:'Revisione tariffa multipla non valida.'};
+ let result;
+ if(existing){
+  result=await db.from('lts_company_multi_stop_fares')
+   .update({...data,revision:input.expectedRevision+1})
+   .eq('id',input.id).eq('client',client).eq('city',city)
+   .eq('second_client',secondClient).eq('second_city',secondCity)
+   .eq('revision',input.expectedRevision)
+   .select('id,client,city,second_client,second_city,cents,enabled,revision,updated_at').maybeSingle();
+  if(!result.error&&!result.data)throw {status:409,error:'Tariffa modificata da un altro amministratore. Aggiorna.'};
+ }else{
+  result=await db.from('lts_company_multi_stop_fares')
+   .insert({client,city,second_client:secondClient,second_city:secondCity,...data})
+   .select('id,client,city,second_client,second_city,cents,enabled,revision,updated_at').single();
+ }
+ if(result.error?.code==='23505')throw {status:409,error:'La coppia ordinata ha già una tariffa.'};
+ if(result.error||!result.data)throw {status:503};
+ return pairProjection(result.data);
+}
 export async function handleCompanyTariffs(req,{getClients}={}){
  const origin=req.headers.get('origin');
  if(origin!==ORIGIN)return send({error:'Origine non autorizzata.'},403,origin);
@@ -130,12 +175,18 @@ export async function handleCompanyTariffs(req,{getClients}={}){
   const account=await authorize(req,clients);
   const input=await body(req);
   if(input.action==='list'){
-   const [tariffs,extraRates]=await Promise.all([list(clients.admin),listExtras(clients.admin)]);
-   return send({tariffs,extraRates},200,origin);
+   const [tariffs,extraRates,multiStopRates]=await Promise.all([
+    list(clients.admin),listExtras(clients.admin),
+    listMultiStop(clients.admin,account.role==='admin')]);
+   return send({tariffs,extraRates,multiStopRates},200,origin);
   }
   if(input.action==='extra-save'&&account.role==='admin'){
    const extra=await saveExtra(clients.admin,input,account.id);
    return send({extra},200,origin);
+  }
+  if(input.action==='multi-save'&&account.role==='admin'){
+   const multiStopRate=await saveMultiStop(clients.admin,input,account.id);
+   return send({multiStopRate},200,origin);
   }
   if(input.action==='save'&&account.role==='admin'){
    const tariff=await save(clients.admin,input,account.id);
