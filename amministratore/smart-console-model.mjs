@@ -61,7 +61,7 @@ export function smartConsoleAlerts({drivers=[],report=null,customerStats=null}={
  return alerts;
 }
 
-/** Non-AI, zero-network command shortcuts from natural Italian phrases.
+/** Regole locali deterministiche per scorciatoie operative in italiano, senza accesso alla rete.
  * Results are only UI suggestions, never mutations or privileged actions.
  */
 export function smartCommandIntent(value=''){
