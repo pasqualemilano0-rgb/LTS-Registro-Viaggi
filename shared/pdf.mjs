@@ -1,3 +1,4 @@
+import {monthlyKilometres,kilometresTotal,weekLabel} from './kilometres.mjs';
 import { monthlyTrips, SERVICES, formatMonth } from './domain.mjs';
 
 const SERVICE_LABELS = Object.fromEntries(SERVICES.map(service => [service.key, service.label]));
@@ -50,7 +51,13 @@ function fitFont(doc, rows, widths, availableHeight) {
 }
 
 /** No currency or tariff snapshots are sent to jsPDF, including PDF metadata. */
-export function generateMonthlyPdf({ state, month, logoDataUrl, jsPDF = globalThis.jspdf?.jsPDF }) {
+export function generateMonthlyPdf({ state, month, logoDataUrl, kilometres = null, accountId = null, jsPDF = globalThis.jspdf?.jsPDF }) {
+  // The original register layout and its row heights are never modified.
+  const kmAuthorized = kilometres?.authorized===true;
+  const driverId=typeof accountId==='string'&&accountId.startsWith('account:')?accountId.slice(8):null;
+  if(kmAuthorized&&(!driverId||kilometres.driverId!==driverId||kilometres.month!==month))
+    throw new Error('Identità o mese CHILOMETRI non validi. Aggiorna il registro.');
+  const kmRows=kmAuthorized?monthlyKilometres(kilometres.entries,month):[];
   const rows = reportRows(state, month);
   if (!rows.length) throw new Error('Non ci sono viaggi nel mese selezionato.');
   if (rows.length > 5000) throw new Error('Il mese contiene oltre 5.000 viaggi: genera il resoconto da un computer.');
@@ -172,6 +179,25 @@ export function generateMonthlyPdf({ state, month, logoDataUrl, jsPDF = globalTh
         doc.text(doc.splitTextToSize(`Nota: ${card.note}`, 90), x, y);
       },
       willDrawPage: drawHeader,
+    });
+  }
+  if(kmAuthorized) {
+    // A separate summary follows the complete trip table and administration notes.
+    // A new page is allowed; never compress the published register typography.
+    const startY=(doc.lastAutoTable?.finalY??tableTop)+7;
+    const weeklyRows=kmRows.map(row=>[weekLabel(row.weekStart),row.km.toLocaleString('it-IT')+' km']);
+    weeklyRows.push(['TOTALE MESE',kilometresTotal(kmRows,month).toLocaleString('it-IT')+' km']);
+    doc.autoTable({
+      startY,
+      margin:{top:tableTop+8,right:11,bottom:15,left:11},
+      head:[['CHILOMETRI · SETTIMANE','DISTANZA']],
+      body:weeklyRows,
+      theme:'plain',showHead:'firstPage',rowPageBreak:'avoid',
+      styles:{font:'helvetica',fontSize:8,cellPadding:1.5,textColor:'#203942',minCellHeight:5.5},
+      headStyles:{fillColor:'#e4f4f9',textColor:'#086b84',fontStyle:'bold',fontSize:8},
+      alternateRowStyles:{fillColor:'#f3f6f8'},
+      columnStyles:{0:{cellWidth:115},1:{cellWidth:73}},
+      willDrawPage:drawHeader
     });
   }
   const pages = doc.getNumberOfPages();

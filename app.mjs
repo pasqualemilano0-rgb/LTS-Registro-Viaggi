@@ -1,3 +1,5 @@
+import {mountKilometres} from '/LTS-Registro-Viaggi/kilometres-ui.mjs';
+import {kilometresForPdf} from '/LTS-Registro-Viaggi/kilometres-client.mjs';
 import * as D from '/LTS-Registro-Viaggi/shared/domain.mjs';
 import { quickTripFromRoute } from '/LTS-Registro-Viaggi/shared/quick-trip.mjs';
 import {REGISTER_PAGE_SIZE,registerTripCounts,filterRegisterTrips,paginateRegisterTrips,stepRegisterMonth} from '/LTS-Registro-Viaggi/shared/register-explorer.mjs';
@@ -934,7 +936,10 @@ function renderRegister(main){
   pdf.disabled=true;
   try{
    const module=await import('/LTS-Registro-Viaggi/shared/pdf.mjs');const logo=await module.loadPdfLogo();
-   pdfReport=module.generateMonthlyPdf({state,month,logoDataUrl:logo});
+   const owner=accountAccess.getAccountId();
+   const kilometres=await kilometresForPdf(month);
+   if(owner!==accountAccess.getAccountId())throw new Error('Account cambiato. Riapri il Registro.');
+   pdfReport=module.generateMonthlyPdf({state,month,logoDataUrl:logo,kilometres,accountId:owner});
    render();toast('PDF del mese pronto: aprilo o condividilo.');
   }catch(err){toast(err.message||'Impossibile creare il PDF.',true);pdf.disabled=false;}
  }}},icon('pdf'),'PDF del mese');
@@ -1016,6 +1021,8 @@ function renderRegister(main){
     ' · '+page.visible.length+' di '+page.total;
  }
  updateRegisterList();
+ // Weekly kilometres belong below the register, never inside individual trips.
+ mountKilometres(main,month,{onChange:()=>{pdfReport=null;}});
  refreshView=()=>{if(tab==='register')render();};
 
 }

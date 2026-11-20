@@ -55,6 +55,7 @@ try{
    let registerLimit=REGISTER_PAGE_SIZE,lastDeletedTrip=null,activationWelcome=false,pdfReport=null,refreshView=null;
    let user={id:'account:synthetic'},busy=false,editingId=null,editingBaseline=null,draftBaselineDate='2026-11-09';
    let draft={date:'2026-11-09',container:'',client:'',city:'',secondClient:'',secondCity:'',services:[],second:false,note:'',noteOpen:false,servicesOpen:false};
+   const mountKilometres=()=>{};
    const store={usingAccount:()=>true,getSyncInfo:()=>({pending:false})};
    const today=()=> '2026-11-09';
    const newDraft=()=>({date:today(),container:'',client:'',city:'',secondClient:'',secondCity:'',services:[],second:false,note:'',noteOpen:false,servicesOpen:false});
