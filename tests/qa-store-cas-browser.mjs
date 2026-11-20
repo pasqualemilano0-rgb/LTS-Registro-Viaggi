@@ -5,7 +5,8 @@ import {readFile} from 'node:fs/promises';
 import {resolve,sep,extname} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {createRequire} from 'node:module';
-import {emptyState,validateState} from '../shared/domain.mjs';
+import {emptyState,validateState,createTrip} from '../shared/domain.mjs';
+import {generateMonthlyPdf} from '../shared/pdf.mjs';
 const root=resolve(fileURLToPath(new URL('../',import.meta.url)));
 const runner=process.env.LTS_BROWSER_PLAYWRIGHT||'/tmp/lts-browser-test';
 const {chromium,webkit}=createRequire(import.meta.url)(runner+'/node_modules/playwright');
@@ -210,5 +211,79 @@ try{
   assert.deepEqual(await other.evaluate(()=>persisted()),disk,'Other owner cannot overwrite pending old account');
   await t.context.close();
  }
- console.log('PASS '+engine+' real IndexedDB CAS: offline tabs, suspended GET/POST, recovery merge/export/delete, abort, auth/MFA and logout isolation');
+ // Integrated administrative-note round trip: real browser IndexedDB, simulated
+ // account-authenticated HTTP, offline queue, online retry and the actual PDF generator.
+ // This is NOT a credentialed live Supabase QA request.
+ {
+  const t=await setup(),page=await t.open();
+  const row=createTrip({id:'qa-admin-note-001',date:'2026-11-13',
+   container:'MSCU1234567',client:'ALFA',city:'SALERNO',services:[],
+   note:'NOTA PRIVATA',adminNote:'ATTESA 2 ORE'},initial);
+  const created=await page.evaluate(row=>outcome(()=>store.saveState({
+   ...window.snapshot.state,trips:[row]})),row);
+  assert.equal(created.ok,true,'Save with note must be accepted');
+  assert.equal(created.value.pending,false,'Successful online save must not be reported as pending');
+  assert.equal(t.archives.get(ID).state.trips[0].adminNote,'ATTESA 2 ORE');
+  let loaded=await page.evaluate(()=>store.loadState());
+  assert.equal(loaded.state.trips[0].adminNote,'ATTESA 2 ORE');
+  assert.equal(loaded.state.trips[0].note,'NOTA PRIVATA');
+
+  // An offline edit must persist locally without pretending it reached the server.
+  await t.context.setOffline(true);
+  const queued=await page.evaluate(async()=>{
+   const current=await store.loadState(),state=structuredClone(current.state);
+   state.trips[0].adminNote='ATTESA 3 ORE';
+   return outcome(()=>store.saveState(state));
+  });
+  assert.equal(queued.ok,true);
+  assert.equal(queued.value.pending,true);
+  assert.equal(t.archives.get(ID).state.trips[0].adminNote,'ATTESA 2 ORE',
+   'Offline edits must not mutate the simulated server');
+  assert.equal((await page.evaluate(()=>persisted())).state.trips[0].adminNote,'ATTESA 3 ORE');
+  await t.context.setOffline(false);
+  const synced=await page.evaluate(()=>outcome(()=>store.syncPending()));
+  assert.equal(synced.ok,true);
+  assert.equal(synced.value.pending,false);
+  assert.equal(t.archives.get(ID).state.trips[0].adminNote,'ATTESA 3 ORE');
+  loaded=await page.evaluate(()=>store.loadState());
+  assert.equal(loaded.state.trips[0].adminNote,'ATTESA 3 ORE');
+  assert.equal(loaded.state.trips[0].note,'NOTA PRIVATA');
+
+  // PDF must include the administrative note only in its dedicated section,
+  // not the private driver note or the main trip rows.
+  const calls=[],drawn=[];
+  class FakePdf {
+   constructor(){this.pages=1;this.lastAutoTable=null;}
+   setProperties(){}setFont(){}setFontSize(){}setTextColor(){}setDrawColor(){}
+   setLineWidth(){}line(){}addImage(){}setPage(){}
+   splitTextToSize(value){return [String(value)];}
+   getImageProperties(){return {width:100,height:40};}
+   getNumberOfPages(){return this.pages;}
+   text(value){drawn.push(String(value));}
+   output(){return new Blob(['synthetic pdf']);}
+   autoTable(options){calls.push(options);this.lastAutoTable={finalY:options.startY+25};}
+  }
+  const pdf=generateMonthlyPdf({state:loaded.state,month:'2026-11',
+   logoDataUrl:'data:image/png;base64,AA==',jsPDF:FakePdf});
+  assert.equal(pdf.tripCount,1);
+  assert.equal(calls.length,2);
+  assert.match(calls[1].head[0][0],/NOTE PER L'AMMINISTRAZIONE/);
+  assert.equal(calls[0].body.length,1);
+  assert(!JSON.stringify(calls[0]).includes('ATTESA 3 ORE'));
+  assert(!JSON.stringify(calls).includes('NOTA PRIVATA'));
+  calls[1].didDrawCell({row:{index:0},column:{index:0},section:'body',cell:{x:11,y:70}});
+  assert(drawn.some(value=>value.includes('Nota: ATTESA 3 ORE')));
+
+  // Explicit empty administrative note is an allowed change, not data loss.
+  const cleared=await page.evaluate(async()=>{
+   const current=await store.loadState(),state=structuredClone(current.state);
+   state.trips[0].adminNote='';
+   return outcome(()=>store.saveState(state));
+  });
+  assert.equal(cleared.ok,true);
+  assert.equal((await page.evaluate(()=>store.loadState())).state.trips[0].adminNote,'');
+  assert.equal(t.archives.get(ID).state.trips[0].note,'NOTA PRIVATA');
+  await t.context.close();
+ }
+ console.log('PASS '+engine+' real IndexedDB CAS: offline tabs, suspended GET/POST, recovery merge/export/delete, admin-note save/read/offline-sync/PDF, abort, auth/MFA and logout isolation');
 }finally{if(browser)await browser.close();await new Promise(ok=>server.close(ok));}

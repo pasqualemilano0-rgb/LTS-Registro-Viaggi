@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {tripDraftHasWork,possibleTripDuplicate,restoreTripEditorSnapshot,TRIP_DRAFT_VERSION} from '../shared/trip-editor-safety.mjs';
+import {tripDraftHasWork,possibleTripDuplicate,restoreTripEditorSnapshot,TRIP_DRAFT_VERSION,assertTripAdminNoteRetained} from '../shared/trip-editor-safety.mjs';
 
 const read=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
 const base={date:'2026-11-09',container:'',client:'',city:'',secondClient:'',secondCity:'',
@@ -74,4 +74,22 @@ test('driver wiring: account-scoped IndexedDB scratchpad, visible sync and guard
  assert.match(app,/Viaggio salvato sul dispositivo/);
  assert.match(worker,/shared\/trip-editor-safety[.]mjs/);
  assert.doesNotMatch(app,/localStorage[.]setItem\('trip-editor-v1:/);
+});
+
+test('admin note save check blocks silent loss, concurrent deletion and unexpected alteration',()=>{
+ const trip={id:'trip-1',adminNote:'ATTESA 2 ORE'};
+ assert.equal(assertTripAdminNoteRetained([trip],trip),trip);
+ assert.equal(assertTripAdminNoteRetained([{id:'trip-1'}],{id:'trip-1',adminNote:''}).id,'trip-1');
+ assert.throws(()=>assertTripAdminNoteRetained([{id:'trip-1'}],trip),/nota per amministrazione/i);
+ assert.throws(()=>assertTripAdminNoteRetained([],trip),/nota per amministrazione/i);
+ assert.throws(()=>assertTripAdminNoteRetained([{id:'trip-1',adminNote:'MODIFICATA'}],trip),/nota per amministrazione/i);
+});
+test('driver keeps scratchpad on note mismatch and does not expose admin note in the trip card',()=>{
+ const app=read('app.mjs');
+ assert.match(app,/try\{assertTripAdminNoteRetained\(state\.trips,trip\);\}/);
+ assert.match(app,/catch\(noteError\)\{keepEditorScratchpad\(\);throw noteError;\}/);
+ assert.match(app,/noteOpen:focusNote\|\|Boolean\(trip\.note\|\|trip\.adminNote\)/);
+ assert.match(app,/Nota amministrazione:/);
+ assert.match(app,/Presente nel PDF mensile/);
+ assert.doesNotMatch(app,/trip-note-text[^\n]*title:trip\.adminNote/);
 });

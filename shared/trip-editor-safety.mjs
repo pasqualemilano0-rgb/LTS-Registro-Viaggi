@@ -45,3 +45,12 @@ export function restoreTripEditorSnapshot(snapshot,trips){
   editingBaseline:existing&&typeof snapshot.editingBaseline==='string'?snapshot.editingBaseline:null,
   removedEdit:Boolean(editingId&&!existing)};
 }
+
+/** Confirm a persisted/returned trip still contains its intended admin note.
+ * This does not claim an offline pending state is synced online. */
+export function assertTripAdminNoteRetained(savedTrips,attempted){
+ const saved=Array.isArray(savedTrips)&&savedTrips.find(item=>item?.id===attempted?.id);
+ if(!saved||(saved.adminNote??'')!==(attempted?.adminNote??''))
+  throw new Error('La nota per amministrazione non è stata conservata nel registro restituito dal salvataggio. La bozza resta disponibile: verifica la sincronizzazione prima di generare il PDF.');
+ return saved;
+}
