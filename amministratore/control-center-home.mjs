@@ -35,6 +35,8 @@ export function setupControlCenter({account,authorized=()=>false,getRoster=()=>n
  const nodes={},signatures=new Map(),requests=new Map();
  let owner=null,insights=null,insightQuery=null,insightKey=null,desiredKey=null,requestSeq=0,queue=false,selectedTrendDay=29;
  let loadedReportStamp=null,lastFetchAt=0,error='',loading=false,preferences=normalizeActionPreferences();
+ // Browser connectivity events are authoritative; avoid UA-specific navigator.onLine overrides.
+ let networkOnline=navigator.onLine!==false,reconnectPending=false;
  let model=deriveControlCenter(),mounted=false,changingFilters=false;
  const originalToday=()=>romeDate()||new Date().toISOString().slice(0,10);
  const ownerId=()=>typeof account?.getAccountId==='function'?account.getAccountId():null;
@@ -136,14 +138,16 @@ export function setupControlCenter({account,authorized=()=>false,getRoster=()=>n
  function renderStatus(){
   nodes.error.textContent=error;nodes.error.hidden=!error;host.setAttribute('aria-busy',String(loading));
   const monthlyStale=getReport()?.stale===true;
+  const offline=!networkOnline;
   const seen=stamp(model.insightsReportedAt||model.reportedAt);
-  nodes.sync.textContent=loading?'Aggiornamento discreto in corso…':error?'Ultimi dati confermati conservati':monthlyStale?'Riepilogo mensile da aggiornare':seen?'Dati verificati · '+seen:'Dati autorizzati in caricamento';
-  nodes.sync.dataset.state=loading?'loading':error||monthlyStale?'stale':seen?'ready':'loading';
+  nodes.sync.textContent=offline?'Dispositivo offline · nessun aggiornamento in corso':loading?'Aggiornamento discreto in corso…':error?'Ultimi dati confermati conservati':monthlyStale?'Riepilogo mensile da aggiornare':seen?'Dati verificati · '+seen:'Dati autorizzati in caricamento';
+  nodes.sync.dataset.state=offline?'stale':loading?'loading':error||monthlyStale?'stale':seen?'ready':'loading';
   const prior=showingPreviousScope(),shown=shownQuery();
   const range='dal '+dateLabel(shown.fromDate)+' al '+dateLabel(shown.toDate);
   const filterNames=[shown.driverId?model.options.drivers.find(d=>d.id===shown.driverId)?.name||'Autista selezionato':'Tutti gli autisti',shown.client||'Tutti i clienti',shown.city||'Tutte le località'].join(' · ');
   nodes.status.textContent=prior?'I nuovi filtri non sono ancora confermati. Sono mostrati gli ultimi dati verificati '+range+' · '+filterNames+'.':loading?'Aggiornamento delle analisi, senza interrompere la schermata.':model.scope.recordsComplete?'Analisi '+range+' · '+filterNames+'. Dati sincronizzati; gli elementi non ancora inviati dai telefoni non sono disponibili qui.':'Le schede mostrano soltanto i dati già verificati. Le analisi diventano disponibili al termine del caricamento.';
-  nodes.status.classList.toggle('cc-warning',model.partial||prior||monthlyStale);
+  nodes.status.classList.toggle('cc-warning',offline||model.partial||prior||monthlyStale);
+  if(offline)nodes.status.textContent+=' Connessione assente: i dati visualizzati potrebbero non essere aggiornati.';
   if(monthlyStale)nodes.status.textContent+=' Riepilogo mensile: mostrato l’ultimo dato disponibile; l’aggiornamento non è riuscito.';
   if(model.partial)nodes.status.textContent+=' Alcuni importi o archivi sono incompleti: i totali possono essere parziali.';
  }
@@ -231,7 +235,8 @@ export function setupControlCenter({account,authorized=()=>false,getRoster=()=>n
  function shownQuery(){return insightQuery?{...insightQuery}:query();}
  function sameQuery(a,b){return safeSignature(a)===safeSignature(b);}
  async function loadInsights({force=false}={}){
-  if(!canAct()||typeof account?.companyInsights!=='function')return false;
+  // Retain last authorized snapshot offline, without attempting API requests.
+  if(!networkOnline||!canAct()||typeof account?.companyInsights!=='function')return false;
   let value;try{value=query();validateQuery(value);}catch(err){error=err.message;renderStatus();return false;}
   const expectedOwner=owner,key=String(owner)+':'+JSON.stringify(value);desiredKey=key;
   if(!force&&key===insightKey&&insights)return true;
@@ -263,10 +268,14 @@ export function setupControlCenter({account,authorized=()=>false,getRoster=()=>n
   renderSnapshots();
   const report=getReport(),version=report?safeSignature([report.month,report.driverId,report.summary,report.chart,report.drivers,report.trips,report.incompleteArchives]):null;
   const changed=version!==loadedReportStamp;loadedReportStamp=version;
+  // Connectivity may resume in the background; refresh once when Home becomes active.
+  const reconnectNow=networkOnline&&reconnectPending;
+  if(reconnectNow)reconnectPending=false;
   const reportAt=Date.parse(report?.reportedAt),insightsAt=Date.parse(insights?.reportedAt);
   const reportIsNewer=!insights||!Number.isFinite(reportAt)||!Number.isFinite(insightsAt)||reportAt>insightsAt;
   if(force){setReportFilters({month:query().month,driverId:query().driverId,refresh:true});void loadInsights({force:true});}
-  else if(forceInsights||!insights||changed&&reportIsNewer)void loadInsights({force:forceInsights||changed});
+  else if(reconnectNow||forceInsights||!insights||changed&&reportIsNewer)
+   void loadInsights({force:reconnectNow||forceInsights||changed});
  }
  function reset(){
   requestSeq++;requests.clear();owner=null;insights=null;insightQuery=null;insightKey=null;selectedTrendDay=29;desiredKey=null;loadedReportStamp=null;lastFetchAt=0;error='';loading=false;changingFilters=false;model=deriveControlCenter();preferences=normalizeActionPreferences();signatures.clear();
@@ -281,6 +290,19 @@ export function setupControlCenter({account,authorized=()=>false,getRoster=()=>n
  for(const name of ['lts-admin-data-refreshed','lts-admin-roster-refreshed','lts-admin-customers-refreshed','lts-admin-approvals-refreshed'])window.addEventListener(name,scheduledRefresh);
  new MutationObserver(scheduledRefresh).observe(dashboard,{attributes:true,attributeFilter:['data-view','data-home-section','hidden','inert']});
  document.addEventListener('visibilitychange',()=>{if(!document.hidden)scheduledRefresh();});
+ window.addEventListener('offline',()=>{
+  if(!networkOnline)return;
+  networkOnline=false;reconnectPending=true;
+  // Ignore late in-flight answers after a connection loss, preserving authorized cards.
+  requestSeq++;requests.clear();desiredKey=null;loading=false;
+  if(mounted&&permitted())renderStatus();
+ });
+ window.addEventListener('online',()=>{
+  if(networkOnline)return;
+  networkOnline=true;
+  if(mounted&&permitted()&&atHome())refresh({forceInsights:true});
+  // Otherwise keep reconnectPending until visibility or view returns to Home.
+ });
  mount();
  return {refresh,reset,openCustomers};
 }

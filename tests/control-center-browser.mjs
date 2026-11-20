@@ -178,6 +178,26 @@ try{
  await page.evaluate(()=>{const q=window.__ccQA;Object.assign(q.data,{owner:'account:33333333-3333-4333-8333-333333333333',defer:false,offline:false,report:q.report,roster:q.roster,customers:q.customers,approvals:q.approvals});q.home.reset();q.home.refresh();});
  await page.waitForFunction(()=>document.querySelector('#cc-kpi-anomalies .cc-kpi-value').textContent==='2');
  assert.equal(await page.locator('#cc-quick-actions [data-action="security"]').count(),0,'Own shortcut preferences return only for their owner');
+ // Connectivity status must be explicit without wiping the already authorized view.
+ const requestsBeforeOffline=await page.evaluate(()=>window.__ccQA.data.requests.length);
+ await page.evaluate(()=>window.dispatchEvent(new Event('offline')));
+ await page.waitForFunction(()=>document.querySelector('.cc-sync')?.textContent.includes('Dispositivo offline'));
+ assert.match(await page.locator('#control-center-home .cc-toolbar > .cc-status-note').textContent(),/Connessione assente/);
+ assert.equal(await page.locator('#cc-kpi-anomalies .cc-kpi-value').textContent(),'2');
+ // Refresh attempts while offline must not make requests or erase authorized data.
+ await page.evaluate(()=>window.__ccQA.home.refresh({forceInsights:true}));
+ await page.waitForTimeout(75);
+ assert.equal(await page.evaluate(()=>window.__ccQA.data.requests.length),requestsBeforeOffline);
+ await page.evaluate(()=>window.dispatchEvent(new Event('online')));
+ await page.waitForFunction(count=>window.__ccQA.data.requests.length===count+1,requestsBeforeOffline);
+ await page.waitForFunction(()=>document.querySelector('#control-center-home')?.getAttribute('aria-busy')==='false');
+ assert.equal(await page.locator('#cc-kpi-anomalies .cc-kpi-value').textContent(),'2');
+ assert.doesNotMatch(await page.locator('.cc-sync').textContent(),/Dispositivo offline/);
+ // Duplicate connectivity events must not launch duplicate backend refreshes.
+ await page.evaluate(()=>window.dispatchEvent(new Event('online')));
+ await page.waitForTimeout(75);
+ assert.equal(await page.evaluate(()=>window.__ccQA.data.requests.length),requestsBeforeOffline+1);
+ note('offline retains authorized data, blocks API calls, reconnects exactly once');
  const beforeDemotion=await page.evaluate(()=>window.__ccQA.data.calls.length);
  await page.evaluate(()=>{const q=window.__ccQA;q.data.role='driver';window.dispatchEvent(new Event('lts-admin-data-refreshed'));});
  await page.waitForFunction(()=>[...document.querySelectorAll('.cc-kpi-value')].every(node=>node.textContent==='—'));
