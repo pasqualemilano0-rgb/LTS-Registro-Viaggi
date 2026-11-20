@@ -1,4 +1,4 @@
-import {filterTripCustomerChoices} from '../shared/trip-customer-choices.mjs';
+import {filterTripCustomerChoices} from '../../shared/trip-customer-choices.mjs';
 export function normalizeContainer(value){return String(value??'').trim().toUpperCase().replace(/\s+/g,'');}
 export function validContainer(value){return /^[A-Z]{4}[0-9]{7}$/.test(normalizeContainer(value));}
 export function searchCustomers(choices,query){return filterTripCustomerChoices(choices,query,12);}

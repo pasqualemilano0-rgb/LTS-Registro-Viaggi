@@ -3,9 +3,9 @@
  * The general name-only customer proposal is NOT supported by that endpoint.
  * Backend verifies driver/admin permissions and admin MFA; frontend checks are UX only.
  */
-import {checkedGoogleMapsUrl} from '../shared/maps-client.mjs';
+import {checkedGoogleMapsUrl} from '../../shared/maps-client.mjs';
 
-export function prepareMapsApprovalFromAssistant({url,customer}={}){
+export function prepareMapsApprovalRequest({url,customer}={}){
  const mapsUrl=checkedGoogleMapsUrl(url).href;
  const name=String(customer?.name??'').trim();
  const city=String(customer?.city??'').trim();
@@ -27,6 +27,6 @@ export function mapsApprovalStatus(result){
  */
 export async function submitExistingMapsApproval(input,{saveSharedMapsCustomer}={}){
  if(typeof saveSharedMapsCustomer!=='function')throw new Error('Servizio richieste LTS non collegato.');
- const {url,customer}=prepareMapsApprovalFromAssistant(input);
+ const {url,customer}=prepareMapsApprovalRequest(input);
  return mapsApprovalStatus(await saveSharedMapsCustomer(url,customer));
 }
