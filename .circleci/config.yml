@@ -1,20 +1,16 @@
 version: 2.1
 # Full QA parity incl. read-only unauthenticated live HTTP auth smoke; no secrets, production writes, or deployments.
+# One CircleCI workflow per commit, retaining every independent security and regression job.
+# The expensive Chromium/WebKit job runs only on review branches and still applies
+# its changed-file classifier. Main Porti snapshot commits never start medium Docker.
 workflows:
-  essential-offline:
+  lts-unified-quality-gate:
     jobs:
       - webapp-regression
       - booking-auth-transport
       - snapshot-publisher-contract
       - cloudflare-publisher-contract
-  # Browser tests on all non-main branches, then cheap file classification.
-  # main receives Porti data commits every 30 minutes and never starts medium Docker.
-  # A docs/snapshot-only feature branch exits the browser job before npm install.
-  browser-release-parity:
-    jobs:
       - browser-report-parity:
-          # Review all non-main branches; the first step inspects changes.
-          # In particular, data(porti) commits on main never start medium Docker.
           filters:
             branches:
               ignore:

@@ -42,11 +42,22 @@ test('Read-only production smoke and synthetic evidence remain',()=>{
   assert.match(browser,/lts-browser-synthetic-evidence/);
 });
 test('Expensive browser job excludes main, filters review branches by changed files',()=>{
-  const workflow=circle.split('  browser-release-parity:\n')[1].split('\njobs:\n')[0];
+  const workflow=circle.split('  lts-unified-quality-gate:\n')[1].split('\njobs:\n')[0];
   assert.match(workflow,/browser-report-parity:/);
   assert.match(workflow,/branches:\n\s+ignore:\n\s+- main/);
   assert.doesNotMatch(workflow,/branches:\n\s+only:/);
   assert.match(browser,/node scripts\/ci-browser-change-gate\.mjs/);
   assert.match(browser,/circleci-agent step halt/);
   assert.ok(browser.indexOf('name: Skip non-app changes')<browser.indexOf('name: Install matching'));
+});
+
+test('Exactly one workflow retains all four offline gates and the browser safety gate',()=>{
+  const workflows=circle.split('workflows:\n')[1].split('\njobs:\n')[0];
+  const names=[...workflows.matchAll(/^  ([a-z][a-z0-9-]*):$/gm)].map(match=>match[1]);
+  assert.deepEqual(names,['lts-unified-quality-gate']);
+  for(const job of ['webapp-regression','booking-auth-transport',
+    'snapshot-publisher-contract','cloudflare-publisher-contract','browser-report-parity']){
+    assert.ok(workflows.includes('- '+job),'Missing '+job);
+  }
+  assert.match(workflows,/browser-report-parity:[\s\S]*branches:\n\s+ignore:\n\s+- main/);
 });

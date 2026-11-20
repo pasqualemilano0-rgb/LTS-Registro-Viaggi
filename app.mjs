@@ -557,10 +557,47 @@ function renderInsert(main){
  form.append(el('div',{class:'section-hero insert-hero'},el('h1',{},editingId?'Modifica viaggio':'Inserisci viaggio'),date.wrap));
  // The most frequent workflow is a return trip: keep the shortcut above the form.
  const latestRoute=D.sortTrips(state.trips)[0]||null;
- if(!editingId&&latestRoute)form.append(el('section',{class:'trip-quick-route','aria-label':'Inserimento rapido'},
-  el('div',{},el('strong',{},'Percorso abituale'),el('p',{},latestRoute.client+' · '+latestRoute.city)),
-  button('Ripeti ultimo percorso','secondary',()=>repeatRoute(latestRoute),'refresh',
-   {class:'secondary-button trip-quick-route-action'})));
+ if(!editingId&&latestRoute){
+  // Offer the most-used routes from the existing personal trip history.
+  // Keep one representative trip per route; never auto-select or save it.
+  const routeCounts=new Map();
+  for(const trip of D.sortTrips(state.trips).slice(0,100)){
+   const client=D.normalizeText(trip.client),city=D.normalizeText(trip.city);
+   if(!client||!city)continue;
+   const secondClient=D.normalizeText(trip.secondClient),secondCity=D.normalizeText(trip.secondCity);
+   const key=JSON.stringify([client,city,secondClient&&secondCity?secondClient:'',secondClient&&secondCity?secondCity:'']);
+   const item=routeCounts.get(key);
+   if(item)item.count++;
+   else routeCounts.set(key,{trip,count:1});
+  }
+  // The latest journey already has its own action: never suggest it twice.
+  const lastClient=D.normalizeText(latestRoute.client),lastCity=D.normalizeText(latestRoute.city);
+  const lastSecondClient=D.normalizeText(latestRoute.secondClient),lastSecondCity=D.normalizeText(latestRoute.secondCity);
+  const latestKey=JSON.stringify([lastClient,lastCity,
+   lastSecondClient&&lastSecondCity?lastSecondClient:'',
+   lastSecondClient&&lastSecondCity?lastSecondCity:'']);
+  const frequentRoutes=[...routeCounts.entries()]
+   .filter(([key,item])=>item.count>1&&key!==latestKey)
+   .sort((a,b)=>b[1].count-a[1].count).slice(0,3).map(([,item])=>item);
+  const latestSecond=lastSecondClient&&lastSecondCity
+   ?' + '+latestRoute.secondClient+' · '+latestRoute.secondCity:'';
+  const quick=el('section',{class:'trip-quick-route','aria-label':'Inserimento rapido'},
+   el('div',{},el('strong',{},'Ultimo percorso'),el('p',{},latestRoute.client+' · '+latestRoute.city+latestSecond)),
+   button('Ripeti ultimo percorso','secondary',()=>repeatRoute(latestRoute),'refresh',
+    {class:'secondary-button trip-quick-route-action'}));
+  if(frequentRoutes.length){
+   const frequent=el('div',{class:'trip-frequent-routes',role:'group','aria-label':'Percorsi più utilizzati'},
+    el('strong',{},'Percorsi più utilizzati'));
+   for(const {trip,count} of frequentRoutes){
+    const second=D.normalizeText(trip.secondClient)&&D.normalizeText(trip.secondCity)
+     ?' + '+trip.secondClient+' · '+trip.secondCity:'';
+    frequent.append(button(trip.client+' · '+trip.city+second+' ('+count+' viaggi)','secondary',()=>repeatRoute(trip),'refresh',
+     {class:'secondary-button trip-quick-route-action'}));
+   }
+   quick.append(frequent);
+  }
+  form.append(quick);
+ }
  // Dashboard shortcut: reuse the same Google Maps import and confirmation path
  // as Clienti. Preserve the current unsaved journey before opening the dialog.
  if(!editingId)form.append(el('section',{class:'dashboard-maps-shortcut',

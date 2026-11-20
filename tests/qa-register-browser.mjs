@@ -122,6 +122,52 @@ try{
  assert.equal(await page.locator('.register-trip-list .trip-card').count(),0);
  await page.getByRole('button',{name:'Mese successivo'}).click();
  assert.equal(await page.locator('.register-trip-list .trip-card').count(),24);
+ // Mobile layout contract for the frequent-route shortcuts, including long customer names.
+ await page.evaluate(()=>{
+  const quick=document.createElement('section');
+  quick.className='trip-quick-route';
+  quick.style.cssText='width:calc(100% - 24px);margin:12px;box-sizing:border-box';
+  const summary=document.createElement('div');
+  summary.textContent='Ultimo percorso · CLIENTE DEMO · NAPOLI';
+  const last=document.createElement('button');
+  last.className='secondary-button trip-quick-route-action';
+  last.textContent='Ripeti ultimo percorso';
+  const frequent=document.createElement('div');
+  frequent.className='trip-frequent-routes';
+  const title=document.createElement('strong');
+  title.textContent='Percorsi più utilizzati';
+  frequent.append(title);
+  for(const label of ['CLIENTE CON DENOMINAZIONE MOLTO LUNGA · POMIGLIANO D’ARCO (12 viaggi)',
+   'CLIENTECONNOMEMOLTOLUNGOEVITARETRONCAMENTI · CASERTA (8 viaggi)',
+   'CLIENTE DEMO · NAPOLI (4 viaggi)']){
+   const button=document.createElement('button');
+   button.className='secondary-button trip-quick-route-action';
+   button.type='button';
+   button.textContent=label;
+   frequent.append(button);
+  }
+  quick.append(summary,last,frequent);
+  document.body.append(quick);
+ });
+ for(const width of [390,320]){
+  await page.setViewportSize({width,height:844});
+  const geometry=await page.evaluate(()=>{
+   const section=document.querySelector('body>.trip-quick-route');
+   const frequent=section.querySelector('.trip-frequent-routes');
+   const title=frequent.querySelector('strong').getBoundingClientRect();
+   const bounds=frequent.getBoundingClientRect();
+   const buttons=[...frequent.querySelectorAll('button')].map(el=>el.getBoundingClientRect());
+   return {
+    noHorizontalOverflow:document.documentElement.scrollWidth<=window.innerWidth+1,
+    frequentOnNewRow:bounds.top>=section.querySelector('button').getBoundingClientRect().bottom-1,
+    buttonsWithinGroup:buttons.every(rect=>rect.left>=bounds.left-1&&rect.right<=bounds.right+1),
+    buttonsStacked:buttons.every((rect,i)=>i===0?rect.top>=title.bottom-1:rect.top>=buttons[i-1].bottom+1)
+   };
+  });
+  assert.deepEqual(geometry,{noHorizontalOverflow:true,frequentOnNewRow:true,
+   buttonsWithinGroup:true,buttonsStacked:true},'Frequent route layout at '+width+'px');
+ }
+ await page.setViewportSize({width:390,height:844});
  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>window.innerWidth+1),false);
  assert.deepEqual(errors,[]);
  console.log('PASS '+engine+' register V4 390px search, pagination, filters, undo and month controls');
