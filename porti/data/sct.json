@@ -1,7 +1,7 @@
 {
   "source": "https://www.salernocontainerterminal.com/ca/an/vessel_schedule.php",
   "source_updated_at": null,
-  "acquired_at": "2026-11-20T06:30:16.459Z",
+  "acquired_at": "2026-11-20T08:00:16.716Z",
   "rows": [
     {
       "vessel": "GRANDE ANGOLA",
@@ -238,6 +238,6 @@
       "status": "PENDING"
     }
   ],
-  "updated_at": "2026-11-20T06:30:16.459Z",
+  "updated_at": "2026-11-20T08:00:16.716Z",
   "data_changed_at": "2026-11-20T06:30:16.459Z"
 }
