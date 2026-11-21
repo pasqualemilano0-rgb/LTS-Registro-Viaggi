@@ -1,7 +1,7 @@
 {
   "source": "https://www.salernocontainerterminal.com/ca/an/vessel_schedule.php",
   "source_updated_at": null,
-  "acquired_at": "2026-11-21T18:30:16.919Z",
+  "acquired_at": "2026-11-21T19:00:17.913Z",
   "rows": [
     {
       "vessel": "LIDER TRABZON",
@@ -229,6 +229,6 @@
       "status": "PENDING"
     }
   ],
-  "updated_at": "2026-11-21T18:30:16.919Z",
+  "updated_at": "2026-11-21T19:00:17.913Z",
   "data_changed_at": "2026-11-21T11:00:16.350Z"
 }
