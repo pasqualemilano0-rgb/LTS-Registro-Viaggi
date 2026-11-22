@@ -20,7 +20,7 @@ const ORIGIN='https://pasqualemilano0-rgb.github.io';
 const endpoint='https://otrqynkscpbeyuvdlgpg.supabase.co/functions/v1/lts-payroll';
 const tokens={a:'a'.repeat(70),b:'b'.repeat(70),admin:'m'.repeat(70),revoked:'r'.repeat(70)};
 
-function fixture({adminMfa=true}={}){
+function fixture({adminMfa=true,enabled=true}={}){
  const accounts=[
   {user_id:A,role:'driver',enabled:true,removed_at:null},
   {user_id:B,role:'driver',enabled:true,removed_at:null},
@@ -88,6 +88,7 @@ function fixture({adminMfa=true}={}){
  let handler=null;
  const deno={
   env:{get:key=>({
+   LTS_PAYROLL_ENABLED:enabled?'yes':null,
    SUPABASE_URL:'https://unit-test.supabase.co',
    SUPABASE_PUBLISHABLE_KEYS:JSON.stringify({default:'public-key-at-least-11-characters'}),
    SUPABASE_SECRET_KEYS:JSON.stringify({default:'secret-key-at-least-11-characters'})
@@ -113,6 +114,19 @@ function fixture({adminMfa=true}={}){
  return {call,docs,audit,reads};
 }
 
+test('production payroll release flag remains OFF by default and denies every document action',async()=>{
+ const x=fixture({enabled:false});
+ for(const [actor,action] of [
+  [tokens.a,'download'],[tokens.a,'acknowledge'],[tokens.a,'list'],
+  [tokens.admin,'publish'],[tokens.admin,'drivers']
+ ]){
+  const outcome=await x.call(actor,action,{id:docA});
+  assert.equal(outcome.status,503,'disabled backend must not serve '+action);
+ }
+ assert.equal(x.reads.length,0,'no Storage data read while disabled');
+ assert.equal(x.audit.length,0,'no audit/data writes while disabled');
+ assert.equal(x.docs[0].acknowledged_at,null,'no implicit receipt while disabled');
+});
 test('autista B cannot read PDF or acknowledge receipt for autista A',async()=>{
  const x=fixture();
  assert.equal((await x.call(tokens.b,'download',{id:docA})).status,403);
