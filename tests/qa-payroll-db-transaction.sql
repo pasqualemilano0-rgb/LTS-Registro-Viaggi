@@ -13,15 +13,15 @@ begin
  assert public.lts_payroll_secure_qa_acknowledge(d,a) is null, 'Draft receipt denied';
  assert public.lts_payroll_secure_qa_mark_first_access(d,a) is null, 'Draft access denied';
  update public.lts_payroll_documents_secure_qa set state='published',published_by=m,published_at=now() where id=d;
- assert public.lts_payroll_secure_qa_acknowledge(d,a) is null, 'Receipt before access denied';
  assert public.lts_payroll_secure_qa_mark_first_access(d,b) is null, 'Cross-driver access denied';
- assert public.lts_payroll_secure_qa_acknowledge(d,b) is null, 'Cross-driver receipt denied';
- at1:=public.lts_payroll_secure_qa_mark_first_access(d,a);
- assert at1 is not null, 'Owner first access';
- assert (select acknowledged_at is null from public.lts_payroll_documents_secure_qa where id=d), 'No automatic receipt';
+ assert public.lts_payroll_secure_qa_acknowledge(d,b) is null, 'Cross-driver confirmation denied';
+ assert public.lts_payroll_secure_qa_mark_first_access(d,a) is null, 'No first PDF access before confirmation';
+ assert (select first_accessed_at is null from public.lts_payroll_documents_secure_qa where id=d), 'PDF remains unopened';
  at1:=public.lts_payroll_secure_qa_acknowledge(d,a);
  at2:=public.lts_payroll_secure_qa_acknowledge(d,a);
- assert at1 is not null and at1=at2, 'Idempotent receipt';
+ assert at1 is not null and at1=at2, 'Idempotent pre-PDF confirmation';
+ assert (select first_accessed_at is null from public.lts_payroll_documents_secure_qa where id=d), 'Confirm does not claim PDF was read';
+ assert public.lts_payroll_secure_qa_mark_first_access(d,a) is not null, 'First PDF access after confirmation';
  select count(*) into n from public.lts_payroll_audit_secure_qa where document_id=d and event='acknowledge';
  assert n=1, 'Exactly one receipt audit';
  assert public.lts_payroll_secure_qa_revoke(d,a) is null, 'Driver cannot revoke';
@@ -37,4 +37,4 @@ begin
 end;
 $$;
 rollback;
-select 'PASS: 19 SQL assertions; all synthetic rows rolled back' as result;
+select 'PASS: QA pre-PDF confirmation, owner isolation, revocation, atomic audit; rolled back' as result;
