@@ -94,12 +94,6 @@ function fixture({adminMfa=true}={}){
   createClient:(_url,key)=>key.startsWith('public-key')?publicClient:db,
   checkLtsSession:async (_db,token)=>{if(token===tokens.revoked)throw {status:403};},
   requireAdminMfa:async()=>({enrolled:adminMfa,verified:adminMfa}),
-  deviceAction:async action=>({enrolled:action==='passkey-status'}),
-  // Synthetic stub checks the second factor independently of JWT validation.
-  // Full credential-signature verification needs a separate WebAuthn integration test.
-  requireDocumentUnlock:async (_api,_actor,token)=>{
-   if(token!=='synthetic-device-verified')throw {status:423};
-  },
   Deno:deno,URL,Request,Response,Blob,File,TextDecoder,TextEncoder,crypto,atob,
   console
  },{timeout:2000});
@@ -107,7 +101,7 @@ function fixture({adminMfa=true}={}){
  async function call(token,action,options={}){
   const request=new Request(endpoint,{method:'POST',headers:{
    'Origin':ORIGIN,'Authorization':'Bearer '+token,'Content-Type':'application/json'
-  },body:JSON.stringify({action,unlockToken:'synthetic-device-verified',...options})});
+  },body:JSON.stringify({action,...options})});
   const response=await handler(request);
   return {status:response.status,data:response.headers.get('content-type')?.includes('json')?
     await response.json():await response.arrayBuffer()};
@@ -149,17 +143,26 @@ test('revoked JWT and admin without enrolled MFA are denied all document actions
 });
 
 
-test('valid LTS JWT without device step-up cannot list, read, or acknowledge payroll',async()=>{
+test('verified LTS session grants only the driver-owned published documents without biometrics',async()=>{
  const x=fixture();
- for(const action of ['list','download','acknowledge']){
-  const extra=action==='list'?{}:{id:docA};
-  assert.equal((await x.call(tokens.a,action,{...extra,unlockToken:null})).status,423);
- }
- assert.equal(x.docs[0].first_accessed_at,null);
- assert.equal(x.docs[0].acknowledged_at,null);
+ const own=await x.call(tokens.a,'list');
+ assert.equal(own.status,200);
+ assert.equal(own.data.documents.length,1,'drafts and other drivers must remain hidden');
+ assert.equal(own.data.documents[0].id,docA);
+ assert.equal((await x.call(tokens.b,'download',{id:docA})).status,403);
+ assert.equal((await x.call(tokens.a,'download',{id:docA})).status,200);
+ assert.equal((await x.call(tokens.a,'acknowledge',{id:docA})).status,200);
+ assert.equal((await x.call(tokens.revoked,'list')).status,403);
 });
 
-// Tests run the real Edge handler; only Auth, WebAuthn and storage are synthetic.
+test('a supplied unlock token cannot bypass driver ownership or revocation',async()=>{
+ const x=fixture();
+ assert.equal((await x.call(tokens.b,'download',{id:docA,unlockToken:'forged'})).status,403);
+ assert.equal((await x.call(tokens.revoked,'download',{id:docA,unlockToken:'forged'})).status,403);
+ assert.equal((await x.call(tokens.a,'download',{id:draftA,unlockToken:'forged'})).status,403);
+});
+
+// Tests run the real Edge handler; only Auth, MFA and storage are synthetic.
 test('MFA admin revokes once; drivers cannot revoke or read/ack a revoked PDF',async()=>{
  const x=fixture();
  assert.equal((await x.call(tokens.a,'revoke',{id:docA})).status,403);
