@@ -31,7 +31,7 @@ function fixture({adminMfa=true}={}){
   {id:docB,driver_id:B,category:'cedolino',state:'published',object_path:B+'/2026/'+docB+'.pdf',first_accessed_at:null,acknowledged_at:null},
   {id:draftA,driver_id:A,category:'cedolino',state:'draft',object_path:A+'/2026/'+draftA+'.pdf',first_accessed_at:null,acknowledged_at:null}
  ];
- const audit=[];
+ const audit=[],reads=[];
  class Query{
   constructor(table){this.table=table;this.filters=[];}
   select(){return this;}
@@ -50,9 +50,12 @@ function fixture({adminMfa=true}={}){
  const db={
   from:table=>new Query(table),
   storage:{from:()=>({
-   download:async path=>docs.some(d=>d.object_path===path)?
-    {data:new Blob(['%PDF-1.5\n1 0 obj\nendobj\n%%EOF'],{type:'application/pdf'}),error:null}:
-    {data:null,error:{message:'not found'}}
+   download:async path=>{
+    reads.push(path);
+    return docs.some(d=>d.object_path===path)?
+     {data:new Blob(['%PDF-1.5\n1 0 obj\nendobj\n%%EOF'],{type:'application/pdf'}),error:null}:
+     {data:null,error:{message:'not found'}};
+   }
   })},
   rpc:async (name,args)=>{
    if(name==='lts_payroll_revoke'){
@@ -64,11 +67,12 @@ function fixture({adminMfa=true}={}){
    const doc=docs.find(d=>d.id===args.p_document_id&&d.driver_id===args.p_driver_id);
    if(!doc||doc.state!=='published')return {data:null,error:null};
    if(name==='lts_payroll_mark_first_access'){
+    if(doc.category==='cedolino'&&!doc.acknowledged_at)return {data:null,error:null};
     if(!doc.first_accessed_at){doc.first_accessed_at='2026-11-18T10:00:00Z';audit.push({event:'first_access'});}
     return {data:doc.first_accessed_at,error:null};
    }
    if(name==='lts_payroll_acknowledge'){
-    if(doc.category!=='cedolino'||!doc.first_accessed_at)return {data:null,error:null};
+    if(doc.category!=='cedolino')return {data:null,error:null};
     if(!doc.acknowledged_at){doc.acknowledged_at='2026-11-18T10:03:00Z';audit.push({event:'acknowledge'});}
     return {data:doc.acknowledged_at,error:null};
    }
@@ -106,7 +110,7 @@ function fixture({adminMfa=true}={}){
   return {status:response.status,data:response.headers.get('content-type')?.includes('json')?
     await response.json():await response.arrayBuffer()};
  }
- return {call,docs,audit};
+ return {call,docs,audit,reads};
 }
 
 test('autista B cannot read PDF or acknowledge receipt for autista A',async()=>{
@@ -125,16 +129,29 @@ test('autista A cannot read B nor receive unpublished drafts',async()=>{
  assert.equal((await x.call(tokens.a,'drivers')).status,403);
 });
 
-test('acknowledgement is optional, needs a successful PDF request and is idempotent',async()=>{
+test('cedolino PDF is denied until owner confirms availability, then accessible',async()=>{
  const x=fixture();
- assert.equal((await x.call(tokens.a,'acknowledge',{id:docA})).status,409);
+ assert.equal((await x.call(tokens.a,'download',{id:docA})).status,409);
+ assert.equal(x.reads.length,0,'storage not read before confirmation');
+ assert.equal(x.docs[0].first_accessed_at,null);
+ assert.equal((await x.call(tokens.a,'acknowledge',{id:docA})).status,200);
+ assert.equal(x.docs[0].first_accessed_at,null,'confirm is not first PDF access');
+ assert.equal((await x.call(tokens.a,'acknowledge',{id:docA})).status,200);
+ assert.equal(x.audit.filter(e=>e.event==='acknowledge').length,1,'idempotent receipt');
  assert.equal((await x.call(tokens.a,'download',{id:docA})).status,200);
- assert.equal((await x.call(tokens.a,'acknowledge',{id:docA})).status,200);
- assert.equal((await x.call(tokens.a,'acknowledge',{id:docA})).status,200);
+ assert.ok(x.docs[0].first_accessed_at,'first access after confirmation');
  assert.equal(x.audit.filter(e=>e.event==='first_access').length,1);
- assert.equal(x.audit.filter(e=>e.event==='acknowledge').length,1);
+ assert.equal((await x.call(tokens.a,'download',{id:docA})).status,200);
+ assert.equal(x.audit.filter(e=>e.event==='first_access').length,1);
 });
 
+test('forged client receipt fields never bypass server PDF gate',async()=>{
+ const x=fixture();
+ assert.equal((await x.call(tokens.b,'acknowledge',{id:docA,driverId:A,confirmed:true})).status,409);
+ assert.equal((await x.call(tokens.a,'acknowledge',{id:draftA,confirmed:true})).status,409);
+ assert.equal((await x.call(tokens.a,'download',{id:docA,acknowledged_at:'2099-01-01',confirmed:true})).status,409);
+ assert.equal(x.reads.length,0,'denied before reaching storage');
+});
 test('revoked JWT and admin without enrolled MFA are denied all document actions',async()=>{
  const x=fixture({adminMfa:false});
  assert.equal((await x.call(tokens.revoked,'download',{id:docA})).status,403);
@@ -150,8 +167,9 @@ test('verified LTS session grants only the driver-owned published documents with
  assert.equal(own.data.documents.length,1,'drafts and other drivers must remain hidden');
  assert.equal(own.data.documents[0].id,docA);
  assert.equal((await x.call(tokens.b,'download',{id:docA})).status,403);
- assert.equal((await x.call(tokens.a,'download',{id:docA})).status,200);
+ assert.equal((await x.call(tokens.a,'download',{id:docA})).status,409);
  assert.equal((await x.call(tokens.a,'acknowledge',{id:docA})).status,200);
+ assert.equal((await x.call(tokens.a,'download',{id:docA})).status,200);
  assert.equal((await x.call(tokens.revoked,'list')).status,403);
 });
 
