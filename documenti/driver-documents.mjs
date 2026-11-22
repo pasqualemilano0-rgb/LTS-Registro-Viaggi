@@ -115,19 +115,28 @@ function openPdfPreview(blob,doc){
  const heading=element('h2','',doc.label||'Documento PDF');
  const help=element('p','hint','Visualizza il PDF sul telefono oppure scaricalo. Il file salvato fuori dall’app non è protetto dallo sblocco LTS.');
  const links=element('div','preview-actions');
- const preview=element('a','primary link-button','Visualizza PDF');
- preview.href=url;preview.target='_blank';preview.rel='noopener noreferrer';
+ const preview=element('button','primary','Visualizza PDF');
+ preview.type='button';
+ const frame=element('iframe','document-pdf-frame');
+ frame.hidden=true;
+ frame.title='Anteprima del documento PDF';
+ frame.setAttribute('sandbox','allow-downloads');
+ frame.setAttribute('referrerpolicy','no-referrer');
+ frame.src=url;
+ preview.addEventListener('click',()=>{
+  frame.hidden=false;preview.disabled=true;
+ });
  const save=element('a','outline link-button','Scarica PDF');
  save.href=url;save.download=String(doc.original_filename||'LTS-documento.pdf').replace(/[^a-zA-Z0-9._-]/g,'_').slice(0,120);
  const close=element('button','text-button','Chiudi');
  close.type='button';close.addEventListener('click',()=>viewer.close());
  links.append(preview,save);
- viewer.append(heading,help,links);
+ viewer.append(heading,help,links,frame);
  if(doc.category==='cedolino'&&!doc.acknowledged_at){
   const message=element('p','hint','Dopo aver aperto o scaricato il cedolino, conferma esplicitamente la ricezione. Se esci senza confermare, resterà in attesa.');
   const confirm=element('button','primary','Ho ricevuto il cedolino');
   confirm.type='button';confirm.disabled=true;
-  for(const link of [preview,save])link.addEventListener('click',()=>{confirm.disabled=false;});
+  for(const action of [preview,save])action.addEventListener('click',()=>{confirm.disabled=false;});
   confirm.addEventListener('click',async()=>{
    if(!window.confirm('Confermi di aver ricevuto il cedolino? Non equivale a firma, pagamento o accettazione degli importi.'))return;
    confirm.disabled=true;

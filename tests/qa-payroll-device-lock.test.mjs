@@ -88,3 +88,10 @@ test('QA origin/RP ID and PDF API are explicitly bound to their own environment'
  assert.ok(screen.includes('await api.acknowledge(doc.id)'));
  assert.ok(html.includes('Se non confermi rimane in attesa'));
 });
+
+test('PDF preview stays in guarded tab and never opens an unprotected new tab',()=>{
+ assert.match(screen,/frame\.setAttribute\('sandbox','allow-downloads'\)/);
+ assert.match(screen,/frame\.src=url/);
+ assert.doesNotMatch(screen,/preview\.target='_blank'/);
+ assert.match(html,/frame-src blob:/);
+});

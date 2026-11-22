@@ -11,7 +11,9 @@ function payrollEndpoint(){
  try{url=new URL(configured);auth=new URL(login);}catch{
   throw Error('Configurazione documenti non valida.');
  }
- if(url.protocol!=='https:'||url.pathname!=='/functions/v1/lts-payroll'||
+ const allowedPath=runtime.environment==='qa'&&auth.hostname==='sywxretbfgwxwhvdcknq.supabase.co'
+  ?'/functions/v1/lts-payroll-secure-qa':'/functions/v1/lts-payroll';
+ if(url.protocol!=='https:'||url.pathname!==allowedPath||
     url.search||url.hash||url.username||url.password||url.origin!==auth.origin)
   throw Error('Servizio documenti non compatibile con questo account.');
  return url.href;
