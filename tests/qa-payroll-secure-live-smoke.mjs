@@ -26,8 +26,8 @@ const noJwt=await call('POST',allowed,{headers:{'Content-Type':'application/json
 assert.equal(noJwt.status,401,'Missing JWT cannot access documents');
 const invalid=await call('POST',allowed,{headers:{
  'Authorization':'Bearer '+('x'.repeat(70)),'Content-Type':'application/json'
-},body:'{"action":"passkey-status"}'});
-assert.equal(invalid.status,401,'Invalid JWT cannot perform passkey operations');
+},body:'{"action":"list"}'});
+assert.equal(invalid.status,401,'Invalid JWT cannot read private documents');
 const cross=await call('POST',forbidden,{headers:{'Content-Type':'application/json'},body:'{"action":"list"}'});
 assert.equal(cross.status,403,'Production origin cannot use QA document endpoint');
 const wrongHeaders=await call('OPTIONS',allowed,{headers:{
