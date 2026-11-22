@@ -105,7 +105,28 @@ function display(doc){
   button.disabled=true;note('');
   try{
    const generation=viewGeneration;
-   row.append(details,actions);
+   if(doc.category==='cedolino'&&!doc.acknowledged_at){
+    const accepted=window.confirm(
+     'Il cedolino '+(doc.label||'')+' è disponibile per il tuo account LTS. '+
+     'Per aprire o scaricare il PDF devi confermare che ti è stato messo a disposizione. '+
+     'La conferma NON attesta lettura, pagamento né accettazione degli importi. Confermi?'
+    );
+    if(!accepted)return;
+    // Server records availability BEFORE any request for PDF bytes.
+    await api.acknowledge(doc.id);
+   }
+   if(generation!==viewGeneration||document.hidden||!account.isVerified()||account.getRole()!=='driver')
+    throw Error('Verifica nuovamente l’account LTS per leggere il PDF.');
+   const file=await api.download(doc.id);
+   if(generation!==viewGeneration||document.hidden||!account.isVerified()||account.getRole()!=='driver')
+    throw Error('Verifica nuovamente l’account LTS per leggere il PDF.');
+   openPdfPreview(file,doc);
+   await load();
+  }catch(error){note(error.message||'Documento PDF non disponibile.',true);}
+  finally{button.disabled=false;}
+ });
+ actions.append(button);
+ row.append(details,actions);
  return row;
 }
 async function load(append=false){
