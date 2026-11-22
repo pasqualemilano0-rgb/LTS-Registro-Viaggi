@@ -71,23 +71,6 @@ function openPdfPreview(blob,doc){
  close.type='button';close.addEventListener('click',()=>viewer.close());
  links.append(preview,save);
  viewer.append(heading,help,links,frame);
- if(doc.category==='cedolino'&&!doc.acknowledged_at){
-  const message=element('p','hint','Dopo aver aperto o scaricato il cedolino, conferma esplicitamente la ricezione. Se esci senza confermare, resterà in attesa.');
-  const confirm=element('button','primary','Ho ricevuto il cedolino');
-  confirm.type='button';confirm.disabled=true;
-  for(const action of [preview,save])action.addEventListener('click',()=>{confirm.disabled=false;});
-  confirm.addEventListener('click',async()=>{
-   if(!window.confirm('Confermi di aver ricevuto il cedolino? Non equivale a firma, pagamento o accettazione degli importi.'))return;
-   confirm.disabled=true;
-   try{
-    await api.acknowledge(doc.id);
-    viewer.close();
-    await load();
-    note('Ricezione registrata. Non equivale a confermare il pagamento dello stipendio.');
-   }catch(error){note(error.message||'Conferma non registrata.',true);confirm.disabled=false;}
-  });
-  viewer.append(message,confirm);
- }
  viewer.append(close);
  viewer.addEventListener('close',()=>{
   URL.revokeObjectURL(url);
@@ -111,10 +94,8 @@ function display(doc){
  if(doc.category==='cedolino'){
   const when=text=>new Intl.DateTimeFormat('it-IT',{dateStyle:'short',timeStyle:'short'}).format(new Date(text));
   const receiptStatus=doc.acknowledged_at
-   ?'Ricezione confermata il '+when(doc.acknowledged_at)
-   :doc.first_accessed_at
-    ?'Ricezione in attesa · primo accesso PDF il '+when(doc.first_accessed_at)
-    :'Non risulta ancora un accesso al PDF';
+   ?'Messa a disposizione confermata il '+when(doc.acknowledged_at)
+   :'Conferma obbligatoria prima di aprire o scaricare il PDF';
   details.append(element('small','',receiptStatus));
  }
  const actions=element('div','actions');
@@ -124,38 +105,7 @@ function display(doc){
   button.disabled=true;note('');
   try{
    const generation=viewGeneration;
-   const file=await api.download(doc.id);
-   if(generation!==viewGeneration||document.hidden||!account.isVerified()||account.getRole()!=='driver')
-    throw Error('Verifica nuovamente l’account LTS per leggere il PDF.');
-   openPdfPreview(file,doc);
-   // First access is recorded server-side only after the PDF bytes are available.
-   await load();
-  }catch(error){note(error.message||'Download non disponibile.',true);}
-  finally{button.disabled=false;}
- });
- actions.append(button);
- if(doc.category==='cedolino'&&!doc.acknowledged_at){
-  const confirm=element('button','outline','Ho ricevuto il cedolino');
-  confirm.type='button';confirm.disabled=!doc.first_accessed_at;
-  confirm.title=doc.first_accessed_at
-   ?'Conferma richiesta di ricezione; non è una firma né una prova del pagamento.'
-   :'Apri prima il PDF. La richiesta di conferma resterà in attesa.';
-  confirm.addEventListener('click',async()=>{
-   if(!window.confirm('Confermo soltanto di aver ricevuto il cedolino PDF. '+
-      'NON confermo il pagamento dello stipendio, né la correttezza degli importi. Proseguire?'))return;
-   confirm.disabled=true;note('');
-   try{
-    await api.acknowledge(doc.id);
-    await load();
-    note('Ricezione del cedolino confermata. Non equivale alla firma o alla prova di pagamento.');
-   }catch(error){note(error.message||'Conferma non registrata.',true);}
-   finally{confirm.disabled=false;}
-  });
-  actions.append(confirm);
- }else if(doc.category==='cedolino'){
-  actions.append(element('span','status published','Ricezione confermata'));
- }
- row.append(details,actions);
+   row.append(details,actions);
  return row;
 }
 async function load(append=false){
