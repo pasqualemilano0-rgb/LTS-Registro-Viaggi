@@ -1,0 +1,131 @@
+-- QA ONLY: separate additive payroll objects; never apply to production.
+-- Original QA payroll schema/function/bucket untouched, data is synthetic.
+-- LTS · private payroll documents; REVIEW + APPLY IN STAGING FIRST.
+-- Do not import payroll content into personal registry archives, Github, or browser backups.
+create table if not exists public.lts_payroll_documents_secure_qa (
+  id uuid primary key default gen_random_uuid(),
+  driver_id uuid not null references auth.users(id),
+  uploaded_by uuid not null references auth.users(id),
+  published_by uuid references auth.users(id),
+  category text not null check (category in ('cedolino','cu','altri')),
+  document_year int not null check (document_year between 2000 and 2100),
+  document_month int check (document_month between 1 and 12),
+  label text not null check (char_length(label) between 1 and 160),
+  original_filename text not null check (char_length(original_filename) between 1 and 180),
+  object_path text not null unique,
+  file_size int not null check (file_size between 1 and 8388608),
+  sha256_hex text not null check (sha256_hex ~ '^[a-f0-9]{64}$'),
+  state text not null default 'draft' check (state in ('draft','published','archived')),
+  created_at timestamptz not null default now(),
+  published_at timestamptz,
+  first_accessed_at timestamptz,
+  acknowledged_at timestamptz,
+  archived_at timestamptz,
+  constraint payroll_month_required check (category <> 'cedolino' or document_month is not null),
+  constraint payroll_receipt_consistent check ((state <> 'draft' or (first_accessed_at is null and acknowledged_at is null)) and
+    (acknowledged_at is null or (category='cedolino' and first_accessed_at is not null and published_at is not null))),
+  constraint payroll_publication_consistent check (
+    (state='draft' and published_at is null and archived_at is null)
+    or (state='published' and published_at is not null and archived_at is null)
+    or (state='archived' and archived_at is not null)
+  )
+);
+create index if not exists lts_payroll_documents_secure_qa_driver_sort
+  on public.lts_payroll_documents_secure_qa (driver_id, document_year desc, created_at desc);
+create index if not exists lts_payroll_documents_secure_qa_status
+  on public.lts_payroll_documents_secure_qa (state, created_at desc);
+
+create table if not exists public.lts_payroll_audit_secure_qa (
+  id bigint generated always as identity primary key,
+  document_id uuid not null references public.lts_payroll_documents_secure_qa(id),
+  actor_id uuid not null references auth.users(id),
+  event text not null check (event in ('upload','publish','archive','download','first_access','acknowledge')),
+  happened_at timestamptz not null default now()
+);
+create index if not exists lts_payroll_audit_secure_qa_document
+  on public.lts_payroll_audit_secure_qa (document_id, happened_at desc);
+
+-- INSERT/UPDATE and their audit record share the SAME database transaction.
+-- Runs with the caller (service_role); no direct anon/authenticated function access.
+create or replace function public.lts_payroll_secure_qa_write_audit()
+returns trigger language plpgsql security invoker
+set search_path = ''
+as $$
+begin
+  if tg_op = 'INSERT' then
+    insert into public.lts_payroll_audit_secure_qa (document_id, actor_id, event)
+      values (new.id, new.uploaded_by, 'upload');
+  elsif tg_op = 'UPDATE' and old.state = 'draft' and new.state = 'published' then
+    if new.published_by is null then
+      raise exception 'A publishing administrator is required.';
+    end if;
+    insert into public.lts_payroll_audit_secure_qa (document_id, actor_id, event)
+      values (new.id, new.published_by, 'publish');
+  end if;
+  if tg_op = 'UPDATE' then
+    if old.first_accessed_at is null and new.first_accessed_at is not null then
+      insert into public.lts_payroll_audit_secure_qa (document_id, actor_id, event)
+        values (new.id, new.driver_id, 'first_access');
+    end if;
+    if old.acknowledged_at is null and new.acknowledged_at is not null then
+      insert into public.lts_payroll_audit_secure_qa (document_id, actor_id, event)
+        values (new.id, new.driver_id, 'acknowledge');
+    end if;
+  end if;
+  return new;
+end;
+$$;
+revoke all on function public.lts_payroll_secure_qa_write_audit() from public, anon, authenticated;
+drop trigger if exists lts_payroll_secure_qa_write_audit_trg on public.lts_payroll_documents_secure_qa;
+create trigger lts_payroll_secure_qa_write_audit_trg
+after insert or update of state, first_accessed_at, acknowledged_at on public.lts_payroll_documents_secure_qa
+for each row execute function public.lts_payroll_secure_qa_write_audit();
+
+-- Server-only RPCs; driver_id is supplied exclusively after verified JWT and role checks.
+-- Database timestamps are idempotent and do not rely on the device clock.
+create or replace function public.lts_payroll_secure_qa_mark_first_access(p_document_id uuid,p_driver_id uuid)
+returns timestamptz language plpgsql security invoker
+set search_path=''
+as $$
+declare v_at timestamptz;
+begin
+ update public.lts_payroll_documents_secure_qa
+ set first_accessed_at=coalesce(first_accessed_at,now())
+ where id=p_document_id and driver_id=p_driver_id and state='published'
+ returning first_accessed_at into v_at;
+ return v_at;
+end;
+$$;
+create or replace function public.lts_payroll_secure_qa_acknowledge(p_document_id uuid,p_driver_id uuid)
+returns timestamptz language plpgsql security invoker
+set search_path=''
+as $$
+declare v_at timestamptz;
+begin
+ update public.lts_payroll_documents_secure_qa
+ set acknowledged_at=coalesce(acknowledged_at,now())
+ where id=p_document_id and driver_id=p_driver_id and category='cedolino'
+   and state='published' and first_accessed_at is not null
+ returning acknowledged_at into v_at;
+ return v_at;
+end;
+$$;
+revoke all on function public.lts_payroll_secure_qa_mark_first_access(uuid,uuid) from public,anon,authenticated;
+revoke all on function public.lts_payroll_secure_qa_acknowledge(uuid,uuid) from public,anon,authenticated;
+grant execute on function public.lts_payroll_secure_qa_mark_first_access(uuid,uuid) to service_role;
+grant execute on function public.lts_payroll_secure_qa_acknowledge(uuid,uuid) to service_role;
+
+alter table public.lts_payroll_documents_secure_qa enable row level security;
+alter table public.lts_payroll_audit_secure_qa enable row level security;
+-- Deliberately NO anon or authenticated policies: ONLY trusted Edge backend with
+-- service_role, independent JWT + live-session + account role + admin-MFA checks.
+revoke all on public.lts_payroll_documents_secure_qa from anon, authenticated;
+revoke all on public.lts_payroll_audit_secure_qa from anon, authenticated;
+revoke all on sequence public.lts_payroll_audit_secure_qa_id_seq from anon, authenticated;
+
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('lts-payroll-secure-qa','lts-payroll-secure-qa',false,8388608,array['application/pdf'])
+on conflict (id) do update set public=false,
+ file_size_limit=excluded.file_size_limit, allowed_mime_types=excluded.allowed_mime_types;
+-- Never create SELECT/INSERT/UPDATE/DELETE storage.objects policies for anon/authenticated.
+-- Edge function uses its private service_role client to access the bucket.
