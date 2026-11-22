@@ -70,23 +70,25 @@ test('SQL migration uses valid paired dollar delimiters and atomic audit trigger
 });
 
 test('first document access is authenticated, owner-scoped, published-only and server timed',()=>{
- assert.match(api,/if\(actor\.role==='driver'\)\{\s*\/\/ The file has reached the server/);
+ assert.match(api,/if\(actor\.role==='driver'\)\{\s*\/\/ Mark first PDF access/);
  assert.match(api,/await db\.rpc\('lts_payroll_mark_first_access'/);
+ assert.match(api,/data\.category==='cedolino'&&!data\.acknowledged_at/);
+ assert.match(sql,/category <> 'cedolino' or acknowledged_at is not null/);
  assert.match(api,/p_document_id:id,p_driver_id:actor\.userId/);
  assert.match(sql,/first_accessed_at=coalesce\(first_accessed_at,now\(\)\)/);
  assert.match(sql,/where id=p_document_id and driver_id=p_driver_id and state='published'/);
 });
 
-test('receipt acknowledgement is voluntary, restricted to the employee and not proof of payment',()=>{
+test('pre-PDF availability confirmation is required, restricted, and not proof of viewing or payment',()=>{
  assert.match(api,/async function acknowledge\(db,actor,id\)\{\s*if\(actor\.role!=='driver'\)fail\(403\)/);
  assert.match(api,/await db\.rpc\('lts_payroll_acknowledge'/);
  assert.match(sql,/acknowledged_at=coalesce\(acknowledged_at,now\(\)\)/);
- assert.match(sql,/category='cedolino'\s+and state='published' and first_accessed_at is not null/);
+ assert.match(sql,/category='cedolino'\s+and state='published'\s+returning acknowledged_at/);
  assert.match(driver,/api\.acknowledge\(doc\.id\)/);
- assert.match(driver,/NON confermo il pagamento dello stipendio/);
- assert.match(driver,/confirm\.disabled=!doc\.first_accessed_at/);
- assert.match(admin,/Ricezione confermata il/);
- assert.match(text('documenti/index.html'),/non conferma né il pagamento dello stipendio/);
+ assert.match(driver,/La conferma NON attesta lettura, pagamento/);
+ assert.match(driver,/await api\.acknowledge\(doc\.id\)[\s\S]*const file=await api\.download\(doc\.id\)/);
+ assert.match(admin,/Messa a disposizione confermata il/);
+ assert.match(text('documenti/index.html'),/non equivale a firma, pagamento dello stipendio/);
 });
 
 test('admin payroll page requires distinct login despite existing LTS session',()=>{
