@@ -77,14 +77,14 @@ test('no password-only path to driver PDFs and no biometric/PIN collection',()=>
 });
 
 test('QA origin/RP ID and PDF API are explicitly bound to their own environment',()=>{
- assert.match(edge,/LTS_PAYROLL_ALLOWED_ORIGIN/);
- assert.match(verifier,/LTS_PAYROLL_ALLOWED_ORIGIN/);
- assert.match(verifier,/const RPID=new URL\\(ORIGIN\\)\\.hostname/);
- assert.match(transport,/runtime\\.accountAuth\\?\\.payrollEndpoint/);
- assert.match(transport,/url\\.origin!==auth\\.origin/);
- assert.doesNotMatch(transport,/const ENDPOINT='https:\\/\\/otrqynkscpbeyuvdlgpg/);
- assert.match(screen,/function openPdfPreview\\(blob,doc\\)/);
- assert.match(screen,/URL\\.revokeObjectURL\\(url\\)/);
- assert.match(screen,/await api\\.acknowledge\\(doc\\.id\\)/);
- assert.match(html,/Se non confermi rimane in attesa/);
+ assert.ok(edge.includes('LTS_PAYROLL_ALLOWED_ORIGIN'));
+ assert.ok(verifier.includes('LTS_PAYROLL_ALLOWED_ORIGIN'));
+ assert.ok(verifier.includes('const RPID=new URL(ORIGIN).hostname;'));
+ assert.ok(transport.includes('runtime.accountAuth?.payrollEndpoint'));
+ assert.ok(transport.includes('url.origin!==auth.origin'));
+ assert.ok(!transport.includes("const ENDPOINT='https://otrqynkscpbeyuvdlgpg"));
+ assert.ok(screen.includes('function openPdfPreview(blob,doc)'));
+ assert.ok(screen.includes('URL.revokeObjectURL(url)'));
+ assert.ok(screen.includes('await api.acknowledge(doc.id)'));
+ assert.ok(html.includes('Se non confermi rimane in attesa'));
 });

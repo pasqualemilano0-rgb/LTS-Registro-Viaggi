@@ -94,7 +94,7 @@ function fixture({adminMfa=true}={}){
   requireDocumentUnlock:async (_api,_actor,token)=>{
    if(token!=='synthetic-device-verified')throw {status:423};
   },
-  Deno:deno,Request,Response,Blob,File,TextDecoder,TextEncoder,crypto,atob,
+  Deno:deno,URL,Request,Response,Blob,File,TextDecoder,TextEncoder,crypto,atob,
   console
  },{timeout:2000});
  assert.equal(typeof handler,'function');
