@@ -15,6 +15,9 @@ const ORIGIN=(()=>{
   throw Error('LTS payroll origin non autorizzata');
  return value;
 })();
+// Separate operational switch: OFF unless explicitly enabled for this Edge.
+// The public webapp must not configure payrollEndpoint until testing is complete.
+const PAYROLL_ENABLED=Deno.env.get('LTS_PAYROLL_ENABLED')==='yes';
 const BUCKET='lts-payroll-private';
 const MAX_FILE=8388608, MAX_MULTIPART=MAX_FILE+32768;
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -252,6 +255,10 @@ async function acknowledge(db,actor,id){
  return {id,acknowledgedAt:at};
 }
 Deno.serve(async req=>{
+ // Fail closed for every method, including CORS and direct API calls. This is
+ // separate from JWT/session/MFA authorization enforced when enabled.
+ if(!PAYROLL_ENABLED)return new Response(JSON.stringify({error:'Archivio documenti non ancora attivo.'}),{
+  status:503,headers:{...noCache,'Content-Type':'application/json; charset=utf-8'}});
  if(req.headers.get('origin')!==ORIGIN)return json({error:'Origine non autorizzata.'},403);
  if(req.method==='OPTIONS'){
   const method=req.headers.get('access-control-request-method');
