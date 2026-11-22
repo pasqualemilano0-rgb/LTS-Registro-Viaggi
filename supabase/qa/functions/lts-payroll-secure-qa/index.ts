@@ -212,17 +212,22 @@ async function revokeDocument(db,actor,id){
 async function download(db,actor,id){
  validId(id);
  const {data,error}=await db.from('lts_payroll_documents_secure_qa')
-  .select('id,driver_id,object_path,state').eq('id',id).maybeSingle();
+  .select('id,driver_id,object_path,state,category,acknowledged_at').eq('id',id).maybeSingle();
  if(error)fail(503);
  if(!data)fail(404);
  if(actor.role==='driver'&&(data.driver_id!==actor.userId||data.state!=='published'))fail(403);
  if(actor.role==='admin'&&data.state==='archived')fail(403);
+ // Owner + published status are checked above. A cedolino PDF cannot leave
+ // this API before explicit confirmation, even if the browser skips its UI.
+ if(actor.role==='driver'&&data.category==='cedolino'&&!data.acknowledged_at)
+  fail(409,'Conferma prima la messa a disposizione del cedolino per aprire il PDF.');
  if(!data.object_path.startsWith(data.driver_id+'/'))fail(503);
  const {data:file,error:readErr}=await db.storage.from(BUCKET).download(data.object_path);
  if(readErr||!file)fail(503,'PDF non disponibile.');
  if(actor.role==='driver'){
-  // The file has reached the server, not necessarily the recipient's device.
-  // Timestamp comes exclusively from a restricted DB RPC; never from client data.
+  // Mark first PDF access only AFTER the file is fetched. The restricted
+  // RPC rechecks owner, published state and prior cedolino confirmation.
+  // It also rejects a concurrent revoke; no bytes are returned on failure.
   const {data:at,error:accessError}=await db.rpc('lts_payroll_secure_qa_mark_first_access',{
    p_document_id:id,p_driver_id:actor.userId
   });
@@ -234,7 +239,8 @@ async function download(db,actor,id){
   'Content-Disposition':'attachment; filename="LTS-documento.pdf"',
   'Content-Security-Policy':'sandbox'}});
 }
-/** Voluntary receipt acknowledgement, not a signature, wage payment, or approval of amounts. */
+/** Explicit pre-PDF acknowledgement of availability, NOT proof of viewing,
+ * wage payment, correct amounts, or contractual acceptance. */
 async function acknowledge(db,actor,id){
  if(actor.role!=='driver')fail(403);
  validId(id);
@@ -242,7 +248,7 @@ async function acknowledge(db,actor,id){
   p_document_id:id,p_driver_id:actor.userId
  });
  if(error)fail(503,'Conferma non registrata. Riprova.');
- if(!at)fail(409,'Apri prima il tuo cedolino PDF per confermarne la ricezione.');
+ if(!at)fail(409,'Cedolino non disponibile o non assegnato a questo autista.');
  return {id,acknowledgedAt:at};
 }
 Deno.serve(async req=>{
