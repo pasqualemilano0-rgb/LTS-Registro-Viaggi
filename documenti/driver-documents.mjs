@@ -1,8 +1,7 @@
 import * as account from '../account-access.mjs';
 import * as api from './document-api.mjs';
-import * as passkey from './device-passkey.mjs';
 const $=id=>document.getElementById(id);
-let category='cedolino',offset=0,busy=false,deviceBusy=false,unlockTimer=null,activePdfPreview=null;
+let category='cedolino',offset=0,busy=false,activePdfPreview=null;
 let viewGeneration=0;
 const months=['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
 function note(message='',error=false){
@@ -14,100 +13,36 @@ function element(tag,cls,text){
  if(text!==undefined)el.textContent=String(text);
  return el;
 }
-function locked(message=''){
+// Clear sensitive content when the app is backgrounded or the account changes.
+function hideDocuments(){
  viewGeneration++;
  closePdfPreview();
- api.clearDeviceUnlock();
- $('content').hidden=true;$('device-gate').hidden=true;$('locked').hidden=false;
- $('documents').replaceChildren();
- if(message)note(message,true);
-}
-function lockArea(){
- viewGeneration++;
- closePdfPreview();
- if(unlockTimer){clearTimeout(unlockTimer);unlockTimer=null;}
  $('content').hidden=true;
  $('documents').replaceChildren();offset=0;
- const wasUnlocked=api.hasDeviceUnlock();
- if(wasUnlocked)void api.lockDocuments().catch(()=>{});
- else api.clearDeviceUnlock();
- if(!$('locked').hidden){
-  $('device-gate').hidden=true;return;
- }
- $('device-gate').hidden=false;
- note('Documenti protetti: ripeti lo sblocco del dispositivo.');
 }
-function showDeviceGate(enrolled){
- $('locked').hidden=true;$('content').hidden=true;
- $('device-gate').hidden=false;
- $('unlock-panel').hidden=!enrolled;
- $('device-setup-form').hidden=enrolled;
- $('device-description').textContent=enrolled
-  ?'Usa la passkey registrata per accedere ai documenti personali LTS.'
-  :'Per la prima attivazione, registra una passkey protetta con il blocco schermo.';
+function locked(message=''){
+ hideDocuments();
+ $('locked').hidden=false;
+ if(message)note(message,true);
 }
 async function authenticate(){
- if(deviceBusy)return;
- viewGeneration++;
- if(unlockTimer){clearTimeout(unlockTimer);unlockTimer=null;}
- // Revoke any previously granted unlock, including before account re-validation.
- void api.lockDocuments().catch(()=>{});
- $('content').hidden=true;$('locked').hidden=true;$('device-gate').hidden=true;
- api.clearDeviceUnlock();
+ hideDocuments();
+ $('locked').hidden=true;
+ const generation=viewGeneration;
  try{
   if(!account.hasSession())await account.restoreDriverSession();
   const status=await account.verifySession();
-  if(status.role!=='driver'||!account.isVerified()){
+  if(generation!==viewGeneration||document.hidden)return;
+  if(status.role!=='driver'||!account.isVerified()||account.getRole()!=='driver'){
    locked('Accedi con un account autista.');return;
   }
-  const device=await api.deviceStatus();
-  if(typeof device.enrolled!=='boolean')throw Error('Verifica dispositivo non disponibile.');
-  showDeviceGate(device.enrolled);
-  if(!await passkey.supported())
-   note('Il browser o il blocco schermo non supporta WebAuthn. Nessun documento verrà mostrato.',true);
-  else note('');
- }catch(error){locked(error.message||'Verifica account non disponibile.');}
-}
-async function doUnlock(){
- if(deviceBusy||!$('content').hidden)return;
- deviceBusy=true;$('unlock-device').disabled=true;note('');
- try{
-  const {challengeId,options}=await api.deviceUnlockOptions();
-  const credential=await passkey.verifyPasskey(options);
-  const result=await api.deviceUnlockVerify(challengeId,credential);
-  if(!api.hasDeviceUnlock())throw Error('Sblocco non confermato.');
-  if(document.visibilityState!=='visible'){lockArea();return;}
-  $('device-gate').hidden=true;$('content').hidden=false;
-  unlockTimer=setTimeout(()=>lockArea(),result.expiresInMs);
+  $('locked').hidden=true;$('content').hidden=false;
+  note('');
   await load();
- }catch(error){lockArea();note(error?.message||'Impossibile sbloccare i documenti.',true);}
- finally{deviceBusy=false;$('unlock-device').disabled=false;}
+ }catch(error){
+  if(generation===viewGeneration)locked(error.message||'Verifica account non disponibile.');
+ }
 }
-$('unlock-device').addEventListener('click',()=>void doUnlock());
-$('setup-another-device').addEventListener('click',()=>{
- if(deviceBusy)return;
- $('unlock-panel').hidden=true;
- $('device-setup-form').hidden=false;
- $('device-description').textContent='Per autorizzare un nuovo dispositivo, reinserisci la password LTS e crea una passkey.';
- $('device-password').focus();
-});
-$('device-setup-form').addEventListener('submit',async event=>{
- event.preventDefault();if(deviceBusy)return;
- deviceBusy=true;$('device-register').disabled=true;note('');
- const password=$('device-password').value;
- $('device-password').value='';
- try{
-  if(!await passkey.supported())
-   throw Error('Attiva impronta, Face ID o PIN del dispositivo e usa un browser compatibile.');
-  const {challengeId,options}=await api.registerDeviceOptions(password);
-  const credential=await passkey.createPasskey(options);
-  const result=await api.registerDeviceVerify(challengeId,credential);
-  if(result.registered!==true)throw Error('Registrazione della passkey non confermata.');
-  showDeviceGate(true);
-  note('Sblocco configurato. Premi «Sblocca con Face ID, impronta o PIN».');
- }catch(error){note(error.message||'Impossibile registrare il dispositivo.',true);}
- finally{deviceBusy=false;$('device-register').disabled=false;}
-});
 function closePdfPreview(){
  if(activePdfPreview?.open)activePdfPreview.close();
  activePdfPreview=null;
@@ -117,7 +52,7 @@ function openPdfPreview(blob,doc){
  const url=URL.createObjectURL(blob);
  const viewer=element('dialog','document-preview');
  const heading=element('h2','',doc.label||'Documento PDF');
- const help=element('p','hint','Visualizza il PDF sul telefono oppure scaricalo. Il file salvato fuori dall’app non è protetto dallo sblocco LTS.');
+ const help=element('p','hint','Visualizza il PDF sul telefono oppure scaricalo. Il file salvato fuori dall’app resta accessibile dal dispositivo.');
  const links=element('div','preview-actions');
  const preview=element('button','primary','Visualizza PDF');
  preview.type='button';
@@ -188,8 +123,10 @@ function display(doc){
  button.addEventListener('click',async()=>{
   button.disabled=true;note('');
   try{
+   const generation=viewGeneration;
    const file=await api.download(doc.id);
-   if(document.visibilityState!=='visible'||!api.hasDeviceUnlock())throw Error('Ripeti lo sblocco per leggere il PDF.');
+   if(generation!==viewGeneration||document.hidden||!account.isVerified()||account.getRole()!=='driver')
+    throw Error('Verifica nuovamente l’account LTS per leggere il PDF.');
    openPdfPreview(file,doc);
    // First access is recorded server-side only after the PDF bytes are available.
    await load();
@@ -230,7 +167,8 @@ async function load(append=false){
   const filter={category,offset};
   if($('year').value)filter.year=Number($('year').value);
   const result=await api.documents(filter);
-  if(generation!==viewGeneration||$('content').hidden||!api.hasDeviceUnlock())return;
+  if(generation!==viewGeneration||$('content').hidden||document.hidden||
+      !account.isVerified()||account.getRole()!=='driver')return;
   if(!Array.isArray(result.documents))throw Error('Archivio documenti non valido.');
   for(const doc of result.documents){
    if(doc.state!=='published'||!['cedolino','cu','altri'].includes(doc.category))
@@ -264,14 +202,13 @@ $('year').addEventListener('change',()=>void load());
 $('refresh').addEventListener('click',()=>void load());
 $('more').addEventListener('click',()=>void load(true));
 document.addEventListener('visibilitychange',()=>{
- if(document.hidden){if(!deviceBusy)lockArea();}
- else if(!deviceBusy&&(!$('locked').hidden||$('device-gate').hidden===false))
-   void authenticate();
+ if(document.hidden)hideDocuments();
+ else void authenticate();
 });
-window.addEventListener('lts-account-locked',()=>{lockArea();locked('Sessione chiusa. Accedi nuovamente.');});
-window.addEventListener('pagehide',()=>lockArea());
-// Never keep the PDF list exposed when navigating back to a page from BFCache.
+window.addEventListener('lts-account-locked',()=>locked('Sessione chiusa. Accedi nuovamente.'));
+window.addEventListener('pagehide',()=>hideDocuments());
+// A restored BFCache page must recheck the account before rendering a PDF list.
 window.addEventListener('pageshow',event=>{
- if(event.persisted&&!deviceBusy){lockArea();void authenticate();}
+ if(event.persisted)void authenticate();
 });
 void authenticate();
