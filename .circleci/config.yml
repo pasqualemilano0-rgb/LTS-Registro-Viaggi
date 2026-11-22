@@ -35,6 +35,10 @@ jobs:
             node --test tests/*.test.mjs
             node tests/maps-redirect-diagnostic.mjs
             node tests/qa-report-production-http-smoke.mjs
+            # Non-destructive QA-only payroll boundary checks; no real JWT/PDF.
+            if test -f supabase/qa/functions/lts-payroll-secure-qa/index.ts; then
+              node tests/qa-payroll-secure-live-smoke.mjs
+            fi
 
   booking-auth-transport:
     docker:
