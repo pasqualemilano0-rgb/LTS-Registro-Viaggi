@@ -95,3 +95,8 @@ test('PDF preview stays in guarded tab and never opens an unprotected new tab',(
  assert.doesNotMatch(screen,/preview\.target='_blank'/);
  assert.match(html,/frame-src blob:/);
 });
+
+test('password verification revokes only its temporary Supabase session',()=>{
+ assert.match(verifier,/publicClient\.auth\.signOut\(\{scope:'local'\}\)/);
+ assert.doesNotMatch(verifier,/publicClient\.auth\.signOut\(\)/);
+});

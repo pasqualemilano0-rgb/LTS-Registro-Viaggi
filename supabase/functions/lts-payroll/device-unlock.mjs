@@ -82,7 +82,12 @@ async function verifyPasswordReentry(publicClient,privateClient,actor,password){
    fail(401,'Password LTS non valida.');
  }finally{
   // Revoke the temporary password-check session; not the user's original session.
-  if(verified?.session)try{await publicClient.auth.signOut();}catch{}
+  if(verified?.session){
+    // Only the disposable password-verification session is revoked.
+    // A global signOut would invalidate the driver's legitimate LTS sessions.
+    const {error:signOutError}=await publicClient.auth.signOut({scope:'local'});
+    if(signOutError)fail(503,'Chiusura sessione temporanea non riuscita.');
+   }
  }
 }
 async function registerOptions(api,actor,input){
