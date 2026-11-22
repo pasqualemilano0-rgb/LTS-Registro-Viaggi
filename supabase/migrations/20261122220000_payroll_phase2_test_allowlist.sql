@@ -20,6 +20,6 @@ create table if not exists public.lts_payroll_test_allowlist (
 comment on table public.lts_payroll_test_allowlist is
  'Manual, temporary LTS payroll test audience. Zero rows = zero API access even if the feature flag is accidentally enabled. Never store passwords, tokens or PDF data.';
 alter table public.lts_payroll_test_allowlist enable row level security;
-revoke all on public.lts_payroll_test_allowlist from public,anon,authenticated;
+revoke all on public.lts_payroll_test_allowlist from public,anon,authenticated,service_role;
 grant select on public.lts_payroll_test_allowlist to service_role;
 -- No policies; no application INSERT/UPDATE/DELETE, no automatic testers.
