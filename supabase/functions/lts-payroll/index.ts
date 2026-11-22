@@ -70,6 +70,19 @@ async function objectBody(req){
   return value;
  }catch(e){if(e?.status)throw e;fail(400);}
 }
+/**
+ * Second, independent release gate: verified live LTS users must be manually
+ * allowlisted for the limited test. A feature flag alone never admits a user.
+ * The database caps entries at two drivers and one admin; entries expire.
+ * Query errors fail closed. No client-provided test role or user ID is trusted.
+ */
+async function requirePhase2Tester(db,userId,role){
+ const {data,error}=await db.from('lts_payroll_test_allowlist')
+  .select('user_id').eq('user_id',userId).eq('role',role)
+  .eq('enabled',true).gt('expires_at',new Date().toISOString()).maybeSingle();
+ if(error)fail(503,'Accesso test ai documenti non disponibile.');
+ if(!data)fail(403,'Documenti non ancora abilitati per questo account.');
+}
 async function authorized(req,api){
  const match=AUTH.exec(req.headers.get('authorization')||'');
  if(!match)fail(401);
@@ -86,6 +99,8 @@ async function authorized(req,api){
   const mfa=await requireAdminMfa(api.db,match[1],userId);
   if(!mfa?.enrolled||!mfa?.verified)fail(428);
  }
+ // All operations, including list and admin upload, require a live test seat.
+ await requirePhase2Tester(api.db,userId,access.role);
  return {userId,role:access.role,sessionId};
 }
 function mustAdmin(actor){if(actor.role!=='admin')fail(403);}
