@@ -75,7 +75,10 @@ test('phase 2 allowlist is server-only, expires and has exactly three possible s
  assert.match(migration,/user_id uuid not null unique references auth\.users\(id\)/);
  assert.match(migration,/interval '7 days'/);
  assert.match(migration,/enable row level security/);
- assert.match(migration,/revoke all on public\.lts_payroll_test_allowlist from public,anon,authenticated/);
+ assert.match(migration,/revoke all on public\.lts_payroll_test_allowlist from public,anon,authenticated,service_role/);
+ const corrective=read('supabase/migrations/20261122221500_payroll_phase2_allowlist_readonly.sql');
+ assert.match(corrective,/revoke all on public\.lts_payroll_test_allowlist from public, anon, authenticated, service_role/);
+ assert.match(corrective,/grant select on public\.lts_payroll_test_allowlist to service_role/);
  assert.doesNotMatch(migration,/insert into public\.lts_payroll_test_allowlist/);
 });
 
