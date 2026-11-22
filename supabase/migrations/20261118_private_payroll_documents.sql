@@ -21,7 +21,7 @@ create table if not exists public.lts_payroll_documents (
   archived_at timestamptz,
   constraint payroll_month_required check (category <> 'cedolino' or document_month is not null),
   constraint payroll_receipt_consistent check ((state <> 'draft' or (first_accessed_at is null and acknowledged_at is null)) and
-    (acknowledged_at is null or (category='cedolino' and first_accessed_at is not null and published_at is not null))),
+    (acknowledged_at is null or (category='cedolino' and published_at is not null))),
   constraint payroll_publication_consistent check (
     (state='draft' and published_at is null and archived_at is null)
     or (state='published' and published_at is not null and archived_at is null)
@@ -79,6 +79,8 @@ create trigger lts_payroll_write_audit_trg
 after insert or update of state, first_accessed_at, acknowledged_at on public.lts_payroll_documents
 for each row execute function public.lts_payroll_write_audit();
 
+-- Cedolino receipt records availability BEFORE PDF access. It is not a view,
+-- a signature or proof of payment. First PDF access requires the receipt.
 -- Server-only RPCs; driver_id is supplied exclusively after verified JWT and role checks.
 -- Database timestamps are idempotent and do not rely on the device clock.
 create or replace function public.lts_payroll_mark_first_access(p_document_id uuid,p_driver_id uuid)
@@ -90,6 +92,7 @@ begin
  update public.lts_payroll_documents
  set first_accessed_at=coalesce(first_accessed_at,now())
  where id=p_document_id and driver_id=p_driver_id and state='published'
+   and (category <> 'cedolino' or acknowledged_at is not null)
  returning first_accessed_at into v_at;
  return v_at;
 end;
@@ -103,7 +106,7 @@ begin
  update public.lts_payroll_documents
  set acknowledged_at=coalesce(acknowledged_at,now())
  where id=p_document_id and driver_id=p_driver_id and category='cedolino'
-   and state='published' and first_accessed_at is not null
+   and state='published'
  returning acknowledged_at into v_at;
  return v_at;
 end;
