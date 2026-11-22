@@ -53,6 +53,15 @@ test('DB requires prior receipt for cedolino PDF access but not to record the re
  assert.match(qaMigration,/to service_role/);
 });
 
+test('production backend is disabled unless separately and explicitly activated',()=>{
+ const prod=read('supabase/functions/lts-payroll/index.ts');
+ assert.match(prod,/Deno\.env\.get\('LTS_PAYROLL_ENABLED'\)==='yes'/);
+ const gate=prod.indexOf('if(!PAYROLL_ENABLED)return new Response');
+ const origin=prod.indexOf("if(req.headers.get('origin')!==ORIGIN)");
+ const handler=prod.indexOf('Deno.serve(async req=>{');
+ assert.ok(handler>=0&&gate>handler&&origin>gate,'deny all methods before CORS/auth/Storage');
+ assert.doesNotMatch(read('runtime-config.mjs'),/payrollEndpoint/);
+});
 test('driver UI confirms before requesting PDF, and has no post-view confirmation shortcut',()=>{
  const src=read('documenti/driver-documents.mjs');
  const ack=src.indexOf('await api.acknowledge(doc.id)');
