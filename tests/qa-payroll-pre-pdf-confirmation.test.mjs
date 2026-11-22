@@ -40,7 +40,8 @@ test('DB requires prior receipt for cedolino PDF access but not to record the re
   assert.match(sql,/category <> 'cedolino' or acknowledged_at is not null/);
   assert.match(sql,/category='cedolino' and published_at is not null/);
   assert.match(sql,/and \(category <> 'cedolino' or acknowledged_at is not null\)/);
-  const acknowledge=sql.slice(sql.indexOf('create or replace function public.lts_payroll',sql.indexOf('mark_first_access')),sql.indexOf('revoke all on function'));
+  const acknowledge=sql.match(/create or replace function public\\.lts_payroll(?:_secure_qa)?_acknowledge[\\s\\S]*?\\$\\$;/)?.[0];
+  assert.ok(acknowledge,'acknowledge RPC in '+path);
   assert.doesNotMatch(acknowledge,/and first_accessed_at is not null/);
   assert.match(acknowledge,/and state='published'\s+returning acknowledged_at/);
   assert.match(sql,/revoke all on function public\.lts_payroll/);
