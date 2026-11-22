@@ -20,12 +20,13 @@ const ORIGIN='https://pasqualemilano0-rgb.github.io';
 const endpoint='https://otrqynkscpbeyuvdlgpg.supabase.co/functions/v1/lts-payroll';
 const tokens={a:'a'.repeat(70),b:'b'.repeat(70),admin:'m'.repeat(70),revoked:'r'.repeat(70)};
 
-function fixture({adminMfa=true,enabled=true}={}){
+function fixture({adminMfa=true,enabled=true,allowedUsers=[A,B,M],expiry='2099-01-01T00:00:00Z'}={}){
  const accounts=[
   {user_id:A,role:'driver',enabled:true,removed_at:null},
   {user_id:B,role:'driver',enabled:true,removed_at:null},
   {user_id:M,role:'admin',enabled:true,removed_at:null}
  ];
+ const allowlist=allowedUsers.map(user_id=>({user_id,role:user_id===M?'admin':'driver',enabled:true,expires_at:expiry}));
  const docs=[
   {id:docA,driver_id:A,category:'cedolino',state:'published',object_path:A+'/2026/'+docA+'.pdf',first_accessed_at:null,acknowledged_at:null},
   {id:docB,driver_id:B,category:'cedolino',state:'published',object_path:B+'/2026/'+docB+'.pdf',first_accessed_at:null,acknowledged_at:null},
@@ -36,11 +37,12 @@ function fixture({adminMfa=true,enabled=true}={}){
   constructor(table){this.table=table;this.filters=[];}
   select(){return this;}
   eq(key,val){this.filters.push(row=>row[key]===val);return this;}
+  gt(key,val){this.filters.push(row=>row[key]>val);return this;}
   is(key,val){this.filters.push(row=>row[key]===val);return this;}
   order(){return this;}
   range(){return this;}
   values(){
-   const rows=this.table==='lts_account_access'?accounts:this.table==='lts_payroll_documents'?docs:[];
+   const rows=this.table==='lts_account_access'?accounts:this.table==='lts_payroll_documents'?docs:this.table==='lts_payroll_test_allowlist'?allowlist:[];
    return rows.filter(row=>this.filters.every(test=>test(row)));
   }
   maybeSingle(){return Promise.resolve({data:this.values()[0]||null,error:null});}
@@ -127,6 +129,27 @@ test('production payroll release flag remains OFF by default and denies every do
  assert.equal(x.audit.length,0,'no audit/data writes while disabled');
  assert.equal(x.docs[0].acknowledged_at,null,'no implicit receipt while disabled');
 });
+test('flag ON still denies ALL non-allowlisted users, including admins, before Storage',async()=>{
+ const x=fixture({enabled:true,allowedUsers:[]});
+ for(const [token,action] of [
+  [tokens.a,'list'],[tokens.a,'download'],[tokens.a,'acknowledge'],
+  [tokens.b,'download'],[tokens.admin,'drivers'],[tokens.admin,'revoke']
+ ]){
+  const result=await x.call(token,action,{id:docA});
+  assert.equal(result.status,403,'test allowlist must deny '+action);
+ }
+ assert.equal(x.reads.length,0);
+ assert.equal(x.audit.length,0);
+ assert.equal(x.docs[0].acknowledged_at,null);
+});
+
+test('expired allowlist entries cannot access payroll even when flag is ON',async()=>{
+ const x=fixture({enabled:true,expiry:'2020-01-01T00:00:00Z'});
+ assert.equal((await x.call(tokens.a,'list')).status,403);
+ assert.equal((await x.call(tokens.admin,'drivers')).status,403);
+ assert.equal(x.reads.length,0);
+});
+
 test('autista B cannot read PDF or acknowledge receipt for autista A',async()=>{
  const x=fixture();
  assert.equal((await x.call(tokens.b,'download',{id:docA})).status,403);
