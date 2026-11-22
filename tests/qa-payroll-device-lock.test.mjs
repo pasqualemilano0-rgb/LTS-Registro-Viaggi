@@ -26,7 +26,7 @@ test('PDF list, download, acknowledgement all require server-verified device ste
 
 test('WebAuthn origin, RP ID, challenge, user verification, password enrollment enforced',()=>{
  assert.match(verifier,/npm:@simplewebauthn\/server@13\.3\.0/);
- assert.match(verifier,/const RPID='pasqualemilano0-rgb\.github\.io'/);
+ assert.match(verifier,/const RPID=new URL\(ORIGIN\)\.hostname/);
  assert.match(verifier,/expectedOrigin:ORIGIN,expectedRPID:RPID,requireUserVerification:true/);
  assert.match(verifier,/const challenge=await consumeChallenge\(api\.db,actor,input\.challengeId,'register'\)/);
  assert.match(verifier,/const challenge=await consumeChallenge\(api\.db,actor,input\.challengeId,'unlock'\)/);
@@ -74,4 +74,17 @@ test('no password-only path to driver PDFs and no biometric/PIN collection',()=>
  assert.doesNotMatch(edge,/if\s*\(\s*!passkey\s*\)\s*return.*documents/);
  assert.doesNotMatch(client,/getUserMedia|FaceDetector|localStorage|sessionStorage/);
  assert.match(screen,/showDeviceGate\(device.enrolled\)/);
+});
+
+test('QA origin/RP ID and PDF API are explicitly bound to their own environment',()=>{
+ assert.match(edge,/LTS_PAYROLL_ALLOWED_ORIGIN/);
+ assert.match(verifier,/LTS_PAYROLL_ALLOWED_ORIGIN/);
+ assert.match(verifier,/const RPID=new URL\\(ORIGIN\\)\\.hostname/);
+ assert.match(transport,/runtime\\.accountAuth\\?\\.payrollEndpoint/);
+ assert.match(transport,/url\\.origin!==auth\\.origin/);
+ assert.doesNotMatch(transport,/const ENDPOINT='https:\\/\\/otrqynkscpbeyuvdlgpg/);
+ assert.match(screen,/function openPdfPreview\\(blob,doc\\)/);
+ assert.match(screen,/URL\\.revokeObjectURL\\(url\\)/);
+ assert.match(screen,/await api\\.acknowledge\\(doc\\.id\\)/);
+ assert.match(html,/Se non confermi rimane in attesa/);
 });

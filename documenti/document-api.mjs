@@ -1,6 +1,21 @@
 /** Shared LTS document transport. No document content is stored in browser caches. */
 import * as account from '../account-access.mjs';
-const ENDPOINT='https://otrqynkscpbeyuvdlgpg.supabase.co/functions/v1/lts-payroll';
+import runtime from '../runtime-config.mjs';
+// Each build must explicitly select the payroll API of its own Auth project.
+function payrollEndpoint(){
+ const configured=runtime.accountAuth?.payrollEndpoint;
+ const login=runtime.accountAuth?.loginEndpoint;
+ if(typeof configured!=='string'||typeof login!=='string')
+  throw Error('Archivio documenti non ancora configurato per questo ambiente.');
+ let url,auth;
+ try{url=new URL(configured);auth=new URL(login);}catch{
+  throw Error('Configurazione documenti non valida.');
+ }
+ if(url.protocol!=='https:'||url.pathname!=='/functions/v1/lts-payroll'||
+    url.search||url.hash||url.username||url.password||url.origin!==auth.origin)
+  throw Error('Servizio documenti non compatibile con questo account.');
+ return url.href;
+}
 // The unlock credential is an ephemeral in-memory capability. NEVER persist it.
 let unlocked=null;
 export function hasDeviceUnlock(){
@@ -21,7 +36,7 @@ async function request(payload,{multipart=false,pdf=false}={}){
  const outbound=protectedAction?{...payload,unlockToken:unlocked.token}:payload;
  const abort=new AbortController(),timer=setTimeout(()=>abort.abort(),multipart?90000:30000);
  try{
-  const response=await fetch(ENDPOINT,{method:'POST',mode:'cors',cache:'no-store',
+  const response=await fetch(payrollEndpoint(),{method:'POST',mode:'cors',cache:'no-store',
    credentials:'omit',headers:{Authorization:'Bearer '+token,...(multipart?{}:{'Content-Type':'application/json'})},
    body:multipart?payload:JSON.stringify(outbound),signal:abort.signal});
   if(!response.ok){

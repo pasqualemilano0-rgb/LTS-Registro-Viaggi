@@ -8,7 +8,14 @@ import {checkLtsSession} from './lts-session.mjs';
 import {requireAdminMfa} from './lts-admin-mfa.mjs';
 import {deviceAction,requireDocumentUnlock} from './device-unlock.mjs';
 
-const ORIGIN='https://pasqualemilano0-rgb.github.io';
+const ORIGIN=(()=>{
+ const value=Deno.env.get('LTS_PAYROLL_ALLOWED_ORIGIN')||'https://pasqualemilano0-rgb.github.io';
+ let url;
+ try{url=new URL(value);}catch{throw Error('LTS payroll origin non valida');}
+ if(url.origin!==value||url.protocol!=='https:'||!url.hostname||url.username||url.password)
+  throw Error('LTS payroll origin non autorizzata');
+ return value;
+})();
 const BUCKET='lts-payroll-private';
 const MAX_FILE=8388608, MAX_MULTIPART=MAX_FILE+32768;
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;

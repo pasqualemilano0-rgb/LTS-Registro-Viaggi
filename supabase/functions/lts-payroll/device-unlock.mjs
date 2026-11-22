@@ -8,8 +8,15 @@ import {
  generateAuthenticationOptions, verifyAuthenticationResponse
 } from 'npm:@simplewebauthn/server@13.3.0';
 
-const ORIGIN='https://pasqualemilano0-rgb.github.io';
-const RPID='pasqualemilano0-rgb.github.io';
+const ORIGIN=(()=>{
+ const value=Deno.env.get('LTS_PAYROLL_ALLOWED_ORIGIN')||'https://pasqualemilano0-rgb.github.io';
+ let url;
+ try{url=new URL(value);}catch{throw Error('LTS payroll origin non valida');}
+ if(url.origin!==value||url.protocol!=='https:'||!url.hostname||url.username||url.password)
+  throw Error('LTS payroll origin non autorizzata');
+ return value;
+})();
+const RPID=new URL(ORIGIN).hostname;
 const RP_NAME='LTS Registro Viaggi';
 const UUID=/^[a-f0-9]{8}-[a-f0-9]{4}-[1-8][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i;
 const KEY=/^[A-Za-z0-9_-]{24,1024}$/;

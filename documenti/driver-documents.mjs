@@ -2,7 +2,7 @@ import * as account from '../account-access.mjs';
 import * as api from './document-api.mjs';
 import * as passkey from './device-passkey.mjs';
 const $=id=>document.getElementById(id);
-let category='cedolino',offset=0,busy=false,deviceBusy=false,unlockTimer=null;
+let category='cedolino',offset=0,busy=false,deviceBusy=false,unlockTimer=null,activePdfPreview=null;
 const months=['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
 function note(message='',error=false){
  $('notice').textContent=message;$('notice').hidden=!message;
@@ -14,12 +14,14 @@ function element(tag,cls,text){
  return el;
 }
 function locked(message=''){
+ closePdfPreview();
  api.clearDeviceUnlock();
  $('content').hidden=true;$('device-gate').hidden=true;$('locked').hidden=false;
  $('documents').replaceChildren();
  if(message)note(message,true);
 }
 function lockArea(){
+ closePdfPreview();
  if(unlockTimer){clearTimeout(unlockTimer);unlockTimer=null;}
  $('content').hidden=true;
  $('documents').replaceChildren();offset=0;
@@ -102,6 +104,56 @@ $('device-setup-form').addEventListener('submit',async event=>{
  }catch(error){note(error.message||'Impossibile registrare il dispositivo.',true);}
  finally{deviceBusy=false;$('device-register').disabled=false;}
 });
+function closePdfPreview(){
+ if(activePdfPreview?.open)activePdfPreview.close();
+ activePdfPreview=null;
+}
+function openPdfPreview(blob,doc){
+ // The PDF remains in memory only while this guarded dialog is open.
+ const url=URL.createObjectURL(blob);
+ const viewer=element('dialog','document-preview');
+ const heading=element('h2','',doc.label||'Documento PDF');
+ const help=element('p','hint','Visualizza il PDF sul telefono oppure scaricalo. Il file salvato fuori dall’app non è protetto dallo sblocco LTS.');
+ const links=element('div','preview-actions');
+ const preview=element('a','primary link-button','Visualizza PDF');
+ preview.href=url;preview.target='_blank';preview.rel='noopener noreferrer';
+ const save=element('a','outline link-button','Scarica PDF');
+ save.href=url;save.download=String(doc.original_filename||'LTS-documento.pdf').replace(/[^a-zA-Z0-9._-]/g,'_').slice(0,120);
+ const close=element('button','text-button','Chiudi');
+ close.type='button';close.addEventListener('click',()=>viewer.close());
+ links.append(preview,save);
+ viewer.append(heading,help,links);
+ if(doc.category==='cedolino'&&!doc.acknowledged_at){
+  const message=element('p','hint','Dopo aver aperto o scaricato il cedolino, conferma esplicitamente la ricezione. Se esci senza confermare, resterà in attesa.');
+  const confirm=element('button','primary','Ho ricevuto il cedolino');
+  confirm.type='button';confirm.disabled=true;
+  for(const link of [preview,save])link.addEventListener('click',()=>{confirm.disabled=false;});
+  confirm.addEventListener('click',async()=>{
+   if(!window.confirm('Confermi di aver ricevuto il cedolino? Non equivale a firma, pagamento o accettazione degli importi.'))return;
+   confirm.disabled=true;
+   try{
+    await api.acknowledge(doc.id);
+    viewer.close();
+    await load();
+    note('Ricezione registrata. Non equivale a confermare il pagamento dello stipendio.');
+   }catch(error){note(error.message||'Conferma non registrata.',true);confirm.disabled=false;}
+  });
+  viewer.append(message,confirm);
+ }
+ viewer.append(close);
+ viewer.addEventListener('close',()=>{
+  URL.revokeObjectURL(url);
+  viewer.remove();
+  if(activePdfPreview===viewer)activePdfPreview=null;
+ },{once:true});
+ if(typeof viewer.showModal!=='function'){
+  URL.revokeObjectURL(url);viewer.remove();
+  throw Error('Anteprima PDF non supportata. Usa un browser Chrome o Safari aggiornato.');
+ }
+ document.body.append(viewer);
+ activePdfPreview=viewer;
+ viewer.showModal();
+}
 function display(doc){
  const row=element('article','document-row');
  const details=element('div');
@@ -118,14 +170,15 @@ function display(doc){
   details.append(element('small','',receiptStatus));
  }
  const actions=element('div','actions');
- const button=element('button','outline','Scarica PDF');
+ const button=element('button','outline','Apri PDF');
  button.type='button';
  button.addEventListener('click',async()=>{
   button.disabled=true;note('');
   try{
    const file=await api.download(doc.id);
-   api.savePdf(file,doc.original_filename);
-   // Refresh server-side first-access timestamp. The receipt action remains optional.
+   if(document.visibilityState!=='visible'||!api.hasDeviceUnlock())throw Error('Ripeti lo sblocco per leggere il PDF.');
+   openPdfPreview(file,doc);
+   // First access is recorded server-side only after the PDF bytes are available.
    await load();
   }catch(error){note(error.message||'Download non disponibile.',true);}
   finally{button.disabled=false;}
@@ -136,7 +189,7 @@ function display(doc){
   confirm.type='button';confirm.disabled=!doc.first_accessed_at;
   confirm.title=doc.first_accessed_at
    ?'Conferma volontaria di ricezione; non è una firma né una prova del pagamento.'
-   :'Apri prima il PDF. Non è obbligatorio confermarne la ricezione.';
+   :'Apri prima il PDF. La richiesta di conferma resterà in attesa.';
   confirm.addEventListener('click',async()=>{
    if(!window.confirm('Confermo soltanto di aver ricevuto il cedolino PDF. '+
       'NON confermo il pagamento dello stipendio, né la correttezza degli importi. Proseguire?'))return;
