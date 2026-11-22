@@ -4,6 +4,9 @@ PR principale: pubblica #193; precedente candidato `8ec6653ed0d521aa9e3150fe7f2f
 PR #194: ripresa selettivamente la revoca amministrativa con transizione e audit atomici, adattata allo schema `driver_id/state` della #193. Nessun merge dello schema incompatibile `employee_id/status`.
 PR privata #215: mantenuti richiesta esplicita di ricezione, tre categorie, tema/logo LTS e scelta delle due aree.
 
+## Aggiornamento dei requisiti — 22 novembre 2026
+Per richiesta successiva, il candidato #193 **non richiede più WebAuthn, passkey o sblocco biometrico**. I test e gli asset QA descritti sotto sono la fotografia **precedente** alla modifica e non certificano il nuovo build. JWT verificato, sessione attiva, isolamento A/B, MFA admin, revoca e ricevuta rimangono obbligatori. Non dichiarare l'Edge QA pubblicata aggiornata senza verifica della versione distribuita e test E2E.
+
 ## Modifiche
 
 - Revoca solo amministratore con MFA server-side: documento `archived`, PDF negato anche all'admin, audit con attore e timestamp; PDF e ricevute conservati.
@@ -18,7 +21,7 @@ PR privata #215: mantenuti richiesta esplicita di ricezione, tre categorie, tema
 - CI precedente: cinque contesti CircleCI verdi sul candidato di partenza, senza rilancio.
 - Suite Node dopo le modifiche funzionali: 409 test. 407 pass immediati; due test HTTP hanno avuto timeout di rete nell'esecutore. Ripetuti soltanto questi due con `NODE_USE_ENV_PROXY=1`: 2/2 pass. Nessuna modifica del codice per mascherare il problema.
 - Database QA: 19 asserzioni reali in transazione (due driver e admin già esistenti), incluse ricevute/IDOR/bozze/revoca/idempotenza/audit/privilegi RPC. ROLLBACK di tutti i metadati sintetici. Non è un E2E HTTP autenticato.
-- Edge QA v3: riletta e confrontata byte per byte con i quattro file candidati; JWT, sessione, MFA e WebAuthn invariati.
+- Edge QA v3 (storico prima della rimozione): confrontata con il vecchio candidato; JWT, sessione, MFA e WebAuthn erano invariati. **Non rappresenta il nuovo backend senza WebAuthn.**
 - Smoke HTTP QA: 204 / 401 / 401 / 403 / 403, rispettivamente preflight ammesso, JWT mancante, token falso, origine produzione vietata, header CORS non consentito.
 - Worker preparato: 22 scenari con credenziali Basic sintetiche locali; 15 asset, CSP/no-store, gate e rifiuto contenuto corrotto. Non è un login al sito reale.
 - Isolamento: su 13 Worker letti, soltanto `lts-test-pr205` usa KV `0442a91a117846509a3074c74ab08292`.
@@ -35,7 +38,7 @@ Backend `lts-payroll-secure-qa` v3; schema aggiunto: sola RPC `lts_payroll_secur
 ## Gate ancora bloccanti
 
 1. Il browser disponibile non dispone delle credenziali Basic QA; il controllo non è stato aggirato o cambiato. Nessun login A/B o MFA reale attestato.
-2. Nessun Android fisico accessibile: registrazione/sblocco/annullamento/scadenza/revoca/cambio telefono da provare in Chrome Android sull'origine QA esatta.
+2. Nessun Android fisico accessibile: accesso con sessione LTS, cambio account, riapertura, background, PDF e scadenza/revoca sessione ancora da provare in Chrome Android sull'origine QA esatta. La biometria non è più prevista.
 3. Nessun PDF sintetico ancora caricato via amministratore MFA: upload, visualizzatore Android, download, ricevuta persistente e isolamento tramite token reali ancora da provare. La validazione upload corrente controlla tipo/estensione/dimensione e firma `%PDF-`; non è una validazione completa della struttura PDF né una scansione malware.
 4. LTS TEST baseline ha Booking disabilitato: i test di regressione del codice passano, ma non attestano il flusso Booking/Porti dal vivo in questa PWA QA.
 5. Nuova CI richiesta sul commit consolidato; vedere stato corrente della PR e rapporto finale Issue #220.
