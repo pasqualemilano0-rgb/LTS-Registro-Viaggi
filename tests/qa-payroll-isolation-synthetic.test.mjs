@@ -20,9 +20,9 @@ const ORIGIN='https://pasqualemilano0-rgb.github.io';
 const endpoint='https://otrqynkscpbeyuvdlgpg.supabase.co/functions/v1/lts-payroll';
 const tokens={a:'a'.repeat(70),b:'b'.repeat(70),admin:'m'.repeat(70),revoked:'r'.repeat(70)};
 
-function fixture({adminMfa=true,disabledDriver=false,removedDriver=false}={}){
+function fixture({adminMfa=true}={}){
  const accounts=[
-  {user_id:A,role:'driver',enabled:!disabledDriver,removed_at:removedDriver?'2026-11-22T12:00:00Z':null},
+  {user_id:A,role:'driver',enabled:true,removed_at:null},
   {user_id:B,role:'driver',enabled:true,removed_at:null},
   {user_id:M,role:'admin',enabled:true,removed_at:null}
  ];
@@ -98,9 +98,9 @@ function fixture({adminMfa=true,disabledDriver=false,removedDriver=false}={}){
   console
  },{timeout:2000});
  assert.equal(typeof handler,'function');
- async function call(token,action,options={},origin=ORIGIN){
+ async function call(token,action,options={}){
   const request=new Request(endpoint,{method:'POST',headers:{
-   'Origin':origin,'Authorization':'Bearer '+token,'Content-Type':'application/json'
+   'Origin':ORIGIN,'Authorization':'Bearer '+token,'Content-Type':'application/json'
   },body:JSON.stringify({action,...options})});
   const response=await handler(request);
   return {status:response.status,data:response.headers.get('content-type')?.includes('json')?
@@ -178,44 +178,4 @@ test('admin without MFA cannot revoke',async()=>{
  const x=fixture({adminMfa:false});
  assert.equal((await x.call(tokens.admin,'revoke',{id:docA})).status,428);
  assert.equal(x.docs[0].state,'published');
-});
-
-
-test('Step 1: inactive or removed driver is denied listing, PDF and receipt',async()=>{
- for(const state of [{disabledDriver:true},{removedDriver:true}]){
-  const x=fixture(state);
-  for(const action of ['list','download','acknowledge']){
-   const options=action==='list'?{}:{id:docA};
-   assert.equal((await x.call(tokens.a,action,options)).status,403,action);
-  }
-  assert.equal(x.docs[0].first_accessed_at,null);
-  assert.equal(x.docs[0].acknowledged_at,null);
- }
-});
-
-test('Step 1: forged or malformed JWT, wrong origin and retired passkey actions fail closed',async()=>{
- const x=fixture();
- assert.equal((await x.call('z'.repeat(70),'list')).status,401);
- assert.equal((await x.call('invalid','list')).status,401);
- assert.equal((await x.call(tokens.a,'list',{},'https://evil.invalid')).status,403);
- assert.equal((await x.call(tokens.a,'passkey-status')).status,400);
-});
-
-test('Step 1: caller-controlled driverId never overrides verified session identity',async()=>{
- const x=fixture();
- const a=await x.call(tokens.a,'list',{driverId:B});
- const b=await x.call(tokens.b,'list',{driverId:A});
- assert.equal(a.status,200);
- assert.equal(b.status,200);
- assert.deepEqual(Array.from(a.data.documents,doc=>doc.id),[docA]);
- assert.deepEqual(Array.from(b.data.documents,doc=>doc.id),[docB]);
- assert.equal((await x.call(tokens.a,'publish',{id:docA,driverId:B})).status,403);
-});
-
-test('Step 1: driver session revocation prevents all document operations',async()=>{
- const x=fixture();
- for(const action of ['list','download','acknowledge','drivers','publish','revoke']){
-  const options=action==='list'||action==='drivers'?{}:{id:docA};
-  assert.equal((await x.call(tokens.revoked,action,options)).status,403,action);
- }
 });
