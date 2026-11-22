@@ -62,6 +62,23 @@ test('production backend is disabled unless separately and explicitly activated'
  assert.ok(handler>=0&&gate>handler&&origin>gate,'deny all methods before CORS/auth/Storage');
  assert.doesNotMatch(read('runtime-config.mjs'),/payrollEndpoint/);
 });
+test('phase 2 allowlist is server-only, expires and has exactly three possible seats',()=>{
+ const prod=read('supabase/functions/lts-payroll/index.ts');
+ const migration=read('supabase/migrations/20261122220000_payroll_phase2_test_allowlist.sql');
+ assert.match(prod,/await requirePhase2Tester\(api\.db,userId,access\.role\)/);
+ assert.match(prod,/\.from\('lts_payroll_test_allowlist'\)/);
+ assert.match(prod,/\.eq\('user_id',userId\)\.eq\('role',role\)/);
+ assert.match(prod,/\.eq\('enabled',true\)\.gt\('expires_at',new Date\(\)\.toISOString\(\)\)/);
+ assert.match(prod,/if\(error\)fail\(503/);
+ assert.match(prod,/if\(!data\)fail\(403/);
+ assert.match(migration,/slot in \('driver_a','driver_b','admin'\)/);
+ assert.match(migration,/user_id uuid not null unique references auth\.users\(id\)/);
+ assert.match(migration,/interval '7 days'/);
+ assert.match(migration,/enable row level security/);
+ assert.match(migration,/revoke all on public\.lts_payroll_test_allowlist from public,anon,authenticated/);
+ assert.doesNotMatch(migration,/insert into public\.lts_payroll_test_allowlist/);
+});
+
 test('driver UI confirms before requesting PDF, and has no post-view confirmation shortcut',()=>{
  const src=read('documenti/driver-documents.mjs');
  const ack=src.indexOf('await api.acknowledge(doc.id)');
