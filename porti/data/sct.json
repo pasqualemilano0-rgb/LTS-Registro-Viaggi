@@ -1,7 +1,7 @@
 {
   "source": "https://www.salernocontainerterminal.com/ca/an/vessel_schedule.php",
   "source_updated_at": null,
-  "acquired_at": "2026-11-22T12:30:16.690Z",
+  "acquired_at": "2026-11-22T13:00:16.995Z",
   "rows": [
     {
       "vessel": "GRANDE MICHIGAN",
@@ -202,6 +202,6 @@
       "status": "PENDING"
     }
   ],
-  "updated_at": "2026-11-22T12:30:16.690Z",
+  "updated_at": "2026-11-22T13:00:16.995Z",
   "data_changed_at": "2026-11-21T23:00:16.565Z"
 }
