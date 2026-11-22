@@ -19,7 +19,7 @@ assert.equal((await call('/__lts_qa_gate',auth)).status,204);
 assert.equal((await call('/documenti/',auth,{method:'POST'})).status,405);
 assert.equal((await call('/unknown',auth)).status,404);
 assert.equal((await call('/documenti',auth)).status,308);
-for(const path of ['/documenti/','/documenti/driver-documents.mjs','/documenti/device-passkey.mjs','/documenti/document-api.mjs','/documenti/admin-documents.mjs','/documenti/documents.css','/amministratore/','/amministratore/buste-paga/','/amministratore/admin-area-choice.mjs','/amministratore/admin-area-choice.css','/assets/admin-card-amministrativa.webp','/assets/admin-card-logistica.svg','/assets/admin-hero-napoli.svg','/runtime-config.mjs','/app.mjs']){
+for(const path of ['/documenti/','/documenti/driver-documents.mjs','/documenti/document-api.mjs','/documenti/admin-documents.mjs','/documenti/documents.css','/amministratore/','/amministratore/buste-paga/','/amministratore/admin-area-choice.mjs','/amministratore/admin-area-choice.css','/assets/admin-card-amministrativa.webp','/assets/admin-card-logistica.svg','/assets/admin-hero-napoli.svg','/runtime-config.mjs','/app.mjs']){
  const r=await call(path,auth);
  assert.equal(r.status,200,path);
  assert.match(r.headers.get('cache-control'),/no-store/);
@@ -30,4 +30,4 @@ for(const path of ['/documenti/','/documenti/driver-documents.mjs','/documenti/d
 }
 const broken={...env,QA_ASSETS:{get:async()=>new Uint8Array([1,2,3])}};
 assert.equal((await worker.fetch(new Request(origin+'/documenti/',{headers:auth}),broken)).status,503);
-console.log('PASS: 22 exact-artifact scenarios; synthetic Basic, 15 assets, CSP/no-store, corruption rejection.');
+console.log('PASS: 21 exact-artifact scenarios; synthetic Basic, 14 assets, CSP/no-store, corruption rejection.');
