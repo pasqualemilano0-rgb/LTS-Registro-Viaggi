@@ -11,7 +11,8 @@ const ROOT=fileURLToPath(new URL('../',import.meta.url));
 const SOURCE_FILES=[
  'documenti/index.html','documenti/documents.css','documenti/driver-documents.mjs',
  'documenti/device-passkey.mjs','documenti/document-api.mjs','documenti/admin-documents.mjs',
- 'amministratore/buste-paga/index.html'
+ 'amministratore/buste-paga/index.html','amministratore/admin-area-choice.css',
+ 'amministratore/admin-area-choice.mjs','assets/admin-hero-napoli.svg','assets/admin-card-logistica.svg'
 ];
 function once(contents,anchor,change,label){
  if(!contents.includes(anchor)||contents.indexOf(anchor)!==contents.lastIndexOf(anchor))
@@ -46,7 +47,17 @@ export function prepareDocumentsQa(root,source=ROOT){
  app=once(app,anchor,anchor+newUI,'QA driver profile');
  let admin=readFileSync(adminPath,'utf8');
  if(admin.includes('href="./buste-paga/"'))throw Error('QA admin document link already exists');
- admin=once(admin,'</header>',`<a href="./buste-paga/" aria-label="Apri gestione documenti riservata">AREA AMMINISTRATIVA · DOCUMENTI</a></header>`,'QA admin HTML');
+ admin=once(admin,'</header>\n  <main class="container">',`<a href="./buste-paga/" aria-label="Apri gestione documenti riservata">AREA AMMINISTRATIVA · DOCUMENTI</a></header>\n  <main class="container">`,'QA admin HTML');
+ const choiceSource=readFileSync(join(source,'amministratore/index.html'),'utf8');
+ const start=choiceSource.indexOf('      <div id="admin-area-choice"');
+ const end=choiceSource.indexOf('      <div id="admin-logistica-login"',start);
+ if(start<0||end<0)throw Error('Missing verified area selector');
+ admin=once(admin,'</head>','<link rel="stylesheet" href="./admin-area-choice.css">'+
+  '<script type="module" src="./admin-area-choice.mjs"></script></head>','QA chooser assets');
+ admin=once(admin,'      <form id="login-form"',choiceSource.slice(start,end)+
+  '      <div id="admin-logistica-login" hidden><form id="login-form"','QA logistics login');
+ admin=once(admin,'      <div class="login-footer">',
+  '<button id="admin-area-back" type="button">Torna alla scelta delle aree</button></div>\n      <div class="login-footer">','QA login footer');
  const writes=[{path:'runtime-config.mjs',text:runtime},{path:'app.mjs',text:app},{path:'amministratore/index.html',text:admin}];
  for(const file of SOURCE_FILES){
   let content=readFileSync(join(source,file),'utf8');
@@ -65,9 +76,12 @@ export function prepareDocumentsQa(root,source=ROOT){
   mkdirSync(dirname(destination),{recursive:true});
   writeFileSync(destination,text,'utf8');
  }
+ const photo='assets/admin-card-amministrativa.webp';
+ mkdirSync(join(folder,'assets'),{recursive:true});
+ copyFileSync(join(source,photo),join(folder,photo));
  // The immutable Worker security policy must ALSO permit QA endpoint + frame-src blob:
  // do not deploy these assets until its CSP is reviewed and updated safely.
- return {files:writes.map(x=>x.path),api:QA_ENDPOINT,workerCspRequired:true};
+ return {files:[...writes.map(x=>x.path),photo],api:QA_ENDPOINT,workerCspRequired:true};
 }
 if(process.argv[1]&&resolve(process.argv[1])===fileURLToPath(import.meta.url)){
  const dir=process.argv[2];

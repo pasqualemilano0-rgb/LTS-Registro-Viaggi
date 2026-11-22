@@ -72,6 +72,7 @@ export async function deviceUnlockVerify(challengeId,credential){
 export const documents=filter=>request({action:'list',...filter});
 export const drivers=()=>request({action:'drivers'});
 export const publish=id=>request({action:'publish',id});
+export const revoke=id=>request({action:'revoke',id});
 export const upload=(file,{driverId,category,year,month,label})=>{
  if(!(file instanceof File)||file.size>8388608||file.size<10||
     !file.name.toLowerCase().endsWith('.pdf'))throw Error('Seleziona un PDF fino a 8 MB.');

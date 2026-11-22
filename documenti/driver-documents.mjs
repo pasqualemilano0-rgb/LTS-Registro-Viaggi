@@ -3,6 +3,7 @@ import * as api from './document-api.mjs';
 import * as passkey from './device-passkey.mjs';
 const $=id=>document.getElementById(id);
 let category='cedolino',offset=0,busy=false,deviceBusy=false,unlockTimer=null,activePdfPreview=null;
+let viewGeneration=0;
 const months=['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
 function note(message='',error=false){
  $('notice').textContent=message;$('notice').hidden=!message;
@@ -14,6 +15,7 @@ function element(tag,cls,text){
  return el;
 }
 function locked(message=''){
+ viewGeneration++;
  closePdfPreview();
  api.clearDeviceUnlock();
  $('content').hidden=true;$('device-gate').hidden=true;$('locked').hidden=false;
@@ -21,6 +23,7 @@ function locked(message=''){
  if(message)note(message,true);
 }
 function lockArea(){
+ viewGeneration++;
  closePdfPreview();
  if(unlockTimer){clearTimeout(unlockTimer);unlockTimer=null;}
  $('content').hidden=true;
@@ -45,6 +48,7 @@ function showDeviceGate(enrolled){
 }
 async function authenticate(){
  if(deviceBusy)return;
+ viewGeneration++;
  if(unlockTimer){clearTimeout(unlockTimer);unlockTimer=null;}
  // Revoke any previously granted unlock, including before account re-validation.
  void api.lockDocuments().catch(()=>{});
@@ -174,7 +178,7 @@ function display(doc){
   const receiptStatus=doc.acknowledged_at
    ?'Ricezione confermata il '+when(doc.acknowledged_at)
    :doc.first_accessed_at
-    ?'Primo accesso PDF registrato il '+when(doc.first_accessed_at)
+    ?'Ricezione in attesa · primo accesso PDF il '+when(doc.first_accessed_at)
     :'Non risulta ancora un accesso al PDF';
   details.append(element('small','',receiptStatus));
  }
@@ -197,7 +201,7 @@ function display(doc){
   const confirm=element('button','outline','Ho ricevuto il cedolino');
   confirm.type='button';confirm.disabled=!doc.first_accessed_at;
   confirm.title=doc.first_accessed_at
-   ?'Conferma volontaria di ricezione; non è una firma né una prova del pagamento.'
+   ?'Conferma richiesta di ricezione; non è una firma né una prova del pagamento.'
    :'Apri prima il PDF. La richiesta di conferma resterà in attesa.';
   confirm.addEventListener('click',async()=>{
    if(!window.confirm('Confermo soltanto di aver ricevuto il cedolino PDF. '+
@@ -219,12 +223,14 @@ function display(doc){
 }
 async function load(append=false){
  if(busy||$('content').hidden)return;
+ const generation=viewGeneration;
  busy=true;$('refresh').disabled=true;$('more').disabled=true;
  if(!append){offset=0;$('documents').replaceChildren();}
  try{
   const filter={category,offset};
   if($('year').value)filter.year=Number($('year').value);
   const result=await api.documents(filter);
+  if(generation!==viewGeneration||$('content').hidden||!api.hasDeviceUnlock())return;
   if(!Array.isArray(result.documents))throw Error('Archivio documenti non valido.');
   for(const doc of result.documents){
    if(doc.state!=='published'||!['cedolino','cu','altri'].includes(doc.category))
@@ -262,6 +268,8 @@ document.addEventListener('visibilitychange',()=>{
  else if(!deviceBusy&&(!$('locked').hidden||$('device-gate').hidden===false))
    void authenticate();
 });
+window.addEventListener('lts-account-locked',()=>{lockArea();locked('Sessione chiusa. Accedi nuovamente.');});
+window.addEventListener('pagehide',()=>lockArea());
 // Never keep the PDF list exposed when navigating back to a page from BFCache.
 window.addEventListener('pageshow',event=>{
  if(event.persisted&&!deviceBusy){lockArea();void authenticate();}

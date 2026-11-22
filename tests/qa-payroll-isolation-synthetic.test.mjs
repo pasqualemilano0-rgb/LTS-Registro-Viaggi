@@ -55,6 +55,12 @@ function fixture({adminMfa=true}={}){
     {data:null,error:{message:'not found'}}
   })},
   rpc:async (name,args)=>{
+   if(name==='lts_payroll_revoke'){
+    const doc=docs.find(d=>d.id===args.p_document_id&&d.state==='published');
+    if(args.p_actor_id!==M||!doc)return {data:null,error:null};
+    doc.state='archived';audit.push({document_id:doc.id,actor_id:M,event:'archive'});
+    return {data:'2026-11-22T14:00:00Z',error:null};
+   }
    const doc=docs.find(d=>d.id===args.p_document_id&&d.driver_id===args.p_driver_id);
    if(!doc||doc.state!=='published')return {data:null,error:null};
    if(name==='lts_payroll_mark_first_access'){
@@ -151,4 +157,22 @@ test('valid LTS JWT without device step-up cannot list, read, or acknowledge pay
  }
  assert.equal(x.docs[0].first_accessed_at,null);
  assert.equal(x.docs[0].acknowledged_at,null);
+});
+
+// Tests run the real Edge handler; only Auth, WebAuthn and storage are synthetic.
+test('MFA admin revokes once; drivers cannot revoke or read/ack a revoked PDF',async()=>{
+ const x=fixture();
+ assert.equal((await x.call(tokens.a,'revoke',{id:docA})).status,403);
+ assert.equal((await x.call(tokens.admin,'revoke',{id:docA})).status,200);
+ assert.equal((await x.call(tokens.admin,'revoke',{id:docA})).status,409);
+ assert.equal((await x.call(tokens.a,'download',{id:docA})).status,403);
+ assert.equal((await x.call(tokens.a,'acknowledge',{id:docA})).status,409);
+ assert.equal((await x.call(tokens.admin,'download',{id:docA})).status,403);
+ assert.equal(x.audit.filter(e=>e.event==='archive').length,1);
+ assert.equal(x.docs.length,3,'revocation never deletes documents');
+});
+test('admin without MFA cannot revoke',async()=>{
+ const x=fixture({adminMfa:false});
+ assert.equal((await x.call(tokens.admin,'revoke',{id:docA})).status,428);
+ assert.equal(x.docs[0].state,'published');
 });

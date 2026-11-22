@@ -83,17 +83,17 @@ function renderRow(doc){
  information.append(node('small','',metadata(doc)+(driver?' · '+driver.name:'')));
  information.append(node('small','',doc.original_filename));
  const format=stamp=>new Intl.DateTimeFormat('it-IT',{dateStyle:'short',timeStyle:'short'}).format(new Date(stamp));
- const tracking=doc.state==='draft'?'Bozza: non ancora disponibile al dipendente'
+ const tracking=doc.state==='archived'?'Revocato: accesso al PDF disabilitato':doc.state==='draft'?'Bozza: non ancora disponibile al dipendente'
   :doc.acknowledged_at?'Ricezione confermata il '+format(doc.acknowledged_at)
   :doc.first_accessed_at?
     'Primo accesso PDF il '+format(doc.first_accessed_at)+
-      (doc.category==='cedolino'?' · conferma facoltativa non effettuata':'')
+      (doc.category==='cedolino'?' · conferma di ricezione in attesa':'')
   :'Pubblicato il '+(doc.published_at?format(doc.published_at):'—')+' · nessun accesso PDF registrato';
  information.append(node('small','',tracking));
  const actions=node('div','actions');
- actions.append(node('span','status '+doc.state,doc.state==='published'?'Pubblicato':'Bozza'));
+ actions.append(node('span','status '+doc.state,doc.state==='archived'?'Revocato':doc.state==='published'?'Pubblicato':'Bozza'));
  const download=node('button','outline','PDF');
- download.type='button';
+ download.type='button';download.disabled=doc.state==='archived';
  download.addEventListener('click',async()=>{
   download.disabled=true;notice('');
   try{const file=await api.download(doc.id);api.savePdf(file,doc.original_filename);}
@@ -113,6 +113,16 @@ function renderRow(doc){
    finally{publish.disabled=false;}
   });
   actions.append(publish);
+ }
+ if(doc.state==='published'){
+  const revoke=node('button','outline','Revoca');revoke.type='button';
+  revoke.addEventListener('click',async()=>{
+   if(!window.confirm('Revocare questo documento? Non sarà più accessibile. Le conferme già registrate rimangono nello storico.'))return;
+   revoke.disabled=true;notice('');
+   try{await api.revoke(doc.id);await refreshDocs();notice('Documento revocato. Storico conservato.');}
+   catch(error){notice(error.message||'Revoca non riuscita.',true);revoke.disabled=false;}
+  });
+  actions.append(revoke);
  }
  row.append(information,actions);
  return row;

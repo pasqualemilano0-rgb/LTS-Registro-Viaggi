@@ -203,6 +203,13 @@ async function publish(db,actor,id){
  // Audit inserted atomically by lts_payroll_write_audit trigger.
  return {id,state:'published'};
 }
+async function revokeDocument(db,actor,id){
+ mustAdmin(actor);validId(id);
+ const {data,error}=await db.rpc('lts_payroll_revoke',{p_document_id:id,p_actor_id:actor.userId});
+ if(error)fail(503,'Revoca non registrata.');
+ if(!data)fail(409,'Documento non revocabile.');
+ return {id,state:'archived'};
+}
 async function download(db,actor,id){
  validId(id);
  const {data,error}=await db.from('lts_payroll_documents')
@@ -211,6 +218,7 @@ async function download(db,actor,id){
  if(!data)fail(404);
  if(actor.role==='driver'&&(data.driver_id!==actor.userId||data.state!=='published'))fail(403);
  if(actor.role==='admin'&&data.state==='archived')fail(403);
+ if(!data.object_path.startsWith(data.driver_id+'/'))fail(503);
  const {data:file,error:readErr}=await db.storage.from(BUCKET).download(data.object_path);
  if(readErr||!file)fail(503,'PDF non disponibile.');
  if(actor.role==='driver'){
@@ -269,6 +277,7 @@ Deno.serve(async req=>{
   }
   if(input.action==='list')return json({documents:await listDocs(api.db,actor,input)});
   if(input.action==='publish')return json(await publish(api.db,actor,input.id));
+  if(input.action==='revoke')return json(await revokeDocument(api.db,actor,input.id));
   if(input.action==='download')return await download(api.db,actor,input.id);
   if(input.action==='acknowledge')return json(await acknowledge(api.db,actor,input.id));
   fail(400);
