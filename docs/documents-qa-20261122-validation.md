@@ -44,3 +44,16 @@ Backend `lts-payroll-secure-qa` v3; schema aggiunto: sola RPC `lts_payroll_secur
 5. Nuova CI richiesta sul commit consolidato; vedere stato corrente della PR e rapporto finale Issue #220.
 
 Produzione non modificata. PR #193 deve rimanere Draft. Valutazione provvisoria 7/10: implementazione e controlli automatici avanzati, collaudo autenticato e Android mancanti.
+
+
+## STEP 1 — accesso LTS senza biometria, Supabase QA v4 (22/11/2026)
+
+**Ambito verificato:** sola Edge Function dedicata `lts-payroll-secure-qa` nel progetto Supabase QA `sywxretbfgwxwhvdcknq`. Nessun deploy su Supabase produzione, GitHub Pages o Cloudflare. Le tabelle payroll QA risultavano vuote prima della verifica.
+
+- Il precedente servizio QA **v3** richiedeva ancora `device-unlock.mjs` / WebAuthn. Eseguito deploy **v4 ACTIVE**, mantenendo `verify_jwt=false` invariato rispetto alla baseline QA; la funzione esegue comunque `auth.getUser` su ogni richiesta con token, controllo sessione `lts_session_is_active`, ruolo/abilitazione e MFA admin. Non è stata introdotta una scorciatoia senza autenticazione.
+- Confronto pre-deploy: solo il file `index.ts` cambia per eliminare import, azioni e gate WebAuthn e relativo messaggio HTTP 423; `lts-session.mjs` e `lts-admin-mfa.mjs` sono **identici byte per byte** alla v3. Dopo il deploy, riletti e verificati tutti e tre i sorgenti distribuiti, corrispondenti esattamente al commit candidato.
+- RLS attiva su `lts_payroll_documents`, `lts_payroll_documents_secure_qa` e tabelle audit; né `anon` né `authenticated` possono leggere/inserire direttamente. La RPC `lts_session_is_active` controlla `auth.sessions` e il registro revoche `lts_revoked_sessions`; la sua EXECUTE è negata ai ruoli client, consentita a `service_role`. Le RPC QA di ricevuta/revoca risultano anch'esse riservate a `service_role`.
+- Il codice del driver usa solo account LTS verificato, nasconde elenco/chiude anteprima al background e riconvalida la sessione. Il backend forza l'ID proprietario per list e download e nega documenti non pubblicati. L'admin conserva l'MFA.
+- CI sulla versione precedente del ramo `28ba0acd7edad707be1e5e3185e9f0110569cf79`: **5/5 CircleCI success** (incluso `webapp-regression` e `browser-report-parity`). I test webapp comprendono lo smoke anonimo HTTP QA 204/401/401/403/403 ma, essendo stato eseguito prima del deploy v4, **non attesta ancora la versione aggiornata**.
+- **Bloccanti**: smoke HTTP successivo al deploy v4, accesso reale con due autisti QA distinti A/B e admin MFA, PDF sintetici published/draft/revoked, cambio account, revoca sessione, Android e ripristino QA. Tutti questi controlli devono avvenire su ambiente isolato, prima del merge e del go-live. Il deploy v4 non è approvazione produzione.
+- **Rollback QA:** sorgenti e configurazione della versione distribuita **v3** sono stati letti prima del deploy; ripristinare la v3 se i test v4 falliscono. Nessuna tabella WebAuthn già esistente è stata eliminata dal progetto QA.
