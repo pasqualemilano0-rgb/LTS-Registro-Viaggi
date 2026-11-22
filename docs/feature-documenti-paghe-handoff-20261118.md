@@ -51,22 +51,16 @@ Codice proposto su ramo feature; **non installato né verificato end-to-end**, *
 - Non pubblicare prima di concordare con consulente del lavoro e responsabile privacy se la tracciatura adottata è sufficiente per dimostrare la consegna nel contesto aziendale. Nessuna firma obbligatoria è prevista.
 
 
-## Estensione: sblocco dispositivo / passkey per I MIEI DOCUMENTI
+## Decisione aggiornata 22 novembre 2026 — rimosso lo sblocco biometrico
 
-- Ambito: tutte le categorie CEDOLINO, CU e ALTRI DOCUMENTI. La UI rimane bloccata; anche il backend impedisce list/download/acknowledge senza WebAuthn.
-- Tecnologia: WebAuthn/passkey, userVerification required. Sistema operativo e browser scelgono Face ID, impronta o PIN. Non si raccolgono dati biometrici, fotografie o PIN.
-- Prima registrazione: account autista LTS già verificato più reinserimento password LTS validata dal backend Supabase Auth per lo stesso user_id. Rate limit server 5 tentativi ogni 15 minuti.
-- Nuovo telefono: pulsante Registra nuova passkey nella schermata protetta, sempre con reimmissione della password LTS. Massimo cinque passkey attive.
-- Origin WebAuthn: https://pasqualemilano0-rgb.github.io; RP ID pasqualemilano0-rgb.github.io. Libreria server pin npm:@simplewebauthn/server@13.3.0.
-- Challenge WebAuthn a consumo singolo e validità 90 secondi, legata a user_id e session_id LTS. Il server verifica firma, challenge, RP ID, origin e UV.
-- Sblocco: token casuale di 32 byte, conservato soltanto nella memoria della pagina; SHA-256 sul server, legato alla sessione e alla passkey non revocata. Scadenza lato server entro 3 minuti.
-- Protezione: blocco UI e cancellazione elenco immediati quando app va in background, sessione scade, browser ripristina pagina; richiesta di revoca sblocco lato server.
-- Nessuna via alternativa a password-only se il dispositivo non supporta WebAuthn con sblocco schermo. L'admin mantiene password/MFA già previste.
-- Nota privacy: il blocco protegge soltanto l'area LTS, non i PDF già scaricati nella cartella Download del dispositivo.
-- Nuovi file: documenti/device-passkey.mjs, supabase/functions/lts-payroll/device-unlock.mjs, supabase/migrations/20261118_payroll_device_unlock.sql, tests/qa-payroll-device-lock.test.mjs.
-- QA prima di produzione: Android Chrome, iOS Safari, assenza WebAuthn, Face ID/PIN annullato, dispositivo nuovo, password errata e throttling, riutilizzo challenge, JWT revocato/rubato, accesso tra due autisti A/B, blocco background e dopo 3 minuti, download offline, RLS, Storage, CORS, regression Booking TFG/Porti.
-- STATO: soltanto PR di sviluppo. Nessun deploy o modifica a Supabase di produzione, nessun PDF reale caricato. Non pubblicare senza QA end-to-end.
-
+- L'accesso a **I MIEI DOCUMENTI** richiede l'account autista LTS autenticato, il JWT Supabase validato dal server, la sessione attiva e non revocata, ruolo autista abilitato e controllo proprietario + documento published per ogni richiesta.
+- Non è richiesto Face ID, impronta, PIN aggiuntivo, WebAuthn o passkey: la funzione non dipende più dal supporto biometrico del telefono.
+- **Nessuna scorciatoia sui permessi:** A non deve leggere i PDF di B, le bozze e i documenti revocati restano negati. L'admin mantiene accesso separato e MFA obbligatoria.
+- L'elenco dei documenti e l'anteprima PDF vengono cancellati/chiusi quando la pagina va in background o si perde la sessione; al ritorno viene verificata nuovamente la sessione LTS. I PDF già scaricati sul dispositivo restano sotto la responsabilità del dispositivo.
+- Rimossi dal candidato frontend, API e migrazioni WebAuthn; le eventuali tabelle biometriche precedentemente create **nel solo Supabase QA** non vengono eliminate automaticamente.
+- La conferma esplicita «Ho ricevuto il cedolino» dopo l'apertura del PDF resta obbligatoriamente proposta finché non confermata. Non equivale a pagamento o accettazione importi.
+- QA richiesta: accesso A/B, separazione documenti, sessione revocata, admin MFA, PDF pubblicato/bozza/revocato, ricevuta, background/ripristino, nessuna cache privata e rollback. Il precedente collaudo WebAuthn Android non è più applicabile.
+- Nessuna pubblicazione: PR in bozza fino alle prove E2E e autorizzazione specifica.
 
 ## Accesso amministrativo a due aree (18 novembre 2026)
 
@@ -77,7 +71,7 @@ Codice proposto su ramo feature; **non installato né verificato end-to-end**, *
 - Il pulsante Torna alla scelta delle aree cancella il campo password e gli eventuali errori del form logistico; il logout della dashboard ripresenta la selezione.
 - Nuovi file amministratore/admin-area-choice.mjs, amministratore/admin-area-choice.css e tests/qa-admin-area-choice.test.mjs. Modificato solo il markup di accesso in amministratore/index.html; non modifica il motore di login amministratore in admin.mjs.
 - Test statici/sintetici per le due opzioni, la separazione del login payroll con MFA e i click della scelta; da confermare comportamento su mobile/desktop e CircleCI al commit finale.
-- **PR #193 IN BOZZA: non pubblicare né usare dati reali prima di tutti i collaudi payroll, WebAuthn e autorizzazioni.**
+- **PR #193 IN BOZZA: non pubblicare né usare dati reali prima dei collaudi payroll e autorizzazioni.**
 
 
 ## Restyling di accesso approvato — Napoli, Porto e logo LTS originale
@@ -89,13 +83,13 @@ Codice proposto su ramo feature; **non installato né verificato end-to-end**, *
 - Le foto originali dell'anteprima utente sono state preparate come file WebP ottimizzati nel pacchetto di consegna della chat; i file binari fotografici **non sono inclusi nella PR**. Sono previsti come sostituzione finale degli SVG, con commit binario verificabile.
 - Modifiche a `amministratore/index.html` e `amministratore/admin-area-choice.css` limitate alla schermata di accesso; la CSS usa `body:has(#login-panel:not([hidden]) #admin-area-choice:not([hidden]))` per non modificare topbar/dashboard quando il login è già riuscito.
 - `tests/qa-admin-area-choice.test.mjs` verifica logo ufficiale, immagini locali, mobile e isolamento della dashboard. `tests/company-report-browser.mjs` apre prima AREA LOGISTICA per mantenere il collaudo di visibilità password.
-- Non unire né distribuire la PR #193 finché non passano i test browser e i collaudi di Supabase/WebAuthn/permessi documentali.
+- Non unire né distribuire la PR #193 finché non passano i test browser e i collaudi di Supabase/permessi documentali.
 
-\n## PDF + sblocco dispositivo — correzioni QA 22/11/2026
+\n## PDF + accesso con sessione LTS — correzioni QA 22/11/2026
 - Il browser usa ESCLUSIVAMENTE `runtime-config.mjs > accountAuth.payrollEndpoint`, che deve puntare a `/functions/v1/lts-payroll` nella STESSA origin Supabase di `accountAuth.loginEndpoint`. Senza questa impostazione, accesso ai PDF fail-closed: nessun fallback automatico verso produzione o QA.
 - Allestire il build LTS TEST con runtime accountAuth e CSP dedicati esclusivamente al progetto Supabase QA; non distribuire il runtime QA sul dominio ufficiale. Non inserirvi chiavi segrete.
-- Sul deployment della Edge Function QA impostare `LTS_PAYROLL_ALLOWED_ORIGIN` all'origine HTTPS **esatta** della PWA QA (senza path). WebAuthn usa lo stesso host come RP ID; il browser deve aprire l'esatta origin. Una origin non configurata o diversa non è autorizzata.
-- Lo sblocco richiede passkey WebAuthn di piattaforma con userVerification required, sessione LTS valida e challenge server monouso. La UI blocca dopo 3 minuti o quando va in background.
+- Sul deployment della Edge Function QA impostare `LTS_PAYROLL_ALLOWED_ORIGIN` all'origine HTTPS **esatta** della PWA QA (senza path). L'origine dev'essere esattamente autorizzata; una origin non configurata o diversa viene rifiutata.
+- Solo sessione LTS verificata: non richiedere una seconda autenticazione biometrica. La UI nasconde l'elenco, chiude il PDF quando va in background e riconvalida la sessione al ritorno.
 - Dopo il fetch di un PDF autorizzato viene mostrata una finestra con azioni esplicite **Visualizza PDF** e **Scarica PDF**; l'URL Blob è revocato alla chiusura. Per i cedolini non confermati, la richiesta di ricevuta è disponibile dopo la selezione dell'azione PDF, senza registrazioni automatiche; uscendo senza confermare lo stato resta in attesa. Non è firma né accettazione della paga.
 - ATTENZIONE: database QA attuale corrisponde a PR #194 (employee_id/status), non a #193 (driver_id/state). Le migration non si possono applicare sovrapponendole. Prima di deploy QA consolidare lo schema o usare un ambiente isolato con database vuoto; non alterare il QA esistente automaticamente.
-- Test da completare prima della pubblicazione: PWA Android/WebAuthn reale, 2 autisti QA A/B con download incrociato negato, admin MFA, nuovi dispositivi, replay/passkey revocata, PDF falso e >8 MB, confirm/audit, rollback QA, regressioni Booking e Registro. Nessun merge o deploy autorizzato con soli test statici.
+- Test da completare prima della pubblicazione: PWA Android reale, 2 autisti QA A/B con download incrociato negato, admin MFA, sessione revocata e cambio account, PDF falso e >8 MB, confirm/audit, rollback QA, regressioni Booking e Registro. Nessun merge o deploy autorizzato con soli test statici.
