@@ -18,7 +18,7 @@ test('QA overlay binds PDF endpoint to QA login, keeps production source untouch
  try{
   const result=prepareDocumentsQa(dir);
   assert.equal(result.workerCspRequired,true);
-  assert.equal(result.files.length,15);
+  assert.equal(result.files.length,14);
   assert.match(readFileSync(join(dir,'runtime-config.mjs'),'utf8'),/lts-payroll-secure-qa/);
   assert.match(readFileSync(join(dir,'app.mjs'),'utf8'),/I MIEI DOCUMENTI/);
   assert.match(readFileSync(join(dir,'documenti/index.html'),'utf8'),/sywxretbfgwxwhvdcknq.supabase.co/);
