@@ -1,19 +1,8 @@
 {
   "source": "https://tfg.bucci.it/@/TFGW_TP_ETA",
   "source_updated_at": "2026-11-21T08:41:57.000Z",
-  "acquired_at": "2026-11-21T22:30:16.875Z",
+  "acquired_at": "2026-11-22T07:30:16.499Z",
   "rows": [
-    {
-      "vessel": "ASTRAIOS",
-      "arrival_voyage": "0HWLAE1MA",
-      "departure_voyage": "0HWLAE1MA",
-      "eta": "11/11/26 06:00",
-      "acceptance": "NAVE CHIUSA",
-      "custom_close_time": "10/11/26 15:00:00",
-      "fast_corridor_cut_off": "10/11/2615:00:00",
-      "gate_cut_off": "",
-      "destination": "INTERNO PORTO"
-    },
     {
       "vessel": "X PRESS SALWEEN",
       "arrival_voyage": "645E",
