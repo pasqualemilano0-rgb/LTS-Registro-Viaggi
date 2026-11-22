@@ -23,7 +23,8 @@ create table if not exists public.lts_payroll_documents_secure_qa (
   archived_at timestamptz,
   constraint payroll_month_required check (category <> 'cedolino' or document_month is not null),
   constraint payroll_receipt_consistent check ((state <> 'draft' or (first_accessed_at is null and acknowledged_at is null)) and
-    (acknowledged_at is null or (category='cedolino' and published_at is not null))),
+    (acknowledged_at is null or (category='cedolino' and published_at is not null)) and
+    (category <> 'cedolino' or first_accessed_at is null or acknowledged_at is not null)),
   constraint payroll_publication_consistent check (
     (state='draft' and published_at is null and archived_at is null)
     or (state='published' and published_at is not null and archived_at is null)
