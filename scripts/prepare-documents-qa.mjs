@@ -10,7 +10,7 @@ const QA_ENDPOINT=QA_SUPABASE+'/functions/v1/lts-payroll-secure-qa';
 const ROOT=fileURLToPath(new URL('../',import.meta.url));
 const SOURCE_FILES=[
  'documenti/index.html','documenti/documents.css','documenti/driver-documents.mjs',
- 'documenti/device-passkey.mjs','documenti/document-api.mjs','documenti/admin-documents.mjs',
+ 'documenti/document-api.mjs','documenti/admin-documents.mjs',
  'amministratore/buste-paga/index.html','amministratore/admin-area-choice.css',
  'amministratore/admin-area-choice.mjs','assets/admin-hero-napoli.svg','assets/admin-card-logistica.svg'
 ];
@@ -40,7 +40,7 @@ export function prepareDocumentsQa(root,source=ROOT){
  const newUI=`
   if(store.usingAccount()&&accountAccess.isEnabled()&&accountAccess.isVerified()&&accountAccess.getRole()==='driver'){
    body.querySelector('.profile-menu')?.prepend(menuButton('I MIEI DOCUMENTI',
-    'Cedolino, CU e altri PDF riservati. Richiede sblocco del dispositivo.','download',()=>{
+    'Cedolino, CU e altri PDF riservati. Accesso con account LTS.','download',()=>{
      dialog.close();window.location.assign(new URL('documenti/',import.meta.url).href);
     }));
   }`;
