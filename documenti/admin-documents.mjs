@@ -84,10 +84,10 @@ function renderRow(doc){
  information.append(node('small','',doc.original_filename));
  const format=stamp=>new Intl.DateTimeFormat('it-IT',{dateStyle:'short',timeStyle:'short'}).format(new Date(stamp));
  const tracking=doc.state==='archived'?'Revocato: accesso al PDF disabilitato':doc.state==='draft'?'Bozza: non ancora disponibile al dipendente'
-  :doc.acknowledged_at?'Ricezione confermata il '+format(doc.acknowledged_at)
-  :doc.first_accessed_at?
-    'Primo accesso PDF il '+format(doc.first_accessed_at)+
-      (doc.category==='cedolino'?' · conferma di ricezione in attesa':'')
+  :doc.acknowledged_at?'Messa a disposizione confermata il '+format(doc.acknowledged_at)+
+    (doc.first_accessed_at?' · primo accesso PDF il '+format(doc.first_accessed_at):' · PDF non ancora aperto')
+  :doc.category==='cedolino'?'Pubblicato · conferma obbligatoria prima del PDF'
+  :doc.first_accessed_at?'Primo accesso PDF il '+format(doc.first_accessed_at)
   :'Pubblicato il '+(doc.published_at?format(doc.published_at):'—')+' · nessun accesso PDF registrato';
  information.append(node('small','',tracking));
  const actions=node('div','actions');
