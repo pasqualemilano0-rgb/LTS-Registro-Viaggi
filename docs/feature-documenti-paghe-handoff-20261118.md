@@ -1,4 +1,4 @@
-# LTS · Documenti paghe — handoff tecnico (PR di sviluppo, NON pubblicare)
+> **Requisito aggiornato 22/11/2026 — conferma prima del PDF:** l'autista deve confermare la *messa a disposizione* del CEDOLINO prima che l'API eroghi il file. Il backend nega anche un download diretto in assenza della conferma server-side. CU e ALTRI non richiedono il passaggio. La conferma non prova la lettura del PDF e non deve essere chiamata firma, pagamento o accettazione degli importi. PR ancora in bozza, produzione immutata; QA migration e test A/B sono gate bloccanti.\n\n# LTS · Documenti paghe — handoff tecnico (PR di sviluppo, NON pubblicare)
 
 ## Ambito richiesto
 - In **IL TUO PROFILO** dell'autista: **I MIEI DOCUMENTI** con **CEDOLINO**, **CU**, **ALTRI DOCUMENTI**.
@@ -40,9 +40,9 @@
 Codice proposto su ramo feature; **non installato né verificato end-to-end**, **nessun PDF personale caricato**, nessun deploy Supabase o merge. Richiesta approvazione tecnica e privacy prima del go-live.
 
 ## Estensione: tracciabilità e ricevuta volontaria (18 novembre 2026)
-- Tre eventi **distinti**: `published_at` (pubblicazione amministrativa), `first_accessed_at` (PDF recuperato dal server su richiesta dell'autista), `acknowledged_at` (tocco esplicito «Ho ricevuto il cedolino»).
+- Tre eventi **distinti e ordinati**: `published_at` (pubblicazione), `acknowledged_at` (conferma esplicita di disponibilità PRIMA di scaricare il cedolino), `first_accessed_at` (successiva richiesta effettiva del PDF al server).
 - `first_accessed_at` non prova la lettura né l'arrivo del file sul dispositivo: è un evento del servizio dopo il download Storage ed è registrato prima della consegna HTTP completa.
-- `acknowledged_at` è facoltativo e disponibile soltanto per `CEDOLINO` dopo il primo accesso; non è una firma elettronica del lavoratore, non prova il pagamento e non costituisce accettazione degli importi.
+- `acknowledged_at` richiede conferma esplicita **prima del download o della visualizzazione del CEDOLINO**: registra la messa a disposizione, non una lettura avvenuta. Non è una firma, non prova pagamento e non costituisce accettazione degli importi.
 - Le date sono scritte dal **database**, mai ricevute dal browser; eventi iniziali idempotenti mediante RPC `lts_payroll_mark_first_access` / `lts_payroll_acknowledge`, consentite esclusivamente a service_role dopo i controlli Edge JWT/sessione/ruolo.
 - Il trigger `lts_payroll_write_audit` registra primo accesso e conferma in modo atomico; i nuovi eventi sono persistenti nella tabella di audit separata dal registro viaggi.
 - L'area admin mostra la cronologia sintetica per PDF; non indica «pagato» o «firmato».
@@ -58,7 +58,7 @@ Codice proposto su ramo feature; **non installato né verificato end-to-end**, *
 - **Nessuna scorciatoia sui permessi:** A non deve leggere i PDF di B, le bozze e i documenti revocati restano negati. L'admin mantiene accesso separato e MFA obbligatoria.
 - L'elenco dei documenti e l'anteprima PDF vengono cancellati/chiusi quando la pagina va in background o si perde la sessione; al ritorno viene verificata nuovamente la sessione LTS. I PDF già scaricati sul dispositivo restano sotto la responsabilità del dispositivo.
 - Rimossi dal candidato frontend, API e migrazioni WebAuthn; le eventuali tabelle biometriche precedentemente create **nel solo Supabase QA** non vengono eliminate automaticamente.
-- La conferma esplicita «Ho ricevuto il cedolino» dopo l'apertura del PDF resta obbligatoriamente proposta finché non confermata. Non equivale a pagamento o accettazione importi.
+- La conferma esplicita della **messa a disposizione** è richiesta **prima dell'apertura del PDF**; finché non confermata l'API non consegna alcun byte del cedolino. Non equivale a lettura, pagamento o accettazione degli importi.
 - QA richiesta: accesso A/B, separazione documenti, sessione revocata, admin MFA, PDF pubblicato/bozza/revocato, ricevuta, background/ripristino, nessuna cache privata e rollback. Il precedente collaudo WebAuthn Android non è più applicabile.
 - Nessuna pubblicazione: PR in bozza fino alle prove E2E e autorizzazione specifica.
 
@@ -90,6 +90,6 @@ Codice proposto su ramo feature; **non installato né verificato end-to-end**, *
 - Allestire il build LTS TEST con runtime accountAuth e CSP dedicati esclusivamente al progetto Supabase QA; non distribuire il runtime QA sul dominio ufficiale. Non inserirvi chiavi segrete.
 - Sul deployment della Edge Function QA impostare `LTS_PAYROLL_ALLOWED_ORIGIN` all'origine HTTPS **esatta** della PWA QA (senza path). L'origine dev'essere esattamente autorizzata; una origin non configurata o diversa viene rifiutata.
 - Solo sessione LTS verificata: non richiedere una seconda autenticazione biometrica. La UI nasconde l'elenco, chiude il PDF quando va in background e riconvalida la sessione al ritorno.
-- Dopo il fetch di un PDF autorizzato viene mostrata una finestra con azioni esplicite **Visualizza PDF** e **Scarica PDF**; l'URL Blob è revocato alla chiusura. Per i cedolini non confermati, la richiesta di ricevuta è disponibile dopo la selezione dell'azione PDF, senza registrazioni automatiche; uscendo senza confermare lo stato resta in attesa. Non è firma né accettazione della paga.
+- Dopo il fetch di un PDF autorizzato viene mostrata una finestra con azioni esplicite **Visualizza PDF** e **Scarica PDF**; l'URL Blob è revocato alla chiusura. Per i cedolini non confermati, la richiesta di conferma si apre **prima** della chiamata di download. Se l'autista rifiuta o chiude, non viene registrata conferma e nessun byte PDF è consegnato. L'endpoint verifica la conferma persistita, non soltanto lo stato grafico.
 - ATTENZIONE: database QA attuale corrisponde a PR #194 (employee_id/status), non a #193 (driver_id/state). Le migration non si possono applicare sovrapponendole. Prima di deploy QA consolidare lo schema o usare un ambiente isolato con database vuoto; non alterare il QA esistente automaticamente.
 - Test da completare prima della pubblicazione: PWA Android reale, 2 autisti QA A/B con download incrociato negato, admin MFA, sessione revocata e cambio account, PDF falso e >8 MB, confirm/audit, rollback QA, regressioni Booking e Registro. Nessun merge o deploy autorizzato con soli test statici.
