@@ -182,6 +182,30 @@ test('cedolino PDF is denied until owner confirms availability, then accessible'
  assert.equal(x.audit.filter(e=>e.event==='first_access').length,1);
 });
 
+test('one receipt survives repeated lists and PDF opens; admin sees original timestamp',async()=>{
+ const x=fixture();
+ const before=await x.call(tokens.a,'list');
+ assert.equal(before.status,200);
+ assert.equal(before.data.documents.find(d=>d.id===docA)?.acknowledged_at,null);
+ assert.equal((await x.call(tokens.a,'acknowledge',{id:docA})).status,200);
+ const confirmedAt=x.docs.find(d=>d.id===docA)?.acknowledged_at;
+ assert.ok(confirmedAt,'persistent receipt timestamp required');
+ // Each list simulates a fresh page load retrieving the server-recorded value.
+ const afterReload=await x.call(tokens.a,'list');
+ assert.equal(afterReload.status,200);
+ assert.equal(afterReload.data.documents.find(d=>d.id===docA)?.acknowledged_at,confirmedAt);
+ const adminList=await x.call(tokens.admin,'list',{driverId:A});
+ assert.equal(adminList.status,200);
+ assert.equal(adminList.data.documents.find(d=>d.id===docA)?.acknowledged_at,confirmedAt);
+ assert.equal((await x.call(tokens.a,'download',{id:docA})).status,200);
+ assert.equal((await x.call(tokens.a,'download',{id:docA})).status,200);
+ assert.equal((await x.call(tokens.a,'acknowledge',{id:docA})).status,200);
+ assert.equal(x.docs.find(d=>d.id===docA)?.acknowledged_at,confirmedAt,'retry never changes receipt');
+ assert.equal(x.audit.filter(e=>e.event==='acknowledge').length,1,'only one confirmation audit');
+ assert.equal(x.audit.filter(e=>e.event==='first_access').length,1,'only one first-access audit');
+ assert.equal((await x.call(tokens.b,'list')).data.documents.some(d=>d.id===docA),false,'no cross-driver receipt leakage');
+});
+
 test('forged client receipt fields never bypass server PDF gate',async()=>{
  const x=fixture();
  assert.equal((await x.call(tokens.b,'acknowledge',{id:docA,driverId:A,confirmed:true})).status,409);
