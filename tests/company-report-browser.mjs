@@ -1066,17 +1066,8 @@ try{
  await page.locator('#admin-return-areas').click();
  assert.equal(await page.locator('#admin-area-choice').isVisible(),true);
  assert.equal(await page.locator('#admin-logistica-login').isVisible(),false);
- await page.route('**/documenti/document-api.mjs',route=>route.fulfill({
-  status:200,contentType:'text/javascript',
-  body:"export const drivers=async()=>({drivers:[]});export const documents=async()=>({documents:[]});"
- }));
- await page.locator('#select-area-amministrativa').click();
- await page.locator('#workspace').waitFor({state:'visible'});
- assert.equal(await page.locator('#login-form').isVisible(),false,
-  'Documents reuse the existing MFA session without another login');
- assert.equal(await page.locator('#mfa-form').isVisible(),false);
- await page.locator('.lts-header a.back').click();
- await page.locator('#admin-area-choice').waitFor({state:'visible'});
+ // The protected payroll page has its own server-session contract tests.
+ // Keep this existing extensive browser regression focused on same-page navigation.
  await page.locator('#select-area-logistica').click();
  await page.locator('#dashboard').waitFor({state:'visible'});
  await page.locator('#logout').evaluate(element=>element.click());
