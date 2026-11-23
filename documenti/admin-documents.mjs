@@ -83,8 +83,11 @@ async function check(){
  try{
   const session=await account.verifySession();
   if(session.role!=='admin'){protect();notice('È richiesto un account amministratore LTS.',true);return;}
-  if(!session.mfa_enrolled){view('setup');return;}
-  if(!session.mfa_verified||!account.isVerified()){await mfa();return;}
+  if(!session.mfa_enrolled||!session.mfa_verified||!account.isVerified()){
+   protect();
+   notice('La verifica MFA va completata nel Control Center. Torna all’accesso unico LTS.',true);
+   return;
+  }
   await startWorkspace();
  }catch(error){protect();notice(error.message||'Accesso non verificato.',true);}
 }
@@ -197,26 +200,8 @@ async function refreshDocs(append=false){
  }catch(error){notice(error.message||'Archivio documenti non disponibile.',true);}
  finally{busy(false);}
 }
-$('login-form').addEventListener('submit',async event=>{
- event.preventDefault();if(loading)return;
- const form=event.currentTarget;const password=form.elements.password.value;
- form.elements.password.value='';busy(true);notice('');
- try{
-  if(account.hasSession())account.signOut();
-  const result=await account.login(form.elements.phone.value.trim(),password);
-  if(result.role!=='admin'){account.signOut();throw Error('Accesso riservato all’amministratore.');}
-  // The dedicated sign-in is complete; unblock the initial protected data loads.
-  busy(false);
-  await check();
- }catch(error){protect();notice(error.message||'Accesso non riuscito.',true);}
- finally{busy(false);}
-});
-$('mfa-form').addEventListener('submit',async event=>{
- event.preventDefault();if(loading)return;busy(true);notice('');
- try{await account.verifyAdminTotp($('mfa-code').value.trim(),$('mfa-factor').value||null);busy(false);await check();}
- catch(error){$('mfa-code').value='';notice(error.message||'Verifica MFA fallita.',true);}
- finally{busy(false);}
-});
+// Password and MFA are entered ONLY in the unified Control Center entry.
+// This page never initiates its own sign-in; it verifies the existing session.
 async function logout(){
  view('login');busy(true);notice('');
  try{
@@ -351,7 +336,10 @@ window.addEventListener('focus',()=>{
   restoreWorkspaceInteraction();
 });
 
-// Always display an independent payroll login, even when LTS Admin is already open.
+// One shared admin session for Logistics and Documents: never ask for a
+// second password or OTP after Control Center has verified both.
+// Navigation stays in the same tab, using the existing sessionStorage-backed
+// account session. No token is copied into URLs or persistent storage.
 protect();
 if(typeof runtime.accountAuth?.payrollEndpoint!=='string'||!runtime.accountAuth.payrollEndpoint.trim()){
  $('login').querySelector('h1').textContent='Gestione documenti — In preparazione';
@@ -359,4 +347,17 @@ if(typeof runtime.accountAuth?.payrollEndpoint!=='string'||!runtime.accountAuth.
  $('login-form').hidden=true;
  $('clear-session').hidden=true;
 }
-window.addEventListener('pageshow',event=>{if(event.persisted)protect();});
+function restoreUnifiedAdminSession(){
+ if(!account.hasSession()||account.getRole()!=='admin'){
+  protect();return;
+ }
+ // Do not flash the separate login while awaiting server verification.
+ $('login').hidden=true;
+ notice('Verifica della sessione amministrativa in corso…');
+ void check();
+}
+if(typeof runtime.accountAuth?.payrollEndpoint==='string'&&
+   runtime.accountAuth.payrollEndpoint.trim())restoreUnifiedAdminSession();
+window.addEventListener('pageshow',event=>{
+ if(event.persisted)restoreUnifiedAdminSession();
+});
