@@ -299,3 +299,7 @@ body:has(#login-panel:not([hidden]) #admin-area-choice:not([hidden])) #notice{
  }
  #admin-area-choice .admin-area-tile-link>span{font-size:19px}
 }
+
+/* A visible, non-clickable placeholder until the payroll API is enabled. */
+.admin-area-tile.area-unavailable{opacity:.65;cursor:not-allowed;filter:grayscale(.16)}
+.admin-area-tile.area-unavailable .admin-area-tile-link{font-weight:800}
