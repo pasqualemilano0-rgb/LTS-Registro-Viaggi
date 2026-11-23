@@ -1,34 +1,44 @@
 /**
- * Presentation-only chooser for the two independent LTS administrative areas.
- * This module never reads passwords, changes account roles, or bypasses MFA.
- * AREA LOGISTICA uses the existing admin.mjs login + controls;
- * AREA AMMINISTRATIVA follows its own /buste-paga/ sign-in flow.
+ * One administrator sign-in (password + MFA) precedes the area chooser.
+ * This module only controls presentation. Server-side session, MFA and role
+ * verification remain in admin.mjs and the protected endpoints.
  */
 const chooser=document.getElementById('admin-area-choice');
 const logistics=document.getElementById('admin-logistica-login');
+const loginPanel=document.getElementById('login-panel');
+const dashboard=document.getElementById('dashboard');
 const openLogistics=document.getElementById('select-area-logistica');
 const back=document.getElementById('admin-area-back');
-const loginPanel=document.getElementById('login-panel');
 
-function showChooser(){
+function showLogin(){
  if(!chooser||!logistics)return;
- logistics.hidden=true;chooser.hidden=false;
- const password=document.getElementById('login-password');
- if(password)password.value='';
- const error=document.getElementById('login-error');
- if(error){error.textContent='';error.hidden=true;}
- if(loginPanel&&!loginPanel.hidden)openLogistics?.focus({preventScroll:true});
+ chooser.hidden=true;
+ logistics.hidden=false;
+ if(loginPanel&&!loginPanel.hidden)document.getElementById('login-phone')?.focus({preventScroll:true});
 }
-function showLogistics(){
- if(!chooser||!logistics)return;
- chooser.hidden=true;logistics.hidden=false;
- document.getElementById('login-phone')?.focus({preventScroll:true});
+function showAreaChoice(){
+ if(!chooser||!logistics||!loginPanel||!dashboard)return;
+ // Only a server-verified administrator can see the chooser.
+ // The event is dispatched by admin.mjs after MFA verification.
+ logistics.hidden=true;
+ chooser.hidden=false;
+ loginPanel.hidden=false;
+ dashboard.hidden=false;
+ dashboard.inert=true;
+ openLogistics?.focus({preventScroll:true});
 }
-openLogistics?.addEventListener('click',showLogistics);
-back?.addEventListener('click',showChooser);
-// Logout from the logistics dashboard returns to the access-area chooser.
-document.getElementById('logout')?.addEventListener('click',showChooser);
-// A browser history restore must not reveal an outdated password form.
+function enterLogistics(){
+ if(chooser?.hidden||!loginPanel||!dashboard)return;
+ chooser.hidden=true;
+ loginPanel.hidden=true;
+ dashboard.inert=false;
+}
+document.addEventListener('lts-admin-authenticated',showAreaChoice);
+openLogistics?.addEventListener('click',enterLogistics);
+back?.addEventListener('click',()=>{ /* Login is before the chooser; no return to password here. */ });
+document.getElementById('logout')?.addEventListener('click',showLogin);
+window.addEventListener('lts-account-locked',showLogin);
 window.addEventListener('pageshow',event=>{
- if(event.persisted&&loginPanel&&!loginPanel.hidden)showChooser();
+ if(event.persisted&&loginPanel&&!loginPanel.hidden&&dashboard.hidden)showLogin();
 });
+showLogin();
