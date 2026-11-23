@@ -125,7 +125,7 @@ test('delayed server responses cannot revive the private documents view after lo
    documents:()=>{calls++;return documentRequest.promise;}
   }};
   runInNewContext(logic+String.raw`
-globalThis.qa={check,protect,view,refreshRoster,refreshDocs};
+globalThis.qa={check,protect,view,refreshRoster,refreshDocs,isLoading:()=>loading};
 `,env);
   return {qa:env.qa,els,session,verify,driverRequest,documentRequest,calls:()=>calls};
  }
@@ -160,6 +160,7 @@ globalThis.qa={check,protect,view,refreshRoster,refreshDocs};
   assert.equal(x.els.workspace.hidden,true);
   assert.equal(x.els.documents.children.length,0);
   assert.equal(x.els.summary.textContent,'');
+  assert.equal(x.qa.isLoading(),false,'logout clears pending busy state');
  }
 });
 

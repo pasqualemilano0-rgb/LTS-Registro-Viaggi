@@ -75,6 +75,8 @@ function protect(){
  $('driver').replaceChildren(option('','Seleziona autista'));
  $('filter-driver').replaceChildren(option('','Tutti gli autisti'));
  view('login');
+ // Pending requests from a logged-out account must not lock the next login.
+ busy(false);
 }
 async function mfa(){
  view('mfa');
