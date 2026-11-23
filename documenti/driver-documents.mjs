@@ -161,6 +161,21 @@ function display(doc){
  row.append(details,actions);
  return row;
 }
+function emptyCategoryState(){
+ const labels={
+  cedolino:'Nessun cedolino pubblicato',
+  cu:'Nessuna CU pubblicata',
+  altri:'Nessun documento pubblicato'
+ };
+ const box=element('div','empty-documents');
+ const symbol=element('span','empty-documents-icon');
+ symbol.setAttribute('aria-hidden','true');
+ const copy=element('div','empty-documents-copy');
+ copy.append(element('strong','',labels[category]||'Nessun documento pubblicato'),
+  element('p','','Non ci sono documenti pubblicati in questa categoria. Quando saranno disponibili, compariranno qui.'));
+ box.append(symbol,copy);
+ return box;
+}
 async function load(append=false){
  if(!payrollConfigured()){showNotConfigured();return;}
  if(busy||$('content').hidden)return;
@@ -181,7 +196,7 @@ async function load(append=false){
   }
   offset+=result.documents.length;
   $('more').hidden=result.documents.length<50;
-  if(!offset)$('documents').append(element('p','hint','Non ci sono documenti pubblicati in questa categoria.'));
+  if(!offset)$('documents').append(emptyCategoryState());
   note('');
  }catch(error){note(error.message||'Impossibile aggiornare i documenti.',true);}
  finally{busy=false;$('refresh').disabled=false;$('more').disabled=false;}
@@ -194,6 +209,7 @@ for(const button of document.querySelectorAll('[data-category]')){
    item.setAttribute('aria-pressed',String(chosen));
   }
   $('category-title').textContent=category==='cedolino'?'CEDOLINO':category==='cu'?'CU':'ALTRI DOCUMENTI';
+  $('cedolino-info').hidden=category!=='cedolino';
   void load();
  });
 }
