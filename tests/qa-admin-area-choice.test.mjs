@@ -30,7 +30,7 @@ test('admin access first offers two exact areas while preserving original logist
  assert.doesNotMatch(chooser,/account\.signOut|verifyAdminTotp|manageDrivers|localStorage|sessionStorage/);
 });
 
-test('area amministrativa opens a static preview while independent login still requires MFA',()=>{
+test('area amministrativa opens the protected login and retains the static preview separately',()=>{
  assert.match(login,/id="select-area-amministrativa"[^>]*href="\.\/buste-paga\/"/);
  assert.match(login,/Le funzioni di entrambe le aree richiedono l’accesso amministratore con MFA/);
  const preview=source('amministratore/buste-paga/anteprima/index.html');
@@ -40,7 +40,7 @@ test('area amministrativa opens a static preview while independent login still r
  assert.match(payroll,/id="login-form"/);
  assert.match(payroll,/id="mfa-form"/);
  assert.match(payroll,/AREA AMMINISTRATIVA RISERVATA/);
- assert.match(payroll,/Accedi con l'account amministratore LTS/);
+ assert.match(payroll,/Accedi con l’account amministratore LTS/);
  assert.match(style,/#admin-area-choice\[hidden\],#admin-logistica-login\[hidden\]\{display:none!important\}/);
  assert.match(style,/@media\(max-width:480px\)/);
 });
