@@ -109,6 +109,7 @@ test('profile always shows I MIEI DOCUMENTI to signed-in drivers, even before pa
  assert.ok(!/if\(payrollAvailable\)/.test(menuGate),'payroll config cannot hide profile menu');
  const directPage=text('documenti/driver-documents.mjs');
  assert.match(directPage,/I MIEI DOCUMENTI — In preparazione/);
- assert.match(directPage,/if\(typeof runtime\.accountAuth\?\.payrollEndpoint!=='string'/);
+ assert.match(directPage,/function payrollConfigured\(\)/);
+ assert.match(directPage,/if\(!payrollConfigured\(\)\)showNotConfigured\(\)/);
  assert.doesNotMatch(text('runtime-config.mjs'),/payrollEndpoint/);
 });

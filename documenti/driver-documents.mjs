@@ -41,7 +41,23 @@ function locked(message=''){
  $('locked').hidden=false;
  if(message)note(message,true);
 }
+// A missing payroll endpoint is a permanent OFF state for this page, not an
+// API error. Every re-entry (visibility/focus/BFCache/refresh) must obey it.
+function payrollConfigured(){
+ return typeof runtime.accountAuth?.payrollEndpoint==='string'&&
+  Boolean(runtime.accountAuth.payrollEndpoint.trim());
+}
+function showNotConfigured(){
+ hideDocuments();
+ $('locked').hidden=false;
+ $('locked').querySelector('h1').textContent='I MIEI DOCUMENTI — In preparazione';
+ $('locked').querySelector('p').textContent='Il servizio paghe non è ancora attivo. Nessun PDF personale è disponibile da questa pagina.';
+ $('locked').querySelector('a').textContent='Torna al Registro Viaggi';
+ note('');
+}
 async function authenticate(){
+ // Required even on visibilitychange/pageshow; don't open the document list.
+ if(!payrollConfigured()){showNotConfigured();return;}
  hideDocuments();
  $('locked').hidden=true;
  const generation=viewGeneration;
@@ -146,6 +162,7 @@ function display(doc){
  return row;
 }
 async function load(append=false){
+ if(!payrollConfigured()){showNotConfigured();return;}
  if(busy||$('content').hidden)return;
  const generation=viewGeneration;
  busy=true;$('refresh').disabled=true;$('more').disabled=true;
@@ -192,19 +209,16 @@ document.addEventListener('visibilitychange',()=>{
  if(document.hidden)hideDocuments();
  else void authenticate();
 });
-window.addEventListener('lts-account-locked',()=>locked('Sessione chiusa. Accedi nuovamente.'));
+window.addEventListener('lts-account-locked',()=>{
+ if(!payrollConfigured())showNotConfigured();
+ else locked('Sessione chiusa. Accedi nuovamente.');
+});
 window.addEventListener('pagehide',()=>hideDocuments());
 // A restored BFCache page must recheck the account before rendering a PDF list.
 window.addEventListener('pageshow',event=>{
  if(event.persisted)void authenticate();
 });
-// A direct link may exist after code publication, but payroll is not enabled.
-if(typeof runtime.accountAuth?.payrollEndpoint!=='string'||!runtime.accountAuth.payrollEndpoint.trim()){
- $('locked').hidden=false;
- $('locked').querySelector('h1').textContent='I MIEI DOCUMENTI — In preparazione';
- $('locked').querySelector('p').textContent='Il servizio paghe non è ancora attivo. Nessun PDF personale è disponibile da questa pagina.';
- $('locked').querySelector('a').textContent='Torna al Registro Viaggi';
-}else{
- void authenticate();
-}
+// Direct open and foreground restoration share the same safe gating logic.
+if(!payrollConfigured())showNotConfigured();
+else void authenticate();
 

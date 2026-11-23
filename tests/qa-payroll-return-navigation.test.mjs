@@ -76,7 +76,8 @@ test('PDF security, account checks and no-store stay unchanged',()=>{
  assert.match(driver,/const status=await account\.verifySession\(\)/);
  assert.match(driver,/await api\.acknowledge\(doc\.id\)/);
  assert.match(driver,/await api\.download\(doc\.id\)/);
- assert.match(driver,/if\(typeof runtime\.accountAuth\?\.payrollEndpoint!=='string'/);
+ assert.match(driver,/function payrollConfigured\(\)/);
+ assert.match(driver,/if\(!payrollConfigured\(\)\)showNotConfigured\(\)/);
  assert.match(html,/no-referrer/);
  assert.match(html,/default-src 'none'/);
 });
