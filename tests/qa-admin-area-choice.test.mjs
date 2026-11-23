@@ -5,110 +5,93 @@ import {runInNewContext} from 'node:vm';
 import {createHash} from 'node:crypto';
 
 const source=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
-const login=source('amministratore/index.html');
-const payroll=source('amministratore/buste-paga/index.html');
+const entry=source('amministratore/index.html');
+const admin=source('amministratore/admin.mjs');
 const chooser=source('amministratore/admin-area-choice.mjs');
+const payroll=source('amministratore/buste-paga/index.html');
+const payrollClient=source('documenti/admin-documents.mjs');
 const style=source('amministratore/admin-area-choice.css');
 
-test('admin access first offers two exact areas while preserving original logistics login',()=>{
- assert.match(login,/id="admin-area-choice"/);
- assert.match(login,/id="select-area-logistica"/);
- assert.match(login,/>AREA(?:<br>|\s+)LOGISTICA<\/span>/);
- assert.match(login,/id="select-area-amministrativa"/);
- assert.match(login,/>AREA(?:<br>|\s+)AMMINISTRATIVA<\/span>/);
- assert.match(login,/id="admin-logistica-login" hidden/);
- assert.match(login,/id="login-form"/);
- assert.match(login,/id="mfa-panel"/);
- assert.match(login,/id="admin-area-back"/);
- const chooserStart=login.indexOf('id="admin-area-choice"');
- const formStart=login.indexOf('id="login-form"');
- const loginWrap=login.indexOf('id="admin-logistica-login"');
- assert.ok(chooserStart<loginWrap&&loginWrap<formStart);
- assert.ok(login.indexOf('id="admin-logistica-login" hidden')<formStart);
- assert.match(login,/src="\.\/admin-area-choice\.mjs\?v=20261118-v1"/);
- assert.match(login,/href="\.\/admin-area-choice\.css\?v=20261118-v1"/);
- assert.doesNotMatch(chooser,/account\.signOut|verifyAdminTotp|manageDrivers|localStorage|sessionStorage/);
+test('one administrator login is shown BEFORE Control Center, never alongside it',()=>{
+ assert.match(entry,/id="admin-area-choice"[^>]*hidden/);
+ assert.match(entry,/id="admin-logistica-login"(?![^>]*hidden)/);
+ assert.match(entry,/id="login-form"/);
+ assert.match(entry,/id="mfa-panel"/);
+ assert.match(entry,/id="admin-area-title"/);
+ assert.match(entry,/ACCESSO UNICO · CONTROL CENTER/);
+ assert.match(entry,/Accesso amministratore/);
+ assert.match(entry,/Dopo la verifica MFA potrai scegliere e utilizzare entrambe le aree/);
+ assert.match(entry,/Accedi al Control Center/);
+ assert.match(entry,/id="admin-area-back"[^>]*hidden/);
+ assert.ok(entry.indexOf('id="admin-area-choice"')<entry.indexOf('id="login-form"'),
+  'HTML ordering must not be used as authorization: the choice is hidden by default');
+ assert.match(entry,/admin\.mjs\?v=20261123-unified-login-v1/);
+ assert.match(entry,/admin-area-choice\.mjs\?v=20261123-unified-login-v1/);
+ assert.match(entry,/admin-area-choice\.css\?v=20261123-unified-login-v1/);
 });
 
-test('area amministrativa opens the protected login and retains the static preview separately',()=>{
- assert.match(login,/id="select-area-amministrativa"[^>]*href="\.\/buste-paga\/"/);
- assert.match(login,/Le funzioni di entrambe le aree richiedono l’accesso amministratore con MFA/);
- const preview=source('amministratore/buste-paga/anteprima/index.html');
- assert.match(preview,/MODALITÀ ANTEPRIMA — senza credenziali/);
- assert.match(preview,/class="button-primary active-link" href="\.\.\/"/);
- assert.match(preview,/Documenti degli autisti/);
- assert.match(payroll,/id="login-form"/);
- assert.match(payroll,/id="mfa-form"/);
- assert.match(payroll,/AREA AMMINISTRATIVA RISERVATA/);
- assert.match(payroll,/Accedi con l’account amministratore LTS/);
- assert.match(style,/#admin-area-choice\[hidden\],#admin-logistica-login\[hidden\]\{display:none!important\}/);
- assert.match(style,/@media\(max-width:480px\)/);
+test('verified MFA session reveals the chooser, with no second password prompt',()=>{
+ assert.match(admin,/function showAuthenticatedAreaChoice\(\)/);
+ assert.match(admin,/if\(!account\.isVerified\(\)\|\|account\.getRole\(\)!=='admin'\)return false/);
+ assert.match(admin,/dashboard\.hidden=true;dashboard\.inert=false/);
+ assert.match(admin,/loginPanel\.hidden=false/);
+ assert.match(admin,/byId\('admin-logistica-login'\)\.hidden=true/);
+ assert.match(admin,/byId\('admin-area-choice'\)\.hidden=false/);
+ assert.match(admin,/if\(status\.mfa_enrolled&&status\.mfa_verified\)\{\s*showAuthenticatedAreaChoice\(\)/);
+ assert.match(admin,/const status=statusFromCompletedVerification\|\|await account\.verifySession\(\)/);
+ assert.match(admin,/const verifiedMfa=await account\.verifyAdminTotp\(code,selected\)/);
+ assert.match(admin,/await authenticate\(verifiedMfa\)/);
+ assert.match(admin,/byId\('admin-choice-logout'\)\.addEventListener\('click'/);
 });
 
-test('selection changes only presentation and allows returning without exposing password',()=>{
- const nodes=new Map();
- function element(id){
-  const item={id,hidden:id==='admin-logistica-login',value:'',textContent:'',listeners:{},focused:false,
-   addEventListener(type,fn){this.listeners[type]=fn;},
-   focus(){this.focused=true;}
-  };
-  nodes.set(id,item);
-  return item;
- }
- for(const id of [
-  'admin-area-choice','admin-logistica-login','select-area-logistica',
-  'admin-area-back','login-panel','login-phone','login-password','login-error','logout'
- ])element(id);
- const handlers={};
+test('area selection only asks for a server recheck, not another credential',()=>{
+ assert.match(entry,/id="select-area-logistica"[^>]*aria-controls="dashboard"/);
+ assert.match(entry,/id="select-area-amministrativa"[^>]*href="\.\/buste-paga\/"/);
+ assert.match(entry,/id="admin-return-areas"/);
+ assert.match(admin,/async function openAuthenticatedLogistics\(\)/);
+ assert.match(admin,/const status=await account\.verifySession\(\)/);
+ assert.match(admin,/status\.role!=='admin'\|\|status\.mfa_verified!==true\|\|!account\.isVerified\(\)/);
+ assert.match(admin,/const previous=showDashboard\(status\)/);
+ assert.match(admin,/byId\('admin-return-areas'\)\.addEventListener\('click'/);
+ assert.doesNotMatch(chooser,/login-password|login-phone|verifyAdminTotp|sessionStorage|localStorage/);
+ const events=[];
+ const button={addEventListener:(name,cb)=>{if(name==='click')button.click=cb;}};
  runInNewContext(chooser,{
-  document:{getElementById:id=>nodes.get(id)||null},
-  window:{addEventListener(type,fn){handlers[type]=fn;}}
+  document:{getElementById:id=>id==='select-area-logistica'?button:null},
+  window:{dispatchEvent:event=>events.push(event.type)},
+  Event:class{constructor(type){this.type=type;}}
  });
- const button=nodes.get('select-area-logistica');
- button.listeners.click();
- assert.equal(nodes.get('admin-area-choice').hidden,true);
- assert.equal(nodes.get('admin-logistica-login').hidden,false);
- assert.equal(nodes.get('login-phone').focused,true);
- nodes.get('login-password').value='sensitive';
- nodes.get('admin-area-back').listeners.click();
- assert.equal(nodes.get('admin-area-choice').hidden,false);
- assert.equal(nodes.get('admin-logistica-login').hidden,true);
- assert.equal(nodes.get('login-password').value,'');
- assert.equal(nodes.get('select-area-logistica').focused,true);
- button.listeners.click();
- nodes.get('logout').listeners.click();
- assert.equal(nodes.get('admin-area-choice').hidden,false);
- assert.equal(nodes.get('admin-logistica-login').hidden,true);
- button.listeners.click();
- handlers.pageshow({persisted:true});
- assert.equal(nodes.get('admin-area-choice').hidden,false);
+ button.click();
+ assert.deepEqual(events,['lts-admin-open-logistics']);
 });
 
+test('documents verify the existing shared admin session, not a second login',()=>{
+ assert.match(payroll,/id="login-form"[^>]*hidden/);
+ assert.match(payroll,/Vai all’accesso unico LTS/);
+ assert.match(payroll,/Torna alle aree/);
+ assert.match(payroll,/admin-documents\.mjs\?v=20261123-unified-login-v1/);
+ assert.match(payrollClient,/function restoreUnifiedAdminSession\(\)/);
+ assert.match(payrollClient,/if\(!account\.hasSession\(\)\|\|account\.getRole\(\)!=='admin'\)/);
+ assert.match(payrollClient,/void check\(\)/);
+ assert.match(payrollClient,/const session=await account\.verifySession\(\)/);
+ assert.match(payrollClient,/if\(!session\.mfa_enrolled\|\|!session\.mfa_verified\|\|!account\.isVerified\(\)\)/);
+ assert.doesNotMatch(payrollClient,/\baccount\.login\(/);
+ assert.doesNotMatch(payrollClient,/\baccount\.verifyAdminTotp\(/);
+ assert.match(payrollClient,/window\.addEventListener\('pageshow',event=>\{/);
+ assert.match(payroll,/href="\.\/anteprima\/"/);
+});
 
-test('approved branding uses the exact original logo, Napoli porto and camion local assets',()=>{
+test('server protection and original LTS branding are retained',()=>{
+ const edge=source('supabase/functions/lts-payroll/index.ts');
+ assert.match(edge,/await requireAdminMfa\(/);
+ assert.match(edge,/await checkLtsSession\(/);
+ assert.match(edge,/PAYROLL_PILOT_LIST_ONLY=true/);
  const raw=readFileSync(new URL('../assets/lts-logo.png',import.meta.url));
- const gitBlobSha=createHash('sha1').update(Buffer.from('blob '+raw.byteLength+'\0')).update(raw).digest('hex');
- assert.equal(gitBlobSha,'168228cfb22738ed74a3115fc47d361b635f9308',
-   'Do not replace the user-supplied original LTS red/cyan logo.');
- assert.match(login,/src="\.\.\/assets\/lts-logo\.png"/);
- assert.match(login,/src="\.\.\/assets\/admin-hero-napoli\.svg"/);
- assert.match(login,/src="\.\.\/assets\/admin-card-logistica\.svg"/);
- assert.match(login,/src="\.\.\/assets\/admin-card-amministrativa\.(?:webp|svg)"/);
- const hero=source('assets/admin-hero-napoli.svg');
- assert.match(hero,/PORTO DI NAPOLI/);
- assert.match(hero,/Vesuvio|Napoli/);
- assert.match(hero,/truck|Camion|camion/);
- assert.match(style,/--lts-red:#ef082f/);
- assert.match(style,/--lts-cyan:#00a9e7/);
- assert.match(style,/--lts-navy:#062b59/);
+ const sha=createHash('sha1').update(Buffer.from('blob '+raw.byteLength+'\0')).update(raw).digest('hex');
+ assert.equal(sha,'168228cfb22738ed74a3115fc47d361b635f9308');
+ for(const asset of ['lts-logo.png','admin-hero-napoli.svg','admin-card-logistica.svg',
+  'admin-card-amministrativa.webp'])assert.ok(entry.includes(asset));
+ assert.match(style,/#admin-area-choice\[hidden\],#admin-logistica-login\[hidden\]\{display:none!important\}/);
+ assert.match(style,/#admin-area-choice \.admin-area-session-bar/);
  assert.match(style,/@media\(max-width:480px\)/);
-});
-
-
-test('visual selector never affects authenticated logistics dashboard or MFA',()=>{
- assert.match(style,/body:has\(#login-panel:not\(\[hidden\]\) #admin-area-choice:not\(\[hidden\]\)\) \.topbar/);
- assert.doesNotMatch(style,/body:has\(#admin-area-choice:not\(\[hidden\]\)\)/);
- assert.match(login,/id="dashboard" hidden/);
- assert.match(login,/id="mfa-panel"/);
- assert.match(style,/#admin-area-choice\[hidden\]/);
 });
