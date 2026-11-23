@@ -8,6 +8,8 @@ import {describeBackupConflict} from '/LTS-Registro-Viaggi/shared/backup-conflic
 import * as store from '/LTS-Registro-Viaggi/client-store.mjs';
 import runtimeConfig from '/LTS-Registro-Viaggi/runtime-config.mjs';
 import * as accountAccess from '/LTS-Registro-Viaggi/account-access.mjs';
+import {documents as listPayrollDocuments} from '/LTS-Registro-Viaggi/documenti/document-api.mjs';
+import {countUnreadDocuments} from '/LTS-Registro-Viaggi/shared/payroll-unread.mjs';
 import {createDriverSessionShield,transientDriverSessionError} from '/LTS-Registro-Viaggi/driver-session-guard.mjs';
 import {createLtsRealtime} from '/LTS-Registro-Viaggi/realtime-client.mjs';
 import {sharedMapsEnabled,sharedMapsCustomers,saveSharedMapsCustomer} from '/LTS-Registro-Viaggi/shared-maps-client.mjs?v=20261110-maps-approval-v1';
@@ -91,6 +93,53 @@ let refreshTripFareEstimate=null;
 let portiFrame = null;
 let subscribed = false;
 let realtimeBridge=null;
+// Do not store per-driver document metadata or read receipts on the device.
+let unreadDocumentCount=0,unreadDocumentOwner=null,unreadDocumentLastCheck=0;
+let unreadDocumentInFlight=false,unreadDocumentGeneration=0;
+function documentBadgeAllowed(){
+ return store.usingAccount()&&accountAccess.isVerified()&&accountAccess.getRole()==='driver'&&
+  typeof runtimeConfig.accountAuth?.payrollEndpoint==='string'&&
+  Boolean(runtimeConfig.accountAuth.payrollEndpoint.trim());
+}
+function paintDocumentBadge(){
+ const count=documentBadgeAllowed()&&unreadDocumentOwner===accountAccess.getAccountId()
+  ?unreadDocumentCount:0;
+ document.querySelectorAll('.profile-button').forEach(profile=>{
+  profile.querySelector('.profile-document-badge')?.remove();
+  profile.setAttribute('aria-label',`Profilo di ${name()||'autista'}`+
+   (count?`, ${count>=100?'oltre 99':count} documenti nuovi`:''));
+  if(count)profile.append(el('span',{class:'profile-document-badge','aria-hidden':'true'},
+   count>=100?'99+':String(count)));
+ });
+}
+async function refreshDocumentBadge(force=false){
+ const owner=accountAccess.getAccountId();
+ if(!documentBadgeAllowed()){
+  unreadDocumentOwner=null;unreadDocumentCount=0;unreadDocumentLastCheck=0;
+  unreadDocumentGeneration++;paintDocumentBadge();return;
+ }
+ if(unreadDocumentOwner!==owner){
+  unreadDocumentOwner=owner;unreadDocumentCount=0;unreadDocumentLastCheck=0;
+  unreadDocumentGeneration++;
+ }
+ paintDocumentBadge();
+ if(document.hidden||navigator.onLine===false||unreadDocumentInFlight||
+    (!force&&Date.now()-unreadDocumentLastCheck<60000))return;
+ const generation=++unreadDocumentGeneration;
+ unreadDocumentInFlight=true;
+ try{
+  // Existing paginated owner-scoped API; backend records PDF first access.
+  const count=await countUnreadDocuments(listPayrollDocuments);
+  if(generation!==unreadDocumentGeneration||owner!==accountAccess.getAccountId()||
+     !documentBadgeAllowed())return;
+  unreadDocumentCount=count;unreadDocumentLastCheck=Date.now();
+ }catch{
+  // Transient errors never silently mark PDFs as read.
+  if(generation===unreadDocumentGeneration)unreadDocumentLastCheck=Date.now();
+ }finally{
+  unreadDocumentInFlight=false;paintDocumentBadge();
+ }
+}
 function beginLtsRealtime(){
  if(!store.usingAccount()||!accountAccess.isVerified())return;
  realtimeBridge?.stop();
@@ -261,6 +310,7 @@ function render(){
   document.querySelector('.topbar').replaceWith(header);
   document.querySelector('.bottom-nav').replaceWith(nav);
   document.querySelector('#sync-status')?.replaceWith(syncNode());
+  paintDocumentBadge();void refreshDocumentBadge();
   return;
  }
  unmountPorti();
@@ -269,6 +319,7 @@ function render(){
  if(tab==='insert')renderInsert(main); else if(tab==='register')renderRegister(main);else if(tab==='customers')renderCustomers(main);else if(tab==='porti')renderPorti(main);else renderTariffs(main);
  if(tab!=='porti')main.append(syncNode());
  scroll.scrollTop=scrollTop;
+ paintDocumentBadge();void refreshDocumentBadge();
 }
 // Porti follows the Rome calendar, regardless of device timezone.
 function isPortiSundayInRome(at=new Date()){
@@ -330,7 +381,7 @@ function receiveState(record,{source}={}){
  }
  const brandName=document.querySelector('.brand-title');if(brandName)brandName.textContent=name()||'Il tuo registro';
  const profile=document.querySelector('.profile-button');
- if(profile){profile.textContent=initials();profile.setAttribute('aria-label',`Profilo di ${name()||'autista'}`);}
+ if(profile){profile.textContent=initials();paintDocumentBadge();}
  if(refreshView)refreshView();else render();
 }
 function emptyState(title,message,ico='truck',action=null){return el('section',{class:'panel empty-state'},el('div',{class:'empty-icon'},icon(ico)),el('h3',{},title),el('p',{},message),action);}
@@ -2100,6 +2151,7 @@ function accountInstallBanner(){
   el('span',{class:'account-install-banner-wave','aria-hidden':'true'}));
 }
 function renderAccountGate(message=''){
+ unreadDocumentOwner=null;unreadDocumentCount=0;unreadDocumentLastCheck=0;unreadDocumentGeneration++;
  realtimeBridge?.stop();realtimeBridge=null;
  companyCustomers=[];
  companyCustomersError='';
@@ -2185,6 +2237,7 @@ async function verifyDriverOnResume(){
   driverBackgroundAt=null;
   clearResumeRetry();
   driverSessionShield.close();
+  void refreshDocumentBadge(true);
   void refreshCompanyCustomers();
   if(['insert','tariffs','customers'].includes(tab))void refreshCompanyRates();
  }catch(error){
@@ -2400,6 +2453,15 @@ document.addEventListener('visibilitychange',()=>{
  if(!document.hidden)void checkInstalledAppVersion();
 });
 setInterval(()=>void checkInstalledAppVersion(),120000);
+ // New document publications appear within one minute while LTS is open.
+ // Opening the profile menu alone does not clear notifications.
+ setInterval(()=>{if(!document.hidden)void refreshDocumentBadge();},60000);
+ window.addEventListener('online',()=>void refreshDocumentBadge(true));
+ window.addEventListener('focus',()=>void refreshDocumentBadge());
+ window.addEventListener('pageshow',event=>{if(event.persisted)void refreshDocumentBadge(true);});
+ document.addEventListener('visibilitychange',()=>{
+  if(!document.hidden)void refreshDocumentBadge(true);
+ });
 window.addEventListener('online',()=>realtimeBridge?.resume());
 window.addEventListener('focus',()=>realtimeBridge?.resume());
 window.addEventListener('offline',()=>realtimeBridge?.resume());
