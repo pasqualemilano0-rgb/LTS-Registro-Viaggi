@@ -313,7 +313,7 @@ body:has(#login-panel:not([hidden]) #admin-area-choice:not([hidden])) #notice{
 #admin-area-choice .admin-area-session-bar span span{color:#168161;margin-right:6px}
 #admin-choice-logout{
  appearance:none;background:#fff;border:1px solid #b5d0dd;border-radius:11px;
- padding:10px 15px;min-height:40px;color:#0b5573;font:750 13px/1.2 inherit;cursor:pointer
+ padding:10px 15px;min-height:40px;color:#0b5573;font-weight:750;font-size:13px;line-height:1.2;font-family:inherit;cursor:pointer
 }
 #admin-choice-logout:focus-visible{outline:3px solid #0c97c9;outline-offset:3px}
 @media(max-width:480px){
