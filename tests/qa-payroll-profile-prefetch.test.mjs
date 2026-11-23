@@ -10,7 +10,7 @@ const code=app.slice(start,end)
  .replace("await import(new URL('documenti/document-api.mjs',import.meta.url).href)","await getApi()");
 
 function fixture({authorized=true}={}){
- const state={owner:'driver-A',account:true,verified:true,role:'driver',online:true,auth:authorized};
+ const state={owner:'driver-A',account:true,verified:true,role:'driver',online:true,auth:authorized,temporary:false};
  const time={ms:1000000,now(){return this.ms;}};
  let calls=0;
  const accountAccess={
@@ -22,6 +22,7 @@ function fixture({authorized=true}={}){
  const store={usingAccount:()=>state.account};
  const getApi=async()=>({documents:async()=>{
   calls++;
+  if(state.temporary)throw Error('Failed to fetch: temporary network outage');
   if(!state.auth){
    const error=Error('Forbidden: not in allowlist');error.status=403;throw error;
   }
@@ -65,13 +66,20 @@ test('a denied, expired or failed server check never creates a menu permission',
 
 test('temporary network errors retry sooner than definitive 403 denials',async()=>{
  const x=fixture({authorized:false});
- x.state.auth=false;
  assert.equal(await x.api.prefetchPayrollProfileAccess(),false);
  assert.equal(x.calls(),1);
  // Definitive 403 is throttled, not retried after one minute.
  x.time.ms+=61000;
  assert.equal(await x.api.prefetchPayrollProfileAccess(),false);
  assert.equal(x.calls(),1);
+ const y=fixture({authorized:true});
+ y.state.temporary=true;
+ assert.equal(await y.api.prefetchPayrollProfileAccess(),false);
+ assert.equal(y.calls(),1);
+ y.state.temporary=false;
+ y.time.ms+=31000;
+ assert.equal(await y.api.prefetchPayrollProfileAccess(),true);
+ assert.equal(y.calls(),2,'a transient failure is retried after 30 seconds');
 });
 test('verified driver B never inherits driver A authorization',async()=>{
  const x=fixture();
