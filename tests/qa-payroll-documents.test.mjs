@@ -98,18 +98,18 @@ test('admin payroll page requires distinct login despite existing LTS session',(
  assert.match(admin,/busy\(false\);\s*await check\(\);/);
 });
 
-test('profile always shows I MIEI DOCUMENTI to signed-in drivers, even before payroll activation',()=>{
- assert.match(profile,/if\(store\.usingAccount\(\)\&\&accountAccess\.getRole\(\)==='driver'\)\{/);
+test('profile shows document link only after server verifies preview eligibility',()=>{
+ assert.match(profile,/store\.usingAccount\(\)&&accountAccess\.isVerified\(\)/);
+ assert.match(profile,/accountAccess\.getRole\(\)==='driver'/);
+ assert.match(profile,/const accountOwner=accountAccess\.getAccountId\(\)/);
+ assert.match(profile,/await api\.documents\(\{offset:0\}\)/);
+ assert.match(profile,/!Array\.isArray\(result\?\.documents\)\|\|!dialog\.open/);
+ assert.match(profile,/accountAccess\.getAccountId\(\)!==accountOwner/);
  assert.match(profile,/menuButton\('I MIEI DOCUMENTI'/);
- assert.match(profile,/Servizio in preparazione\./);
  assert.match(profile,/new URL\('documenti\/',import\.meta\.url\)/);
- const menuGate=profile.slice(profile.indexOf("if(store.usingAccount()&&accountAccess.getRole()==='driver'){"),
-  profile.indexOf("if(store.usingAccount()&&accountAccess.getRole()==='admin'"));
- assert.ok(menuGate.includes("menuButton('I MIEI DOCUMENTI'"));
- assert.ok(!/if\(payrollAvailable\)/.test(menuGate),'payroll config cannot hide profile menu');
- const directPage=text('documenti/driver-documents.mjs');
- assert.match(directPage,/I MIEI DOCUMENTI — In preparazione/);
- assert.match(directPage,/function payrollConfigured\(\)/);
- assert.match(directPage,/if\(!payrollConfigured\(\)\)showNotConfigured\(\)/);
- assert.doesNotMatch(text('runtime-config.mjs'),/payrollEndpoint/);
+ assert.match(text('runtime-config.mjs'),/"payrollEndpoint":/);
+ assert.doesNotMatch(profile,/Deno\.env|getAccountId\(\)===['"][a-f0-9-]{36}/);
+ const page=text('documenti/driver-documents.mjs');
+ assert.match(page,/const status=await account\.verifySession\(\)/);
+ assert.match(page,/function payrollConfigured\(\)/);
 });
