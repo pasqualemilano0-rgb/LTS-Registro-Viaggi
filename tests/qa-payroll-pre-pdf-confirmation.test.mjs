@@ -53,14 +53,19 @@ test('DB requires prior receipt for cedolino PDF access but not to record the re
  assert.match(qaMigration,/to service_role/);
 });
 
-test('production backend is disabled unless separately and explicitly activated',()=>{
+test('production preview exposes only the driver list after live allowlist authorization',()=>{
  const prod=read('supabase/functions/lts-payroll/index.ts');
  assert.match(prod,/Deno\.env\.get\('LTS_PAYROLL_ENABLED'\)==='yes'/);
- const gate=prod.indexOf('if(!PAYROLL_ENABLED)return new Response');
- const origin=prod.indexOf("if(req.headers.get('origin')!==ORIGIN)");
- const handler=prod.indexOf('Deno.serve(async req=>{');
- assert.ok(handler>=0&&gate>handler&&origin>gate,'deny all methods before CORS/auth/Storage');
- assert.doesNotMatch(read('runtime-config.mjs'),/payrollEndpoint/);
+ const handler=prod.slice(prod.indexOf('Deno.serve(async req=>{'));
+ const origin=handler.indexOf("if(req.headers.get('origin')!==ORIGIN)");
+ const auth=handler.indexOf('const api=clients(),actor=await authorized(req,api)');
+ const guard=handler.indexOf("if(!PAYROLL_ENABLED&&(input.action!=='list'||actor.role!=='driver'))");
+ const list=handler.indexOf("if(input.action==='list')return json");
+ assert.ok(origin>=0&&auth>origin&&guard>auth&&list>guard,
+  'Origin, verified session and test allowlist precede the read-only list');
+ assert.match(handler,/if\(!PAYROLL_ENABLED\)fail\(503,'Caricamento documenti non attivo/);
+ assert.match(handler,/if\(!PAYROLL_ENABLED&&\(input\.action!=='list'\|\|actor\.role!=='driver'\)\)/);
+ assert.match(read('runtime-config.mjs'),/"payrollEndpoint": "https:\/\/otrqynkscpbeyuvdlgpg\.supabase\.co\/functions\/v1\/lts-payroll"/);
 });
 test('phase 2 allowlist is server-only, expires and has exactly three possible seats',()=>{
  const prod=read('supabase/functions/lts-payroll/index.ts');
