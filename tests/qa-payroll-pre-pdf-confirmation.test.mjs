@@ -56,15 +56,16 @@ test('DB requires prior receipt for cedolino PDF access but not to record the re
 test('production preview exposes only the driver list after live allowlist authorization',()=>{
  const prod=read('supabase/functions/lts-payroll/index.ts');
  assert.match(prod,/Deno\.env\.get\('LTS_PAYROLL_ENABLED'\)==='yes'/);
+ assert.match(prod,/const PAYROLL_PILOT_LIST_ONLY=true/);
  const handler=prod.slice(prod.indexOf('Deno.serve(async req=>{'));
  const origin=handler.indexOf("if(req.headers.get('origin')!==ORIGIN)");
  const auth=handler.indexOf('const api=clients(),actor=await authorized(req,api)');
- const guard=handler.indexOf("if(!PAYROLL_ENABLED&&(input.action!=='list'||actor.role!=='driver'))");
+ const guard=handler.indexOf("if((PAYROLL_PILOT_LIST_ONLY||!PAYROLL_ENABLED)&&(input.action!=='list'||actor.role!=='driver'))");
  const list=handler.indexOf("if(input.action==='list')return json");
  assert.ok(origin>=0&&auth>origin&&guard>auth&&list>guard,
   'Origin, verified session and test allowlist precede the read-only list');
- assert.match(handler,/if\(!PAYROLL_ENABLED\)fail\(503,'Caricamento documenti non attivo/);
- assert.match(handler,/if\(!PAYROLL_ENABLED&&\(input\.action!=='list'\|\|actor\.role!=='driver'\)\)/);
+ assert.match(handler,/if\(PAYROLL_PILOT_LIST_ONLY\|\|!PAYROLL_ENABLED\)fail\(503,'Caricamento documenti non attivo/);
+ assert.match(handler,/if\(\(PAYROLL_PILOT_LIST_ONLY\|\|!PAYROLL_ENABLED\)\&\&\(input\.action!=='list'\|\|actor\.role!=='driver'\)\)/);
  assert.match(read('runtime-config.mjs'),/"payrollEndpoint": "https:\/\/otrqynkscpbeyuvdlgpg\.supabase\.co\/functions\/v1\/lts-payroll"/);
 });
 test('phase 2 allowlist is server-only, expires and has exactly three possible seats',()=>{
