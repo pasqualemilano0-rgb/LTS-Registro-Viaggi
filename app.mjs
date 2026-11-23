@@ -1334,7 +1334,11 @@ function openProfile(required=false){
           ?'CEDOLINO · CU · ALTRI DOCUMENTI. Solo i tuoi PDF pubblicati.'
           :'CEDOLINO · CU · ALTRI DOCUMENTI. Servizio in preparazione.',
         'pdf',()=>{
-          dialog.close();window.location.assign(new URL('documenti/',import.meta.url).href);
+          // Mark the in-app navigation so Documents can return with browser
+          // history, restoring the open LTS page instead of reloading home.
+          const target=new URL('documenti/',import.meta.url);
+          target.searchParams.set('from','profile');
+          dialog.close();window.location.assign(target.href);
         }));
     }
     if(store.usingAccount()&&accountAccess.getRole()==='admin'&&accountAccess.isVerified())
