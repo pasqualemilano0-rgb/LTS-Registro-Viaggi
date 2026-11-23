@@ -875,31 +875,17 @@ body.lts-driver-session-blocked dialog[open]{visibility:hidden!important;pointer
 .profile-action-group .menu-button .menu-arrow{font-size:20px;color:#9cabb3}
 .profile-action-group .menu-button:focus-visible{outline:3px solid #48b9d1;outline-offset:-3px}
 .profile-action-group .menu-button:active{background:#eaf5f7}
-.profile-action-group--services .profile-menu-rows{border:0;box-shadow:none;background:transparent}
-.profile-action-group .menu-button-featured{background:linear-gradient(116deg,#006e86,#0d8096);border:1px solid #006b82;border-radius:15px;color:#fff;min-height:73px;padding:14px 16px;box-shadow:0 7px 16px #006f891c}
-.profile-action-group .menu-button-featured>.icon{color:#fff;width:23px;height:23px}
-.profile-action-group .menu-button-featured small{color:#def2f6;font-size:11px}
-.profile-action-group .menu-button-featured .menu-arrow{color:#e3f5f8}
-.profile-action-group .menu-button-featured:active{background:#00586e}
-.profile-action-group--services .menu-button:not(.menu-button-featured){border:1px solid #dde9ee;border-radius:13px;background:#f8fbfc}
 .profile-action-group--security .menu-button-logout{color:#a32f4e;background:#fffafb}
 .profile-action-group--security .menu-button-logout>.icon{color:#ba3e5a}
 .profile-action-group--security .menu-button-logout small{color:#977782}
-.dialog-inner:has(.profile-action-group)>.push-settings{margin-top:22px;padding:14px;border:1px solid #dce9ee;border-radius:15px;background:#f8fbfc}
-.dialog-inner:has(.profile-action-group)>.push-settings .section-label{margin-bottom:9px;color:#245364}
-.dialog-inner:has(.profile-action-group)>.push-settings .profile-description{font-size:11px}
-.dialog-inner:has(.profile-action-group)>.push-settings>.profile-menu{gap:8px}
 .dialog-inner:has(.profile-action-group)>.info-note{margin-top:18px!important}
 @media(max-width:480px){
  .dialog-inner:has(.profile-action-group){padding:17px 16px calc(22px + env(safe-area-inset-bottom))}
  .profile-action-group{margin-top:16px}
  .profile-action-group .menu-button{min-height:55px;padding:11px 12px;font-size:12.5px}
- .profile-action-group .menu-button-featured{min-height:69px;padding:13px 14px}
  .profile-group-heading p{font-size:10.5px}
 }
 
-/* Distinct document action: file icon and clean directional chevron.
-   Backup operations retain download/upload glyphs. */
-.profile-action-group .menu-button-featured>.icon{width:25px;height:25px;stroke-width:1.75}
-.profile-action-group .menu-button-featured .menu-arrow{display:grid;place-items:center;color:#f1fcff}
-.profile-action-group .menu-button-featured .menu-arrow>.icon{width:19px;height:19px;stroke:currentColor;stroke-width:2.3}
+/* Documents uses the same white card, text and PDF icon color as other actions.
+   Only size the chevron SVG; backups retain their download/upload arrows. */
+.profile-action-group [data-profile-action="I MIEI DOCUMENTI"] .menu-arrow>.icon{width:18px;height:18px;stroke:currentColor;stroke-width:2.2}
