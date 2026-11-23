@@ -846,3 +846,54 @@ body.lts-driver-session-blocked dialog[open]{visibility:hidden!important;pointer
  background:#f5fafbfd;color:#17657a;box-shadow:0 7px 20px #143e4930;
  font-size:12px;font-weight:750;text-align:center;pointer-events:none;
 }
+
+/* LTS profile menu 2026-11-23: compact, grouped, mobile-first.
+   Scoped to the profile dialog; other list and modal layouts stay unchanged. */
+.dialog-inner:has(.profile-action-group){padding:21px 19px calc(24px + env(safe-area-inset-bottom))}
+.dialog-inner:has(.profile-action-group)>.profile-hero{margin-bottom:11px;border-radius:17px;padding:13px 15px;background:linear-gradient(125deg,#eaf7fa,#f3f9fc);border-color:#d5e6ed}
+.profile-edit-disclosure{margin:0;border:1px solid #dceaf0;border-radius:14px;background:#f8fbfc;overflow:hidden}
+.profile-edit-disclosure>summary{list-style:none;display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:45px;padding:11px 14px;font-size:12px;font-weight:750;color:#156c83;cursor:pointer;touch-action:manipulation}
+.profile-edit-disclosure>summary::-webkit-details-marker{display:none}
+.profile-edit-disclosure>summary:focus-visible{outline:3px solid #48b9d1;outline-offset:-3px;border-radius:12px}
+.profile-edit-disclosure .profile-edit-chevron{font-size:20px;font-weight:500;line-height:1;transition:transform .2s}
+.profile-edit-disclosure[open] .profile-edit-chevron{transform:rotate(180deg)}
+.profile-edit-disclosure form{padding:12px 14px 15px;border-top:1px solid #ddeaf0;background:#fff}
+.profile-edit-disclosure .field{margin-bottom:12px}
+.profile-edit-disclosure input{min-height:45px}
+.profile-edit-disclosure .primary-button{margin-top:2px}
+.dialog-inner:has(.profile-action-group)>.profile-separator{margin:15px 0 3px;background:transparent;height:0}
+.profile-action-group{margin-top:18px}
+.profile-group-heading{padding:0 2px 9px;display:grid;gap:3px}
+.profile-group-heading h3{font-size:13px;letter-spacing:.005em;color:#245364;font-weight:850}
+.profile-group-heading p{font-size:11px;color:#748c99;line-height:1.42}
+.profile-action-group .profile-menu-rows{gap:0;border:1px solid #dde9ee;border-radius:15px;background:#fff;overflow:hidden;box-shadow:0 3px 12px #1e435606}
+.profile-action-group .menu-button{background:transparent;border:0;border-radius:0;width:100%;min-height:57px;gap:12px;padding:12px 13px;font-size:13px;font-weight:750;line-height:1.35;color:#213f4b;box-shadow:none}
+.profile-action-group .menu-button+.menu-button{border-top:1px solid #edf2f4}
+.profile-action-group .menu-button>span:nth-child(2){flex:1;min-width:0;overflow-wrap:anywhere}
+.profile-action-group .menu-button>.icon{width:21px;height:21px;color:#13788e}
+.profile-action-group .menu-button small{font-size:10.5px;font-weight:450;line-height:1.35;margin-top:3px;color:#708793}
+.profile-action-group .menu-button .menu-arrow{font-size:20px;color:#9cabb3}
+.profile-action-group .menu-button:focus-visible{outline:3px solid #48b9d1;outline-offset:-3px}
+.profile-action-group .menu-button:active{background:#eaf5f7}
+.profile-action-group--services .profile-menu-rows{border:0;box-shadow:none;background:transparent}
+.profile-action-group .menu-button-featured{background:linear-gradient(116deg,#006e86,#0d8096);border:1px solid #006b82;border-radius:15px;color:#fff;min-height:73px;padding:14px 16px;box-shadow:0 7px 16px #006f891c}
+.profile-action-group .menu-button-featured>.icon{color:#fff;width:23px;height:23px}
+.profile-action-group .menu-button-featured small{color:#def2f6;font-size:11px}
+.profile-action-group .menu-button-featured .menu-arrow{color:#e3f5f8}
+.profile-action-group .menu-button-featured:active{background:#00586e}
+.profile-action-group--services .menu-button:not(.menu-button-featured){border:1px solid #dde9ee;border-radius:13px;background:#f8fbfc}
+.profile-action-group--security .menu-button-logout{color:#a32f4e;background:#fffafb}
+.profile-action-group--security .menu-button-logout>.icon{color:#ba3e5a}
+.profile-action-group--security .menu-button-logout small{color:#977782}
+.dialog-inner:has(.profile-action-group)>.push-settings{margin-top:22px;padding:14px;border:1px solid #dce9ee;border-radius:15px;background:#f8fbfc}
+.dialog-inner:has(.profile-action-group)>.push-settings .section-label{margin-bottom:9px;color:#245364}
+.dialog-inner:has(.profile-action-group)>.push-settings .profile-description{font-size:11px}
+.dialog-inner:has(.profile-action-group)>.push-settings>.profile-menu{gap:8px}
+.dialog-inner:has(.profile-action-group)>.info-note{margin-top:18px!important}
+@media(max-width:480px){
+ .dialog-inner:has(.profile-action-group){padding:17px 16px calc(22px + env(safe-area-inset-bottom))}
+ .profile-action-group{margin-top:16px}
+ .profile-action-group .menu-button{min-height:55px;padding:11px 12px;font-size:12.5px}
+ .profile-action-group .menu-button-featured{min-height:69px;padding:13px 14px}
+ .profile-group-heading p{font-size:10.5px}
+}

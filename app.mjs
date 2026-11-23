@@ -1312,12 +1312,15 @@ function openProfile(required=false){
  else body.append(el('div',{class:'profile-hero'},el('div',{class:'profile-avatar'},initials()),el('div',{},el('p',{class:'profile-description'},'IL TUO REGISTRO PERSONALE'),el('p',{class:'catalog-title'},name()))));
  const form=el('form',{novalidate:true});const error=el('div',{class:'form-error',role:'alert'});const first=field('Nome','firstName',state.profile.firstName,{placeholder:'Il tuo nome',autocomplete:'given-name',required:true,maxlength:200});const last=field('Cognome','lastName',state.profile.lastName,{placeholder:'Il tuo cognome',autocomplete:'family-name',required:true,maxlength:200});
  form.append(error,first.wrap,last.wrap,el('button',{type:'submit',class:'primary-button full','data-save':true},icon('check'),required?'Inizia a registrare':'Salva profilo'));
- form.addEventListener('submit',async event=>{event.preventDefault();error.textContent='';if(!first.input.value.trim()||!last.input.value.trim()){error.textContent='Inserisci nome e cognome dell’autista.';(!first.input.value.trim()?first.input:last.input).focus();return;}try{requireCurrentEditor(expectedProfile,state.profile,'Il profilo');await persist({...state,profile:{firstName:D.normalizeText(first.input.value),lastName:D.normalizeText(last.input.value)}});dialog.close();render();toast('Profilo salvato.');}catch(err){error.textContent=err.message;}});body.append(form);
+ form.addEventListener('submit',async event=>{event.preventDefault();error.textContent='';if(!first.input.value.trim()||!last.input.value.trim()){error.textContent='Inserisci nome e cognome dell’autista.';(!first.input.value.trim()?first.input:last.input).focus();return;}try{requireCurrentEditor(expectedProfile,state.profile,'Il profilo');await persist({...state,profile:{firstName:D.normalizeText(first.input.value),lastName:D.normalizeText(last.input.value)}});dialog.close();render();toast('Profilo salvato.');}catch(err){error.textContent=err.message;}});
+ if(required)body.append(form);
+ else body.append(el('details',{class:'profile-edit-disclosure'},
+  el('summary',{},'Modifica nome e cognome',el('span',{class:'profile-edit-chevron','aria-hidden':'true'},'⌄')),form));
  if(required&&store.usingAccount())body.append(button('Recupera vecchi viaggi','text',()=>{dialog.close();showLegacyArchiveRecovery();},'download',{class:'text-button full'}));
  if(!required){
   const importInput=el('input',{type:'file',accept:'.json,.zip,application/json,application/zip',class:'visually-hidden','aria-label':'Seleziona un backup',on:{change:async event=>{const file=event.target.files?.[0];if(!file)return;dialog.close();await importFile(file);}}});
   const installItem=menuButton('Installa app','Aggiungi LTS alla schermata Home.','download',startInstall);installItem.dataset.installTrigger='';installItem.hidden=isInstalled();
-  body.append(el('div',{class:'profile-separator'}),el('p',{class:'section-label'},'I tuoi dati'),el('div',{class:'profile-menu'},menuButton('Sincronizza adesso','Invia online le modifiche salvate sul telefono.','cloud',async()=>{try{const result=await store.syncPending();if(result?.state)state=D.validateState(result.state);dialog.close();render();toast('Sincronizzazione completata.');}catch(err){toast(err.message||'Sincronizzazione non riuscita.',true);}}),menuButton('Esporta backup','Salva una copia in File o su Google Drive.','download',()=>downloadBackup()),menuButton('Importa backup','Backup web JSON o archivio Android ZIP.','upload',()=>importInput.click()),menuButton('Ricarica dati online','Recupera la versione online dopo aver conservato un backup.','refresh',()=>{dialog.close();confirmAction('Ricaricare i dati online?','Prima esporta un backup. Le modifiche non sincronizzate sul telefono saranno sostituite dai dati online.',async()=>{const result=await store.loadState({preferRemote:true});state=D.validateState(result.state);user=result.user||null;draft=newDraft();editingId=null;editingBaseline=null;render();toast('Registro online ricaricato.');},'Ricarica');}),installItem,importInput));
+  body.append(el('div',{class:'profile-separator'}),el('div',{class:'profile-menu'},menuButton('Sincronizza adesso','Invia online le modifiche salvate sul telefono.','cloud',async()=>{try{const result=await store.syncPending();if(result?.state)state=D.validateState(result.state);dialog.close();render();toast('Sincronizzazione completata.');}catch(err){toast(err.message||'Sincronizzazione non riuscita.',true);}}),menuButton('Esporta backup','Salva una copia in File o su Google Drive.','download',()=>downloadBackup()),menuButton('Importa backup','Backup web JSON o archivio Android ZIP.','upload',()=>importInput.click()),menuButton('Ricarica dati online','Recupera la versione online dopo aver conservato un backup.','refresh',()=>{dialog.close();confirmAction('Ricaricare i dati online?','Prima esporta un backup. Le modifiche non sincronizzate sul telefono saranno sostituite dai dati online.',async()=>{const result=await store.loadState({preferRemote:true});state=D.validateState(result.state);user=result.user||null;draft=newDraft();editingId=null;editingBaseline=null;render();toast('Registro online ricaricato.');},'Ricarica');}),installItem,importInput));
   appendPushSettings(body,{apiRequest:store.pushRequest,toast});
   const syncInfo=store.getSyncInfo();
   if(!store.usingAccount())body.querySelector('.profile-menu').prepend(menuButton('Collega dispositivi',syncInfo.linked?'Archivio condiviso: viaggi, clienti e tariffe si aggiornano online.':'Collega iPhone e Android con un codice temporaneo.','link',()=>{dialog.close();deviceLinkDialog();}));
@@ -1362,6 +1365,47 @@ function openProfile(required=false){
   }
   if(syncInfo.conflict)body.querySelector('.profile-menu').prepend(menuButton('Risolvi sincronizzazione','Controlla le due copie: nessuna modifica viene scartata automaticamente.','info',()=>{dialog.close();syncConflictDialog();}));
   body.querySelector('.profile-menu').append(menuButton('Esporta per Android','ZIP compatibile da importare nell’app LTS Android.','download',downloadAndroidBackup));
+  // Group the EXISTING buttons; their callbacks and access checks are unchanged.
+  const oldProfileMenu=body.querySelector('.profile-menu');
+  const profileActions=new Map([...oldProfileMenu.querySelectorAll('button.menu-button')]
+    .map(item=>[item.dataset.profileAction,item]));
+  const groups=[];
+  const addProfileGroup=(title,subtitle,kind,names)=>{
+    const entries=names.map(label=>profileActions.get(label)).filter(Boolean);
+    if(!entries.length)return null;
+    const list=el('div',{class:'profile-menu profile-menu-rows'},...entries);
+    const group=el('section',{class:'profile-action-group profile-action-group--'+kind,'aria-label':title},
+      el('div',{class:'profile-group-heading'},el('h3',{},title),el('p',{},subtitle)),list);
+    groups.push(group);
+    return group;
+  };
+  addProfileGroup('Accesso rapido','Le funzioni collegate al tuo account.','services',
+    ['I MIEI DOCUMENTI','Gestisci autisti','Accedi con account autista']);
+  const documentEntry=profileActions.get('I MIEI DOCUMENTI');
+  if(documentEntry)documentEntry.classList.add('menu-button-featured');
+  addProfileGroup('Dati e sincronizzazione','Mantieni aggiornato il registro sui tuoi dispositivi.','sync',
+    ['Risolvi sincronizzazione','Sincronizza adesso','Collega dispositivi']);
+  addProfileGroup('Archivio e backup','Salva, trasferisci o recupera una copia dei tuoi viaggi.','backup',
+    ['Esporta backup','Importa backup','Recupera archivio precedente','Esporta per Android','Ricarica dati online']);
+  const accountGroup=addProfileGroup('Account e sicurezza','Accesso e impostazioni del dispositivo.','security',
+    ['Installa app','Esci dall’account']);
+  if(profileActions.get('Esci dall’account'))profileActions.get('Esci dall’account').classList.add('menu-button-logout');
+  const importField=oldProfileMenu.querySelector('input[type=file]');
+  if(importField)body.append(importField);
+  // Preserve any future actions not yet assigned to a section.
+  const ungrouped=[...oldProfileMenu.querySelectorAll('button.menu-button')];
+  if(ungrouped.length){
+    const backupGroup=groups.find(g=>g.classList.contains('profile-action-group--backup'));
+    const list=backupGroup?.querySelector('.profile-menu');
+    if(list)list.append(...ungrouped);
+    else addProfileGroup('Altre funzioni','Ulteriori strumenti del profilo.','extras',
+      ungrouped.map(item=>item.dataset.profileAction));
+  }
+  oldProfileMenu.replaceWith(...groups);
+  // Notification settings remain available before final account actions.
+  const notifications=body.querySelector('.push-settings');
+  if(notifications&&accountGroup)accountGroup.before(notifications);
+
   body.append(el('div',{class:'info-note',style:'margin-top:17px;margin-bottom:0'},icon('lock'),'Il PDF mensile contiene viaggi e servizi. Le tariffe e gli importi restano solo nell’app.'));
   body.append(el('p',{class:'subtle-footer'},store.usingAccount()
     ?'Registro dell’account verificato. I viaggi degli altri account non sono accessibili. Non condividere la password; conserva un backup prima di cambiare telefono.'
@@ -1454,7 +1498,7 @@ async function syncConflictDialog(){
   body.append(confirm);
  }catch(err){error.textContent=err.message;}
 }
-function menuButton(title,description,ico,handler){return el('button',{type:'button',class:'menu-button',on:{click:handler}},icon(ico),el('span',{},title,el('small',{},description)),el('span',{class:'menu-arrow'},'›'));}
+function menuButton(title,description,ico,handler){return el('button',{type:'button',class:'menu-button','data-profile-action':title,on:{click:handler}},icon(ico),el('span',{},title,el('small',{},description)),el('span',{class:'menu-arrow'},'›'));}
 function downloadBlob(blob,fileName){const url=URL.createObjectURL(blob);const anchor=el('a',{href:url,download:fileName});document.body.append(anchor);anchor.click();anchor.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);}
 async function downloadBackup(){
  try{
