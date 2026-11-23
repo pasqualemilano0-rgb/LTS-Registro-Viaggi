@@ -889,3 +889,15 @@ body.lts-driver-session-blocked dialog[open]{visibility:hidden!important;pointer
 /* Documents uses the same white card, text and PDF icon color as other actions.
    Only size the chevron SVG; backups retain their download/upload arrows. */
 .profile-action-group [data-profile-action="I MIEI DOCUMENTI"] .menu-arrow>.icon{width:18px;height:18px;stroke:currentColor;stroke-width:2.2}
+
+/* Unopened payroll PDFs: compact, accessible, profile-only notification badge. */
+.profile-button .profile-document-badge{
+ position:absolute;top:-7px;right:-7px;z-index:1;
+ display:flex;align-items:center;justify-content:center;
+ min-width:20px;height:20px;padding:0 5px;
+ border-radius:999px;border:2px solid #fff;
+ background:#d51f38;color:#fff;
+ font:800 11px/1 system-ui,-apple-system,"Segoe UI",sans-serif;
+ letter-spacing:0;box-shadow:0 1px 4px #3333;
+ pointer-events:none;
+}
