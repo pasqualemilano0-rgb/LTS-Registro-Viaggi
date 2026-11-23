@@ -11,7 +11,7 @@ const code=app.slice(start,end)
 
 function fixture({authorized=true}={}){
  const state={owner:'driver-A',account:true,verified:true,role:'driver',online:true,auth:authorized};
- const time={now:1000000};
+ const time={ms:1000000,now(){return this.ms;}};
  let calls=0;
  const accountAccess={
   isEnabled:()=>true,
@@ -40,7 +40,7 @@ test('successful preload is reused immediately for the same driver',async()=>{
  assert.equal(x.api.payrollProfileCached('driver-A'),true);
  assert.equal(await x.api.prefetchPayrollProfileAccess(),true);
  assert.equal(x.calls(),1,'opening Profile must not cause another API call');
- x.time.now+=61000;
+ x.time.ms+=61000;
  assert.equal(await x.api.prefetchPayrollProfileAccess(),true);
  assert.equal(x.calls(),2,'eligibility refreshes periodically');
 });
@@ -50,7 +50,7 @@ test('a denied, expired or failed server check never creates a menu permission',
  assert.equal(await x.api.prefetchPayrollProfileAccess(),false);
  assert.equal(x.api.payrollProfileCached('driver-A'),false);
  x.state.auth=true;
- x.time.now+=61000;
+ x.time.ms+=61000;
  assert.equal(await x.api.prefetchPayrollProfileAccess(),true);
  assert.equal(x.api.payrollProfileCached('driver-A'),true);
  x.state.auth=false;
