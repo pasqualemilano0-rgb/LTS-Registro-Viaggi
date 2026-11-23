@@ -40,7 +40,7 @@ test('authenticator verification and a valid admin role are necessary to show th
   entry.indexOf('let driverRequest=',entry.indexOf('async function authenticate(')));
  assert.match(authenticated,/if\(status\.mfa_enrolled&&!status\.mfa_verified\)/);
  assert.match(authenticated,/showMfaPanel\(\)/);
- assert.match(authenticated,/if\(status\.mfa_enrolled&&status\.mfa_verified\)\{\s*showAuthenticatedAreaChoice\(\)/);
+ assert.match(authenticated,/if\(status\.mfa_enrolled&&status\.mfa_verified\)\{\s*adminMfaGatePassed=true;\s*showAuthenticatedAreaChoice\(\)/);
  assert.match(entry,/const verifiedMfa=await account\.verifyAdminTotp\(code,selected\)/);
  assert.match(entry,/await authenticate\(verifiedMfa\)/);
 });
