@@ -7,6 +7,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {runInNewContext} from 'node:vm';
+import {validatePayrollPdf} from '../supabase/functions/lts-payroll/pdf-security.mjs';
 
 const src=readFileSync(new URL('../supabase/functions/lts-payroll/index.ts',import.meta.url),'utf8')
  .replace(/^import .+;\s*$/gm,'')
@@ -22,6 +23,12 @@ const draftA='10000000-0000-4000-8000-000000000003';
 const ORIGIN='https://pasqualemilano0-rgb.github.io';
 const endpoint='https://otrqynkscpbeyuvdlgpg.supabase.co/functions/v1/lts-payroll';
 const tokens={a:'a'.repeat(70),b:'b'.repeat(70),admin:'m'.repeat(70),revoked:'r'.repeat(70)};
+function syntheticPdf(extra=''){
+ const head='%PDF-1.5\n',obj='1 0 obj\n<< /Type /Catalog '+extra+' >>\nendobj\n';
+ const offset=Buffer.byteLength(head+obj,'latin1');
+ return head+obj+'xref\n0 2\n0000000000 65535 f \n0000000009 00000 n \n'+
+  'trailer\n<< /Root 1 0 R /Size 2 >>\nstartxref\n'+offset+'\n%%EOF\n';
+}
 
 function fixture({adminMfa=true,enabled=true,preview=false,allowedUsers=[A,B,M],expiry='2099-01-01T00:00:00Z'}={}){
  const accounts=[
@@ -126,6 +133,7 @@ function fixture({adminMfa=true,enabled=true,preview=false,allowedUsers=[A,B,M],
   createClient:(_url,key)=>key.startsWith('public-key')?publicClient:db,
   checkLtsSession:async (_db,token)=>{if(token===tokens.revoked)throw {status:403};},
   requireAdminMfa:async()=>({enrolled:adminMfa,verified:adminMfa}),
+  validatePayrollPdf,
   Deno:deno,globalTestPilot:preview,URL,Request,Response,Blob,File,TextDecoder,TextEncoder,crypto,atob,
   console
  },{timeout:2000});
@@ -138,9 +146,9 @@ function fixture({adminMfa=true,enabled=true,preview=false,allowedUsers=[A,B,M],
   return {status:response.status,data:response.headers.get('content-type')?.includes('json')?
     await response.json():await response.arrayBuffer()};
  }
- async function callUpload(token,driverId){
+ async function callUpload(token,driverId,pdf=syntheticPdf()){
   const fields=new FormData();
-  fields.set('file',new File(['%PDF-1.5\n1 0 obj\nendobj\n%%EOF'],'test.pdf',{type:'application/pdf'}));
+  fields.set('file',new File([pdf],'test.pdf',{type:'application/pdf'}));
   fields.set('driverId',driverId);
   fields.set('category','cedolino');
   fields.set('year','2026');
@@ -232,6 +240,15 @@ test('only MILANO PASQUALE may receive uploaded PDF bytes',async()=>{
  assert.equal(x.writes.length,1);
  assert.equal(x.writes[0].startsWith(A+'/2026/'),true);
 });
+test('malformed or active PDF is denied before private Storage upload',async()=>{
+ const x=fixture({allowedUsers:[A]});
+ for(const pdf of [syntheticPdf('/OpenAction'),syntheticPdf().replace('%%EOF',''),syntheticPdf('/J#61vaScript')]){
+  const r=await x.callUpload(tokens.admin,A,pdf);
+  assert.equal(r.status,400);
+  assert.equal(x.writes.length,0,'invalid PDF must never reach Storage');
+ }
+});
+
 test('a reassigned driver_a slot is rejected if its identity is not MILANO PASQUALE',async()=>{
  const x=fixture({allowedUsers:[B]});
  x.allowlist[0].slot='driver_a';
