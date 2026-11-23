@@ -292,7 +292,7 @@ export const readMapsCustomer=async(link)=>{
 };
 `;
 // Browser-only fake Documents API: local response; never uses Supabase or real JWT.
-const mockPayrollApi=String.raw\`
+const mockPayrollApi=String.raw`
 globalThis.__mockPayrollCalls=[];
 export const drivers=async()=>{
  globalThis.__mockPayrollCalls.push('drivers');
@@ -309,7 +309,7 @@ export const upload=async()=>{throw Error('QA: no document uploading');};
 export const download=async()=>{throw Error('QA: no document download');};
 export const acknowledge=async()=>{throw Error('QA: no acknowledgments');};
 export const savePdf=()=>{throw Error('QA: no document bytes');};
-\`;
+`;
 const root=resolve(dir),mime={'.html':'text/html','.css':'text/css','.mjs':'text/javascript','.png':'image/png'};
 const server=createServer(async(req,res)=>{
  const path=new URL(req.url,'http://localhost').pathname;
