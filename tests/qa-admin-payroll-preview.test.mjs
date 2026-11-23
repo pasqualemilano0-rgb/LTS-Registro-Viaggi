@@ -10,8 +10,8 @@ const secure=read('documenti/admin-documents.mjs');
 const api=read('supabase/functions/lts-payroll/index.ts');
 
 test('admin chooser enters a public preview, not the authenticated workspace',()=>{
- assert.match(chooser,/id="select-area-amministrativa"[^>]+href="\.\/buste-paga\/anteprima\/"/);
- assert.match(chooser,/Apri anteprima/);
+ assert.match(chooser,/id="select-area-amministrativa"[^>]+href="\.\/buste-paga\/"/);
+ assert.match(chooser,/Cedolini, CU, pubblicazione PDF e archivio riservato/);
  assert.match(chooser,/Area Logistica: accesso con credenziali e MFA/);
  assert.match(preview,/MODALITÀ ANTEPRIMA — senza credenziali/);
  assert.match(preview,/ANTEPRIMA NON OPERATIVA/);
