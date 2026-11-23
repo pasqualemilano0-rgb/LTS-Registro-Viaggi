@@ -104,7 +104,7 @@ async function refreshRoster(){
   // The archive filter still supports viewing existing records for all drivers.
   for(const driver of roster){
    if(driver.documents_enabled)
-    $('driver').append(option(driver.id,driver.name+' · unico destinatario dei test'));
+    $('driver').append(option(driver.id,driver.name));
    $('filter-driver').append(option(driver.id,driver.name));
   }
   $('driver').value=eligible.length===1?eligible[0].id:'';
@@ -288,7 +288,7 @@ $('upload-form').addEventListener('submit',async event=>{
   }
   $('files').value='';
   $('file-selection').textContent=uploadedFilesLabel([]);
-  uploadFeedback(success+' PDF caricati in bozza per '+selected.name+
+  uploadFeedback(success+' '+(success===1?'PDF caricato':'PDF caricati')+' in bozza per '+selected.name+
    '. Ora li trovi nell’archivio qui sotto: per renderli disponibili serve pubblicarli.','success');
  }catch(error){
   if(success){
@@ -296,7 +296,7 @@ $('upload-form').addEventListener('submit',async event=>{
    $('file-selection').textContent=uploadedFilesLabel([]);
   }
   const uncertain=!error?.status||error?.name==='AbortError';
-  uploadFeedback(success+' PDF caricati con conferma. '+(uncertain
+  uploadFeedback(success+' '+(success===1?'PDF caricato':'PDF caricati')+' con conferma. '+(uncertain
    ?'Invio interrotto o non verificabile: controlla l’archivio prima di riprovare.'
    :'Operazione interrotta: '+(error?.message||'errore imprevisto')),'error');
  }finally{
