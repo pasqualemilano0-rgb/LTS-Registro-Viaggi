@@ -31,8 +31,8 @@ test('admin access first offers two exact areas while preserving original logist
 });
 
 test('area amministrativa opens a static preview while independent login still requires MFA',()=>{
- assert.match(login,/id="select-area-amministrativa"[^>]*href="\.\/buste-paga\/anteprima\/"/);
- assert.match(login,/Area Amministrativa: anteprima libera, dati e funzioni riservati protetti/);
+ assert.match(login,/id="select-area-amministrativa"[^>]*href="\.\/buste-paga\/"/);
+ assert.match(login,/Le funzioni di entrambe le aree richiedono l’accesso amministratore con MFA/);
  const preview=source('amministratore/buste-paga/anteprima/index.html');
  assert.match(preview,/MODALITÀ ANTEPRIMA — senza credenziali/);
  assert.match(preview,/class="button-primary active-link" href="\.\.\/"/);
