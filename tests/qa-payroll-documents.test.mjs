@@ -97,3 +97,18 @@ test('admin payroll page requires distinct login despite existing LTS session',(
  assert.match(admin,/account\.verifyAdminTotp/);
  assert.match(admin,/busy\(false\);\s*await check\(\);/);
 });
+
+test('profile always shows I MIEI DOCUMENTI to signed-in drivers, even before payroll activation',()=>{
+ assert.match(profile,/if\(store\.usingAccount\(\)\&\&accountAccess\.getRole\(\)==='driver'\)\{/);
+ assert.match(profile,/menuButton\('I MIEI DOCUMENTI'/);
+ assert.match(profile,/Servizio in preparazione\./);
+ assert.match(profile,/new URL\('documenti\/',import\.meta\.url\)/);
+ const menuGate=profile.slice(profile.indexOf("if(store.usingAccount()&&accountAccess.getRole()==='driver'){"),
+  profile.indexOf("if(store.usingAccount()&&accountAccess.getRole()==='admin'"));
+ assert.ok(menuGate.includes("menuButton('I MIEI DOCUMENTI'"));
+ assert.ok(!/if\(payrollAvailable\)/.test(menuGate),'payroll config cannot hide profile menu');
+ const directPage=text('documenti/driver-documents.mjs');
+ assert.match(directPage,/I MIEI DOCUMENTI — In preparazione/);
+ assert.match(directPage,/if\(typeof runtime\.accountAuth\?\.payrollEndpoint!=='string'/);
+ assert.doesNotMatch(text('runtime-config.mjs'),/payrollEndpoint/);
+});
