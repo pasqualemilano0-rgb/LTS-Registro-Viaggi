@@ -249,7 +249,15 @@ input[type=file]{border-style:dashed}
  .driver-documents-page .archive-description{display:none}
  .driver-documents-page .archive-caption{font-size:10px}
  .driver-documents-page .filters label{gap:8px;font-size:12px}
- .driver-documents-page .filters select{min-width:135px;max-width:150px;min-height:40px}
+ .driver-documents-page .archive-toolbar{
+  display:grid;grid-template-columns:minmax(0,1fr) minmax(180px,190px);
+  gap:10px;align-items:end;
+ }
+ .driver-documents-page .filters{min-width:0}
+ .driver-documents-page .filters select{
+  display:block;width:100%;min-width:0;max-width:none;min-height:40px;
+  padding-right:33px;white-space:nowrap;
+ }
  .driver-documents-page .documents-panel{padding:17px;border-radius:18px}
  .driver-documents-page .documents-panel-heading{margin-bottom:14px}
  .driver-documents-page .documents-panel-heading h2{font-size:16px}
@@ -269,5 +277,12 @@ input[type=file]{border-style:dashed}
  .driver-documents-page .heading h1{font-size:24px}
  .driver-documents-page .category{font-size:10px}
  .driver-documents-page .archive-caption{font-size:9px}
- .driver-documents-page .filters select{min-width:120px;max-width:130px}
+ .driver-documents-page .archive-toolbar{grid-template-columns:minmax(0,1fr) minmax(174px,185px)}
+ .driver-documents-page .filters select{width:100%;min-width:0;max-width:none}
+}
+
+/* Extra-small screens: never crop "Tutti gli anni" or the archive heading. */
+@media(max-width:330px){
+ .driver-documents-page .archive-toolbar{grid-template-columns:1fr;gap:10px}
+ .driver-documents-page .filters select{width:100%;min-width:0;max-width:none}
 }
