@@ -15,7 +15,7 @@ test('admin chooser enters a public preview, not the authenticated workspace',()
  assert.match(chooser,/Area Logistica: accesso con credenziali e MFA/);
  assert.match(preview,/MODALITÀ ANTEPRIMA — senza credenziali/);
  assert.match(preview,/ANTEPRIMA NON OPERATIVA/);
- assert.match(preview,/href="\.\.\/" class="button-primary active-link"/);
+ assert.match(preview,/class="button-primary active-link" href="\.\.\/"/);
 });
 
 test('preview is physically disconnected from the payroll API and contains no private data',()=>{
