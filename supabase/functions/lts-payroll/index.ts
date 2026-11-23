@@ -118,6 +118,27 @@ async function activeDriver(db,id){
  if(!data)fail(404);
  return id;
 }
+/**
+ * Pilot recipient is assigned exclusively through the server-controlled
+ * driver_a allowlist slot. Compare the corresponding identity from the LTS
+ * directory as a second fail-closed check. Neither the browser nor a name
+ * supplied with a request is an authority for document assignment.
+ */
+async function requireMilanoPasqualeRecipient(db){
+ const {data:seat,error:seatError}=await db.from('lts_payroll_test_allowlist')
+  .select('user_id').eq('slot','driver_a').eq('role','driver')
+  .eq('enabled',true).gt('expires_at',new Date().toISOString()).maybeSingle();
+ if(seatError)fail(503,'Autorizzazione del destinatario temporaneamente non verificabile.');
+ if(!seat?.user_id)fail(403,'Destinatario di prova non più abilitato.');
+ const {data:identity,error:identityError}=await db.from('lts_pending_drivers')
+  .select('auth_user_id,first_name,last_name')
+  .eq('auth_user_id',seat.user_id).maybeSingle();
+ if(identityError)fail(503,'Identità del destinatario temporaneamente non verificabile.');
+ const normal=value=>typeof value==='string'?value.trim().toLocaleLowerCase('it'):'';
+ if(!identity||normal(identity.first_name)!=='milano'||normal(identity.last_name)!=='pasquale')
+  fail(403,'Il destinatario autorizzato non corrisponde a MILANO PASQUALE.');
+ return seat.user_id;
+}
 async function roster(db){
  const {data,error}=await db.from('lts_account_access')
   .select('user_id,phone_e164').eq('role','driver')
@@ -130,18 +151,14 @@ async function roster(db){
   .select('auth_user_id,first_name,last_name').in('auth_user_id',ids).limit(201);
  if(e)fail(503);
  const lookup=new Map((names||[]).map(n=>[n.auth_user_id,n]));
- // Reflect server-side recipient eligibility so admin cannot mistake a draft
- // for a deliverable PDF. Only verified admins can request this roster.
- const {data:seats,error:seatsError}=await db.from('lts_payroll_test_allowlist')
-  .select('user_id').eq('role','driver').eq('enabled',true)
-  .gt('expires_at',new Date().toISOString()).limit(3);
- if(seatsError)fail(503,'Disponibilità autisti per la pubblicazione non verificata.');
- const deliverable=new Set((seats||[]).map(x=>x.user_id));
+ // Administrators can review the whole archive, but may upload/publish
+ // exclusively to the verified single test recipient.
+ const pilotDriverId=await requireMilanoPasqualeRecipient(db);
  return data.map(x=>({id:x.user_id,
   name:[lookup.get(x.user_id)?.first_name,lookup.get(x.user_id)?.last_name]
    .filter(Boolean).join(' ').trim()||'Autista senza nome',
   phone:x.phone_e164||'',
-  documents_enabled:deliverable.has(x.user_id)
+  documents_enabled:x.user_id===pilotDriverId
  })).sort((a,b)=>a.name.localeCompare(b.name,'it'));
 }
 async function listDocs(db,actor,q){
@@ -186,6 +203,9 @@ async function upload(req,db,actor){
  if(!(file instanceof File)||file.size<10||file.size>MAX_FILE||
     !/\.pdf$/i.test(file.name)||(file.type&&file.type!=='application/pdf'))fail(400,'Solo PDF fino a 8 MB.');
  const driverId=await activeDriver(db,String(form.get('driverId')||''));
+ // This check runs before reading PDF bytes into memory or touching Storage.
+ if(driverId!==await requireMilanoPasqualeRecipient(db))
+  fail(403,'Caricamento PDF consentito soltanto per MILANO PASQUALE.');
  const category=String(form.get('category')||'');
  const year=Number(form.get('year'));
  const rawMonth=String(form.get('month')||'');
@@ -225,8 +245,10 @@ async function publish(db,actor,id){
  if(findErr)fail(503);
  if(!doc||doc.state!=='draft')fail(409,'Documento non pubblicabile.');
  await activeDriver(db,doc.driver_id);
- // Do not mark a PDF "published" for a driver unable to receive it during
- // the controlled release. Drafts may be prepared for other accounts.
+ // The only permissible publication recipient is the same pilot driver.
+ // Legacy drafts for another driver must not bypass the current policy.
+ if(doc.driver_id!==await requireMilanoPasqualeRecipient(db))
+  fail(403,'Pubblicazione riservata a MILANO PASQUALE.');
  await requirePhase2Tester(db,doc.driver_id,'driver');
  const {data,error}=await db.from('lts_payroll_documents')
   .update({state:'published',published_by:actor.userId,published_at:new Date().toISOString()})
