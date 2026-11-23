@@ -2,6 +2,21 @@ import * as account from '../account-access.mjs';
 import runtime from '../runtime-config.mjs';
 import * as api from './document-api.mjs';
 const $=id=>document.getElementById(id);
+// A normal href="../" creates a NEW register page and replays the truck
+// splash. When Documents was opened from the LTS profile, use browser history
+// to restore the existing register page (including its in-memory UI state).
+// Direct links, fresh tabs and modified clicks keep the ordinary home fallback.
+const openedFromProfile=new URLSearchParams(window.location.search).get('from')==='profile';
+for(const link of document.querySelectorAll('a[data-back-to-register]')){
+ link.addEventListener('click',event=>{
+  if(event.defaultPrevented||event.button!==0||
+     event.metaKey||event.ctrlKey||event.shiftKey||event.altKey)return;
+  if(openedFromProfile&&window.history.length>1){
+   event.preventDefault();
+   window.history.back();
+  }
+ });
+}
 let category='cedolino',offset=0,busy=false,activePdfPreview=null;
 let viewGeneration=0;
 const months=['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
