@@ -897,3 +897,9 @@ body.lts-driver-session-blocked dialog[open]{visibility:hidden!important;pointer
  .profile-action-group .menu-button-featured{min-height:69px;padding:13px 14px}
  .profile-group-heading p{font-size:10.5px}
 }
+
+/* Distinct document action: file icon and clean directional chevron.
+   Backup operations retain download/upload glyphs. */
+.profile-action-group .menu-button-featured>.icon{width:25px;height:25px;stroke-width:1.75}
+.profile-action-group .menu-button-featured .menu-arrow{display:grid;place-items:center;color:#f1fcff}
+.profile-action-group .menu-button-featured .menu-arrow>.icon{width:19px;height:19px;stroke:currentColor;stroke-width:2.3}
