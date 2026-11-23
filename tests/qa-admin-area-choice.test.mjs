@@ -30,8 +30,13 @@ test('admin access first offers two exact areas while preserving original logist
  assert.doesNotMatch(chooser,/account\.signOut|verifyAdminTotp|manageDrivers|localStorage|sessionStorage/);
 });
 
-test('area amministrativa points to independent login and preserves MFA requirements',()=>{
- assert.match(login,/id="select-area-amministrativa"[^>]*href="\.\/buste-paga\/"/);
+test('area amministrativa opens a static preview while independent login still requires MFA',()=>{
+ assert.match(login,/id="select-area-amministrativa"[^>]*href="\.\/buste-paga\/anteprima\/"/);
+ assert.match(login,/Area Amministrativa: anteprima libera, dati e funzioni riservati protetti/);
+ const preview=source('amministratore/buste-paga/anteprima/index.html');
+ assert.match(preview,/MODALITÀ ANTEPRIMA — senza credenziali/);
+ assert.match(preview,/class="button-primary active-link" href="\.\.\/"/);
+ assert.match(preview,/Documenti degli autisti/);
  assert.match(payroll,/id="login-form"/);
  assert.match(payroll,/id="mfa-form"/);
  assert.match(payroll,/AREA AMMINISTRATIVA RISERVATA/);

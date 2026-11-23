@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<meta http-equiv="Cache-Control" content="no-store">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self'; img-src 'self'; form-action 'none'; connect-src 'none'; script-src 'none'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'">
+<meta name="theme-color" content="#073e61">
+<link rel="icon" href="../../../assets/icon-192.png">
+<link rel="stylesheet" href="./anteprima.css?v=20261123-v1">
+<title>LTS · Anteprima Area Amministrativa</title>
+</head>
+<body>
+<header class="admin-preview-header">
+ <a class="brand" href="../../" aria-label="Torna alla selezione delle aree">
+  <img src="../../../assets/lts-logo.png" alt="LTS" width="80" height="56">
+  <span><strong>CONTROL CENTER</strong><small>Area amministrativa</small></span>
+ </a>
+ <a href="../../" class="back-link"><span aria-hidden="true">‹</span> Indietro</a>
+</header>
+<main class="page">
+ <div class="preview-banner" role="status">
+  <span class="preview-mark" aria-hidden="true">◉</span>
+  <div><strong>MODALITÀ ANTEPRIMA — senza credenziali</strong>
+  <p>Puoi esplorare la grafica. Nessun dato reale è caricato e nessuna operazione sui documenti è abilitata.</p></div>
+ </div>
+ <div class="page-heading">
+  <div><p class="eyebrow">LTS · GESTIONE DOCUMENTI</p>
+   <h1>Area amministrativa</h1>
+   <p class="description">Cedolini, Certificazioni Uniche e altri documenti del personale.</p>
+  </div>
+  <span class="preview-pill">ANTEPRIMA</span>
+ </div>
+ <nav class="category-nav" aria-label="Sezioni dell'area amministrativa in anteprima">
+  <a href="#cedolini" class="category-link"><span class="category-icon" aria-hidden="true">▤</span><strong>Cedolini</strong><small>Gestione PDF</small></a>
+  <a href="#cu" class="category-link"><span class="category-icon" aria-hidden="true">▣</span><strong>CU</strong><small>Certificazioni</small></a>
+  <a href="#altri" class="category-link"><span class="category-icon" aria-hidden="true">▧</span><strong>Altri documenti</strong><small>Archivio privato</small></a>
+ </nav>
+ <section class="panel" id="cedolini" aria-labelledby="upload-title">
+  <div class="panel-head"><div><p class="eyebrow">CARICAMENTO RISERVATO</p><h2 id="upload-title">Nuovo documento</h2></div>
+   <span class="locked-label">◈ Funzione bloccata</span></div>
+  <p class="intro">Questa è un'anteprima del modulo. Per assegnare documenti agli autisti serviranno credenziali amministratore e MFA.</p>
+  <fieldset disabled class="form-preview" aria-describedby="disabled-note">
+   <div class="form-grid">
+    <label>Autista destinatario<select><option>Seleziona autista</option></select></label>
+    <label>Categoria<select><option>Cedolino</option><option>CU</option><option>Altri documenti</option></select></label>
+    <label>Anno<input value="2026" type="text"></label>
+    <label>Mese<select><option>Seleziona mese</option></select></label>
+    <label class="full">Descrizione<input placeholder="Es. Cedolino novembre 2026"></label>
+    <label class="full">Documento PDF<input type="file" accept="application/pdf,.pdf"></label>
+   </div>
+   <button type="button" class="button-primary" disabled>Carica documento in bozza</button>
+  </fieldset>
+  <p id="disabled-note" class="disabled-note">Il caricamento, la pubblicazione e la revoca sono disabilitati in questa modalità.</p>
+ </section>
+ <section class="panel" id="cu" aria-labelledby="archive-title">
+  <div class="panel-head"><div><p class="eyebrow">ARCHIVIO PERSONALE</p><h2 id="archive-title">Documenti degli autisti</h2></div>
+    <span class="locked-label">◈ Dati protetti</span></div>
+  <div class="toolbar"><span>Consulta i documenti quando l'area sarà protetta.</span><button type="button" disabled>Filtra per autista</button></div>
+  <div class="empty-state">
+   <div class="empty-icon" aria-hidden="true">▤</div>
+   <strong>Anteprima dell'archivio</strong>
+   <p>Non vengono letti documenti, nomi degli autisti o dati personali. L'elenco sarà disponibile dopo l'autenticazione.</p>
+  </div>
+ </section>
+ <section class="panel mini-panel" id="altri" aria-labelledby="phases-title">
+  <p class="eyebrow">ATTIVAZIONE GRADUALE</p><h2 id="phases-title">Prossimi passaggi</h2>
+  <div class="phases">
+   <div><span>1</span><p><strong>Anteprima grafica</strong><small>Accesso senza credenziali, nessun dato reale</small></p></div>
+   <div><span>2</span><p><strong>Accesso amministratore</strong><small>Login e verifica MFA obbligatoria</small></p></div>
+   <div><span>3</span><p><strong>Gestione documenti</strong><small>Caricamento, pubblicazione e tracciamento sicuri</small></p></div>
+  </div>
+  <div class="page-actions"><a class="button-primary active-link" href="../">Apri l'accesso protetto</a><a class="button-secondary" href="../../">Torna alle aree</a></div>
+ </section>
+</main>
+<footer class="footer">LTS REGISTRO VIAGGI <span aria-hidden="true">·</span> ANTEPRIMA NON OPERATIVA</footer>
+</body>
+</html>
