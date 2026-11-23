@@ -320,3 +320,9 @@ body:has(#login-panel:not([hidden]) #admin-area-choice:not([hidden])) #notice{
  #admin-area-choice .admin-area-session-bar{font-size:11px;gap:8px;padding:12px 17px}
  #admin-choice-logout{padding:9px 11px;font-size:11px}
 }
+
+/* Compact same-session area switch on mobile logistics toolbar. */
+#admin-return-areas:not([hidden]){font-weight:800;white-space:nowrap}
+@media(max-width:420px){
+ .topbar #admin-return-areas{min-width:40px;min-height:40px;padding:6px 8px;font-size:11px}
+}
