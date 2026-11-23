@@ -365,7 +365,7 @@ Deno.serve(async req=>{
    415:'Formato non supportato.',428:'MFA amministratore richiesta.',429:'Troppi tentativi di attivazione. Riprova più tardi.',
    503:'Servizio documenti temporaneamente non disponibile.'};
   // Unexpected runtime exceptions must never disclose internal implementation details.
-  const controlled=e?.status===status && typeof e?.message==='string';
+  const controlled=status<500&&e?.status===status&&typeof e?.message==='string';
   return json({error:controlled?e.message:messages[status]},status);
  }
 });
