@@ -6,6 +6,7 @@
 import {createClient} from 'npm:@supabase/supabase-js@2.118.0';
 import {checkLtsSession} from './lts-session.mjs';
 import {requireAdminMfa} from './lts-admin-mfa.mjs';
+import {validatePayrollPdf} from './pdf-security.mjs';
 
 const ORIGIN=(()=>{
  const value=Deno.env.get('LTS_PAYROLL_ALLOWED_ORIGIN')||'https://pasqualemilano0-rgb.github.io';
@@ -221,7 +222,8 @@ async function upload(req,db,actor){
   (category==='cedolino'&&month===null)||!label||label.length>160)fail(400);
  const originalName=file.name.replace(/[\r\n\x00-\x1f]/g,'_').slice(0,180);
  const buffer=new Uint8Array(await file.arrayBuffer());
- if(String.fromCharCode(...buffer.slice(0,5))!=='%PDF-')fail(400,'File PDF non valido.');
+ const admission=validatePayrollPdf(buffer);
+ if(!admission.ok)fail(400,admission.reason);
  const hash=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',buffer)))
   .map(x=>x.toString(16).padStart(2,'0')).join('');
  const {data:duplicate,error:dupErr}=await db.from('lts_payroll_documents')
@@ -362,6 +364,8 @@ Deno.serve(async req=>{
    409:'Documento già presente o modificato.',413:'File troppo grande.',
    415:'Formato non supportato.',428:'MFA amministratore richiesta.',429:'Troppi tentativi di attivazione. Riprova più tardi.',
    503:'Servizio documenti temporaneamente non disponibile.'};
-  return json({error:e?.message||messages[status]},status);
+  // Unexpected runtime exceptions must never disclose internal implementation details.
+  const controlled=e?.status===status && typeof e?.message==='string';
+  return json({error:controlled?e.message:messages[status]},status);
  }
 });
