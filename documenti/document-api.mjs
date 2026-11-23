@@ -1,0 +1,64 @@
+/** Shared LTS document transport. No document content is stored in browser caches. */
+import * as account from '../account-access.mjs';
+import runtime from '../runtime-config.mjs';
+// Each build must explicitly select the payroll API of its own Auth project.
+function payrollEndpoint(){
+ const configured=runtime.accountAuth?.payrollEndpoint;
+ const login=runtime.accountAuth?.loginEndpoint;
+ if(typeof configured!=='string'||typeof login!=='string')
+  throw Error('Archivio documenti non ancora configurato per questo ambiente.');
+ let url,auth;
+ try{url=new URL(configured);auth=new URL(login);}catch{
+  throw Error('Configurazione documenti non valida.');
+ }
+ const allowedPath=runtime.environment==='qa'&&auth.hostname==='sywxretbfgwxwhvdcknq.supabase.co'
+  ?'/functions/v1/lts-payroll-secure-qa':'/functions/v1/lts-payroll';
+ if(url.protocol!=='https:'||url.pathname!==allowedPath||
+    url.search||url.hash||url.username||url.password||url.origin!==auth.origin)
+  throw Error('Servizio documenti non compatibile con questo account.');
+ return url.href;
+}
+async function request(payload,{multipart=false,pdf=false}={}){
+ if(!account.isVerified())throw Error('Verifica prima il tuo account LTS.');
+ const token=await account.getVerifiedAccessToken();
+ const abort=new AbortController(),timer=setTimeout(()=>abort.abort(),multipart?90000:30000);
+ try{
+  const response=await fetch(payrollEndpoint(),{method:'POST',mode:'cors',cache:'no-store',
+   credentials:'omit',headers:{Authorization:'Bearer '+token,...(multipart?{}:{'Content-Type':'application/json'})},
+   body:multipart?payload:JSON.stringify(payload),signal:abort.signal});
+  if(!response.ok){
+   const result=await response.json().catch(()=>({}));
+   throw Error(result?.error||'Richiesta documenti non riuscita ('+response.status+').');
+  }
+  if(pdf){
+   if(!(response.headers.get('content-type')||'').startsWith('application/pdf'))
+    throw Error('Formato PDF inatteso.');
+   const file=await response.blob();
+   if(file.size>8388608||file.size<10)throw Error('Documento PDF non valido.');
+   return file;
+  }
+  return response.json();
+ }finally{clearTimeout(timer);}
+}
+export const documents=filter=>request({action:'list',...filter});
+export const drivers=()=>request({action:'drivers'});
+export const publish=id=>request({action:'publish',id});
+export const revoke=id=>request({action:'revoke',id});
+export const upload=(file,{driverId,category,year,month,label})=>{
+ if(!(file instanceof File)||file.size>8388608||file.size<10||
+    !file.name.toLowerCase().endsWith('.pdf'))throw Error('Seleziona un PDF fino a 8 MB.');
+ const form=new FormData();
+ for(const [key,value] of Object.entries({driverId,category,year,month:month??'',label}))
+  form.set(key,String(value));
+ form.set('file',file,file.name);
+ return request(form,{multipart:true});
+};
+export const download=id=>request({action:'download',id},{pdf:true});
+export const acknowledge=id=>request({action:'acknowledge',id});
+export function savePdf(blob,filename='LTS-documento.pdf'){
+ const safe=String(filename).replace(/[^a-zA-Z0-9._-]/g,'_').slice(0,120);
+ const url=URL.createObjectURL(blob);
+ const a=document.createElement('a');a.href=url;a.download=safe.endsWith('.pdf')?safe:safe+'.pdf';
+ a.rel='noopener';document.body.append(a);a.click();a.remove();
+ setTimeout(()=>URL.revokeObjectURL(url),30000);
+}

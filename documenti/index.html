@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="it"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1,viewport-fit=cover">
+<meta name="referrer" content="no-referrer"><meta name="robots" content="noindex,nofollow,noarchive">
+<meta http-equiv="Cache-Control" content="no-store">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src https://otrqynkscpbeyuvdlgpg.supabase.co; form-action 'self'; base-uri 'none'; object-src 'none'; frame-src blob:; frame-ancestors 'none'">
+<meta name="theme-color" content="#006f89">
+<link rel="icon" href="../assets/icon-192.png">
+<link rel="stylesheet" href="./documents.css">
+<script type="module" src="./driver-documents.mjs"></script>
+<title>LTS · I miei documenti</title></head>
+<body>
+<header class="lts-header"><a class="lts-brand" href="../"><img src="../assets/lts-logo.png" alt="LTS" width="52" height="46"><span>I miei documenti<small>Area personale riservata · Accesso con account LTS</small></span></a><a class="back" href="../">Il tuo profilo</a></header>
+<main class="shell">
+<div id="notice" class="notice" role="status" aria-live="polite" hidden></div>
+<section id="locked" class="login-card" hidden><h1>Accesso richiesto</h1><p>Accedi al tuo account autista LTS per consultare i documenti. I PDF non sono salvati dall’app, ma i file scaricati rimangono sul tuo dispositivo.</p><a href="../" class="primary link-button">Accedi a LTS</a></section>
+<section id="content" hidden>
+ <div class="heading"><div><p class="eyebrow">LTS · IL TUO PROFILO</p><h1>I MIEI DOCUMENTI</h1><p>Solo i documenti pubblicati per il tuo account.</p></div><button type="button" id="refresh" class="outline">Aggiorna</button></div>
+ <nav class="category-nav" aria-label="Categorie documenti">
+  <button type="button" class="category selected" data-category="cedolino" aria-pressed="true">CEDOLINO</button>
+  <button type="button" class="category" data-category="cu" aria-pressed="false">CU</button>
+  <button type="button" class="category" data-category="altri" aria-pressed="false">ALTRI DOCUMENTI</button>
+ </nav>
+ <div class="filters"><label>Anno<select id="year"><option value="">Tutti gli anni</option></select></label></div>
+ <div class="panel"><h2 id="category-title">CEDOLINO</h2><p class="hint">Prima di aprire o scaricare un cedolino devi confermare che il documento è stato messo a tua disposizione. Senza conferma il PDF rimane bloccato. La conferma non dimostra che il file sia già stato letto e non equivale a firma, pagamento dello stipendio o accettazione degli importi.</p><div id="documents" class="document-list" aria-live="polite"></div>
+ <button type="button" id="more" class="outline" hidden>Carica altri</button></div>
+</section></main>
+</body></html>

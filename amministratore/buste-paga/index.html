@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="it"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1,viewport-fit=cover">
+<meta name="referrer" content="no-referrer"><meta name="robots" content="noindex,nofollow,noarchive">
+<meta http-equiv="Cache-Control" content="no-store">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src https://otrqynkscpbeyuvdlgpg.supabase.co; form-action 'self'; base-uri 'none'; object-src 'none'; frame-ancestors 'none'">
+<meta name="theme-color" content="#006f89">
+<link rel="icon" href="../../assets/icon-192.png">
+<link rel="stylesheet" href="../../documenti/documents.css">
+<script type="module" src="../../documenti/admin-documents.mjs"></script>
+<title>LTS · Accesso amministrazione documenti</title></head>
+<body>
+<header class="lts-header"><a class="lts-brand" href="../"><img src="../../assets/lts-logo.png" alt="LTS" width="52" height="46"><span>Gestione documenti<small>Accesso amministrativo separato</small></span></a><a class="back" href="../">Dashboard LTS</a></header>
+<main class="shell">
+<div id="notice" class="notice" role="status" aria-live="polite" hidden></div>
+<section id="login" class="login-card">
+ <p class="eyebrow">AREA AMMINISTRATIVA RISERVATA</p><h1>Accesso documenti</h1>
+ <p>Accedi con l'account amministratore LTS. Il secondo fattore è obbligatorio.</p>
+ <form id="login-form" class="fields">
+  <label>Numero di cellulare<input name="phone" type="tel" autocomplete="username" inputmode="tel" placeholder="3XXXXXXXXX" required maxlength="40"></label>
+  <label>Password<input name="password" type="password" autocomplete="current-password" minlength="12" maxlength="128" required></label>
+  <button type="submit" class="primary">Accedi</button>
+ </form>
+ <button type="button" id="clear-session" class="text-button">Esci e cambia account</button>
+</section>
+<section id="mfa" class="login-card" hidden>
+ <p class="eyebrow">SECONDO FATTORE</p><h1>Verifica amministratore</h1>
+ <p>Inserisci il codice dell'Authenticator registrato su LTS.</p>
+ <form id="mfa-form" class="fields"><label>Authenticator<select id="mfa-factor"></select></label>
+ <label>Codice temporaneo<input id="mfa-code" type="text" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code" required></label>
+ <button type="submit" class="primary">Conferma verifica</button></form>
+ <button id="mfa-back" type="button" class="text-button">Torna all'accesso</button>
+</section>
+<section id="setup" class="login-card" hidden>
+ <h1>Protezione MFA necessaria</h1><p>Attiva prima l'Authenticator nella dashboard amministratore LTS; nessun documento può essere gestito senza MFA.</p>
+ <a href="../" class="primary link-button">Apri impostazioni amministratore</a>
+ <button id="setup-exit" type="button" class="text-button">Esci</button>
+</section>
+<section id="workspace" hidden>
+ <div class="heading"><div><p class="eyebrow">LTS · CONTROL CENTER</p><h1>CEDOLINI E DOCUMENTI</h1>
+ <p>Stessi autisti della dashboard LTS, archivio PDF privato e pubblicazione controllata.</p></div>
+ <button id="logout" type="button" class="outline">Esci</button></div>
+ <section class="panel"><div class="panel-head"><h2>Carica nuovi documenti</h2><span class="chip">Bozze private</span></div>
+ <form id="upload-form" class="form-grid">
+  <label>Autista destinatario<select id="driver" required><option value="">Seleziona autista</option></select></label>
+  <label>Categoria<select id="category" required><option value="cedolino">CEDOLINO</option><option value="cu">CU</option><option value="altri">ALTRI DOCUMENTI</option></select></label>
+  <label>Anno<input id="year" type="number" min="2000" max="2100" required></label>
+  <label id="month-wrap">Mese<select id="month"><option value="">Seleziona mese</option></select></label>
+  <label class="wide">Descrizione<input id="label" maxlength="160" required placeholder="Es. Cedolino novembre, CU 2026"></label>
+  <label class="wide">Documenti PDF (max 8 MB ciascuno)<input id="files" type="file" accept="application/pdf,.pdf" multiple required></label>
+  <button type="submit" class="primary wide">Carica in bozza, senza pubblicare</button>
+ </form>
+ <p class="hint">Controlla sempre il destinatario. Il sistema non abbina automaticamente i PDF in base al nome.</p><p class="hint">La pubblicazione, la conferma obbligatoria prima del PDF per ogni cedolino e il primo accesso al documento sono eventi distinti. Non costituiscono prova del pagamento o di accettazione degli importi.</p>
+ </section>
+ <section class="panel">
+ <div class="panel-head"><h2>Archivio di tutti gli autisti</h2><button type="button" id="refresh" class="outline">Aggiorna</button></div>
+ <div class="filters"><label>Autista<select id="filter-driver"><option value="">Tutti gli autisti</option></select></label>
+ <label>Categoria<select id="filter-category"><option value="">Tutte</option><option value="cedolino">CEDOLINO</option><option value="cu">CU</option><option value="altri">ALTRI DOCUMENTI</option></select></label></div>
+ <div id="summary" class="hint"></div><div id="documents" class="document-list" aria-live="polite"></div>
+ <button type="button" id="more" class="outline" hidden>Carica altri</button>
+ </section>
+</section></main>
+</body></html>

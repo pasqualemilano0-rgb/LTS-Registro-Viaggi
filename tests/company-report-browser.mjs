@@ -1069,6 +1069,9 @@ try{
  assert.equal(await page.locator('#pro-records .pro-record').count(),0);
  assert.equal(await page.locator('#pro-export-pdf').isDisabled(),true);
  assert.equal(await page.locator('#login-panel').isVisible(),true);
+ assert.equal(await page.locator('#admin-area-choice').isVisible(),true);
+ await page.locator('#select-area-logistica').click();
+ assert.equal(await page.locator('#admin-logistica-login').isVisible(),true);
  await page.locator('#login-password').fill('example-password-for-visibility');
  assert.equal(await page.locator('#login-password').getAttribute('type'),'password');
  await page.locator('#login-password-toggle').click();
