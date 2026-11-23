@@ -11,18 +11,20 @@ const runner=process.env.LTS_BROWSER_PLAYWRIGHT||'/tmp/lts-browser-test';
 const {chromium,webkit}=createRequire(import.meta.url)(runner+'/node_modules/playwright');
 const engine=process.env.LTS_BROWSER_ENGINE==='webkit'?'webkit':'chromium';
 const mockAccount=String.raw`
-export const hasSession=()=>true;
-export const isVerified=()=>true;
-export const getRole=()=> 'admin';
+const mockAdminPresent=()=>globalThis.__mockAdminAuthorized!==false;
+export const hasSession=()=>mockAdminPresent();
+export const isVerified=()=>mockAdminPresent();
+export const getRole=()=>mockAdminPresent()?'admin':null;
 export const getAccountId=()=> 'account:33333333-3333-4333-8333-333333333333';
 let mockVerifyMode='ok';
 export const mockSetVerifyMode=value=>{mockVerifyMode=value;};
 export const verifySession=async()=>{
+ if(!mockAdminPresent())throw new Error('QA: sessione non autenticata');
  if(mockVerifyMode==='offline'){
   const error=new Error('Rete mobile temporaneamente non disponibile.');
   error.offline=true;throw error;
  }
- return {user_id:'33333333-3333-4333-8333-333333333333',role:'admin',mfa_enrolled:true,mfa_verified:true};
+ return {user_id:'33333333-3333-4333-8333-333333333333',role:'admin',mfa_enrolled:true,mfa_verified:globalThis.__mockAdminMfaVerified!==false};
 };
 export const listAdminMfaFactors=async()=>[{label:'Principale',id:'a'}];
 export const manageDrivers=async(action)=>action==='list'?{drivers:[
@@ -289,10 +291,33 @@ export const readMapsCustomer=async(link)=>{
  return {name:'CLIENTE ALFA',city:'NAPOLI',address:'VIA TEST 1, NAPOLI',mapsUrl:link,warnings:[]};
 };
 `;
+// Browser-only fake Documents API: local response; never uses Supabase or real JWT.
+const mockPayrollApi=String.raw\`
+globalThis.__mockPayrollCalls=[];
+export const drivers=async()=>{
+ globalThis.__mockPayrollCalls.push('drivers');
+ return {drivers:[{id:'11111111-1111-4111-8111-111111111111',
+  name:'Autista QA sintetico',documents_enabled:true}]};
+};
+export const documents=async()=>{
+ globalThis.__mockPayrollCalls.push('documents');
+ return {documents:[]};
+};
+export const publish=async()=>{throw Error('QA: no document publishing');};
+export const revoke=async()=>{throw Error('QA: no document revocation');};
+export const upload=async()=>{throw Error('QA: no document uploading');};
+export const download=async()=>{throw Error('QA: no document download');};
+export const acknowledge=async()=>{throw Error('QA: no acknowledgments');};
+export const savePdf=()=>{throw Error('QA: no document bytes');};
+\`;
 const root=resolve(dir),mime={'.html':'text/html','.css':'text/css','.mjs':'text/javascript','.png':'image/png'};
 const server=createServer(async(req,res)=>{
  const path=new URL(req.url,'http://localhost').pathname;
  if(path==='/account-access.mjs'){res.writeHead(200,{'Content-Type':'text/javascript','Cache-Control':'no-store'}).end(mockAccount);return;}
+ if(path==='/documenti/document-api.mjs'){
+  res.writeHead(200,{'Content-Type':'text/javascript','Cache-Control':'no-store'}).end(mockPayrollApi);
+  return;
+ }
  if(path==='/shared-maps-client.mjs'){res.writeHead(200,{'Content-Type':'text/javascript','Cache-Control':'no-store'}).end(mockSharedMaps);return;}
   if(path==='/maps-reader-client.mjs'){res.writeHead(200,{'Content-Type':'text/javascript','Cache-Control':'no-store'}).end(mockMapsReader);return;}
  const file=path==='/amministratore/'?'amministratore/index.html':
@@ -1070,8 +1095,22 @@ try{
  await page.locator('#admin-return-areas').click();
  assert.equal(await page.locator('#admin-area-choice').isVisible(),true);
  assert.equal(await page.locator('#admin-logistica-login').isVisible(),false);
- // The protected payroll page has its own server-session contract tests.
- // Keep this existing extensive browser regression focused on same-page navigation.
+ // The real payroll page MUST reuse the existing admin MFA session in this tab.
+ // All responses below come from the local mock API above (zero credentials).
+ await page.locator('#select-area-amministrativa').click();
+ await page.waitForURL('**/amministratore/buste-paga/');
+ await page.locator('#workspace').waitFor({state:'visible'});
+ assert.equal(await page.locator('#login-form').isVisible(),false,
+  'Entering Documents must never ask for another password');
+ assert.equal(await page.locator('#mfa').isVisible(),false,
+  'Entering Documents must not request another TOTP');
+ assert.deepEqual(await page.evaluate(()=>globalThis.__mockPayrollCalls),
+  ['drivers','documents'],'Documents fetches private data only after verified session');
+ await page.locator('.lts-header a.back').click();
+ await page.waitForURL('**/amministratore/');
+ await page.locator('#admin-area-choice').waitFor({state:'visible'});
+ assert.equal(await page.locator('#admin-logistica-login').isVisible(),false,
+  'Returning to area selection must reuse the same verified admin session');
  await page.locator('#select-area-logistica').click();
  await page.locator('#dashboard').waitFor({state:'visible'});
  await page.locator('#logout').evaluate(element=>element.click());
@@ -1103,6 +1142,25 @@ try{
  assert.equal(await page.locator('#report-month').inputValue(),'2026-11');
  console.log('PASS '+engine+' mobile 390px: ten real pages, admin MFA, charts, filters, PDF/Excel, anomaly drill-down, security, logout wipe');
  await page.close();
+ // Deep links to Documents must fail closed without a session, or without MFA.
+ for(const kind of ['no-session','missing-mfa']){
+  const denied=await browser.newPage({viewport:{width:390,height:844}});
+  await denied.addInitScript(kind=>{
+   if(kind==='no-session')globalThis.__mockAdminAuthorized=false;
+   else globalThis.__mockAdminMfaVerified=false;
+  },kind);
+  const errorsDenied=[];denied.on('pageerror',e=>errorsDenied.push(String(e)));
+  await denied.goto(origin+'/amministratore/buste-paga/',{waitUntil:'networkidle',timeout:20000});
+  await denied.locator('#login').waitFor({state:'visible'});
+  assert.equal(await denied.locator('#workspace').isVisible(),false,
+   'No unauthorized Documents workspace: '+kind);
+  assert.equal(await denied.locator('#login-form').isVisible(),false,
+   'No alternate password form available: '+kind);
+  assert.equal(await denied.evaluate(()=>globalThis.__mockPayrollCalls.length),0,
+   'Denied sessions must not call even the mocked document API: '+kind);
+  assert.equal(errorsDenied.length,0,errorsDenied.join(';'));
+  await denied.close();
+ }
  // Desktop navigation: the protected dashboard must retain working tabs with its
  // new dark sidebar; never make a non-verified page visible via CSS.
  const desktop=await browser.newPage({viewport:{width:1440,height:900}});
