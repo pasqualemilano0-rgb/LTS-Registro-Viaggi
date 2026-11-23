@@ -22,7 +22,7 @@ export const verifySession=async()=>{
   const error=new Error('Rete mobile temporaneamente non disponibile.');
   error.offline=true;throw error;
  }
- return {mfa_enrolled:true,mfa_verified:true};
+ return {user_id:'33333333-3333-4333-8333-333333333333',role:'admin',mfa_enrolled:true,mfa_verified:true};
 };
 export const listAdminMfaFactors=async()=>[{label:'Principale',id:'a'}];
 export const manageDrivers=async(action)=>action==='list'?{drivers:[
@@ -317,6 +317,11 @@ try{
   await page.locator('#'+id).click();
  }
  await page.goto(origin+'/amministratore/',{waitUntil:'networkidle',timeout:20000});
+ await page.locator('#admin-area-choice').waitFor({state:'visible'});
+ assert.equal(await page.locator('#dashboard').isVisible(),false);
+ assert.equal(await page.locator('#admin-logistica-login').isVisible(),false,
+  'A verified session must not show a second login form');
+ await page.locator('#select-area-logistica').click();
  await page.locator('#dashboard').waitFor({state:'visible'});
  assert.equal(await page.locator('#dashboard').getAttribute('data-view'),'overview','Protected overview should open after verified admin MFA');
  assert.equal(await page.locator('#control-center-home').isVisible(),true);
@@ -1055,6 +1060,23 @@ try{
  await page.locator('#smart-search').fill('ROSSI');
  await page.locator('#smart-results .smart-result-buttons button').first().click();
  assert.equal(await page.locator('#smart-detail').isVisible(),true);
+ // Cross-area navigation remains within one verified admin MFA session.
+ await page.locator('#admin-return-areas').click();
+ assert.equal(await page.locator('#admin-area-choice').isVisible(),true);
+ assert.equal(await page.locator('#admin-logistica-login').isVisible(),false);
+ await page.route('**/documenti/document-api.mjs',route=>route.fulfill({
+  status:200,contentType:'text/javascript',
+  body:"export const drivers=async()=>({drivers:[]});export const documents=async()=>({documents:[]});"
+ }));
+ await page.locator('#select-area-amministrativa').click();
+ await page.locator('#workspace').waitFor({state:'visible'});
+ assert.equal(await page.locator('#login-form').isVisible(),false,
+  'Documents reuse the existing MFA session without another login');
+ assert.equal(await page.locator('#mfa-form').isVisible(),false);
+ await page.locator('.lts-header a.back').click();
+ await page.locator('#admin-area-choice').waitFor({state:'visible'});
+ await page.locator('#select-area-logistica').click();
+ await page.locator('#dashboard').waitFor({state:'visible'});
  await page.locator('#logout').evaluate(element=>element.click());
  await page.waitForFunction(()=>document.querySelector('#dashboard').hidden===true);
  assert.equal(await page.locator('#smart-overlay').isVisible(),false);
@@ -1069,8 +1091,8 @@ try{
  assert.equal(await page.locator('#pro-records .pro-record').count(),0);
  assert.equal(await page.locator('#pro-export-pdf').isDisabled(),true);
  assert.equal(await page.locator('#login-panel').isVisible(),true);
- assert.equal(await page.locator('#admin-area-choice').isVisible(),true);
- await page.locator('#select-area-logistica').click();
+ assert.equal(await page.locator('#admin-area-choice').isVisible(),false,
+  'After logout the area choice must not stay visible');
  assert.equal(await page.locator('#admin-logistica-login').isVisible(),true);
  await page.locator('#login-password').fill('example-password-for-visibility');
  assert.equal(await page.locator('#login-password').getAttribute('type'),'password');
@@ -1089,6 +1111,8 @@ try{
  const desktop=await browser.newPage({viewport:{width:1440,height:900}});
  const desktopErrors=[];desktop.on('pageerror',e=>desktopErrors.push(String(e)));
  await desktop.goto(origin+'/amministratore/',{waitUntil:'networkidle',timeout:20000});
+ await desktop.locator('#admin-area-choice').waitFor({state:'visible'});
+ await desktop.locator('#select-area-logistica').click();
  await desktop.locator('#dashboard').waitFor({state:'visible'});
  const nav=desktop.locator('#dashboard>.admin-switch');
  const navBox=await nav.boundingBox(),contentBox=await desktop.locator('#report-panel').boundingBox();
