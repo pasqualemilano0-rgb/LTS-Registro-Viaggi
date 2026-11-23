@@ -1322,13 +1322,20 @@ function openProfile(required=false){
   const syncInfo=store.getSyncInfo();
   if(!store.usingAccount())body.querySelector('.profile-menu').prepend(menuButton('Collega dispositivi',syncInfo.linked?'Archivio condiviso: viaggi, clienti e tariffe si aggiornano online.':'Collega iPhone e Android con un codice temporaneo.','link',()=>{dialog.close();deviceLinkDialog();}));
   if(accountAccess.isEnabled()){
-    if(store.usingAccount()&&accountAccess.getRole()==='driver'&&
-       typeof runtimeConfig.accountAuth?.payrollEndpoint==='string'&&
-       runtimeConfig.accountAuth.payrollEndpoint.trim())
+    // Keep the profile entry discoverable even while payroll remains disabled.
+    // The documents page handles the unavailable state; API authorization is
+    // enforced separately by the production Edge (JWT, session and allowlist).
+    if(store.usingAccount()&&accountAccess.getRole()==='driver'){
+      const payrollAvailable=typeof runtimeConfig.accountAuth?.payrollEndpoint==='string'&&
+        Boolean(runtimeConfig.accountAuth.payrollEndpoint.trim());
       body.querySelector('.profile-menu').prepend(menuButton('I MIEI DOCUMENTI',
-        'CEDOLINO · CU · ALTRI DOCUMENTI. Solo i tuoi PDF pubblicati.','download',()=>{
+        payrollAvailable
+          ?'CEDOLINO · CU · ALTRI DOCUMENTI. Solo i tuoi PDF pubblicati.'
+          :'CEDOLINO · CU · ALTRI DOCUMENTI. Servizio in preparazione.',
+        'download',()=>{
           dialog.close();window.location.assign(new URL('documenti/',import.meta.url).href);
         }));
+    }
     if(store.usingAccount()&&accountAccess.getRole()==='admin'&&accountAccess.isVerified())
       body.querySelector('.profile-menu').prepend(menuButton('Gestisci autisti',
         'Apri il pannello amministratore con inviti, accessi, rimozioni e reinserimenti.','users',()=>{
