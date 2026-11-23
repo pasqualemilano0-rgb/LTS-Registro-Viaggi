@@ -288,8 +288,6 @@ $('upload-form').addEventListener('submit',async event=>{
   }
   $('files').value='';
   $('file-selection').textContent=uploadedFilesLabel([]);
-  $('filter-driver').value=selected.id;
-  $('filter-category').value=values.category;
   uploadFeedback(success+' PDF caricati in bozza per '+selected.name+
    '. Ora li trovi nell’archivio qui sotto: per renderli disponibili serve pubblicarli.','success');
  }catch(error){
@@ -297,14 +295,19 @@ $('upload-form').addEventListener('submit',async event=>{
    $('files').value='';
    $('file-selection').textContent=uploadedFilesLabel([]);
   }
-  uploadFeedback(success+' PDF caricati. '+(error?.name==='AbortError'
-   ?'Connessione scaduta: verifica l’archivio prima di riprovare.'
+  const uncertain=!error?.status||error?.name==='AbortError';
+  uploadFeedback(success+' PDF caricati con conferma. '+(uncertain
+   ?'Invio interrotto o non verificabile: controlla l’archivio prima di riprovare.'
    :'Operazione interrotta: '+(error?.message||'errore imprevisto')),'error');
  }finally{
   busy(false);
   $('upload-form').removeAttribute('aria-busy');
   $('upload-submit').textContent='Carica in bozza, senza pubblicare';
-  if(success)await refreshDocs();
+  if(success){
+   $('filter-driver').value=selected.id;
+   $('filter-category').value=values.category;
+   await refreshDocs();
+  }
  }
 });
 $('filter-driver').addEventListener('change',()=>void refreshDocs());
