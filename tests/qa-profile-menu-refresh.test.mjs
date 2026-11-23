@@ -35,7 +35,7 @@ test('profile section order makes documents first and logout last',()=>{
 });
 
 test('profile account and document authorization conditions are preserved',()=>{
- assert.match(profile,/if\(store\.usingAccount\(\)\&\&accountAccess\.getRole\(\)==='driver'\)\{/);
+ assert.match(profile,/if\(accountAccess\.isEnabled\(\)\&\&store\.usingAccount\(\)\&\&accountAccess\.isVerified\(\)\&\&/);
  assert.match(profile,/menuButton\('I MIEI DOCUMENTI'/);
  assert.match(profile,/if\(store\.usingAccount\(\)\&\&accountAccess\.getRole\(\)==='admin'\&\&accountAccess\.isVerified\(\)\)/);
  assert.match(profile,/if\(store\.usingAccount\(\)\)\{/);
@@ -51,7 +51,9 @@ test('profile account and document authorization conditions are preserved',()=>{
  assert.match(profile,/deviceLinkDialog\(\)/);
  assert.doesNotMatch(profile,/appendPushSettings\(body|push-settings|reminder/i);
  assert.doesNotMatch(app,/import \{ appendPushSettings \}/);
- assert.doesNotMatch(read('runtime-config.mjs'),/payrollEndpoint/);
+ assert.match(read('runtime-config.mjs'),/payrollEndpoint/);
+ assert.match(profile,/await api\.documents\(\{offset:0\}\)/);
+ assert.match(profile,/accountAccess\.getAccountId\(\)!==accountOwner/);
 });
 
 test('menu buttons are MOVED without discarding handlers or hidden file input',()=>{
