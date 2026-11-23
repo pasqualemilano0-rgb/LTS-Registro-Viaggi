@@ -15,8 +15,9 @@ const ORIGIN=(()=>{
   throw Error('LTS payroll origin non autorizzata');
  return value;
 })();
-// Separate operational switch: OFF unless explicitly enabled for this Edge.
-// The public webapp must not configure payrollEndpoint until testing is complete.
+// Full payroll stays OFF unless expressly enabled. A published, allowlisted
+// driver may ONLY list their own documents during the 72-hour preview.
+// Upload, publish, revoke, download and acknowledgement remain disabled.
 const PAYROLL_ENABLED=Deno.env.get('LTS_PAYROLL_ENABLED')==='yes';
 const BUCKET='lts-payroll-private';
 const MAX_FILE=8388608, MAX_MULTIPART=MAX_FILE+32768;
@@ -270,10 +271,8 @@ async function acknowledge(db,actor,id){
  return {id,acknowledgedAt:at};
 }
 Deno.serve(async req=>{
- // Fail closed for every method, including CORS and direct API calls. This is
- // separate from JWT/session/MFA authorization enforced when enabled.
- if(!PAYROLL_ENABLED)return new Response(JSON.stringify({error:'Archivio documenti non ancora attivo.'}),{
-  status:503,headers:{...noCache,'Content-Type':'application/json; charset=utf-8'}});
+ // Preview requests still enforce exact CORS, live JWT, session and the
+ // server-side expiring allowlist before returning any metadata.
  if(req.headers.get('origin')!==ORIGIN)return json({error:'Origine non autorizzata.'},403);
  if(req.method==='OPTIONS'){
   const method=req.headers.get('access-control-request-method');
@@ -289,9 +288,16 @@ Deno.serve(async req=>{
  if(req.method!=='POST')return json({error:'Metodo non consentito.'},405);
  try{
   const api=clients(),actor=await authorized(req,api);
-  if((req.headers.get('content-type')||'').startsWith('multipart/form-data;'))
+  if((req.headers.get('content-type')||'').startsWith('multipart/form-data;')){
+   if(!PAYROLL_ENABLED)fail(503,'Caricamento documenti non attivo durante i test.');
    return json(await upload(req,api.db,actor),201);
+  }
   const input=await objectBody(req);
+  // While the global activation flag is OFF, only the read-only driver list
+  // is available to a separately authenticated and allowlisted account.
+  // Direct download and explicit payroll receipt are still denied.
+  if(!PAYROLL_ENABLED&&(input.action!=='list'||actor.role!=='driver'))
+   fail(503,'Funzione non disponibile durante la prova limitata.');
   // Every driver operation is authorized by the verified, live LTS session.
   // Document ownership, published-only access and admin MFA remain enforced
   // server-side, independently of any browser controls.
