@@ -91,11 +91,13 @@ test('pre-PDF availability confirmation is required, restricted, and not proof o
  assert.match(text('documenti/index.html'),/non equivale a firma, pagamento dello stipendio/);
 });
 
-test('admin payroll page requires distinct login despite existing LTS session',()=>{
- assert.match(admin,/Always display an independent payroll login/);
+test('admin payroll page reuses existing verified session and retains login fallback',()=>{
+ assert.match(admin,/if\(account\.hasSession\(\)\)\{\s*void check\(\)/);
+ assert.match(admin,/const session=await account\.verifySession\(\)/);
+ assert.match(admin,/session\.role!=='admin'/);
+ assert.match(admin,/!session\.mfa_verified\|\|!account\.isVerified\(\)/);
  assert.match(admin,/^protect\(\);/m);
  assert.match(admin,/account\.verifyAdminTotp/);
- assert.match(admin,/busy\(false\);\s*await check\(\);/);
 });
 
 test('profile reuses a server-approved driver check without fetching on every click',()=>{
