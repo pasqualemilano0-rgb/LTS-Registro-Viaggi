@@ -351,8 +351,13 @@ window.addEventListener('focus',()=>{
   restoreWorkspaceInteraction();
 });
 
-// Always display an independent payroll login, even when LTS Admin is already open.
+// Reuse the already verified Control Center administrator session in this
+// same browser tab. Every entry is checked online, including MFA and role.
+// Never accept a sessionStorage flag or a query parameter as proof of access.
 protect();
+if(account.hasSession()){
+ void check();
+}
 if(typeof runtime.accountAuth?.payrollEndpoint!=='string'||!runtime.accountAuth.payrollEndpoint.trim()){
  $('login').querySelector('h1').textContent='Gestione documenti — In preparazione';
  $('login').querySelector('p').textContent='La gestione dei cedolini non è ancora attiva. Nessun documento personale può essere caricato o aperto da questa pagina.';
