@@ -13,7 +13,7 @@ const migration=read('supabase/migrations/20261118_private_payroll_documents.sql
 test('the control-center administrative link uses the secured document workspace',()=>{
  assert.match(selector,/id="select-area-amministrativa"[^>]*href="\.\/buste-paga\/"/);
  assert.match(selector,/Cedolini, CU, pubblicazione PDF e archivio riservato/);
- assert.match(selector,/entrambe le aree richiedono l’accesso amministratore con MFA/);
+ assert.match(selector,/Accesso già verificato\. Puoi passare tra le due aree/);
  assert.match(login,/id="login-form"/);
  assert.match(login,/id="mfa-form"/);
  assert.match(login,/id="workspace" hidden/);
