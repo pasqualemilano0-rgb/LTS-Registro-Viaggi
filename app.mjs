@@ -93,6 +93,7 @@ let subscribed = false;
 let realtimeBridge=null;
 // Presentation-only cache. Authorization and PDF ownership remain server-side.
 const PAYROLL_PROFILE_CHECK_INTERVAL_MS=60000;
+const PAYROLL_PROFILE_DENIED_CHECK_INTERVAL_MS=600000;
 let payrollProfileAccess={owner:null,allowed:false,checkedAt:0,pending:null,generation:0};
 function payrollProfileEligible(){
  return accountAccess.isEnabled()&&store.usingAccount()&&accountAccess.isVerified()&&
@@ -116,8 +117,10 @@ async function prefetchPayrollProfileAccess(force=false){
   payrollProfileAccess={owner,allowed:false,checkedAt:0,pending:null,
    generation:payrollProfileAccess.generation+1};
  }
+ const interval=payrollProfileAccess.allowed?PAYROLL_PROFILE_CHECK_INTERVAL_MS:
+  PAYROLL_PROFILE_DENIED_CHECK_INTERVAL_MS;
  if(!force&&payrollProfileAccess.checkedAt&&
-    Date.now()-payrollProfileAccess.checkedAt<PAYROLL_PROFILE_CHECK_INTERVAL_MS)
+    Date.now()-payrollProfileAccess.checkedAt<interval)
   return payrollProfileAccess.allowed;
  if(payrollProfileAccess.pending)return payrollProfileAccess.pending;
  const generation=payrollProfileAccess.generation;
@@ -2258,7 +2261,7 @@ async function verifyDriverOnResume(){
   driverBackgroundAt=null;
   clearResumeRetry();
   driverSessionShield.close();
-  void prefetchPayrollProfileAccess(true);
+  void prefetchPayrollProfileAccess(payrollProfileAccess.allowed);
   void refreshCompanyCustomers();
   if(['insert','tariffs','customers'].includes(tab))void refreshCompanyRates();
  }catch(error){
@@ -2299,7 +2302,7 @@ window.addEventListener('pagehide',()=>{driverBackgroundAt=Date.now();clearResum
 window.addEventListener('pageshow',event=>{if(event.persisted)resumeDriverWhenVisible();});
 window.addEventListener('online',()=>{
  if(driverSessionShield.isVisible())void verifyDriverOnResume();
- else void prefetchPayrollProfileAccess(true);
+ else void prefetchPayrollProfileAccess(payrollProfileAccess.allowed);
 });
 window.addEventListener('offline',()=>{
  if(driverSessionShield.isVisible())scheduleResumeRetry();
