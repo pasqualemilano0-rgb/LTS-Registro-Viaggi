@@ -9,10 +9,10 @@ const guarded=read('amministratore/buste-paga/index.html');
 const secure=read('documenti/admin-documents.mjs');
 const api=read('supabase/functions/lts-payroll/index.ts');
 
-test('admin chooser enters a public preview, not the authenticated workspace',()=>{
- assert.match(chooser,/id="select-area-amministrativa"[^>]+href="\.\/buste-paga\/anteprima\/"/);
- assert.match(chooser,/Apri anteprima/);
- assert.match(chooser,/Area Logistica: accesso con credenziali e MFA/);
+test('admin chooser enters the protected workspace; static preview remains separate',()=>{
+ assert.match(chooser,/id="select-area-amministrativa"[^>]+href="\.\/buste-paga\/"/);
+ assert.match(chooser,/Cedolini, CU, pubblicazione PDF e archivio riservato/);
+ assert.match(chooser,/Le funzioni di entrambe le aree richiedono l’accesso amministratore con MFA/);
  assert.match(preview,/MODALITÀ ANTEPRIMA — senza credenziali/);
  assert.match(preview,/ANTEPRIMA NON OPERATIVA/);
  assert.match(preview,/class="button-primary active-link" href="\.\.\/"/);
@@ -42,7 +42,8 @@ test('protected admin document flow and server checks remain untouched',()=>{
  assert.match(api,/await checkLtsSession\(/);
  assert.match(api,/await requireAdminMfa\(/);
  assert.match(api,/PAYROLL_PILOT_LIST_ONLY=true/);
- assert.match(api,/if\(\(PAYROLL_PILOT_LIST_ONLY\|\|!PAYROLL_ENABLED\)/);
+ assert.match(api,/if\(actor.role==='driver'&&\(PAYROLL_PILOT_LIST_ONLY\|\|!PAYROLL_ENABLED\)/);
+ assert.match(api,/const PAYROLL_ADMIN_OPERATIONS_ENABLED=true/);
 });
 
 test('mobile preview uses local LTS visuals with responsive layout and no credentials',()=>{

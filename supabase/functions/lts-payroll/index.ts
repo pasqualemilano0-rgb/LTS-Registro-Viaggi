@@ -15,12 +15,11 @@ const ORIGIN=(()=>{
   throw Error('LTS payroll origin non autorizzata');
  return value;
 })();
-// Full payroll stays OFF unless expressly enabled. A published, allowlisted
-// driver may ONLY list their own documents during the 72-hour preview.
-// Upload, publish, revoke, download and acknowledgement remain disabled.
+// Admin operations are enabled ONLY behind authenticated live admin session
+// and verified TOTP MFA. No public visitor gains database or Storage access.
+// Driver PDF access remains at the existing strictly allowlisted test stage.
+const PAYROLL_ADMIN_OPERATIONS_ENABLED=true;
 const PAYROLL_ENABLED=Deno.env.get('LTS_PAYROLL_ENABLED')==='yes';
-// This private pilot is ALWAYS list-only, even if a previous environment
-// accidentally still sets the general release flag to 'yes'.
 const PAYROLL_PILOT_LIST_ONLY=true;
 const BUCKET='lts-payroll-private';
 const MAX_FILE=8388608, MAX_MULTIPART=MAX_FILE+32768;
@@ -103,8 +102,9 @@ async function authorized(req,api){
   const mfa=await requireAdminMfa(api.db,match[1],userId);
   if(!mfa?.enrolled||!mfa?.verified)fail(428);
  }
- // All operations, including list and admin upload, require a live test seat.
- await requirePhase2Tester(api.db,userId,access.role);
+ // Driver accounts remain explicitly allowlisted during rollout. Admin
+ // accounts require the existing production admin role and active verified MFA.
+ if(access.role==='driver')await requirePhase2Tester(api.db,userId,access.role);
  return {userId,role:access.role,sessionId};
 }
 function mustAdmin(actor){if(actor.role!=='admin')fail(403);}
@@ -130,10 +130,19 @@ async function roster(db){
   .select('auth_user_id,first_name,last_name').in('auth_user_id',ids).limit(201);
  if(e)fail(503);
  const lookup=new Map((names||[]).map(n=>[n.auth_user_id,n]));
+ // Reflect server-side recipient eligibility so admin cannot mistake a draft
+ // for a deliverable PDF. Only verified admins can request this roster.
+ const {data:seats,error:seatsError}=await db.from('lts_payroll_test_allowlist')
+  .select('user_id').eq('role','driver').eq('enabled',true)
+  .gt('expires_at',new Date().toISOString()).limit(3);
+ if(seatsError)fail(503,'Disponibilità autisti per la pubblicazione non verificata.');
+ const deliverable=new Set((seats||[]).map(x=>x.user_id));
  return data.map(x=>({id:x.user_id,
   name:[lookup.get(x.user_id)?.first_name,lookup.get(x.user_id)?.last_name]
    .filter(Boolean).join(' ').trim()||'Autista senza nome',
-  phone:x.phone_e164||''})).sort((a,b)=>a.name.localeCompare(b.name,'it'));
+  phone:x.phone_e164||'',
+  documents_enabled:deliverable.has(x.user_id)
+ })).sort((a,b)=>a.name.localeCompare(b.name,'it'));
 }
 async function listDocs(db,actor,q){
  const offset=Number(q.offset??0);
@@ -216,6 +225,9 @@ async function publish(db,actor,id){
  if(findErr)fail(503);
  if(!doc||doc.state!=='draft')fail(409,'Documento non pubblicabile.');
  await activeDriver(db,doc.driver_id);
+ // Do not mark a PDF "published" for a driver unable to receive it during
+ // the controlled release. Drafts may be prepared for other accounts.
+ await requirePhase2Tester(db,doc.driver_id,'driver');
  const {data,error}=await db.from('lts_payroll_documents')
   .update({state:'published',published_by:actor.userId,published_at:new Date().toISOString()})
   .eq('id',id).eq('state','draft').select('id').maybeSingle();
@@ -292,15 +304,17 @@ Deno.serve(async req=>{
  try{
   const api=clients(),actor=await authorized(req,api);
   if((req.headers.get('content-type')||'').startsWith('multipart/form-data;')){
-   if(PAYROLL_PILOT_LIST_ONLY||!PAYROLL_ENABLED)fail(503,'Caricamento documenti non attivo durante i test.');
+   if(!PAYROLL_ADMIN_OPERATIONS_ENABLED||actor.role!=='admin')
+    fail(403,'Caricamento riservato all’amministratore con MFA.');
    return json(await upload(req,api.db,actor),201);
   }
   const input=await objectBody(req);
-  // While the global activation flag is OFF, only the read-only driver list
-  // is available to a separately authenticated and allowlisted account.
-  // Direct download and explicit payroll receipt are still denied.
-  if((PAYROLL_PILOT_LIST_ONLY||!PAYROLL_ENABLED)&&(input.action!=='list'||actor.role!=='driver'))
-   fail(503,'Funzione non disponibile durante la prova limitata.');
+  // Administrative actions are operational with verified MFA. Other drivers
+  // cannot access private PDFs beyond the existing read-only pilot.
+  if(actor.role==='admin'&&!PAYROLL_ADMIN_OPERATIONS_ENABLED)
+   fail(503,'Area amministrativa non attiva.');
+  if(actor.role==='driver'&&(PAYROLL_PILOT_LIST_ONLY||!PAYROLL_ENABLED)&&input.action!=='list')
+   fail(503,'Apertura PDF non ancora attiva per gli autisti.');
   // Every driver operation is authorized by the verified, live LTS session.
   // Document ownership, published-only access and admin MFA remain enforced
   // server-side, independently of any browser controls.

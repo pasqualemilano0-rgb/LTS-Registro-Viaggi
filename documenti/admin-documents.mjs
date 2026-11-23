@@ -65,7 +65,7 @@ async function refreshRoster(){
   $('driver').replaceChildren(option('','Seleziona autista'));
   $('filter-driver').replaceChildren(option('','Tutti gli autisti'));
   for(const driver of roster){
-   $('driver').append(option(driver.id,driver.name+' · '+driver.phone));
+   $('driver').append(option(driver.id,driver.name+' · '+driver.phone+(driver.documents_enabled?' · Abilitato ai test':' · Solo bozze')));
    $('filter-driver').append(option(driver.id,driver.name));
   }
   $('driver').value=roster.some(x=>x.id===selected)?selected:'';
@@ -105,6 +105,13 @@ function renderRow(doc){
  if(doc.state==='draft'){
   const publish=node('button','primary','Pubblica');
   publish.type='button';
+  const recipient=roster.find(x=>x.id===doc.driver_id);
+  // Defense in depth: the Edge also verifies this at publication time.
+  if(!recipient?.documents_enabled){
+   publish.disabled=true;
+   publish.title='La pubblicazione è possibile solo per gli autisti abilitati al test.';
+   publish.setAttribute('aria-label','Pubblicazione non disponibile per autista non abilitato');
+  }
   publish.addEventListener('click',async()=>{
    const owner=roster.find(x=>x.id===doc.driver_id);
    if(!window.confirm('Pubblicare "'+doc.label+'" per '+(owner?.name||'questo autista')+'?'))return;
@@ -141,7 +148,7 @@ async function refreshDocs(append=false){
   const rows=result.documents;
   for(const doc of rows)$('documents').append(renderRow(doc));
   offset+=rows.length;$('more').hidden=rows.length<50;
-  $('summary').textContent=roster.length+' autisti sincronizzati · '+offset+' documenti visualizzati';
+  $('summary').textContent=roster.length+' autisti sincronizzati · '+roster.filter(d=>d.documents_enabled).length+' abilitati alla ricezione durante i test · '+offset+' documenti visualizzati';
   if(!offset)$('documents').append(node('p','hint','Nessun documento in questa selezione.'));
  }catch(error){notice(error.message||'Archivio documenti non disponibile.',true);}
  finally{busy(false);}

@@ -7,7 +7,7 @@
 <meta name="theme-color" content="#006f89">
 <link rel="icon" href="../../assets/icon-192.png">
 <link rel="stylesheet" href="../../documenti/documents.css">
-<script type="module" src="../../documenti/admin-documents.mjs"></script>
+<script type="module" src="../../documenti/admin-documents.mjs?v=20261123-admin-release-v1"></script>
 <title>LTS · Accesso amministrazione documenti</title></head>
 <body>
 <header class="lts-header"><a class="lts-brand" href="../"><img src="../../assets/lts-logo.png" alt="LTS" width="52" height="46"><span>Gestione documenti<small>Accesso amministrativo separato</small></span></a><a class="back" href="../">Dashboard LTS</a></header>
@@ -15,7 +15,8 @@
 <div id="notice" class="notice" role="status" aria-live="polite" hidden></div>
 <section id="login" class="login-card">
  <p class="eyebrow">AREA AMMINISTRATIVA RISERVATA</p><h1>Accesso documenti</h1>
- <p>Accedi con l'account amministratore LTS. Il secondo fattore è obbligatorio.</p>
+ <p>Accedi con l’account amministratore LTS. La verifica MFA è obbligatoria per gestire documenti reali.</p>
+ <p class="hint"><a href="./anteprima/">Visualizza soltanto l’anteprima grafica senza credenziali</a></p>
  <form id="login-form" class="fields">
   <label>Numero di cellulare<input name="phone" type="tel" autocomplete="username" inputmode="tel" placeholder="3XXXXXXXXX" required maxlength="40"></label>
   <label>Password<input name="password" type="password" autocomplete="current-password" minlength="12" maxlength="128" required></label>
@@ -40,7 +41,7 @@
  <div class="heading"><div><p class="eyebrow">LTS · CONTROL CENTER</p><h1>CEDOLINI E DOCUMENTI</h1>
  <p>Stessi autisti della dashboard LTS, archivio PDF privato e pubblicazione controllata.</p></div>
  <button id="logout" type="button" class="outline">Esci</button></div>
- <section class="panel"><div class="panel-head"><h2>Carica nuovi documenti</h2><span class="chip">Bozze private</span></div>
+ <section class="panel"><p class="hint" role="status">Gestione operativa attiva con MFA. Durante il collaudo puoi preparare bozze per tutti gli autisti, ma pubblicare soltanto ai destinatari autorizzati ai test.</p><div class="panel-head"><h2>Carica nuovi documenti</h2><span class="chip">Bozze private</span></div>
  <form id="upload-form" class="form-grid">
   <label>Autista destinatario<select id="driver" required><option value="">Seleziona autista</option></select></label>
   <label>Categoria<select id="category" required><option value="cedolino">CEDOLINO</option><option value="cu">CU</option><option value="altri">ALTRI DOCUMENTI</option></select></label>

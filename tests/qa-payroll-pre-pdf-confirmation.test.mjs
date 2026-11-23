@@ -53,25 +53,28 @@ test('DB requires prior receipt for cedolino PDF access but not to record the re
  assert.match(qaMigration,/to service_role/);
 });
 
-test('production preview exposes only the driver list after live allowlist authorization',()=>{
+test('MFA-backed admin operations enabled while driver test access stays list-only',()=>{
  const prod=read('supabase/functions/lts-payroll/index.ts');
- assert.match(prod,/Deno\.env\.get\('LTS_PAYROLL_ENABLED'\)==='yes'/);
+ assert.match(prod,/const PAYROLL_ADMIN_OPERATIONS_ENABLED=true/);
  assert.match(prod,/const PAYROLL_PILOT_LIST_ONLY=true/);
+ assert.match(prod,/Deno\.env\.get\('LTS_PAYROLL_ENABLED'\)==='yes'/);
  const handler=prod.slice(prod.indexOf('Deno.serve(async req=>{'));
  const origin=handler.indexOf("if(req.headers.get('origin')!==ORIGIN)");
  const auth=handler.indexOf('const api=clients(),actor=await authorized(req,api)');
- const guard=handler.indexOf("if((PAYROLL_PILOT_LIST_ONLY||!PAYROLL_ENABLED)&&(input.action!=='list'||actor.role!=='driver'))");
+ const guard=handler.indexOf("if(actor.role==='driver'&&(PAYROLL_PILOT_LIST_ONLY||!PAYROLL_ENABLED)&&input.action!=='list')");
  const list=handler.indexOf("if(input.action==='list')return json");
- assert.ok(origin>=0&&auth>origin&&guard>auth&&list>guard,
-  'Origin, verified session and test allowlist precede the read-only list');
- assert.match(handler,/if\(PAYROLL_PILOT_LIST_ONLY\|\|!PAYROLL_ENABLED\)fail\(503,'Caricamento documenti non attivo/);
- assert.match(handler,/if\(\(PAYROLL_PILOT_LIST_ONLY\|\|!PAYROLL_ENABLED\)\&\&\(input\.action!=='list'\|\|actor\.role!=='driver'\)\)/);
+ assert.ok(origin>=0&&auth>origin&&guard>auth&&list>guard);
+ assert.match(handler,/if\(!PAYROLL_ADMIN_OPERATIONS_ENABLED\|\|actor\.role!=='admin'\)/);
+ assert.match(handler,/if\(actor\.role==='driver'&&\(PAYROLL_PILOT_LIST_ONLY\|\|!PAYROLL_ENABLED\)&&input\.action!=='list'\)/);
+ assert.match(prod,/if\(access\.role==='admin'\)\{\s*const mfa=await requireAdminMfa/);
+ assert.match(prod,/if\(access\.role==='driver'\)await requirePhase2Tester/);
+ assert.match(prod,/await requirePhase2Tester\(db,doc\.driver_id,'driver'\)/);
  assert.match(read('runtime-config.mjs'),/"payrollEndpoint": "https:\/\/otrqynkscpbeyuvdlgpg\.supabase\.co\/functions\/v1\/lts-payroll"/);
 });
 test('phase 2 allowlist is server-only, expires and has exactly three possible seats',()=>{
  const prod=read('supabase/functions/lts-payroll/index.ts');
  const migration=read('supabase/migrations/20261122220000_payroll_phase2_test_allowlist.sql');
- assert.match(prod,/await requirePhase2Tester\(api\.db,userId,access\.role\)/);
+ assert.match(prod,/if\(access\.role==='driver'\)await requirePhase2Tester\(api\.db,userId,access\.role\)/);
  assert.match(prod,/\.from\('lts_payroll_test_allowlist'\)/);
  assert.match(prod,/\.eq\('user_id',userId\)\.eq\('role',role\)/);
  assert.match(prod,/\.eq\('enabled',true\)\.gt\('expires_at',new Date\(\)\.toISOString\(\)\)/);

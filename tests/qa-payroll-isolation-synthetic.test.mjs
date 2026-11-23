@@ -39,6 +39,9 @@ function fixture({adminMfa=true,enabled=true,preview=false,allowedUsers=[A,B,M],
  class Query{
   constructor(table){this.table=table;this.filters=[];}
   select(){return this;}
+  limit(){return this;}
+  in(key,values){this.filters.push(row=>values.includes(row[key]));return this;}
+  update(patch){this.patch=patch;return this;}
   eq(key,val){this.filters.push(row=>row[key]===val);return this;}
   gt(key,val){this.filters.push(row=>row[key]>val);return this;}
   is(key,val){this.filters.push(row=>row[key]===val);return this;}
@@ -48,7 +51,11 @@ function fixture({adminMfa=true,enabled=true,preview=false,allowedUsers=[A,B,M],
    const rows=this.table==='lts_account_access'?accounts:this.table==='lts_payroll_documents'?docs:this.table==='lts_payroll_test_allowlist'?allowlist:[];
    return rows.filter(row=>this.filters.every(test=>test(row)));
   }
-  maybeSingle(){return Promise.resolve({data:this.values()[0]||null,error:null});}
+  maybeSingle(){
+   const row=this.values()[0]||null;
+   if(row&&this.patch)Object.assign(row,this.patch);
+   return Promise.resolve({data:row,error:null});
+  }
   then(resolve,reject){return Promise.resolve({data:this.values(),error:null}).then(resolve,reject);}
   insert(entry){audit.push(entry);return Promise.resolve({data:null,error:null});}
  }
@@ -119,56 +126,73 @@ function fixture({adminMfa=true,enabled=true,preview=false,allowedUsers=[A,B,M],
  return {call,docs,audit,reads};
 }
 
-test('full payroll stays OFF, preview permits ONLY allowlisted driver read-only list',async()=>{
+test('driver pilot list is owner-scoped; authenticated MFA admin may manage documents',async()=>{
  const x=fixture({enabled:false,preview:true,allowedUsers:[A]});
  const listing=await x.call(tokens.a,'list');
- assert.equal(listing.status,200,'allowlisted active driver sees their own list');
- assert.equal(listing.data.documents.length,1,'unpublished and other driver files hidden');
+ assert.equal(listing.status,200);
+ assert.equal(listing.data.documents.length,1);
  assert.equal(listing.data.documents[0].id,docA);
- assert.equal((await x.call(tokens.b,'list')).status,403,'no access for other driver');
- assert.equal((await x.call(tokens.admin,'list')).status,403,'no admin test seat');
+ assert.equal((await x.call(tokens.b,'list')).status,403);
+ const adminRoster=await x.call(tokens.admin,'drivers');
+ assert.equal(adminRoster.status,200,'admin role plus MFA needs no tester seat');
+ assert.equal(adminRoster.data.drivers.length,2);
+ assert.equal(adminRoster.data.drivers.filter(d=>d.documents_enabled).length,1);
+ assert.equal(adminRoster.data.drivers.find(d=>d.id===A).documents_enabled,true);
+ assert.equal(adminRoster.data.drivers.find(d=>d.id===B).documents_enabled,false);
+ const adminDocs=await x.call(tokens.admin,'list');
+ assert.equal(adminDocs.status,200);
+ assert.equal(adminDocs.data.documents.length,3,'admin sees drafts and published metadata');
  for(const action of ['download','acknowledge','publish','revoke','drivers']){
   const result=await x.call(tokens.a,action,{id:docA});
-  assert.equal(result.status,503,'global OFF must block '+action);
+  assert.equal(result.status,503,'driver pilot does not allow '+action);
  }
- assert.equal(x.reads.length,0,'no Storage bytes read during preview');
- assert.equal(x.audit.length,0,'no audit/data writes during preview');
- assert.equal(x.docs[0].acknowledged_at,null,'no receipt during preview');
+ assert.equal(x.reads.length,0);
+ assert.equal(x.audit.length,0);
 });
-test('expired or missing tester never sees preview documents even with flag OFF',async()=>{
+
+test('expired or missing tester cannot list; verified admin still enters',async()=>{
  const missing=fixture({enabled:false,preview:true,allowedUsers:[]});
  assert.equal((await missing.call(tokens.a,'list')).status,403);
+ assert.equal((await missing.call(tokens.admin,'drivers')).status,200);
  const expired=fixture({enabled:false,preview:true,allowedUsers:[A],expiry:'2020-01-01T00:00:00Z'});
  assert.equal((await expired.call(tokens.a,'list')).status,403);
+ assert.equal((await expired.call(tokens.admin,'drivers')).status,200);
 });
-test('preview stays read-only even if the general payroll flag is enabled',async()=>{
+
+test('driver pilot is list-only even if legacy global payroll flag was enabled',async()=>{
  const x=fixture({enabled:true,preview:true,allowedUsers:[A]});
  assert.equal((await x.call(tokens.a,'list')).status,200);
  for(const action of ['download','acknowledge','publish','revoke','drivers'])
   assert.equal((await x.call(tokens.a,action,{id:docA})).status,503,action);
  assert.equal(x.audit.length,0);assert.equal(x.reads.length,0);
 });
-test('flag ON still denies ALL non-allowlisted users, including admins, before Storage',async()=>{
- const x=fixture({enabled:true,allowedUsers:[]});
+
+test('non-allowlisted drivers remain denied; admin without test seat may read PDF',async()=>{
+ const x=fixture({enabled:false,preview:true,allowedUsers:[]});
  for(const [token,action] of [
   [tokens.a,'list'],[tokens.a,'download'],[tokens.a,'acknowledge'],
-  [tokens.b,'download'],[tokens.admin,'drivers'],[tokens.admin,'revoke']
- ]){
-  const result=await x.call(token,action,{id:docA});
-  assert.equal(result.status,403,'test allowlist must deny '+action);
- }
- assert.equal(x.reads.length,0);
+  [tokens.b,'download']
+ ])assert.equal((await x.call(token,action,{id:docA})).status,403);
+ const adminPdf=await x.call(tokens.admin,'download',{id:docA});
+ assert.equal(adminPdf.status,200,'admin can download published PDF with MFA');
+ assert.equal(x.reads.length,1);
+ assert.equal(x.docs[0].first_accessed_at,null,'admin reading is not driver first access');
+});
+
+test('admin cannot publish a draft to a driver not enabled for the pilot',async()=>{
+ const x=fixture({enabled:false,preview:true,allowedUsers:[B]});
+ const denied=await x.call(tokens.admin,'publish',{id:draftA});
+ assert.equal(denied.status,403);
+ assert.equal(x.docs.find(d=>d.id===draftA).state,'draft');
  assert.equal(x.audit.length,0);
- assert.equal(x.docs[0].acknowledged_at,null);
 });
-
-test('expired allowlist entries cannot access payroll even when flag is ON',async()=>{
- const x=fixture({enabled:true,expiry:'2020-01-01T00:00:00Z'});
- assert.equal((await x.call(tokens.a,'list')).status,403);
- assert.equal((await x.call(tokens.admin,'drivers')).status,403);
- assert.equal(x.reads.length,0);
+test('admin may publish a draft to allowlisted driver only',async()=>{
+ const x=fixture({enabled:false,preview:true,allowedUsers:[A]});
+ const published=await x.call(tokens.admin,'publish',{id:draftA});
+ assert.equal(published.status,200);
+ assert.equal(x.docs.find(d=>d.id===draftA).state,'published');
+ assert.equal((await x.call(tokens.admin,'publish',{id:draftA})).status,409);
 });
-
 test('autista B cannot read PDF or acknowledge receipt for autista A',async()=>{
  const x=fixture();
  assert.equal((await x.call(tokens.b,'download',{id:docA})).status,403);

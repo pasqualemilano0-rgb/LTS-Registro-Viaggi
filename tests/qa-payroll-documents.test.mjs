@@ -46,7 +46,7 @@ test('server publishes deliberately, never at upload',()=>{
 test('separate login page and LTS link exist without secrets',()=>{
  assert.match(text('amministratore/buste-paga/index.html'),/id="login-form"/);
  assert.match(text('amministratore/buste-paga/index.html'),/id="mfa-form"/);
- assert.match(adminIndex,/href="\.\/buste-paga\/anteprima\/"/);
+ assert.match(adminIndex,/href="\.\/buste-paga\/"/);
  assert.match(profile,/I MIEI DOCUMENTI/);
  assert.match(driver,/category='cedolino'/);
  for(const file of [transport,admin,driver]){
