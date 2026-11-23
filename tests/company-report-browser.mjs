@@ -1104,6 +1104,7 @@ try{
   'Entering Documents must never ask for another password');
  assert.equal(await page.locator('#mfa').isVisible(),false,
   'Entering Documents must not request another TOTP');
+ await page.waitForFunction(()=>globalThis.__mockPayrollCalls?.join(',')==='drivers,documents');
  assert.deepEqual(await page.evaluate(()=>globalThis.__mockPayrollCalls),
   ['drivers','documents'],'Documents fetches private data only after verified session');
  await page.locator('.lts-header a.back').click();
@@ -1152,6 +1153,8 @@ try{
   const errorsDenied=[];denied.on('pageerror',e=>errorsDenied.push(String(e)));
   await denied.goto(origin+'/amministratore/buste-paga/',{waitUntil:'networkidle',timeout:20000});
   await denied.locator('#login').waitFor({state:'visible'});
+  if(kind==='missing-mfa')await denied.waitForFunction(()=>
+   document.querySelector('#notice')?.textContent.includes('MFA'));
   assert.equal(await denied.locator('#workspace').isVisible(),false,
    'No unauthorized Documents workspace: '+kind);
   assert.equal(await denied.locator('#login-form').isVisible(),false,
