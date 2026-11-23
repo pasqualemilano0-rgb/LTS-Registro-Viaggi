@@ -19,6 +19,9 @@ const ORIGIN=(()=>{
 // driver may ONLY list their own documents during the 72-hour preview.
 // Upload, publish, revoke, download and acknowledgement remain disabled.
 const PAYROLL_ENABLED=Deno.env.get('LTS_PAYROLL_ENABLED')==='yes';
+// This private pilot is ALWAYS list-only, even if a previous environment
+// accidentally still sets the general release flag to 'yes'.
+const PAYROLL_PILOT_LIST_ONLY=true;
 const BUCKET='lts-payroll-private';
 const MAX_FILE=8388608, MAX_MULTIPART=MAX_FILE+32768;
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -289,14 +292,14 @@ Deno.serve(async req=>{
  try{
   const api=clients(),actor=await authorized(req,api);
   if((req.headers.get('content-type')||'').startsWith('multipart/form-data;')){
-   if(!PAYROLL_ENABLED)fail(503,'Caricamento documenti non attivo durante i test.');
+   if(PAYROLL_PILOT_LIST_ONLY||!PAYROLL_ENABLED)fail(503,'Caricamento documenti non attivo durante i test.');
    return json(await upload(req,api.db,actor),201);
   }
   const input=await objectBody(req);
   // While the global activation flag is OFF, only the read-only driver list
   // is available to a separately authenticated and allowlisted account.
   // Direct download and explicit payroll receipt are still denied.
-  if(!PAYROLL_ENABLED&&(input.action!=='list'||actor.role!=='driver'))
+  if((PAYROLL_PILOT_LIST_ONLY||!PAYROLL_ENABLED)&&(input.action!=='list'||actor.role!=='driver'))
    fail(503,'Funzione non disponibile durante la prova limitata.');
   // Every driver operation is authorized by the verified, live LTS session.
   // Document ownership, published-only access and admin MFA remain enforced
