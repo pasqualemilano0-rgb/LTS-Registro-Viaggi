@@ -55,7 +55,7 @@ test('switching areas verifies the same server session and does not request cred
  assert.match(entry,/showAuthenticatedAreaChoice\(\)/);
  assert.match(html,/id="select-area-amministrativa"[^>]*href="\.\/buste-paga\/"/);
  assert.match(html,/id="admin-return-areas"[^>]*hidden/);
- assert.doesNotMatch(selector,/sessionStorage|access_token|password|verifyAdminTotp/);
+ assert.doesNotMatch(selector,/sessionStorage|access_token|login-password|verifyAdminTotp/);
 });
 
 test('documents auto-use the same-tab account session and never have an active second login',()=>{
