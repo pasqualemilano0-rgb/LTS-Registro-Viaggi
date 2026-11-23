@@ -130,10 +130,19 @@ async function roster(db){
   .select('auth_user_id,first_name,last_name').in('auth_user_id',ids).limit(201);
  if(e)fail(503);
  const lookup=new Map((names||[]).map(n=>[n.auth_user_id,n]));
+ // Reflect server-side recipient eligibility so admin cannot mistake a draft
+ // for a deliverable PDF. Only verified admins can request this roster.
+ const {data:seats,error:seatsError}=await db.from('lts_payroll_test_allowlist')
+  .select('user_id').eq('role','driver').eq('enabled',true)
+  .gt('expires_at',new Date().toISOString()).limit(3);
+ if(seatsError)fail(503,'Disponibilità autisti per la pubblicazione non verificata.');
+ const deliverable=new Set((seats||[]).map(x=>x.user_id));
  return data.map(x=>({id:x.user_id,
   name:[lookup.get(x.user_id)?.first_name,lookup.get(x.user_id)?.last_name]
    .filter(Boolean).join(' ').trim()||'Autista senza nome',
-  phone:x.phone_e164||''})).sort((a,b)=>a.name.localeCompare(b.name,'it'));
+  phone:x.phone_e164||'',
+  documents_enabled:deliverable.has(x.user_id)
+ })).sort((a,b)=>a.name.localeCompare(b.name,'it'));
 }
 async function listDocs(db,actor,q){
  const offset=Number(q.offset??0);
