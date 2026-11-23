@@ -22,7 +22,8 @@ const docB='10000000-0000-4000-8000-000000000002';
 const draftA='10000000-0000-4000-8000-000000000003';
 const ORIGIN='https://pasqualemilano0-rgb.github.io';
 const endpoint='https://otrqynkscpbeyuvdlgpg.supabase.co/functions/v1/lts-payroll';
-const tokens={a:'a'.repeat(70),b:'b'.repeat(70),admin:'m'.repeat(70),revoked:'r'.repeat(70)};
+const tokens={a:'a'.repeat(70),b:'b'.repeat(70),admin:'m'.repeat(70),
+ revoked:'r'.repeat(70),revokedAdmin:'v'.repeat(70),errorAdmin:'e'.repeat(70)};
 function syntheticPdf(extra=''){
  const head='%PDF-1.5\n',obj='1 0 obj\n<< /Type /Catalog '+extra+' >>\nendobj\n';
  const offset=Buffer.byteLength(head+obj,'latin1');
@@ -115,7 +116,8 @@ function fixture({adminMfa=true,enabled=true,preview=false,allowedUsers=[A,B,M],
  };
  const publicClient={
   auth:{getUser:async token=>{
-   const id=token===tokens.a||token===tokens.revoked?A:token===tokens.b?B:token===tokens.admin?M:null;
+   const id=token===tokens.a||token===tokens.revoked?A:token===tokens.b?B:
+    [tokens.admin,tokens.revokedAdmin,tokens.errorAdmin].includes(token)?M:null;
    return {data:{user:id?{id}:null},error:id?null:'bad token'};
   }}
  };
@@ -131,7 +133,10 @@ function fixture({adminMfa=true,enabled=true,preview=false,allowedUsers=[A,B,M],
  };
  runInNewContext(src,{
   createClient:(_url,key)=>key.startsWith('public-key')?publicClient:db,
-  checkLtsSession:async (_db,token)=>{if(token===tokens.revoked)throw {status:403};},
+  checkLtsSession:async (_db,token)=>{
+   if(token===tokens.revoked||token===tokens.revokedAdmin)throw {status:403};
+   if(token===tokens.errorAdmin)throw {status:503,message:'PRIVATE_DATABASE_CONNECTION_STRING_DO_NOT_LEAK'};
+  },
   requireAdminMfa:async()=>({enrolled:adminMfa,verified:adminMfa}),
   validatePayrollPdf,
   Deno:deno,globalTestPilot:preview,URL,Request,Response,Blob,File,TextDecoder,TextEncoder,crypto,atob,
@@ -381,4 +386,33 @@ test('admin without MFA cannot revoke',async()=>{
  const x=fixture({adminMfa:false});
  assert.equal((await x.call(tokens.admin,'revoke',{id:docA})).status,428);
  assert.equal(x.docs[0].state,'published');
+});
+
+
+test('unauthenticated and revoked admin tokens cannot access document roster',async()=>{
+ const x=fixture({allowedUsers:[A]});
+ assert.equal((await x.call('','drivers')).status,401,'missing token');
+ assert.equal((await x.call('z'.repeat(70),'drivers')).status,401,'invalid token');
+ assert.equal((await x.call(tokens.revokedAdmin,'drivers')).status,403,'revoked admin session');
+ assert.equal((await x.call(tokens.revokedAdmin,'list')).status,403,'revoked session cannot read metadata');
+ assert.equal((await x.callUpload(tokens.revokedAdmin,A)).status,403,'revoked session cannot upload');
+ assert.equal(x.reads.length,0);
+ assert.equal(x.writes.length,0);
+});
+
+test('admin MFA is required for PDF upload, not only dashboard navigation',async()=>{
+ const x=fixture({adminMfa:false,allowedUsers:[A]});
+ assert.equal((await x.callUpload(tokens.admin,A)).status,428);
+ assert.equal(x.writes.length,0,'no write before MFA check');
+ assert.equal(x.docs.length,3,'no metadata before MFA check');
+});
+
+test('internal 503 errors never expose database details in the API response',async()=>{
+ const x=fixture({allowedUsers:[A]});
+ const r=await x.call(tokens.errorAdmin,'drivers');
+ assert.equal(r.status,503);
+ assert.equal(r.data.error,'Servizio documenti temporaneamente non disponibile.');
+ assert.equal(JSON.stringify(r.data).includes('PRIVATE_DATABASE_CONNECTION_STRING'),false);
+ assert.equal(x.reads.length,0);
+ assert.equal(x.writes.length,0);
 });
