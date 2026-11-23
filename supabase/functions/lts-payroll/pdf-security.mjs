@@ -15,7 +15,8 @@ const ACTIVE_PDF_NAMES=new Set([
 const BAD='Documento PDF non valido o con contenuti attivi non consentiti.';
 
 export function validatePayrollPdf(data){
- if(!(data instanceof Uint8Array)||data.byteLength<48||data.byteLength>MAX_PDF_BYTES)
+ if(!ArrayBuffer.isView(data)||data.BYTES_PER_ELEMENT!==1||
+    data.byteLength<48||data.byteLength>MAX_PDF_BYTES)
   return {ok:false,reason:BAD};
 
  // Decode Latin-1 only for PDF syntax inspection; never execute or render bytes.
