@@ -94,7 +94,8 @@ let realtimeBridge=null;
 // Presentation-only cache. Authorization and PDF ownership remain server-side.
 const PAYROLL_PROFILE_CHECK_INTERVAL_MS=60000;
 const PAYROLL_PROFILE_DENIED_CHECK_INTERVAL_MS=600000;
-let payrollProfileAccess={owner:null,allowed:false,checkedAt:0,pending:null,generation:0};
+const PAYROLL_PROFILE_RETRY_INTERVAL_MS=30000;
+let payrollProfileAccess={owner:null,allowed:false,retrySoon:false,checkedAt:0,pending:null,generation:0};
 function payrollProfileEligible(){
  return accountAccess.isEnabled()&&store.usingAccount()&&accountAccess.isVerified()&&
   accountAccess.getRole()==='driver'&&
@@ -102,7 +103,7 @@ function payrollProfileEligible(){
   Boolean(runtimeConfig.accountAuth.payrollEndpoint.trim());
 }
 function resetPayrollProfileAccess(){
- payrollProfileAccess={owner:null,allowed:false,checkedAt:0,pending:null,
+ payrollProfileAccess={owner:null,allowed:false,retrySoon:false,checkedAt:0,pending:null,
   generation:payrollProfileAccess.generation+1};
 }
 function payrollProfileCached(owner){
@@ -114,10 +115,11 @@ async function prefetchPayrollProfileAccess(force=false){
  const owner=accountAccess.getAccountId();
  if(!owner){resetPayrollProfileAccess();return false;}
  if(payrollProfileAccess.owner!==owner){
-  payrollProfileAccess={owner,allowed:false,checkedAt:0,pending:null,
+  payrollProfileAccess={owner,allowed:false,retrySoon:false,checkedAt:0,pending:null,
    generation:payrollProfileAccess.generation+1};
  }
  const interval=payrollProfileAccess.allowed?PAYROLL_PROFILE_CHECK_INTERVAL_MS:
+  payrollProfileAccess.retrySoon?PAYROLL_PROFILE_RETRY_INTERVAL_MS:
   PAYROLL_PROFILE_DENIED_CHECK_INTERVAL_MS;
  if(!force&&payrollProfileAccess.checkedAt&&
     Date.now()-payrollProfileAccess.checkedAt<interval)
@@ -125,17 +127,19 @@ async function prefetchPayrollProfileAccess(force=false){
  if(payrollProfileAccess.pending)return payrollProfileAccess.pending;
  const generation=payrollProfileAccess.generation;
  const request=(async()=>{
-  let allowed=false;
+  let allowed=false,retrySoon=false;
   try{
    const api=await import(new URL('documenti/document-api.mjs',import.meta.url).href);
    const result=await api.documents({offset:0});
    allowed=Array.isArray(result?.documents);
-  }catch{
-   // No authorization on failed, expired, revoked or offline checks.
+  }catch(error){
+   // Recheck outages quickly; throttle definitive 401/403/428 denials.
+   retrySoon=![401,403,428].includes(Number(error?.status));
   }
   if(generation!==payrollProfileAccess.generation||
      owner!==accountAccess.getAccountId()||!payrollProfileEligible())return false;
   payrollProfileAccess.allowed=allowed;
+  payrollProfileAccess.retrySoon=retrySoon;
   payrollProfileAccess.checkedAt=Date.now();
   return allowed;
  })();
