@@ -326,3 +326,13 @@ body:has(#login-panel:not([hidden]) #admin-area-choice:not([hidden])) #notice{
 @media(max-width:420px){
  .topbar #admin-return-areas{min-width:40px;min-height:40px;padding:6px 8px;font-size:11px}
 }
+
+/* Three controls (search, area switch, sign-out) must not overflow 320px. */
+@media(max-width:390px){
+ .topbar .brand img{width:48px;height:30px}
+ .topbar .brand strong{font-size:11px;max-width:88px}
+ .topbar .brand small{font-size:8px}
+ .topbar .top-actions{gap:2px}
+ .topbar .top-actions .button{min-width:35px;min-height:36px;padding:4px 5px;font-size:10px}
+ .topbar #admin-return-areas{min-width:35px;min-height:36px;padding:4px 5px;font-size:10px}
+}
