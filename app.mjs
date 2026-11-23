@@ -1335,7 +1335,7 @@ function openProfile(required=false){
         payrollAvailable
           ?'CEDOLINO · CU · ALTRI DOCUMENTI. Solo i tuoi PDF pubblicati.'
           :'CEDOLINO · CU · ALTRI DOCUMENTI. Servizio in preparazione.',
-        'download',()=>{
+        'pdf',()=>{
           dialog.close();window.location.assign(new URL('documenti/',import.meta.url).href);
         }));
     }
@@ -1498,7 +1498,7 @@ async function syncConflictDialog(){
   body.append(confirm);
  }catch(err){error.textContent=err.message;}
 }
-function menuButton(title,description,ico,handler){return el('button',{type:'button',class:'menu-button','data-profile-action':title,on:{click:handler}},icon(ico),el('span',{},title,el('small',{},description)),el('span',{class:'menu-arrow'},'›'));}
+function menuButton(title,description,ico,handler){return el('button',{type:'button',class:'menu-button','data-profile-action':title,on:{click:handler}},icon(ico),el('span',{},title,el('small',{},description)),el('span',{class:'menu-arrow'},title==='I MIEI DOCUMENTI'?icon('chevron'):'›'));}
 function downloadBlob(blob,fileName){const url=URL.createObjectURL(blob);const anchor=el('a',{href:url,download:fileName});document.body.append(anchor);anchor.click();anchor.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);}
 async function downloadBackup(){
  try{
