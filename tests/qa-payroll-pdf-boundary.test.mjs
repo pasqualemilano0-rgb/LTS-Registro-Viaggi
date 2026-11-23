@@ -38,11 +38,62 @@ test('truncated, prepended, appended and malformed PDF containers are rejected',
   assert.equal(validatePayrollPdf(variant).ok,false,'invalid sample '+i);
 });
 
+
+test('signed AcroForm, signature values and harmless strings remain permitted',()=>{
+ const signed=samplePdf('/AcroForm 3 0 R /FT /Sig /ByteRange [0 123 456 789] '+
+  '/Contents <2F4A532F4C61756E6368> /T (Firma /JavaScript # testo)');
+ assert.equal(validatePayrollPdf(signed).ok,true,'signature dictionary is not an active action');
+ const narrative=samplePdf('/Title (Il nome /OpenAction e soltanto testo) '+
+  '/Subject (Voce /JS in una stringa (annidata))');
+ assert.equal(validatePayrollPdf(narrative).ok,true,'ordinary text never triggers action scanning');
+ const comments=samplePdf('/Type /Catalog % /OpenAction merely a comment\n');
+ assert.equal(validatePayrollPdf(comments).ok,true,'PDF comments are ignored');
+});
+
+test('scanned image streams and object data are not misread as PDF actions',()=>{
+ const header='%PDF-1.7\n';
+ const obj='1 0 obj\n<< /Type /XObject /Subtype /Image /Filter /DCTDecode '+
+  '/Length 27 >>\nstream\n';
+ const image=Buffer.concat([
+  Buffer.from([0xff,0xd8,0x00,0x2f,0x4a,0x53]),
+  Buffer.from('/OpenAction /JavaScript')
+ ]);
+ const end='\nendstream\nendobj\n';
+ const pointer=Buffer.byteLength(header+obj)+image.length+Buffer.byteLength(end);
+ const tail='xref\n0 2\n0000000000 65535 f \n0000000009 00000 n \n'+
+  'trailer\n<< /Root 1 0 R >>\nstartxref\n'+pointer+'\n%%EOF\n';
+ const document=Buffer.concat([Buffer.from(header+obj),image,Buffer.from(end+tail)]);
+ assert.equal(validatePayrollPdf(document).ok,true);
+});
+
+test('valid incremental final xref remains permitted with a signature dictionary',()=>{
+ const base=samplePdf();
+ const objects='2 0 obj\n<< /Type /Sig /ByteRange [0 15 35 55] '+
+  '/Contents <DEADBEEF> >>\nendobj\n';
+ const finalXref=base.length+Buffer.byteLength(objects);
+ const update='xref\n2 1\n0000000100 00000 n \ntrailer\n<< /Prev 45 >>\n'+
+  'startxref\n'+finalXref+'\n%%EOF\n';
+ assert.equal(validatePayrollPdf(Buffer.concat([
+  base,Buffer.from(objects+update)
+ ])).ok,true,'the last incremental revision is used');
+});
+
+test('malformed strings, missing stream terminator and oversized blobs are denied',()=>{
+ const unclosed=samplePdf('/Title (broken /JavaScript');
+ assert.equal(validatePayrollPdf(unclosed).ok,false);
+ const raw=samplePdf();
+ const streamBad=Buffer.from(raw.toString('latin1').replace(
+  'endobj\nxref','stream\n\\nmissing terminator\nendobj\nxref'),'latin1');
+ // Trailer structure can be independently valid; malformed payload stays closed.
+ assert.equal(validatePayrollPdf(streamBad).ok,false);
+ assert.equal(validatePayrollPdf(new Uint8Array(8388609)).ok,false);
+});
+
 test('PDF action entries and embedded content are conservatively denied',()=>{
  const forbidden=[
   '/JavaScript','/JS','/J#53','/J#61vaScript','/OpenAction','/Open#41ction',
-  '/AA','/Launch','/EmbeddedFile','/EmbeddedFiles','/RichMedia',
-  '/XFA','/AcroForm','/SubmitForm','/GoToR','/Encrypt'
+  '/AA','/Launch','/EmbeddedFile','/EmbeddedFiles','/EF','/Filespec',
+  '/RichMedia','/XFA','/SubmitForm','/GoToR','/ObjStm','/Encrypt'
  ];
  for(const token of forbidden)
   assert.equal(validatePayrollPdf(samplePdf(token)).ok,false,token);
@@ -71,6 +122,6 @@ test('upload rejects bad PDF before Storage and safeguards unrelated authorizati
 
 test('unexpected exceptions map to generic 503 rather than leaking internal messages',()=>{
  const src=readFileSync(new URL('../supabase/functions/lts-payroll/index.ts',import.meta.url),'utf8');
- assert.match(src,/const controlled=e\?\.status===status && typeof e\?\.message==='string'/);
+ assert.match(src,/const controlled=status<500&&e\?\.status===status&&typeof e\?\.message==='string'/);
  assert.match(src,/controlled\?e.message:messages\[status\]/);
 });
