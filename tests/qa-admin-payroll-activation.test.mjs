@@ -17,7 +17,7 @@ test('the control-center administrative link uses the secured document workspace
  assert.match(login,/id="login-form"/);
  assert.match(login,/id="mfa-form"/);
  assert.match(login,/id="workspace" hidden/);
- assert.match(login,/admin-documents\.mjs\?v=20261123-admin-release-v1/);
+ assert.match(login,/admin-documents\.mjs\?v=20261123-milano-only-v1/);
  assert.match(login,/href="\.\/anteprima\/"/);
  assert.match(preview,/script-src 'none'/);
  assert.match(preview,/connect-src 'none'/);
