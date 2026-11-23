@@ -85,3 +85,86 @@ test('logout and revoked sessions cannot open either private area',()=>{
  assert.match(backend,/PAYROLL_PILOT_LIST_ONLY=true/);
  assert.match(backend,/if\(driverId!==await requireMilanoPasqualeRecipient\(db\)\)/);
 });
+
+
+test('delayed server responses cannot revive the private documents view after logout',async()=>{
+ const {runInNewContext}=await import('node:vm');
+ const source=read('documenti/admin-documents.mjs');
+ const start=source.indexOf('const $=id=>document.getElementById(id);');
+ const end=source.indexOf('// Password and MFA are entered ONLY',start);
+ assert.ok(start>=0&&end>start);
+ const logic=source.slice(start,end);
+ const defer=()=>{
+  let resolve;
+  const promise=new Promise(res=>{resolve=res;});
+  return {promise,resolve};
+ };
+ function fixture(){
+  const verify=defer(),driverRequest=defer(),documentRequest=defer();
+  const elem=()=>({
+   hidden:false,inert:false,value:'',textContent:'',disabled:false,
+   children:[],replaceChildren(...x){this.children=x;},
+   append(x){this.children.push(x);},
+   classList:{toggle(){}}
+  });
+  const els=Object.fromEntries(['login','mfa','setup','workspace','notice','driver',
+   'filter-driver','documents','summary','more','filter-category'].map(id=>[id,elem()]));
+  els.workspace.hidden=true;els.mfa.hidden=true;els.setup.hidden=true;
+  const session={active:true,verified:true,role:'admin',owner:'account:synthetic-admin'};
+  let calls=0;
+  const doc={hidden:false,
+   getElementById:id=>(els[id]??=elem()),
+   createElement:()=>elem(),querySelectorAll:()=>[]
+  };
+  const env={document:doc,account:{
+   hasSession:()=>session.active,isVerified:()=>session.verified,
+   getRole:()=>session.role,getAccountId:()=>session.owner,
+   verifySession:()=>verify.promise
+  },api:{
+   drivers:()=>driverRequest.promise,
+   documents:()=>{calls++;return documentRequest.promise;}
+  }};
+  runInNewContext(logic+String.raw`
+globalThis.qa={check,protect,view,refreshRoster,refreshDocs};
+`,env);
+  return {qa:env.qa,els,session,verify,driverRequest,documentRequest,calls:()=>calls};
+ }
+ {
+  const x=fixture();
+  const pending=x.qa.check();
+  x.session.active=false;x.session.verified=false;x.qa.protect();
+  x.verify.resolve({role:'admin',mfa_enrolled:true,mfa_verified:true});
+  await pending;
+  assert.equal(x.els.workspace.hidden,true);
+  assert.equal(x.calls(),0);
+ }
+ {
+  const x=fixture();
+  x.qa.view('workspace');
+  const pending=x.qa.refreshRoster();
+  x.session.active=false;x.session.verified=false;x.qa.protect();
+  x.driverRequest.resolve({drivers:[{id:'private',name:'Synthetic Sensitive Name',documents_enabled:true}]});
+  await pending;
+  assert.equal(x.els.workspace.hidden,true);
+  assert.equal(x.els.driver.children.length,1);
+  assert.equal(x.els['filter-driver'].children.length,1);
+ }
+ {
+  const x=fixture();
+  x.qa.view('workspace');
+  const pending=x.qa.refreshDocs();
+  assert.equal(x.calls(),1);
+  x.session.active=false;x.session.verified=false;x.qa.protect();
+  x.documentRequest.resolve({documents:[{id:'private'}]});
+  await pending;
+  assert.equal(x.els.workspace.hidden,true);
+  assert.equal(x.els.documents.children.length,0);
+  assert.equal(x.els.summary.textContent,'');
+ }
+});
+
+test('PDF cannot be saved after the originating admin session has ended',()=>{
+ const src=read('documenti/admin-documents.mjs');
+ assert.match(src,/const file=await api\.download\(doc\.id\);\s*if\(mayRenderPrivate\(generation,owner\)\)api\.savePdf/);
+ assert.match(src,/async function logout\(\)\{\s*\/\/ Cancel UI authorization immediately[\s\S]*?protect\(\);busy\(true\)/);
+});
