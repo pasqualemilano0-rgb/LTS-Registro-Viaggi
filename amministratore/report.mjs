@@ -225,7 +225,9 @@ export function setupReport(account){
   return insights.load(context);
  }
  function selectDriver(id){
-  if(driver.value===id&&page)return;
+  // The picker can display a new value before the matching report finishes.
+  // Never skip reload merely because the control already shows that value.
+  if(driver.value===id&&page&&!loading&&(pageDriverId||'')===id)return;
   clearReportScope();driver.value=id;rows=[];focusOnDriver=Boolean(id);void load(false);
  }
  function tabs(view){

@@ -720,8 +720,26 @@ try{
  assert.equal(await page.locator('#report-profile-days').textContent(),'0');
  assert.equal(await page.locator('#report-profile-average').textContent(),'—');
  assert.equal(await page.locator('#report-amount-chart .report-bar-row').count(),0);
+ // Wait for the driver selector and its report to agree before switching back.
+ assert.equal(await page.locator('#report-driver').inputValue(),
+  '22222222-2222-4222-8222-222222222222');
  await page.locator('#report-show-all').click();
- await page.waitForFunction(()=>document.querySelector('#report-count').textContent==='2');
+ try{
+  await page.waitForFunction(()=>document.querySelector('#report-driver')?.value===''&&
+   document.querySelector('#report-count')?.textContent==='2',null,{timeout:15000});
+ }catch(error){
+  const info=await page.evaluate(()=>({
+   driver:document.querySelector('#report-driver')?.value,
+   count:document.querySelector('#report-count')?.textContent,
+   month:document.querySelector('#report-month')?.value,
+   view:document.querySelector('#dashboard')?.dataset.view,
+   status:document.querySelector('#report-status')?.textContent,
+   reportError:document.querySelector('#report-error')?.textContent,
+   reportErrorHidden:document.querySelector('#report-error')?.hidden,
+   calls:globalThis.__mockCompanyReportCalls?.slice(-5)
+  }));
+  throw new Error('Show-all filter/report mismatch '+JSON.stringify(info),{cause:error});
+ }
  assert.equal(await page.locator('#report-driver-profile').isVisible(),false);
  await page.locator('#report-driver').selectOption('');
  await page.waitForFunction(()=>document.querySelector('#report-count').textContent==='2');
