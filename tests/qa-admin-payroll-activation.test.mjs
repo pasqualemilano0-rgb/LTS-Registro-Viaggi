@@ -45,7 +45,7 @@ test('a document may only be published while its test recipient can access the l
  assert.ok(target>=0&&check>target&&write>check);
  assert.match(admin,/publish\.disabled=true/);
  assert.match(admin,/if\(!recipient\?\.documents_enabled\)/);
- assert.match(admin,/unico destinatario dei test/);
+ assert.match(admin,/if\(driver\.documents_enabled\)\s*\$\('driver'\)\.append\(option\(driver\.id,driver\.name\)\)/);
  assert.match(edge,/documents_enabled:x\.user_id===pilotDriverId/);
  assert.match(edge,/\.eq\('slot','driver_a'\)\.eq\('role','driver'\)/);
  assert.match(edge,/\.gt\('expires_at',new Date\(\)\.toISOString\(\)\)/);
