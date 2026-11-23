@@ -35,7 +35,7 @@ test('area amministrativa opens a static preview while independent login still r
  assert.match(login,/Area Amministrativa: anteprima libera, dati e funzioni riservati protetti/);
  const preview=source('amministratore/buste-paga/anteprima/index.html');
  assert.match(preview,/MODALITÀ ANTEPRIMA — senza credenziali/);
- assert.match(preview,/href="\.\.\/" class="button-primary active-link"/);
+ assert.match(preview,/class="button-primary active-link" href="\.\.\/"/);
  assert.match(preview,/Documenti degli autisti/);
  assert.match(payroll,/id="login-form"/);
  assert.match(payroll,/id="mfa-form"/);
