@@ -22,7 +22,9 @@ function fixture({authorized=true}={}){
  const store={usingAccount:()=>state.account};
  const getApi=async()=>({documents:async()=>{
   calls++;
-  if(!state.auth)throw Error('403 - not in allowlist');
+  if(!state.auth){
+   const error=Error('Forbidden: not in allowlist');error.status=403;throw error;
+  }
   return {documents:[]};
  }});
  const api=new Function('accountAccess','store','runtimeConfig','getApi','Date',
@@ -61,6 +63,16 @@ test('a denied, expired or failed server check never creates a menu permission',
  assert.equal(x.api.payrollProfileCached('driver-A'),false);
 });
 
+test('temporary network errors retry sooner than definitive 403 denials',async()=>{
+ const x=fixture({authorized:false});
+ x.state.auth=false;
+ assert.equal(await x.api.prefetchPayrollProfileAccess(),false);
+ assert.equal(x.calls(),1);
+ // Definitive 403 is throttled, not retried after one minute.
+ x.time.ms+=61000;
+ assert.equal(await x.api.prefetchPayrollProfileAccess(),false);
+ assert.equal(x.calls(),1);
+});
 test('verified driver B never inherits driver A authorization',async()=>{
  const x=fixture();
  assert.equal(await x.api.prefetchPayrollProfileAccess(),true);
