@@ -9,7 +9,10 @@ import {readFileSync} from 'node:fs';
 import {runInNewContext} from 'node:vm';
 
 const src=readFileSync(new URL('../supabase/functions/lts-payroll/index.ts',import.meta.url),'utf8')
- .replace(/^import .+;\s*$/gm,'');
+ .replace(/^import .+;\s*$/gm,'')
+ // Tests can disable the hard-coded production pilot guard to retain coverage
+ // of the full future download flow WITHOUT changing deployed source.
+ .replace('const PAYROLL_PILOT_LIST_ONLY=true;','const PAYROLL_PILOT_LIST_ONLY=globalTestPilot;');
 const A='00000000-0000-4000-8000-000000000001';
 const B='00000000-0000-4000-8000-000000000002';
 const M='00000000-0000-4000-8000-000000000003';
@@ -20,7 +23,7 @@ const ORIGIN='https://pasqualemilano0-rgb.github.io';
 const endpoint='https://otrqynkscpbeyuvdlgpg.supabase.co/functions/v1/lts-payroll';
 const tokens={a:'a'.repeat(70),b:'b'.repeat(70),admin:'m'.repeat(70),revoked:'r'.repeat(70)};
 
-function fixture({adminMfa=true,enabled=true,allowedUsers=[A,B,M],expiry='2099-01-01T00:00:00Z'}={}){
+function fixture({adminMfa=true,enabled=true,preview=false,allowedUsers=[A,B,M],expiry='2099-01-01T00:00:00Z'}={}){
  const accounts=[
   {user_id:A,role:'driver',enabled:true,removed_at:null},
   {user_id:B,role:'driver',enabled:true,removed_at:null},
@@ -101,7 +104,7 @@ function fixture({adminMfa=true,enabled=true,allowedUsers=[A,B,M],expiry='2099-0
   createClient:(_url,key)=>key.startsWith('public-key')?publicClient:db,
   checkLtsSession:async (_db,token)=>{if(token===tokens.revoked)throw {status:403};},
   requireAdminMfa:async()=>({enrolled:adminMfa,verified:adminMfa}),
-  Deno:deno,URL,Request,Response,Blob,File,TextDecoder,TextEncoder,crypto,atob,
+  Deno:deno,globalTestPilot:preview,URL,Request,Response,Blob,File,TextDecoder,TextEncoder,crypto,atob,
   console
  },{timeout:2000});
  assert.equal(typeof handler,'function');
@@ -116,18 +119,34 @@ function fixture({adminMfa=true,enabled=true,allowedUsers=[A,B,M],expiry='2099-0
  return {call,docs,audit,reads};
 }
 
-test('production payroll release flag remains OFF by default and denies every document action',async()=>{
- const x=fixture({enabled:false});
- for(const [actor,action] of [
-  [tokens.a,'download'],[tokens.a,'acknowledge'],[tokens.a,'list'],
-  [tokens.admin,'publish'],[tokens.admin,'drivers']
- ]){
-  const outcome=await x.call(actor,action,{id:docA});
-  assert.equal(outcome.status,503,'disabled backend must not serve '+action);
+test('full payroll stays OFF, preview permits ONLY allowlisted driver read-only list',async()=>{
+ const x=fixture({enabled:false,preview:true,allowedUsers:[A]});
+ const listing=await x.call(tokens.a,'list');
+ assert.equal(listing.status,200,'allowlisted active driver sees their own list');
+ assert.equal(listing.data.documents.length,1,'unpublished and other driver files hidden');
+ assert.equal(listing.data.documents[0].id,docA);
+ assert.equal((await x.call(tokens.b,'list')).status,403,'no access for other driver');
+ assert.equal((await x.call(tokens.admin,'list')).status,403,'no admin test seat');
+ for(const action of ['download','acknowledge','publish','revoke','drivers']){
+  const result=await x.call(tokens.a,action,{id:docA});
+  assert.equal(result.status,503,'global OFF must block '+action);
  }
- assert.equal(x.reads.length,0,'no Storage data read while disabled');
- assert.equal(x.audit.length,0,'no audit/data writes while disabled');
- assert.equal(x.docs[0].acknowledged_at,null,'no implicit receipt while disabled');
+ assert.equal(x.reads.length,0,'no Storage bytes read during preview');
+ assert.equal(x.audit.length,0,'no audit/data writes during preview');
+ assert.equal(x.docs[0].acknowledged_at,null,'no receipt during preview');
+});
+test('expired or missing tester never sees preview documents even with flag OFF',async()=>{
+ const missing=fixture({enabled:false,preview:true,allowedUsers:[]});
+ assert.equal((await missing.call(tokens.a,'list')).status,403);
+ const expired=fixture({enabled:false,preview:true,allowedUsers:[A],expiry:'2020-01-01T00:00:00Z'});
+ assert.equal((await expired.call(tokens.a,'list')).status,403);
+});
+test('preview stays read-only even if the general payroll flag is enabled',async()=>{
+ const x=fixture({enabled:true,preview:true,allowedUsers:[A]});
+ assert.equal((await x.call(tokens.a,'list')).status,200);
+ for(const action of ['download','acknowledge','publish','revoke','drivers'])
+  assert.equal((await x.call(tokens.a,action,{id:docA})).status,503,action);
+ assert.equal(x.audit.length,0);assert.equal(x.reads.length,0);
 });
 test('flag ON still denies ALL non-allowlisted users, including admins, before Storage',async()=>{
  const x=fixture({enabled:true,allowedUsers:[]});
