@@ -46,6 +46,9 @@ function validateUploadFields({recipient,category,year,month,label,files}){
 }
 function view(name){
  for(const id of ['login','mfa','setup','workspace'])$(id).hidden=id!==name;
+ // A previous Android visibilitychange may have left this whole section
+ // inert. Always reconcile it when showing any authenticated view.
+ $('workspace').inert=name==='workspace'&&document.hidden;
 }
 function node(tag,cls,text){
  const n=document.createElement(tag);
@@ -319,12 +322,33 @@ setInterval(()=>{
   void refreshRoster().then(()=>refreshDocs());
  }
 },60000);
-// Hide private metadata immediately when the browser moves to the background.
+// Android document pickers and native <select> controls may temporarily
+// background the WebView. Never leave the *entire* workspace inert after
+// returning: an inert parent silently blocks taps on every input, select and
+// file picker even though the controls still look enabled.
+function restoreWorkspaceInteraction(){
+ const workspace=$('workspace');
+ if(workspace.hidden){workspace.inert=false;return;}
+ if(!account.isVerified()||account.getRole()!=='admin'){
+  protect();
+  notice('Sessione amministrativa da verificare nuovamente.',true);
+  return;
+ }
+ // Release pointer/keyboard interaction immediately after foregrounding.
+ // The backend still independently verifies JWT, live session, MFA and role
+ // for each operation; the UI flag is NOT an authorization mechanism.
+ workspace.inert=false;
+ void check();
+}
 document.addEventListener('visibilitychange',()=>{
  if(document.hidden){$('workspace').inert=true;return;}
- if(!$('workspace').hidden){
-  void check().finally(()=>{$('workspace').inert=false;});
- }
+ restoreWorkspaceInteraction();
+});
+// Some Android WebViews miss the visible event after a native file chooser.
+// A focus event must also recover an incorrectly retained inert state.
+window.addEventListener('focus',()=>{
+ if(!document.hidden&&!$('workspace').hidden&&$('workspace').inert)
+  restoreWorkspaceInteraction();
 });
 
 // Always display an independent payroll login, even when LTS Admin is already open.
