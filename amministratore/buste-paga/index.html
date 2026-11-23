@@ -7,7 +7,7 @@
 <meta name="theme-color" content="#006f89">
 <link rel="icon" href="../../assets/icon-192.png">
 <link rel="stylesheet" href="../../documenti/documents.css">
-<script type="module" src="../../documenti/admin-documents.mjs?v=20261123-admin-release-v1"></script>
+<script type="module" src="../../documenti/admin-documents.mjs?v=20261123-milano-only-v1"></script>
 <title>LTS · Accesso amministrazione documenti</title></head>
 <body>
 <header class="lts-header"><a class="lts-brand" href="../"><img src="../../assets/lts-logo.png" alt="LTS" width="52" height="46"><span>Gestione documenti<small>Accesso amministrativo separato</small></span></a><a class="back" href="../">Dashboard LTS</a></header>
@@ -41,7 +41,7 @@
  <div class="heading"><div><p class="eyebrow">LTS · CONTROL CENTER</p><h1>CEDOLINI E DOCUMENTI</h1>
  <p>Stessi autisti della dashboard LTS, archivio PDF privato e pubblicazione controllata.</p></div>
  <button id="logout" type="button" class="outline">Esci</button></div>
- <section class="panel"><p class="hint" role="status">Gestione operativa attiva con MFA. Durante il collaudo puoi preparare bozze per tutti gli autisti, ma pubblicare soltanto ai destinatari autorizzati ai test.</p><div class="panel-head"><h2>Carica nuovi documenti</h2><span class="chip">Bozze private</span></div>
+ <section class="panel"><p class="hint" role="status">Gestione operativa attiva con MFA. Durante il collaudo puoi caricare e pubblicare PDF esclusivamente per MILANO PASQUALE. Gli altri autisti sono esclusi dal caricamento.</p><div class="panel-head"><h2>Carica nuovi documenti</h2><span class="chip">Bozze private</span></div>
  <form id="upload-form" class="form-grid">
   <label>Autista destinatario<select id="driver" required><option value="">Seleziona autista</option></select></label>
   <label>Categoria<select id="category" required><option value="cedolino">CEDOLINO</option><option value="cu">CU</option><option value="altri">ALTRI DOCUMENTI</option></select></label>
@@ -51,7 +51,7 @@
   <label class="wide">Documenti PDF (max 8 MB ciascuno)<input id="files" type="file" accept="application/pdf,.pdf" multiple required></label>
   <button type="submit" class="primary wide">Carica in bozza, senza pubblicare</button>
  </form>
- <p class="hint">Controlla sempre il destinatario. Il sistema non abbina automaticamente i PDF in base al nome.</p><p class="hint">La pubblicazione, la conferma obbligatoria prima del PDF per ogni cedolino e il primo accesso al documento sono eventi distinti. Non costituiscono prova del pagamento o di accettazione degli importi.</p>
+ <p class="hint">Destinatario unico: MILANO PASQUALE. L’autorizzazione viene controllata anche dal server; nessun altro autista può ricevere caricamenti tramite questa pagina.</p><p class="hint">La pubblicazione, la conferma obbligatoria prima del PDF per ogni cedolino e il primo accesso al documento sono eventi distinti. Non costituiscono prova del pagamento o di accettazione degli importi.</p>
  </section>
  <section class="panel">
  <div class="panel-head"><h2>Archivio di tutti gli autisti</h2><button type="button" id="refresh" class="outline">Aggiorna</button></div>

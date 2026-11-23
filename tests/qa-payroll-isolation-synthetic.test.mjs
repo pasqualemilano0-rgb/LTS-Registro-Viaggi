@@ -29,13 +29,18 @@ function fixture({adminMfa=true,enabled=true,preview=false,allowedUsers=[A,B,M],
   {user_id:B,role:'driver',enabled:true,removed_at:null},
   {user_id:M,role:'admin',enabled:true,removed_at:null}
  ];
- const allowlist=allowedUsers.map(user_id=>({user_id,role:user_id===M?'admin':'driver',enabled:true,expires_at:expiry}));
+ const allowlist=allowedUsers.map(user_id=>({user_id,role:user_id===M?'admin':'driver',
+  slot:user_id===A?'driver_a':user_id===B?'driver_b':'admin',enabled:true,expires_at:expiry}));
+ const names=[
+  {auth_user_id:A,first_name:'Milano',last_name:'Pasquale'},
+  {auth_user_id:B,first_name:'Mario',last_name:'Rossi'}
+ ];
  const docs=[
   {id:docA,driver_id:A,category:'cedolino',state:'published',object_path:A+'/2026/'+docA+'.pdf',first_accessed_at:null,acknowledged_at:null},
   {id:docB,driver_id:B,category:'cedolino',state:'published',object_path:B+'/2026/'+docB+'.pdf',first_accessed_at:null,acknowledged_at:null},
   {id:draftA,driver_id:A,category:'cedolino',state:'draft',object_path:A+'/2026/'+draftA+'.pdf',first_accessed_at:null,acknowledged_at:null}
  ];
- const audit=[],reads=[];
+ const audit=[],reads=[],writes=[];
  class Query{
   constructor(table){this.table=table;this.filters=[];}
   select(){return this;}
@@ -43,12 +48,14 @@ function fixture({adminMfa=true,enabled=true,preview=false,allowedUsers=[A,B,M],
   in(key,values){this.filters.push(row=>values.includes(row[key]));return this;}
   update(patch){this.patch=patch;return this;}
   eq(key,val){this.filters.push(row=>row[key]===val);return this;}
+  neq(key,val){this.filters.push(row=>row[key]!==val);return this;}
   gt(key,val){this.filters.push(row=>row[key]>val);return this;}
   is(key,val){this.filters.push(row=>row[key]===val);return this;}
   order(){return this;}
   range(){return this;}
   values(){
-   const rows=this.table==='lts_account_access'?accounts:this.table==='lts_payroll_documents'?docs:this.table==='lts_payroll_test_allowlist'?allowlist:[];
+   const rows=this.table==='lts_account_access'?accounts:this.table==='lts_payroll_documents'?docs:
+    this.table==='lts_payroll_test_allowlist'?allowlist:this.table==='lts_pending_drivers'?names:[];
    return rows.filter(row=>this.filters.every(test=>test(row)));
   }
   maybeSingle(){
@@ -57,11 +64,19 @@ function fixture({adminMfa=true,enabled=true,preview=false,allowedUsers=[A,B,M],
    return Promise.resolve({data:row,error:null});
   }
   then(resolve,reject){return Promise.resolve({data:this.values(),error:null}).then(resolve,reject);}
-  insert(entry){audit.push(entry);return Promise.resolve({data:null,error:null});}
+  insert(entry){
+   if(this.table==='lts_payroll_documents'){
+    docs.push(entry);
+    return {select(){return {single:async()=>({data:{id:entry.id},error:null})}}};
+   }
+   audit.push(entry);return Promise.resolve({data:null,error:null});
+  }
  }
  const db={
   from:table=>new Query(table),
   storage:{from:()=>({
+   upload:async path=>{writes.push(path);return {error:null};},
+   remove:async()=>({error:null}),
    download:async path=>{
     reads.push(path);
     return docs.some(d=>d.object_path===path)?
@@ -123,7 +138,21 @@ function fixture({adminMfa=true,enabled=true,preview=false,allowedUsers=[A,B,M],
   return {status:response.status,data:response.headers.get('content-type')?.includes('json')?
     await response.json():await response.arrayBuffer()};
  }
- return {call,docs,audit,reads};
+ async function callUpload(token,driverId){
+  const fields=new FormData();
+  fields.set('file',new File(['%PDF-1.5\n1 0 obj\nendobj\n%%EOF'],'test.pdf',{type:'application/pdf'}));
+  fields.set('driverId',driverId);
+  fields.set('category','cedolino');
+  fields.set('year','2026');
+  fields.set('month','11');
+  fields.set('label','Documento prova');
+  const request=new Request(endpoint,{method:'POST',headers:{
+   Origin:ORIGIN,Authorization:'Bearer '+token
+  },body:fields});
+  const response=await handler(request);
+  return {status:response.status,data:await response.json()};
+ }
+ return {call,callUpload,docs,audit,reads,writes,allowlist,names};
 }
 
 test('driver pilot list is owner-scoped; authenticated MFA admin may manage documents',async()=>{
@@ -185,6 +214,41 @@ test('admin cannot publish a draft to a driver not enabled for the pilot',async(
  assert.equal(denied.status,403);
  assert.equal(x.docs.find(d=>d.id===draftA).state,'draft');
  assert.equal(x.audit.length,0);
+});
+test('only MILANO PASQUALE may receive uploaded PDF bytes',async()=>{
+ const x=fixture({allowedUsers:[A,B]});
+ const other=await x.callUpload(tokens.admin,B);
+ assert.equal(other.status,403);
+ assert.equal(x.writes.length,0,'other driver rejected before private Storage write');
+ assert.equal(x.docs.length,3,'other driver leaves no metadata');
+ const driverAttempt=await x.callUpload(tokens.a,A);
+ assert.equal(driverAttempt.status,403,'driver cannot upload even to self');
+ assert.equal(x.writes.length,0);
+ const admin=await x.callUpload(tokens.admin,A);
+ assert.equal(admin.status,201);
+ assert.equal(admin.data.state,'draft');
+ assert.equal(x.docs.length,4);
+ assert.equal(x.docs.at(-1).driver_id,A);
+ assert.equal(x.writes.length,1);
+ assert.equal(x.writes[0].startsWith(A+'/2026/'),true);
+});
+test('a reassigned driver_a slot is rejected if its identity is not MILANO PASQUALE',async()=>{
+ const x=fixture({allowedUsers:[B]});
+ x.allowlist[0].slot='driver_a';
+ assert.equal((await x.callUpload(tokens.admin,B)).status,403);
+ assert.equal(x.writes.length,0);
+ assert.equal((await x.call(tokens.admin,'drivers')).data.drivers.some(d=>d.documents_enabled),false);
+});
+test('a second allowlisted driver cannot become an upload or publication recipient',async()=>{
+ const x=fixture({enabled:false,preview:true,allowedUsers:[A,B]});
+ const r=await x.call(tokens.admin,'drivers');
+ assert.equal(r.status,200);
+ assert.equal(r.data.drivers.filter(d=>d.documents_enabled).length,1);
+ assert.equal(r.data.drivers.find(d=>d.id===B).documents_enabled,false);
+ x.docs.push({...x.docs[2],id:'10000000-0000-4000-8000-000000000004',driver_id:B});
+ const rejected=await x.call(tokens.admin,'publish',{id:'10000000-0000-4000-8000-000000000004'});
+ assert.equal(rejected.status,403);
+ assert.equal(x.docs.at(-1).state,'draft');
 });
 test('admin may publish a draft to allowlisted driver only',async()=>{
  const x=fixture({enabled:false,preview:true,allowedUsers:[A]});

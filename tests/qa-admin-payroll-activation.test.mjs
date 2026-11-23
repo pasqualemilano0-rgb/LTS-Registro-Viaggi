@@ -17,7 +17,7 @@ test('the control-center administrative link uses the secured document workspace
  assert.match(login,/id="login-form"/);
  assert.match(login,/id="mfa-form"/);
  assert.match(login,/id="workspace" hidden/);
- assert.match(login,/admin-documents\.mjs\?v=20261123-admin-release-v1/);
+ assert.match(login,/admin-documents\.mjs\?v=20261123-milano-only-v1/);
  assert.match(login,/href="\.\/anteprima\/"/);
  assert.match(preview,/script-src 'none'/);
  assert.match(preview,/connect-src 'none'/);
@@ -45,12 +45,27 @@ test('a document may only be published while its test recipient can access the l
  assert.ok(target>=0&&check>target&&write>check);
  assert.match(admin,/publish\.disabled=true/);
  assert.match(admin,/if\(!recipient\?\.documents_enabled\)/);
- assert.match(admin,/Solo bozze/);
- assert.match(edge,/documents_enabled:deliverable\.has\(x\.user_id\)/);
- assert.match(edge,/\.eq\('role','driver'\)\.eq\('enabled',true\)/);
+ assert.match(admin,/unico destinatario dei test/);
+ assert.match(edge,/documents_enabled:x\.user_id===pilotDriverId/);
+ assert.match(edge,/\.eq\('slot','driver_a'\)\.eq\('role','driver'\)/);
  assert.match(edge,/\.gt\('expires_at',new Date\(\)\.toISOString\(\)\)/);
 });
 
+test('single-recipient pilot upload is enforced by the backend before Storage',()=>{
+ assert.match(edge,/async function requireMilanoPasqualeRecipient\(db,required=true\)/);
+ assert.match(edge,/\.eq\('slot','driver_a'\)\.eq\('role','driver'\)/);
+ assert.match(edge,/normal\(identity\.first_name\)!=='milano'\|\|normal\(identity\.last_name\)!=='pasquale'/);
+ const upload=edge.slice(edge.indexOf('async function upload('),edge.indexOf('async function publish('));
+ const active=upload.indexOf('await activeDriver(db,String(form.get(');
+ const only=upload.indexOf('if(driverId!==await requireMilanoPasqualeRecipient(db))');
+ const storage=upload.indexOf('.storage.from(BUCKET)');
+ assert.ok(active>=0&&only>active&&storage>only,'check ownership before writing PDF bytes');
+ const publish=edge.slice(edge.indexOf('async function publish('),edge.indexOf('async function revokeDocument('));
+ assert.match(publish,/if\(doc\.driver_id!==await requireMilanoPasqualeRecipient\(db\)\)/);
+ assert.match(admin,/if\(driver\.documents_enabled\)/);
+ assert.match(admin,/if\(!selected\?\.documents_enabled\)/);
+ assert.match(read('amministratore/buste-paga/index.html'),/caricare e pubblicare PDF esclusivamente per MILANO PASQUALE/);
+});
 test('audit and immutable first-access evidence stay server-managed',()=>{
  assert.match(migration,/lts_payroll_write_audit/);
  assert.match(edge,/await db\.rpc\('lts_payroll_mark_first_access'/);

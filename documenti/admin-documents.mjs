@@ -64,12 +64,18 @@ async function refreshRoster(){
   const selected=$('driver').value,filter=$('filter-driver').value;
   $('driver').replaceChildren(option('','Seleziona autista'));
   $('filter-driver').replaceChildren(option('','Tutti gli autisti'));
+  const eligible=roster.filter(x=>x.documents_enabled);
+  // The upload picker intentionally exposes only the backend-approved pilot.
+  // The archive filter still supports viewing existing records for all drivers.
   for(const driver of roster){
-   $('driver').append(option(driver.id,driver.name+' · '+driver.phone+(driver.documents_enabled?' · Abilitato ai test':' · Solo bozze')));
+   if(driver.documents_enabled)
+    $('driver').append(option(driver.id,driver.name+' · unico destinatario dei test'));
    $('filter-driver').append(option(driver.id,driver.name));
   }
-  $('driver').value=roster.some(x=>x.id===selected)?selected:'';
+  $('driver').value=eligible.length===1?eligible[0].id:'';
   $('filter-driver').value=roster.some(x=>x.id===filter)?filter:'';
+  if(eligible.length!==1)
+   notice('Nessun destinatario autorizzato al caricamento. Verifica la scadenza dei test.',true);
  }catch(error){notice(error.message||'Sincronizzazione autisti non riuscita.',true);}
 }
 function metadata(doc){
@@ -199,7 +205,10 @@ $('upload-form').addEventListener('submit',async event=>{
  const chosen=Array.from($('files').files||[]);
  if(!chosen.length)return;
  const selected=roster.find(x=>x.id===$('driver').value);
- if(!selected){notice('Seleziona un autista valido.',true);return;}
+ if(!selected?.documents_enabled){
+  notice('Caricamento consentito soltanto all’autista MILANO PASQUALE autorizzato.',true);
+  return;
+ }
  if(!window.confirm('Caricare '+chosen.length+' PDF come BOZZE per '+selected.name+
    '? Tutti i file saranno assegnati a questo autista, senza pubblicazione.'))return;
  busy(true);notice('');
