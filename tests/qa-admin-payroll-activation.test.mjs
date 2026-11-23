@@ -17,7 +17,7 @@ test('the control-center administrative link uses the secured document workspace
  assert.match(login,/id="login-form"/);
  assert.match(login,/id="mfa-form"/);
  assert.match(login,/id="workspace" hidden/);
- assert.match(login,/admin-documents\.mjs\?v=20261123-milano-only-v1/);
+ assert.match(login,/admin-documents\.mjs\?v=20261123-upload-feedback-v1/);
  assert.match(login,/href="\.\/anteprima\/"/);
  assert.match(preview,/script-src 'none'/);
  assert.match(preview,/connect-src 'none'/);
@@ -45,7 +45,7 @@ test('a document may only be published while its test recipient can access the l
  assert.ok(target>=0&&check>target&&write>check);
  assert.match(admin,/publish\.disabled=true/);
  assert.match(admin,/if\(!recipient\?\.documents_enabled\)/);
- assert.match(admin,/unico destinatario dei test/);
+ assert.match(admin,/if\(driver\.documents_enabled\)\s*\$\('driver'\)\.append\(option\(driver\.id,driver\.name\)\)/);
  assert.match(edge,/documents_enabled:x\.user_id===pilotDriverId/);
  assert.match(edge,/\.eq\('slot','driver_a'\)\.eq\('role','driver'\)/);
  assert.match(edge,/\.gt\('expires_at',new Date\(\)\.toISOString\(\)\)/);
@@ -63,7 +63,8 @@ test('single-recipient pilot upload is enforced by the backend before Storage',(
  const publish=edge.slice(edge.indexOf('async function publish('),edge.indexOf('async function revokeDocument('));
  assert.match(publish,/if\(doc\.driver_id!==await requireMilanoPasqualeRecipient\(db\)\)/);
  assert.match(admin,/if\(driver\.documents_enabled\)/);
- assert.match(admin,/if\(!selected\?\.documents_enabled\)/);
+ assert.match(admin,/if\(!recipient\?\.documents_enabled\)/);
+ assert.match(admin,/const issue=validateUploadFields\(values\)/);
  assert.match(read('amministratore/buste-paga/index.html'),/caricare e pubblicare PDF esclusivamente per MILANO PASQUALE/);
 });
 test('audit and immutable first-access evidence stay server-managed',()=>{

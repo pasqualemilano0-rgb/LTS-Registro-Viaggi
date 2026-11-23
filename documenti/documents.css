@@ -322,3 +322,30 @@ input[type=file]{border-style:dashed}
   line-height:1.3;
  }
 }
+
+/* Administrator-only upload feedback: keep form errors beside the action. */
+.admin-payroll-page .admin-field-help{
+ display:block;font-size:11px;font-weight:500;line-height:1.4;color:var(--muted);
+}
+.admin-payroll-page .admin-file-selection{
+ margin:-6px 0 0;font-size:12px;line-height:1.5;color:#506a78;
+ overflow-wrap:anywhere;
+}
+.admin-payroll-page .admin-upload-feedback{
+ margin:0;padding:12px 14px;border:1px solid #b9d9e3;
+ border-radius:12px;background:#edf8fa;color:#10546a;
+ font-size:13px;font-weight:600;line-height:1.55;
+ overflow-wrap:anywhere;scroll-margin:16px;
+}
+.admin-payroll-page .admin-upload-feedback.error{
+ color:#9b2525;border-color:#efc9c9;background:#fff1f1;
+}
+.admin-payroll-page .admin-upload-feedback.success{
+ color:#17674b;border-color:#b7dccf;background:#ebf8f2;
+}
+.admin-payroll-page #upload-form[aria-busy="true"]{
+ opacity:.82;
+}
+.admin-payroll-page #upload-submit:disabled{
+ cursor:progress;
+}
