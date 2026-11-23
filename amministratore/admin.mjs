@@ -271,6 +271,9 @@ function showDashboard(status={}){
   (status.mfa_enrolled===true&&status.mfa_verified===true?'overview':'security'));
  startAdminRealtime();
  void mapsApprovals.load();
+ // The area selector is shown only after the backend has verified this
+ // administrator's password/session and MFA. No second login per section.
+ document.dispatchEvent(new Event('lts-admin-authenticated'));
  return previousPosition;
 }
 // Only accept a server-confirmed response returned by the SAME in-flight login
