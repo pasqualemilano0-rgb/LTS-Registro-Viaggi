@@ -20,9 +20,12 @@ test('mobile layout has one page title, compact navigation and original controls
  assert.match(html,/class="category selected" data-category="cedolino" aria-pressed="true"/);
  assert.match(html,/class="category" data-category="cu" aria-pressed="false"/);
  assert.match(html,/class="category" data-category="altri" aria-pressed="false"/);
- assert.match(html,/documents\.css\?v=20261123-mobile-v2/);
+ assert.match(html,/documents\.css\?v=20261123-mobile-v3/);
  assert.match(css,/\.driver-documents-page \.archive-toolbar\{\s*display:grid;grid-template-columns:minmax\(0,1fr\) minmax\(180px,190px\)/);
  assert.match(css,/@media\(max-width:330px\)/);
+ assert.match(css,/Mobile fix v3/);
+ assert.match(css,/grid-template-columns:44px minmax\(0,1fr\)/);
+ assert.match(css,/padding:10px 40px 10px 13px/);
  assert.match(css,/\.driver-documents-page \.filters select\{\s*display:block;width:100%;min-width:0;max-width:none/);
  assert.match(html,/driver-documents\.mjs\?v=20261123-mobile-v1/);
 });
