@@ -252,6 +252,9 @@ function lock(message='Accedi come amministratore per continuare.'){
  hideCode();
  byId('mfa-panel').hidden=true;
  dashboard.hidden=true;loginPanel.hidden=false;byId('logout').hidden=true;
+ byId('admin-return-areas').hidden=true;
+ byId('admin-area-choice').hidden=true;
+ byId('admin-logistica-login').hidden=false;
  setError(listError,'');
  inform(message,Boolean(message));
 }
@@ -265,6 +268,7 @@ function showDashboard(status={}){
  byId('mfa-warning').hidden=status.mfa_enrolled===true;
  byId('mfa-backup-card').hidden=!(status.mfa_enrolled&&status.mfa_verified);
  loginPanel.hidden=true;dashboard.hidden=false;byId('logout').hidden=false;
+ byId('admin-return-areas').hidden=false;
  byId('smart-command-open').hidden=false;
  setError(loginError,'');inform('');
  companyView.open(previousPosition?.view||
@@ -272,6 +276,47 @@ function showDashboard(status={}){
  startAdminRealtime();
  void mapsApprovals.load();
  return previousPosition;
+}
+// Only reveal the area chooser after server-confirmed administrator MFA.
+function showAuthenticatedAreaChoice(){
+ if(!account.isVerified()||account.getRole()!=='admin')return false;
+ hideResumeGuard();
+ adminRealtime?.stop();smartConsole.reset();
+ byId('smart-command-open').hidden=true;
+ clearMfa();byId('mfa-panel').hidden=true;
+ dashboard.hidden=true;dashboard.inert=false;
+ loginPanel.hidden=false;
+ byId('admin-logistica-login').hidden=true;
+ byId('admin-area-choice').hidden=false;
+ byId('logout').hidden=true;
+ byId('admin-return-areas').hidden=true;
+ byId('switch-account').hidden=true;
+ byId('login-password').value='';
+ setPasswordVisibility(false);
+ setError(loginError,'');inform('');
+ lastAdminVerifiedAt=Date.now();
+ return true;
+}
+async function openAuthenticatedLogistics(){
+ const button=byId('select-area-logistica');
+ if(button.disabled)return;
+ button.disabled=true;
+ try{
+  if(!account.hasSession()||account.getRole()!=='admin')
+   throw new Error('Accesso amministratore richiesto.');
+  const status=await account.verifySession();
+  if(status.role!=='admin'||status.mfa_verified!==true||!account.isVerified()){
+   await authenticate(status);
+   return;
+  }
+  const previous=showDashboard(status);
+  void Promise.allSettled([loadDrivers(),loadBackupFactors()])
+   .then(()=>restoreAdminPosition(previous));
+ }catch(error){
+  if(transientAdminError(error))
+   showResumeGuard('Verifica della sessione non disponibile. Riprova con Internet attivo.',true);
+  else lock(errorText(error,'Accedi nuovamente al Control Center.'));
+ }finally{button.disabled=false;}
 }
 // Only accept a server-confirmed response returned by the SAME in-flight login
 // or MFA verification. Startup and account restoration always call the server.
@@ -313,11 +358,14 @@ async function authenticate(freshStatus=null){
      return;
    }
    if(pending)account.forgetPendingAdminMfa();
+   if(status.mfa_enrolled&&status.mfa_verified){
+    showAuthenticatedAreaChoice();
+    return;
+   }
+   // First-time MFA setup remains in the protected security pane only.
    const previousPosition=showDashboard(status);
-   // Dashboard is available immediately after server authentication; roster,
-   // backup-factor labels and reports load independently in the background.
-   void Promise.allSettled([loadDrivers(),status.mfa_enrolled&&status.mfa_verified?
-     loadBackupFactors():Promise.resolve()]).then(()=>restoreAdminPosition(previousPosition));
+   companyView.open('security');
+   void Promise.allSettled([loadDrivers()]).then(()=>restoreAdminPosition(previousPosition));
  }catch(error){
    if(transientAdminError(error))
     showResumeGuard('La connessione non ha completato la verifica. La sessione rimane conservata: riprova quando sei online.',true);
@@ -496,6 +544,19 @@ async function handleSubmit(event,action,ids){
  }catch(error){inform(errorText(error,'Richiesta non riuscita.'),true);}
  finally{busy=false;button.disabled=false;}
 }
+window.addEventListener('lts-admin-open-logistics',()=>void openAuthenticatedLogistics());
+byId('admin-choice-logout').addEventListener('click',()=>{
+ void account.logout().catch(()=>{});
+ lock('Hai chiuso la sessione amministratore.');
+});
+byId('admin-return-areas').addEventListener('click',()=>{
+ if(account.isVerified()&&account.getRole()==='admin'){
+  rememberAdminPosition();
+  showAuthenticatedAreaChoice();
+  return;
+ }
+ void authenticate();
+});
 byId('login-password-toggle').addEventListener('click',()=>setPasswordVisibility(
  byId('login-password').type==='password'));
 byId('login-form').addEventListener('submit',async event=>{
