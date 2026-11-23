@@ -82,8 +82,8 @@ test('Android page submits to custom validation and shows feedback next to the b
  assert.match(admin,/uploadFeedback\(issue\.message,'error'\)/);
  assert.match(admin,/uploadFeedback\('Caricamento PDF '\+\(success\+1\)/);
  assert.match(admin,/await api\.upload\(file,\{driverId:selected\.id/);
- assert.match(admin,/uploadFeedback\(success\+' PDF caricati in bozza/);
- assert.match(admin,/if\(success\)await refreshDocs\(\)/);
+ assert.match(admin,/uploadFeedback\(success\+' '\+\(success===1\?'PDF caricato':'PDF caricati'\)\+' in bozza/);
+ assert.match(admin,/if\(success\)\{[\s\S]*?await refreshDocs\(\)/);
  assert.doesNotMatch(html,/<script[^>]+src="https?:/);
 });
 
