@@ -63,7 +63,8 @@ test('single-recipient pilot upload is enforced by the backend before Storage',(
  const publish=edge.slice(edge.indexOf('async function publish('),edge.indexOf('async function revokeDocument('));
  assert.match(publish,/if\(doc\.driver_id!==await requireMilanoPasqualeRecipient\(db\)\)/);
  assert.match(admin,/if\(driver\.documents_enabled\)/);
- assert.match(admin,/if\(!selected\?\.documents_enabled\)/);
+ assert.match(admin,/if\(!recipient\?\.documents_enabled\)/);
+ assert.match(admin,/const issue=validateUploadFields\(values\)/);
  assert.match(read('amministratore/buste-paga/index.html'),/caricare e pubblicare PDF esclusivamente per MILANO PASQUALE/);
 });
 test('audit and immutable first-access evidence stay server-managed',()=>{
