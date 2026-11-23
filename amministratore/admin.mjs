@@ -19,6 +19,7 @@ let resumingDashboard=false;
 let lastAdminVerifiedAt=0;
 let adminBackgroundAt=null;
 let adminInlineResumeActive=false;
+let adminMfaGatePassed=false;
 function rememberAdminPosition(){
  if(dashboard.hidden||!account.isVerified()||account.getRole()!=='admin')return;
  rememberPosition(account.getAccountId(),dashboard.dataset.view,window.scrollX,window.scrollY);
@@ -179,6 +180,7 @@ function clearMfa(){
  setError(byId('mfa-error'),'');
 }
 function showMfaPanel(setup=false,resumed=false,purpose='primary'){
+ adminMfaGatePassed=false;
  hideResumeGuard();
  smartConsole.reset();byId('smart-command-open').hidden=true;
  adminRealtime?.stop();
@@ -232,6 +234,7 @@ async function loadBackupFactors(){
  }catch(error){byId('mfa-backup-status').textContent=errorText(error,'Stato backup non disponibile. Riprova online.');}
 }
 function lock(message='Accedi come amministratore per continuare.'){
+ adminMfaGatePassed=false;
  hideResumeGuard();
  setPasswordVisibility(false);
  byId('switch-account').hidden=!account.hasSession();
@@ -259,6 +262,7 @@ function lock(message='Accedi come amministratore per continuare.'){
  inform(message,Boolean(message));
 }
 function showDashboard(status={}){
+ adminMfaGatePassed=status.mfa_enrolled===true&&status.mfa_verified===true;
  lastAdminVerifiedAt=Date.now();
  adminBackgroundAt=null;
  hideResumeGuard();
@@ -268,7 +272,7 @@ function showDashboard(status={}){
  byId('mfa-warning').hidden=status.mfa_enrolled===true;
  byId('mfa-backup-card').hidden=!(status.mfa_enrolled&&status.mfa_verified);
  loginPanel.hidden=true;dashboard.hidden=false;byId('logout').hidden=false;
- byId('admin-return-areas').hidden=false;
+ byId('admin-return-areas').hidden=!adminMfaGatePassed;
  byId('smart-command-open').hidden=false;
  setError(loginError,'');inform('');
  companyView.open(previousPosition?.view||
@@ -279,7 +283,7 @@ function showDashboard(status={}){
 }
 // Only reveal the area chooser after server-confirmed administrator MFA.
 function showAuthenticatedAreaChoice(){
- if(!account.isVerified()||account.getRole()!=='admin')return false;
+ if(!adminMfaGatePassed||!account.isVerified()||account.getRole()!=='admin')return false;
  hideResumeGuard();
  adminRealtime?.stop();smartConsole.reset();
  byId('smart-command-open').hidden=true;
@@ -309,6 +313,7 @@ async function openAuthenticatedLogistics(){
    await authenticate(status);
    return;
   }
+  adminMfaGatePassed=true;
   const previous=showDashboard(status);
   void Promise.allSettled([loadDrivers(),loadBackupFactors()])
    .then(()=>restoreAdminPosition(previous));
@@ -359,6 +364,7 @@ async function authenticate(freshStatus=null){
    }
    if(pending)account.forgetPendingAdminMfa();
    if(status.mfa_enrolled&&status.mfa_verified){
+    adminMfaGatePassed=true;
     showAuthenticatedAreaChoice();
     return;
    }
@@ -550,7 +556,7 @@ byId('admin-choice-logout').addEventListener('click',()=>{
  lock('Hai chiuso la sessione amministratore.');
 });
 byId('admin-return-areas').addEventListener('click',()=>{
- if(account.isVerified()&&account.getRole()==='admin'){
+ if(adminMfaGatePassed&&account.isVerified()&&account.getRole()==='admin'){
   rememberAdminPosition();
   showAuthenticatedAreaChoice();
   return;
