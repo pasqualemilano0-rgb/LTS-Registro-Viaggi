@@ -1062,6 +1062,10 @@ try{
  await page.locator('#smart-search').fill('ROSSI');
  await page.locator('#smart-results .smart-result-buttons button').first().click();
  assert.equal(await page.locator('#smart-detail').isVisible(),true);
+ // Close the active modal before clicking the toolbar behind its scrim.
+ // Background clicks must remain blocked while the dialog is open.
+ await page.locator('#smart-close').click();
+ assert.equal(await page.locator('#smart-overlay').isVisible(),false);
  // Cross-area navigation remains within one verified admin MFA session.
  await page.locator('#admin-return-areas').click();
  assert.equal(await page.locator('#admin-area-choice').isVisible(),true);
