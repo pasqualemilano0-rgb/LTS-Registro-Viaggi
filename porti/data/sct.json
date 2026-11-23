@@ -1,22 +1,13 @@
 {
   "source": "https://www.salernocontainerterminal.com/ca/an/vessel_schedule.php",
   "source_updated_at": null,
-  "acquired_at": "2026-11-23T05:00:16.772Z",
+  "acquired_at": "2026-11-23T07:30:17.136Z",
   "rows": [
     {
       "vessel": "MSC NIOVI VIII",
       "voyage": "MG647W",
       "eta": "22/11/2026 00:00",
       "closing": "21/11/2026 12:00 CLOSED",
-      "acceptance_dry": "CARGO ACCEPTED",
-      "acceptance_reef": "CARGO ACCEPTED",
-      "status": "PENDING"
-    },
-    {
-      "vessel": "ULYSSE",
-      "voyage": "221126E",
-      "eta": "22/11/2026 00:00",
-      "closing": "21/11/2026 10:00 CLOSED",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
@@ -35,6 +26,15 @@
       "voyage": "52W48",
       "eta": "24/11/2026 00:00",
       "closing": "24/11/2026 17:00",
+      "acceptance_dry": "CARGO ACCEPTED",
+      "acceptance_reef": "CARGO ACCEPTED",
+      "status": "PENDING"
+    },
+    {
+      "vessel": "ULYSSE",
+      "voyage": "241126E",
+      "eta": "24/11/2026 00:00",
+      "closing": "23/11/2026 17:00",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
@@ -202,6 +202,6 @@
       "status": "PENDING"
     }
   ],
-  "updated_at": "2026-11-23T05:00:16.772Z",
-  "data_changed_at": "2026-11-22T23:00:16.869Z"
+  "updated_at": "2026-11-23T07:30:17.136Z",
+  "data_changed_at": "2026-11-23T06:45:16.538Z"
 }
