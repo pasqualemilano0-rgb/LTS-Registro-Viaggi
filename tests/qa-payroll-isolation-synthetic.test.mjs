@@ -29,7 +29,12 @@ function fixture({adminMfa=true,enabled=true,preview=false,allowedUsers=[A,B,M],
   {user_id:B,role:'driver',enabled:true,removed_at:null},
   {user_id:M,role:'admin',enabled:true,removed_at:null}
  ];
- const allowlist=allowedUsers.map(user_id=>({user_id,role:user_id===M?'admin':'driver',enabled:true,expires_at:expiry}));
+ const allowlist=allowedUsers.map(user_id=>({user_id,role:user_id===M?'admin':'driver',
+  slot:user_id===A?'driver_a':user_id===B?'driver_b':'admin',enabled:true,expires_at:expiry}));
+ const names=[
+  {auth_user_id:A,first_name:'Milano',last_name:'Pasquale'},
+  {auth_user_id:B,first_name:'Mario',last_name:'Rossi'}
+ ];
  const docs=[
   {id:docA,driver_id:A,category:'cedolino',state:'published',object_path:A+'/2026/'+docA+'.pdf',first_accessed_at:null,acknowledged_at:null},
   {id:docB,driver_id:B,category:'cedolino',state:'published',object_path:B+'/2026/'+docB+'.pdf',first_accessed_at:null,acknowledged_at:null},
@@ -48,7 +53,8 @@ function fixture({adminMfa=true,enabled=true,preview=false,allowedUsers=[A,B,M],
   order(){return this;}
   range(){return this;}
   values(){
-   const rows=this.table==='lts_account_access'?accounts:this.table==='lts_payroll_documents'?docs:this.table==='lts_payroll_test_allowlist'?allowlist:[];
+   const rows=this.table==='lts_account_access'?accounts:this.table==='lts_payroll_documents'?docs:
+    this.table==='lts_payroll_test_allowlist'?allowlist:this.table==='lts_pending_drivers'?names:[];
    return rows.filter(row=>this.filters.every(test=>test(row)));
   }
   maybeSingle(){
@@ -185,6 +191,17 @@ test('admin cannot publish a draft to a driver not enabled for the pilot',async(
  assert.equal(denied.status,403);
  assert.equal(x.docs.find(d=>d.id===draftA).state,'draft');
  assert.equal(x.audit.length,0);
+});
+test('a second allowlisted driver cannot become an upload or publication recipient',async()=>{
+ const x=fixture({enabled:false,preview:true,allowedUsers:[A,B]});
+ const r=await x.call(tokens.admin,'drivers');
+ assert.equal(r.status,200);
+ assert.equal(r.data.drivers.filter(d=>d.documents_enabled).length,1);
+ assert.equal(r.data.drivers.find(d=>d.id===B).documents_enabled,false);
+ x.docs.push({...x.docs[2],id:'10000000-0000-4000-8000-000000000004',driver_id:B});
+ const rejected=await x.call(tokens.admin,'publish',{id:'10000000-0000-4000-8000-000000000004'});
+ assert.equal(rejected.status,403);
+ assert.equal(x.docs.at(-1).state,'draft');
 });
 test('admin may publish a draft to allowlisted driver only',async()=>{
  const x=fixture({enabled:false,preview:true,allowedUsers:[A]});
