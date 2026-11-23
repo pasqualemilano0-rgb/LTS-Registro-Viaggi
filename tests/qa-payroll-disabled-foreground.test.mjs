@@ -39,7 +39,7 @@ function harness(){
  const pageshow=part("window.addEventListener('pageshow',event=>{","// Direct open and foreground restoration");
  new Function('document','window','authenticate','hideDocuments','payrollConfigured','showNotConfigured','locked',
   listeners+pageshow)(document,window,impl.authenticate,hideDocuments,impl.payrollConfigured,impl.showNotConfigured,()=>{});
- return {impl,nodes,events,document,reset(){nodes.content.hidden=false;notice='Old API error';},
+ return {impl,nodes,events,document,runtime,reset(){nodes.content.hidden=false;notice='Old API error';},
   get authCalls(){return authCalls;},get apiCalls(){return apiCalls;},
   get hideCalls(){return hideCalls;},get notice(){return notice;}};
 }
@@ -91,4 +91,27 @@ test('a configured endpoint still takes the ordinary protected auth path',()=>{
  assert.match(src,/await api\.acknowledge\(doc\.id\)/);
  assert.match(src,/await api\.download\(doc\.id\)/);
  assert.match(src,/window\.history\.back\(\)/);
+});
+
+test('background hide and resume always return to disabled message',async()=>{
+ const h=harness();
+ h.document.hidden=true;h.events.visibilitychange();
+ assert.equal(h.nodes.content.hidden,true);
+ h.document.hidden=false;h.reset();h.events.visibilitychange();
+ await Promise.resolve();
+ assert.equal(h.nodes.content.hidden,true);
+ assert.equal(h.nodes.locked.hidden,false);
+ assert.equal(h.authCalls,0);assert.equal(h.apiCalls,0);
+});
+test('empty and whitespace payroll endpoints cannot enable protected UI',async()=>{
+ const h=harness();
+ h.runtime.accountAuth.payrollEndpoint='   ';
+ assert.equal(h.impl.payrollConfigured(),false);
+ await h.impl.authenticate();
+ assert.equal(h.nodes.content.hidden,true);
+ h.runtime.accountAuth.payrollEndpoint='';
+ assert.equal(h.impl.payrollConfigured(),false);
+ h.runtime.accountAuth=null;
+ assert.equal(h.impl.payrollConfigured(),false);
+ assert.equal(h.authCalls,0);
 });
