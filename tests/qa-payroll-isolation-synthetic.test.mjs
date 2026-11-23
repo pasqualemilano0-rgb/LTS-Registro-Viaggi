@@ -116,18 +116,27 @@ function fixture({adminMfa=true,enabled=true,allowedUsers=[A,B,M],expiry='2099-0
  return {call,docs,audit,reads};
 }
 
-test('production payroll release flag remains OFF by default and denies every document action',async()=>{
- const x=fixture({enabled:false});
- for(const [actor,action] of [
-  [tokens.a,'download'],[tokens.a,'acknowledge'],[tokens.a,'list'],
-  [tokens.admin,'publish'],[tokens.admin,'drivers']
- ]){
-  const outcome=await x.call(actor,action,{id:docA});
-  assert.equal(outcome.status,503,'disabled backend must not serve '+action);
+test('full payroll stays OFF, preview permits ONLY allowlisted driver read-only list',async()=>{
+ const x=fixture({enabled:false,allowedUsers:[A]});
+ const listing=await x.call(tokens.a,'list');
+ assert.equal(listing.status,200,'allowlisted active driver sees their own list');
+ assert.equal(listing.data.documents.length,1,'unpublished and other driver files hidden');
+ assert.equal(listing.data.documents[0].id,docA);
+ assert.equal((await x.call(tokens.b,'list')).status,403,'no access for other driver');
+ assert.equal((await x.call(tokens.admin,'list')).status,403,'no admin test seat');
+ for(const action of ['download','acknowledge','publish','revoke','drivers']){
+  const result=await x.call(tokens.a,action,{id:docA});
+  assert.equal(result.status,503,'global OFF must block '+action);
  }
- assert.equal(x.reads.length,0,'no Storage data read while disabled');
- assert.equal(x.audit.length,0,'no audit/data writes while disabled');
- assert.equal(x.docs[0].acknowledged_at,null,'no implicit receipt while disabled');
+ assert.equal(x.reads.length,0,'no Storage bytes read during preview');
+ assert.equal(x.audit.length,0,'no audit/data writes during preview');
+ assert.equal(x.docs[0].acknowledged_at,null,'no receipt during preview');
+});
+test('expired or missing tester never sees preview documents even with flag OFF',async()=>{
+ const missing=fixture({enabled:false,allowedUsers:[]});
+ assert.equal((await missing.call(tokens.a,'list')).status,403);
+ const expired=fixture({enabled:false,allowedUsers:[A],expiry:'2020-01-01T00:00:00Z'});
+ assert.equal((await expired.call(tokens.a,'list')).status,403);
 });
 test('flag ON still denies ALL non-allowlisted users, including admins, before Storage',async()=>{
  const x=fixture({enabled:true,allowedUsers:[]});
