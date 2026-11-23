@@ -28,7 +28,9 @@ async function request(payload,{multipart=false,pdf=false}={}){
    body:multipart?payload:JSON.stringify(payload),signal:abort.signal});
   if(!response.ok){
    const result=await response.json().catch(()=>({}));
-   throw Error(result?.error||'Richiesta documenti non riuscita ('+response.status+').');
+   const error=Error(result?.error||'Richiesta documenti non riuscita ('+response.status+').');
+   error.status=response.status;
+   throw error;
   }
   if(pdf){
    if(!(response.headers.get('content-type')||'').startsWith('application/pdf'))
