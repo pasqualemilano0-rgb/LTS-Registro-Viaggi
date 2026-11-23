@@ -98,17 +98,28 @@ test('admin payroll page requires distinct login despite existing LTS session',(
  assert.match(admin,/busy\(false\);\s*await check\(\);/);
 });
 
-test('profile shows document link only after server verifies preview eligibility',()=>{
- assert.match(profile,/store\.usingAccount\(\)&&accountAccess\.isVerified\(\)/);
- assert.match(profile,/accountAccess\.getRole\(\)==='driver'/);
+test('profile reuses a server-approved driver check without fetching on every click',()=>{
+ assert.match(profile,/if\(payrollProfileEligible\(\)\)\{/);
  assert.match(profile,/const accountOwner=accountAccess\.getAccountId\(\)/);
- assert.match(profile,/await api\.documents\(\{offset:0\}\)/);
- assert.match(profile,/!Array\.isArray\(result\?\.documents\)\|\|!dialog\.open/);
+ assert.match(profile,/if\(payrollProfileCached\(accountOwner\)\)showAuthorizedDocuments\(true\)/);
+ assert.match(profile,/void prefetchPayrollProfileAccess\(\)\.then\(showAuthorizedDocuments\)/);
+ assert.match(profile,/!dialog\.open\|\|!payrollProfileEligible\(\)/);
  assert.match(profile,/accountAccess\.getAccountId\(\)!==accountOwner/);
+ assert.match(profile,/if\(!authorized\)\{/);
+ assert.match(profile,/current\?\.remove\(\)/);
  assert.match(profile,/menuButton\('I MIEI DOCUMENTI'/);
  assert.match(profile,/new URL\('documenti\/',import\.meta\.url\)/);
- assert.match(text('runtime-config.mjs'),/"payrollEndpoint":/);
+ assert.match(profile,/if\(current\)return/);
+ assert.match(profile,/if\(existing\)existing\.prepend\(item\)/);
+ assert.match(profile,/if\(first\)first\.before\(group\);else body\.append\(group\)/);
+ assert.match(profile,/const showAuthorizedDocuments=authorized=>/);
+ assert.match(profile,/if\(payrollProfileEligible\(\)\)/);
+ assert.match(profile,/payrollProfileCached\(accountOwner\)/);
+ assert.match(profile,/prefetchPayrollProfileAccess\(\)/);
+ const prefetch=profile.slice(profile.indexOf('if(payrollProfileEligible()){'));
+ assert.doesNotMatch(prefetch,/await api\.documents/,'profile opening must not wait for network');
  assert.doesNotMatch(profile,/Deno\.env|getAccountId\(\)===['"][a-f0-9-]{36}/);
+ assert.match(text('runtime-config.mjs'),/"payrollEndpoint":/);
  const page=text('documenti/driver-documents.mjs');
  assert.match(page,/const status=await account\.verifySession\(\)/);
  assert.match(page,/function payrollConfigured\(\)/);

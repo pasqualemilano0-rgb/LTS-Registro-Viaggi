@@ -35,7 +35,7 @@ test('profile section order makes documents first and logout last',()=>{
 });
 
 test('profile account and document authorization conditions are preserved',()=>{
- assert.match(profile,/if\(accountAccess\.isEnabled\(\)\&\&store\.usingAccount\(\)\&\&accountAccess\.isVerified\(\)\&\&/);
+ assert.match(profile,/if\(payrollProfileEligible\(\)\)\{/);
  assert.match(profile,/menuButton\('I MIEI DOCUMENTI'/);
  assert.match(profile,/if\(store\.usingAccount\(\)\&\&accountAccess\.getRole\(\)==='admin'\&\&accountAccess\.isVerified\(\)\)/);
  assert.match(profile,/if\(store\.usingAccount\(\)\)\{/);
@@ -52,7 +52,8 @@ test('profile account and document authorization conditions are preserved',()=>{
  assert.doesNotMatch(profile,/appendPushSettings\(body|push-settings|reminder/i);
  assert.doesNotMatch(app,/import \{ appendPushSettings \}/);
  assert.match(read('runtime-config.mjs'),/payrollEndpoint/);
- assert.match(profile,/await api\.documents\(\{offset:0\}\)/);
+ assert.match(app,/await api\.documents\(\{offset:0\}\)/);
+ assert.match(profile,/if\(payrollProfileCached\(accountOwner\)\)showAuthorizedDocuments\(true\)/);
  assert.match(profile,/accountAccess\.getAccountId\(\)!==accountOwner/);
 });
 

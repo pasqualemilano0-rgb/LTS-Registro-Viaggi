@@ -91,6 +91,62 @@ let refreshTripFareEstimate=null;
 let portiFrame = null;
 let subscribed = false;
 let realtimeBridge=null;
+// Presentation-only cache. Authorization and PDF ownership remain server-side.
+const PAYROLL_PROFILE_CHECK_INTERVAL_MS=60000;
+const PAYROLL_PROFILE_DENIED_CHECK_INTERVAL_MS=600000;
+const PAYROLL_PROFILE_RETRY_INTERVAL_MS=30000;
+let payrollProfileAccess={owner:null,allowed:false,retrySoon:false,checkedAt:0,pending:null,generation:0};
+function payrollProfileEligible(){
+ return accountAccess.isEnabled()&&store.usingAccount()&&accountAccess.isVerified()&&
+  accountAccess.getRole()==='driver'&&
+  typeof runtimeConfig.accountAuth?.payrollEndpoint==='string'&&
+  Boolean(runtimeConfig.accountAuth.payrollEndpoint.trim());
+}
+function resetPayrollProfileAccess(){
+ payrollProfileAccess={owner:null,allowed:false,retrySoon:false,checkedAt:0,pending:null,
+  generation:payrollProfileAccess.generation+1};
+}
+function payrollProfileCached(owner){
+ return payrollProfileEligible()&&Boolean(owner)&&
+  payrollProfileAccess.owner===owner&&payrollProfileAccess.allowed;
+}
+async function prefetchPayrollProfileAccess(force=false){
+ if(!payrollProfileEligible()){resetPayrollProfileAccess();return false;}
+ const owner=accountAccess.getAccountId();
+ if(!owner){resetPayrollProfileAccess();return false;}
+ if(payrollProfileAccess.owner!==owner){
+  payrollProfileAccess={owner,allowed:false,retrySoon:false,checkedAt:0,pending:null,
+   generation:payrollProfileAccess.generation+1};
+ }
+ const interval=payrollProfileAccess.allowed?PAYROLL_PROFILE_CHECK_INTERVAL_MS:
+  payrollProfileAccess.retrySoon?PAYROLL_PROFILE_RETRY_INTERVAL_MS:
+  PAYROLL_PROFILE_DENIED_CHECK_INTERVAL_MS;
+ if(!force&&payrollProfileAccess.checkedAt&&
+    Date.now()-payrollProfileAccess.checkedAt<interval)
+  return payrollProfileAccess.allowed;
+ if(payrollProfileAccess.pending)return payrollProfileAccess.pending;
+ const generation=payrollProfileAccess.generation;
+ const request=(async()=>{
+  let allowed=false,retrySoon=false;
+  try{
+   const api=await import(new URL('documenti/document-api.mjs',import.meta.url).href);
+   const result=await api.documents({offset:0});
+   allowed=Array.isArray(result?.documents);
+  }catch(error){
+   // Recheck outages quickly; throttle definitive 401/403/428 denials.
+   retrySoon=![401,403,428].includes(Number(error?.status));
+  }
+  if(generation!==payrollProfileAccess.generation||
+     owner!==accountAccess.getAccountId()||!payrollProfileEligible())return false;
+  payrollProfileAccess.allowed=allowed;
+  payrollProfileAccess.retrySoon=retrySoon;
+  payrollProfileAccess.checkedAt=Date.now();
+  return allowed;
+ })();
+ payrollProfileAccess.pending=request;
+ try{return await request;}
+ finally{if(payrollProfileAccess.pending===request)payrollProfileAccess.pending=null;}
+}
 function beginLtsRealtime(){
  if(!store.usingAccount()||!accountAccess.isVerified())return;
  realtimeBridge?.stop();
@@ -321,6 +377,7 @@ function receiveState(record,{source}={}){
  const changedIdentity=Boolean(user?.id&&record.user?.id!==user.id);
  const previous=state;state=D.validateState(record.state);refreshDraftCustomers(previous,state);user=record.user||null;pdfReport=null;
  if(changedIdentity){
+  resetPayrollProfileAccess();
   draft=newDraft();draftBaselineDate=draft.date;editingId=null;editingBaseline=null;tripDraftRecoveryMessage='';
   lastDeletedTrip=null;registerQuery='';registerFilter='all';registerLimit=REGISTER_PAGE_SIZE;document.querySelectorAll('dialog').forEach(dialog=>dialog.close());render();
   // initialize() owns first-time account onboarding. Avoid opening two
@@ -1386,23 +1443,22 @@ function openProfile(required=false){
       ungrouped.map(item=>item.dataset.profileAction));
   }
   oldProfileMenu.replaceWith(...groups);
-  if(accountAccess.isEnabled()&&store.usingAccount()&&accountAccess.isVerified()&&
-     accountAccess.getRole()==='driver'&&
-     typeof runtimeConfig.accountAuth?.payrollEndpoint==='string'&&
-     runtimeConfig.accountAuth.payrollEndpoint.trim()){
+  if(payrollProfileEligible()){
     const accountOwner=accountAccess.getAccountId();
-    // A hidden menu item is not a security boundary. Only the actual,
-    // live-session checked payroll list API may authorize its creation.
-    void (async()=>{
-      const api=await import(new URL('documenti/document-api.mjs',import.meta.url).href);
-      const result=await api.documents({offset:0});
-      if(!Array.isArray(result?.documents)||!dialog.open||
-         !store.usingAccount()||!accountAccess.isVerified()||
-         accountAccess.getRole()!=='driver'||accountAccess.getAccountId()!==accountOwner)return;
+    const showAuthorizedDocuments=authorized=>{
+      if(!dialog.open||!payrollProfileEligible()||
+         accountAccess.getAccountId()!==accountOwner)return;
+      const current=body.querySelector('[data-profile-action="I MIEI DOCUMENTI"]');
+      if(!authorized){
+        current?.remove();
+        const group=body.querySelector('.profile-action-group--services');
+        if(group&&!group.querySelector('.menu-button'))group.remove();
+        return;
+      }
+      if(current)return;
       const item=menuButton('I MIEI DOCUMENTI',
         'CEDOLINO · CU · ALTRI DOCUMENTI. Solo i tuoi PDF pubblicati.',
         'pdf',()=>{
-          // Return to the existing register history entry without replaying its loader.
           const target=new URL('documenti/',import.meta.url);
           target.searchParams.set('from','profile');
           dialog.close();window.location.assign(target.href);
@@ -1419,7 +1475,11 @@ function openProfile(required=false){
         const first=body.querySelector('.profile-action-group');
         if(first)first.before(group);else body.append(group);
       }
-    })().catch(()=>{/* Preview is invisible if offline, unauthorized or expired. */});
+    };
+    // Previously server-approved access is rendered synchronously, with
+    // background refresh; no new network call for every opening of Profile.
+    if(payrollProfileCached(accountOwner))showAuthorizedDocuments(true);
+    void prefetchPayrollProfileAccess().then(showAuthorizedDocuments);
   }
 
   body.append(el('div',{class:'info-note',style:'margin-top:17px;margin-bottom:0'},icon('lock'),'Il PDF mensile contiene viaggi e servizi. Le tariffe e gli importi restano solo nell’app.'));
@@ -2119,6 +2179,7 @@ function accountInstallBanner(){
   el('span',{class:'account-install-banner-wave','aria-hidden':'true'}));
 }
 function renderAccountGate(message=''){
+ resetPayrollProfileAccess();
  realtimeBridge?.stop();realtimeBridge=null;
  companyCustomers=[];
  companyCustomersError='';
@@ -2204,6 +2265,7 @@ async function verifyDriverOnResume(){
   driverBackgroundAt=null;
   clearResumeRetry();
   driverSessionShield.close();
+  void prefetchPayrollProfileAccess(payrollProfileAccess.allowed);
   void refreshCompanyCustomers();
   if(['insert','tariffs','customers'].includes(tab))void refreshCompanyRates();
  }catch(error){
@@ -2234,6 +2296,7 @@ function resumeDriverWhenVisible(){
  });
  driverBackgroundAt=null;
  if(required)void verifyDriverOnResume();
+ else void prefetchPayrollProfileAccess();
 }
 document.addEventListener('visibilitychange',()=>{
  if(document.hidden){driverBackgroundAt=Date.now();clearResumeRetry();}
@@ -2243,6 +2306,7 @@ window.addEventListener('pagehide',()=>{driverBackgroundAt=Date.now();clearResum
 window.addEventListener('pageshow',event=>{if(event.persisted)resumeDriverWhenVisible();});
 window.addEventListener('online',()=>{
  if(driverSessionShield.isVisible())void verifyDriverOnResume();
+ else void prefetchPayrollProfileAccess(payrollProfileAccess.allowed);
 });
 window.addEventListener('offline',()=>{
  if(driverSessionShield.isVisible())scheduleResumeRetry();
@@ -2342,7 +2406,10 @@ async function initialize(){
     }
   }else result=await store.loadState();
   state=D.validateState(result?.state||result);user=result?.user||null;
-  if(store.usingAccount()&&accountAccess.isVerified())lastDriverVerifiedAt=Date.now();
+  if(store.usingAccount()&&accountAccess.isVerified()){
+   lastDriverVerifiedAt=Date.now();
+   void prefetchPayrollProfileAccess();
+  }
   const subscribe=store.subscribeStatus||store.onStatus;if(subscribe)subscribe(setStatus);
   if(!subscribed&&store.subscribeState){store.subscribeState(receiveState);subscribed=true;}
   if(result?.status)setStatus(result.status);
@@ -2419,6 +2486,10 @@ document.addEventListener('visibilitychange',()=>{
  if(!document.hidden)void checkInstalledAppVersion();
 });
 setInterval(()=>void checkInstalledAppVersion(),120000);
+// Keep access warm in memory for the next profile opening.
+setInterval(()=>{
+ if(!document.hidden&&navigator.onLine!==false)void prefetchPayrollProfileAccess();
+},PAYROLL_PROFILE_CHECK_INTERVAL_MS);
 window.addEventListener('online',()=>realtimeBridge?.resume());
 window.addEventListener('focus',()=>realtimeBridge?.resume());
 window.addEventListener('offline',()=>realtimeBridge?.resume());
