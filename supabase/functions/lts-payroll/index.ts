@@ -124,19 +124,24 @@ async function activeDriver(db,id){
  * directory as a second fail-closed check. Neither the browser nor a name
  * supplied with a request is an authority for document assignment.
  */
-async function requireMilanoPasqualeRecipient(db){
+async function requireMilanoPasqualeRecipient(db,required=true){
  const {data:seat,error:seatError}=await db.from('lts_payroll_test_allowlist')
   .select('user_id').eq('slot','driver_a').eq('role','driver')
   .eq('enabled',true).gt('expires_at',new Date().toISOString()).maybeSingle();
  if(seatError)fail(503,'Autorizzazione del destinatario temporaneamente non verificabile.');
- if(!seat?.user_id)fail(403,'Destinatario di prova non più abilitato.');
+ if(!seat?.user_id){
+  if(required)fail(403,'Destinatario di prova non più abilitato.');
+  return null;
+ }
  const {data:identity,error:identityError}=await db.from('lts_pending_drivers')
   .select('auth_user_id,first_name,last_name')
   .eq('auth_user_id',seat.user_id).maybeSingle();
  if(identityError)fail(503,'Identità del destinatario temporaneamente non verificabile.');
  const normal=value=>typeof value==='string'?value.trim().toLocaleLowerCase('it'):'';
- if(!identity||normal(identity.first_name)!=='milano'||normal(identity.last_name)!=='pasquale')
-  fail(403,'Il destinatario autorizzato non corrisponde a MILANO PASQUALE.');
+ if(!identity||normal(identity.first_name)!=='milano'||normal(identity.last_name)!=='pasquale'){
+  if(required)fail(403,'Il destinatario autorizzato non corrisponde a MILANO PASQUALE.');
+  return null;
+ }
  return seat.user_id;
 }
 async function roster(db){
@@ -153,7 +158,7 @@ async function roster(db){
  const lookup=new Map((names||[]).map(n=>[n.auth_user_id,n]));
  // Administrators can review the whole archive, but may upload/publish
  // exclusively to the verified single test recipient.
- const pilotDriverId=await requireMilanoPasqualeRecipient(db);
+ const pilotDriverId=await requireMilanoPasqualeRecipient(db,false);
  return data.map(x=>({id:x.user_id,
   name:[lookup.get(x.user_id)?.first_name,lookup.get(x.user_id)?.last_name]
    .filter(Boolean).join(' ').trim()||'Autista senza nome',
