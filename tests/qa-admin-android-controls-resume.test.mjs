@@ -91,7 +91,7 @@ test('failed authorization hides workspace instead of unlocking it',()=>{
 });
 
 test('page refresh loads patched module and leaves upload validation and MFA in place',()=>{
- assert.match(page,/admin-documents\.mjs\?v=20261123-android-controls-v1/);
+ assert.match(page,/admin-documents\.mjs\?v=20261123-single-login-v1/);
  assert.match(page,/id="category"/);
  assert.match(page,/id="month"/);
  assert.match(page,/id="files"/);
