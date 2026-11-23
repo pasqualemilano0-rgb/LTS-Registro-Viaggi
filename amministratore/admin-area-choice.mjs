@@ -1,3 +1,4 @@
+import runtime from '../runtime-config.mjs';
 /**
  * Presentation-only chooser for the two independent LTS administrative areas.
  * This module never reads passwords, changes account roles, or bypasses MFA.
@@ -32,3 +33,16 @@ document.getElementById('logout')?.addEventListener('click',showChooser);
 window.addEventListener('pageshow',event=>{
  if(event.persisted&&loginPanel&&!loginPanel.hidden)showChooser();
 });
+
+// Do not advertise an unavailable payroll service in the released LTS shell.
+const payrollConfigured=typeof runtime.accountAuth?.payrollEndpoint==='string'&&
+ Boolean(runtime.accountAuth.payrollEndpoint.trim());
+if(!payrollConfigured){
+ const tile=document.getElementById('select-area-amministrativa');
+ tile?.removeAttribute('href');
+ tile?.setAttribute('aria-disabled','true');
+ tile?.classList.add('area-unavailable');
+ const label=tile?.querySelector('.admin-area-tile-link');
+ if(label)label.textContent='In preparazione';
+ for(const link of document.querySelectorAll('a[href="./buste-paga/"]'))link.hidden=true;
+}
