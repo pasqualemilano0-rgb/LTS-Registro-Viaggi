@@ -286,3 +286,39 @@ input[type=file]{border-style:dashed}
  .driver-documents-page .archive-toolbar{grid-template-columns:1fr;gap:10px}
  .driver-documents-page .filters select{width:100%;min-width:0;max-width:none}
 }
+
+/* Mobile fix v3: the Android native select reserves more room for its arrow.
+ * Keep the label on the same line but let the actual select fill the rest.
+ * This override follows every narrower breakpoint, including <=330px.
+ */
+@media(max-width:620px){
+ .driver-documents-page .archive-toolbar{
+  display:grid;
+  grid-template-columns:minmax(0,1fr);
+  gap:11px;
+  align-items:stretch;
+ }
+ .driver-documents-page .filters{
+  display:grid;
+  grid-template-columns:44px minmax(0,1fr);
+  align-items:center;
+  gap:12px;
+  width:100%;
+  min-width:0;
+ }
+ .driver-documents-page .filters label{
+  display:block;
+  min-width:0;
+  font-size:12px;
+ }
+ .driver-documents-page .filters select{
+  display:block;
+  box-sizing:border-box;
+  width:100%;
+  min-width:0;
+  max-width:none;
+  padding:10px 40px 10px 13px;
+  font-size:14px;
+  line-height:1.3;
+ }
+}
