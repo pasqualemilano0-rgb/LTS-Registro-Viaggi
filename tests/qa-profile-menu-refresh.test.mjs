@@ -77,3 +77,14 @@ test('compact mobile styles and accessible grouped navigation are scoped',()=>{
  assert.match(css,/@media\(max-width:480px\)/);
  assert.match(profile,/el\('section',\{class:'profile-action-group profile-action-group--'\+kind,'aria-label':title\}/);
 });
+
+test('I MIEI DOCUMENTI uses PDF icon, backup icons remain download/upload, arrow is SVG',()=>{
+ const docs=profile.indexOf("menuButton('I MIEI DOCUMENTI'");
+ assert.ok(docs>=0,'Documents action remains in driver profile');
+ assert.match(profile.slice(docs,docs+440),/'pdf',\(\)=>\{/);
+ assert.match(app,/pdf:\['M14 2H6/);
+ assert.match(app,/title==='I MIEI DOCUMENTI'\?icon\('chevron'\):'›'/);
+ assert.match(app,/menuButton\('Esporta backup',[^\n]*'download'/);
+ assert.match(app,/menuButton\('Importa backup',[^\n]*'upload'/);
+ assert.match(css,/\.profile-action-group \.menu-button-featured \.menu-arrow>\.icon/);
+});
