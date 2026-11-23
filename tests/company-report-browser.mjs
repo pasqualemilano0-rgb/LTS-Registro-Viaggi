@@ -295,7 +295,9 @@ const server=createServer(async(req,res)=>{
  if(path==='/account-access.mjs'){res.writeHead(200,{'Content-Type':'text/javascript','Cache-Control':'no-store'}).end(mockAccount);return;}
  if(path==='/shared-maps-client.mjs'){res.writeHead(200,{'Content-Type':'text/javascript','Cache-Control':'no-store'}).end(mockSharedMaps);return;}
   if(path==='/maps-reader-client.mjs'){res.writeHead(200,{'Content-Type':'text/javascript','Cache-Control':'no-store'}).end(mockMapsReader);return;}
- const file=path==='/amministratore/'?'amministratore/index.html':path.slice(1);
+ const file=path==='/amministratore/'?'amministratore/index.html':
+   path==='/amministratore/buste-paga/'?'amministratore/buste-paga/index.html':
+   path.slice(1);
  const target=resolve(root,file);
  if(target!==root&&!target.startsWith(root+sep)){res.writeHead(403).end();return;}
  try{const data=await readFile(target);res.writeHead(200,{'Content-Type':mime[extname(target)]||'application/octet-stream'}).end(data);}
