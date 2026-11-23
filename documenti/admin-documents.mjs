@@ -1,4 +1,5 @@
 import * as account from '../account-access.mjs';
+import runtime from '../runtime-config.mjs';
 import * as api from './document-api.mjs';
 const $=id=>document.getElementById(id);
 let roster=[],offset=0,loading=false;
@@ -226,4 +227,10 @@ document.addEventListener('visibilitychange',()=>{
 
 // Always display an independent payroll login, even when LTS Admin is already open.
 protect();
+if(typeof runtime.accountAuth?.payrollEndpoint!=='string'||!runtime.accountAuth.payrollEndpoint.trim()){
+ $('login').querySelector('h1').textContent='Gestione documenti — In preparazione';
+ $('login').querySelector('p').textContent='La gestione dei cedolini non è ancora attiva. Nessun documento personale può essere caricato o aperto da questa pagina.';
+ $('login-form').hidden=true;
+ $('clear-session').hidden=true;
+}
 window.addEventListener('pageshow',event=>{if(event.persisted)protect();});
