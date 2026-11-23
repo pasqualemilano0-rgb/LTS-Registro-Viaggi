@@ -1,4 +1,5 @@
 import * as account from '../account-access.mjs';
+import runtime from '../runtime-config.mjs';
 import * as api from './document-api.mjs';
 const $=id=>document.getElementById(id);
 let category='cedolino',offset=0,busy=false,activePdfPreview=null;
@@ -182,4 +183,13 @@ window.addEventListener('pagehide',()=>hideDocuments());
 window.addEventListener('pageshow',event=>{
  if(event.persisted)void authenticate();
 });
-void authenticate();
+// A direct link may exist after code publication, but payroll is not enabled.
+if(typeof runtime.accountAuth?.payrollEndpoint!=='string'||!runtime.accountAuth.payrollEndpoint.trim()){
+ $('locked').hidden=false;
+ $('locked').querySelector('h1').textContent='I MIEI DOCUMENTI — In preparazione';
+ $('locked').querySelector('p').textContent='Il servizio paghe non è ancora attivo. Nessun PDF personale è disponibile da questa pagina.';
+ $('locked').querySelector('a').textContent='Torna al Registro Viaggi';
+}else{
+ void authenticate();
+}
+
