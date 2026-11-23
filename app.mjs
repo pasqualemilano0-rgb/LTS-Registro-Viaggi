@@ -17,7 +17,6 @@ import {companyExtraSnapshot} from '/LTS-Registro-Viaggi/shared/company-extras.m
 import {mapsLinkForCompanySync,filterSharedCustomers} from '/LTS-Registro-Viaggi/shared/maps-company-routing.mjs';
 import {dedupedCustomerDirectory,matchingSharedCustomer,canonicalPersonalCustomer} from '/LTS-Registro-Viaggi/shared/customer-site-matches.mjs';
 import {combinedTripCustomerChoices,filterTripCustomerChoices,suggestTripCustomerChoices} from '/LTS-Registro-Viaggi/shared/trip-customer-choices.mjs';
-import { appendPushSettings } from '/LTS-Registro-Viaggi/push-client.mjs';
 import { parseCustomerCsv, mergeCustomerCsv, exportCustomerCsv, MAX_CUSTOMER_CSV_BYTES } from '/LTS-Registro-Viaggi/shared/customer-csv.mjs';
 import {restoreDeletedPersonalCustomer,customerCsvChanges} from '/LTS-Registro-Viaggi/shared/customer-quality.mjs';
 
@@ -1321,7 +1320,6 @@ function openProfile(required=false){
   const importInput=el('input',{type:'file',accept:'.json,.zip,application/json,application/zip',class:'visually-hidden','aria-label':'Seleziona un backup',on:{change:async event=>{const file=event.target.files?.[0];if(!file)return;dialog.close();await importFile(file);}}});
   const installItem=menuButton('Installa app','Aggiungi LTS alla schermata Home.','download',startInstall);installItem.dataset.installTrigger='';installItem.hidden=isInstalled();
   body.append(el('div',{class:'profile-separator'}),el('div',{class:'profile-menu'},menuButton('Sincronizza adesso','Invia online le modifiche salvate sul telefono.','cloud',async()=>{try{const result=await store.syncPending();if(result?.state)state=D.validateState(result.state);dialog.close();render();toast('Sincronizzazione completata.');}catch(err){toast(err.message||'Sincronizzazione non riuscita.',true);}}),menuButton('Esporta backup','Salva una copia in File o su Google Drive.','download',()=>downloadBackup()),menuButton('Importa backup','Backup web JSON o archivio Android ZIP.','upload',()=>importInput.click()),menuButton('Ricarica dati online','Recupera la versione online dopo aver conservato un backup.','refresh',()=>{dialog.close();confirmAction('Ricaricare i dati online?','Prima esporta un backup. Le modifiche non sincronizzate sul telefono saranno sostituite dai dati online.',async()=>{const result=await store.loadState({preferRemote:true});state=D.validateState(result.state);user=result.user||null;draft=newDraft();editingId=null;editingBaseline=null;render();toast('Registro online ricaricato.');},'Ricarica');}),installItem,importInput));
-  appendPushSettings(body,{apiRequest:store.pushRequest,toast});
   const syncInfo=store.getSyncInfo();
   if(!store.usingAccount())body.querySelector('.profile-menu').prepend(menuButton('Collega dispositivi',syncInfo.linked?'Archivio condiviso: viaggi, clienti e tariffe si aggiornano online.':'Collega iPhone e Android con un codice temporaneo.','link',()=>{dialog.close();deviceLinkDialog();}));
   if(accountAccess.isEnabled()){
@@ -1381,13 +1379,11 @@ function openProfile(required=false){
   };
   addProfileGroup('Accesso rapido','Le funzioni collegate al tuo account.','services',
     ['I MIEI DOCUMENTI','Gestisci autisti','Accedi con account autista']);
-  const documentEntry=profileActions.get('I MIEI DOCUMENTI');
-  if(documentEntry)documentEntry.classList.add('menu-button-featured');
   addProfileGroup('Dati e sincronizzazione','Mantieni aggiornato il registro sui tuoi dispositivi.','sync',
     ['Risolvi sincronizzazione','Sincronizza adesso','Collega dispositivi']);
   addProfileGroup('Archivio e backup','Salva, trasferisci o recupera una copia dei tuoi viaggi.','backup',
     ['Esporta backup','Importa backup','Recupera archivio precedente','Esporta per Android','Ricarica dati online']);
-  const accountGroup=addProfileGroup('Account e sicurezza','Accesso e impostazioni del dispositivo.','security',
+  addProfileGroup('Account e sicurezza','Accesso e impostazioni del dispositivo.','security',
     ['Installa app','Esci dall’account']);
   if(profileActions.get('Esci dall’account'))profileActions.get('Esci dall’account').classList.add('menu-button-logout');
   const importField=oldProfileMenu.querySelector('input[type=file]');
@@ -1402,9 +1398,6 @@ function openProfile(required=false){
       ungrouped.map(item=>item.dataset.profileAction));
   }
   oldProfileMenu.replaceWith(...groups);
-  // Notification settings remain available before final account actions.
-  const notifications=body.querySelector('.push-settings');
-  if(notifications&&accountGroup)accountGroup.before(notifications);
 
   body.append(el('div',{class:'info-note',style:'margin-top:17px;margin-bottom:0'},icon('lock'),'Il PDF mensile contiene viaggi e servizi. Le tariffe e gli importi restano solo nell’app.'));
   body.append(el('p',{class:'subtle-footer'},store.usingAccount()
