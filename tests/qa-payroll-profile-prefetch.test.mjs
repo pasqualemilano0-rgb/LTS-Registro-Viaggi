@@ -51,6 +51,9 @@ test('a denied, expired or failed server check never creates a menu permission',
  assert.equal(x.api.payrollProfileCached('driver-A'),false);
  x.state.auth=true;
  x.time.ms+=61000;
+ assert.equal(await x.api.prefetchPayrollProfileAccess(),false);
+ assert.equal(x.calls(),1,'denied accounts must not poll every minute');
+ x.time.ms+=540000;
  assert.equal(await x.api.prefetchPayrollProfileAccess(),true);
  assert.equal(x.api.payrollProfileCached('driver-A'),true);
  x.state.auth=false;
@@ -118,7 +121,7 @@ test('profile prefetch happens at bootstrap and verified resume, not on click',(
  assert.match(profile,/if\(payrollProfileCached\(accountOwner\)\)showAuthorizedDocuments\(true\)/);
  assert.match(profile,/void prefetchPayrollProfileAccess\(\)\.then\(showAuthorizedDocuments\)/);
  assert.match(app,/lastDriverVerifiedAt=Date\.now\(\);\s*void prefetchPayrollProfileAccess\(\)/);
- assert.match(app,/driverSessionShield\.close\(\);\s*void prefetchPayrollProfileAccess\(true\)/);
+ assert.match(app,/driverSessionShield\.close\(\);\s*void prefetchPayrollProfileAccess\(payrollProfileAccess\.allowed\)/);
  assert.match(app,/function renderAccountGate\(message=''\)\{\s*resetPayrollProfileAccess\(\)/);
  assert.match(app,/if\(changedIdentity\)\{\s*resetPayrollProfileAccess\(\)/);
  assert.doesNotMatch(before,/localStorage|sessionStorage|indexedDB/);
