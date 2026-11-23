@@ -1323,24 +1323,8 @@ function openProfile(required=false){
   const syncInfo=store.getSyncInfo();
   if(!store.usingAccount())body.querySelector('.profile-menu').prepend(menuButton('Collega dispositivi',syncInfo.linked?'Archivio condiviso: viaggi, clienti e tariffe si aggiornano online.':'Collega iPhone e Android con un codice temporaneo.','link',()=>{dialog.close();deviceLinkDialog();}));
   if(accountAccess.isEnabled()){
-    // Keep the profile entry discoverable even while payroll remains disabled.
-    // The documents page handles the unavailable state; API authorization is
-    // enforced separately by the production Edge (JWT, session and allowlist).
-    if(store.usingAccount()&&accountAccess.getRole()==='driver'){
-      const payrollAvailable=typeof runtimeConfig.accountAuth?.payrollEndpoint==='string'&&
-        Boolean(runtimeConfig.accountAuth.payrollEndpoint.trim());
-      body.querySelector('.profile-menu').prepend(menuButton('I MIEI DOCUMENTI',
-        payrollAvailable
-          ?'CEDOLINO · CU · ALTRI DOCUMENTI. Solo i tuoi PDF pubblicati.'
-          :'CEDOLINO · CU · ALTRI DOCUMENTI. Servizio in preparazione.',
-        'pdf',()=>{
-          // Mark the in-app navigation so Documents can return with browser
-          // history, restoring the open LTS page instead of reloading home.
-          const target=new URL('documenti/',import.meta.url);
-          target.searchParams.set('from','profile');
-          dialog.close();window.location.assign(target.href);
-        }));
-    }
+    // Payroll entry is added only after a successful owner-scoped server check.
+    // No client-only role/name toggle can grant access to private documents.
     if(store.usingAccount()&&accountAccess.getRole()==='admin'&&accountAccess.isVerified())
       body.querySelector('.profile-menu').prepend(menuButton('Gestisci autisti',
         'Apri il pannello amministratore con inviti, accessi, rimozioni e reinserimenti.','users',()=>{
@@ -1402,6 +1386,41 @@ function openProfile(required=false){
       ungrouped.map(item=>item.dataset.profileAction));
   }
   oldProfileMenu.replaceWith(...groups);
+  if(accountAccess.isEnabled()&&store.usingAccount()&&accountAccess.isVerified()&&
+     accountAccess.getRole()==='driver'&&
+     typeof runtimeConfig.accountAuth?.payrollEndpoint==='string'&&
+     runtimeConfig.accountAuth.payrollEndpoint.trim()){
+    const accountOwner=accountAccess.getAccountId();
+    // A hidden menu item is not a security boundary. Only the actual,
+    // live-session checked payroll list API may authorize its creation.
+    void (async()=>{
+      const api=await import(new URL('documenti/document-api.mjs',import.meta.url).href);
+      const result=await api.documents({offset:0});
+      if(!Array.isArray(result?.documents)||!dialog.open||
+         !store.usingAccount()||!accountAccess.isVerified()||
+         accountAccess.getRole()!=='driver'||accountAccess.getAccountId()!==accountOwner)return;
+      const item=menuButton('I MIEI DOCUMENTI',
+        'CEDOLINO · CU · ALTRI DOCUMENTI. Solo i tuoi PDF pubblicati.',
+        'pdf',()=>{
+          // Return to the existing register history entry without replaying its loader.
+          const target=new URL('documenti/',import.meta.url);
+          target.searchParams.set('from','profile');
+          dialog.close();window.location.assign(target.href);
+        });
+      const existing=body.querySelector('.profile-action-group--services .profile-menu');
+      if(existing)existing.prepend(item);
+      else{
+        const list=el('div',{class:'profile-menu profile-menu-rows'},item);
+        const group=el('section',{class:'profile-action-group profile-action-group--services',
+          'aria-label':'Accesso rapido'},
+          el('div',{class:'profile-group-heading'},
+            el('h3',{},'Accesso rapido'),
+            el('p',{},'Le funzioni collegate al tuo account.')),list);
+        const first=body.querySelector('.profile-action-group');
+        if(first)first.before(group);else body.append(group);
+      }
+    })().catch(()=>{/* Preview is invisible if offline, unauthorized or expired. */});
+  }
 
   body.append(el('div',{class:'info-note',style:'margin-top:17px;margin-bottom:0'},icon('lock'),'Il PDF mensile contiene viaggi e servizi. Le tariffe e gli importi restano solo nell’app.'));
   body.append(el('p',{class:'subtle-footer'},store.usingAccount()
