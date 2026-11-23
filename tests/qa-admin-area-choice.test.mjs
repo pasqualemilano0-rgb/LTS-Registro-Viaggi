@@ -39,7 +39,7 @@ test('verified MFA session reveals the chooser, with no second password prompt',
  assert.match(admin,/loginPanel\.hidden=false/);
  assert.match(admin,/byId\('admin-logistica-login'\)\.hidden=true/);
  assert.match(admin,/byId\('admin-area-choice'\)\.hidden=false/);
- assert.match(admin,/if\(status\.mfa_enrolled&&status\.mfa_verified\)\{\s*showAuthenticatedAreaChoice\(\)/);
+ assert.match(admin,/if\(status\.mfa_enrolled&&status\.mfa_verified\)\{\s*adminMfaGatePassed=true;\s*showAuthenticatedAreaChoice\(\)/);
  assert.match(admin,/const status=statusFromCompletedVerification\|\|await account\.verifySession\(\)/);
  assert.match(admin,/const verifiedMfa=await account\.verifyAdminTotp\(code,selected\)/);
  assert.match(admin,/await authenticate\(verifiedMfa\)/);
