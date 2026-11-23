@@ -32,7 +32,9 @@ test('one administrator login is shown BEFORE Control Center, never alongside it
 
 test('verified MFA session reveals the chooser, with no second password prompt',()=>{
  assert.match(admin,/function showAuthenticatedAreaChoice\(\)/);
- assert.match(admin,/if\(!account\.isVerified\(\)\|\|account\.getRole\(\)!=='admin'\)return false/);
+ assert.match(admin,/adminMfaGatePassed=false/);
+ assert.match(admin,/adminMfaGatePassed=status\.mfa_enrolled===true&&status\.mfa_verified===true/);
+ assert.match(admin,/if\(!adminMfaGatePassed\|\|!account\.isVerified\(\)\|\|account\.getRole\(\)!=='admin'\)return false/);
  assert.match(admin,/dashboard\.hidden=true;dashboard\.inert=false/);
  assert.match(admin,/loginPanel\.hidden=false/);
  assert.match(admin,/byId\('admin-logistica-login'\)\.hidden=true/);
