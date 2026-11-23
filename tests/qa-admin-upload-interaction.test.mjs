@@ -74,7 +74,7 @@ test('valid PDF is uploaded as draft, shown as success and filtered in archive',
  assert.equal(f.calls[0].options.driverId,'driver-A');
  assert.equal(f.calls[0].options.month,'11');
  assert.equal(f.calls[0].options.label,'Cedolino Novembre 2026');
- assert.match(f.el('upload-feedback').textContent,/1 PDF caricati in bozza/);
+ assert.match(f.el('upload-feedback').textContent,/1 PDF caricato in bozza/);
  assert.equal(f.el('filter-driver').value,'driver-A');
  assert.equal(f.el('filter-category').value,'cedolino');
  assert.equal(f.snapshot.refreshes,1);
@@ -108,7 +108,7 @@ test('partial batch failure reports confirmed files and refreshes archive',async
  f.el('files').files=[f.sample('uno.pdf'),f.sample('due.pdf')];
  await f.submit();
  assert.equal(f.calls.length,2);
- assert.match(f.el('upload-feedback').textContent,/1 PDF caricati con conferma/);
+ assert.match(f.el('upload-feedback').textContent,/1 PDF caricato con conferma/);
  assert.equal(f.snapshot.refreshes,1);
  assert.equal(f.el('filter-driver').value,'driver-A');
  assert.equal(f.el('files').value,'');
