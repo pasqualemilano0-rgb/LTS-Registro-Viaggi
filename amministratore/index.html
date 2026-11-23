@@ -29,8 +29,8 @@
   <link rel="stylesheet" href="./control-center-home.css?v=20261111-control-center-v1">
   <link rel="stylesheet" href="./control-center-integration.css?v=20261111-control-center-v1">
   <link rel="stylesheet" href="./admin-area-choice.css?v=20261118-v1">
-  <script type="module" src="./admin.mjs?v=20261111-control-center-v1"></script>
-  <script type="module" src="./admin-area-choice.mjs?v=20261118-v1"></script>
+  <script type="module" src="./admin.mjs?v=20261123-unified-login-v1"></script>
+  <script type="module" src="./admin-area-choice.mjs?v=20261123-unified-login-v1"></script>
   <script type="module" src="./install-pwa.mjs?v=20261108-admin-pwa-v1"></script>
   <script type="module" src="./dashboard-mobile-nav.mjs?v=20261111-control-center-v1"></script>
 </head>
@@ -56,7 +56,7 @@
         <span class="admin-login-identity-label">LTS <small>CONTROL CENTER</small></span>
         <span class="admin-login-secure"><span aria-hidden="true">●</span> Protetto</span>
       </div>
-      <div id="admin-area-choice" aria-labelledby="admin-area-title">
+      <div id="admin-area-choice" aria-labelledby="admin-area-title" hidden>
         <div class="lts-choice-brand">
           <img src="../assets/lts-logo.png" width="380" height="150" alt="Logo ufficiale LTS, logistica trasporti e servizi" loading="eager" decoding="async">
           <p>LOGISTICA <span aria-hidden="true">●</span> TRASPORTI <span aria-hidden="true">●</span> SERVIZI</p>
@@ -101,14 +101,14 @@
               <span class="admin-area-tile-link" aria-hidden="true">Accedi <span>›</span></span>
             </a>
           </div>
-          <p class="admin-area-choice-hint">Le funzioni di entrambe le aree richiedono l’accesso amministratore con MFA. Anteprima grafica disponibile separatamente.</p>
+          <p class="admin-area-choice-hint">Accesso già verificato. Puoi passare tra le due aree senza reinserire le credenziali finché la sessione resta valida.</p>
         </div>
         <div class="lts-choice-footer" aria-hidden="true"><span></span><i></i><b></b><em></em><span></span></div>
       </div>
-      <div id="admin-logistica-login" hidden>
+      <div id="admin-logistica-login">
       <p class="eyebrow">AREA LOGISTICA</p>
-      <h1 id="login-title">Accesso area logistica</h1>
-      <p class="intro-copy">Accedi per gestire autisti, viaggi, clienti, tariffe e operazioni logistiche.</p>
+      <h1 id="login-title">Accesso amministratore LTS</h1>
+      <p class="intro-copy">Inserisci le credenziali una sola volta. Dopo la verifica MFA potrai scegliere l'area logistica o amministrativa.</p>
       <form id="login-form" class="stack" autocomplete="on">
         <label for="login-phone">Numero di cellulare <small>+39 automatico</small>
           <input id="login-phone" type="tel" inputmode="tel" autocomplete="username" placeholder="3XXXXXXXXX" maxlength="40" required>
@@ -119,11 +119,11 @@
             <button id="login-password-toggle" type="button" aria-pressed="false" aria-label="Mostra password">Mostra</button>
           </span>
         </label>
-        <button class="button primary admin-login-submit" type="submit"><span class="admin-login-submit-label">Accedi all’area logistica</span><span aria-hidden="true">→</span></button>
+        <button class="button primary admin-login-submit" type="submit"><span class="admin-login-submit-label">Accedi al Control Center</span><span aria-hidden="true">→</span></button>
       </form>
       <p id="login-error" class="error-message" role="alert" hidden></p>
       <p class="admin-login-trust"><span aria-hidden="true">◈</span> Accesso protetto e verifica in due passaggi</p>
-        <button id="admin-area-back" class="text-button admin-area-back" type="button">← Torna alla scelta delle aree</button>
+        <button id="admin-area-back" class="text-button admin-area-back" type="button" hidden>← Torna alla scelta delle aree</button>
       </div>
       <div class="login-footer"><button id="switch-account" class="text-button" type="button" hidden>Esci dalla sessione precedente</button><a href="../">← Torna al Registro Viaggi</a></div>
     </section>
