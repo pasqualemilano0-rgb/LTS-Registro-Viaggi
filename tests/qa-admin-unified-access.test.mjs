@@ -30,10 +30,12 @@ test('one phone/password form and the MFA form precede the hidden area selector'
 test('authenticator verification and a valid admin role are necessary to show the chooser',()=>{
  const choice=entry.slice(entry.indexOf('function showAuthenticatedAreaChoice('),
   entry.indexOf('async function openAuthenticatedLogistics('));
- assert.match(choice,/!account\.isVerified\(\)\|\|account\.getRole\(\)!=='admin'/);
+ assert.match(choice,/!adminMfaGatePassed\|\|!account\.isVerified\(\)\|\|account\.getRole\(\)!=='admin'/);
  assert.match(choice,/byId\('admin-logistica-login'\)\.hidden=true/);
  assert.match(choice,/byId\('admin-area-choice'\)\.hidden=false/);
  assert.match(choice,/dashboard\.hidden=true/);
+ assert.match(admin,/adminMfaGatePassed=false/);
+ assert.match(admin,/adminMfaGatePassed=status\.mfa_enrolled===true&&status\.mfa_verified===true/);
  const authenticated=entry.slice(entry.indexOf('async function authenticate('),
   entry.indexOf('let driverRequest=',entry.indexOf('async function authenticate(')));
  assert.match(authenticated,/if\(status\.mfa_enrolled&&!status\.mfa_verified\)/);
