@@ -50,12 +50,14 @@ export function checkedGoogleMapsUrl(value) {
 /** Italian locality inference only from a postcode or an explicit province suffix. */
 export function cityFromItalianAddress(value) {
   const address = clean(value, 1000).replace(/(?:,\s*|\s+)(?:Italia|Italy)\s*$/iu, '').trim();
-  const postcode = /(?:^|[\s,])(?:IT[- ]?)?\d{5}[\s,]+(.+)$/u.exec(address);
-  let city = postcode ? postcode[1].split(',')[0].trim() : address.split(',').length > 1 ? address.split(',').at(-1).trim() : '';
+  // Prefer the final postal token: a preceding kilometer can also have five digits.
+  const postcode = [...address.matchAll(/(?:^|[\s,])(?:IT[- ]?)?\d{5}(?=[\s,])/gu)].at(-1);
+  const postalTail = postcode ? address.slice(postcode.index + postcode[0].length).replace(/^[\s,]+/u, '') : '';
+  let city = postcode ? postalTail.split(',')[0].trim() : address.split(',').length > 1 ? address.split(',').at(-1).trim() : '';
   if (!postcode && !/.+\s+(?:\([A-Z]{2}\)|[A-Z]{2})$/iu.test(city)) return '';
   city = city.replace(/\s*\([A-Z]{2}\)\s*$/iu, '').replace(/\s+[A-Z]{2}\s*$/iu, '').trim();
   // A CAP plus explicit province can identify a named industrial locality.
-  const industrialLocality = Boolean(postcode && /.+\s+(?:\([A-Z]{2}\)|[A-Z]{2})$/iu.test(postcode[1].split(',')[0].trim()) && /^ZONA INDUSTRIALE\s+[\p{L}]/iu.test(city));
+  const industrialLocality = Boolean(postcode && /.+\s+(?:\([A-Z]{2}\)|[A-Z]{2})$/iu.test(postalTail.split(',')[0].trim()) && /^ZONA INDUSTRIALE\s+[\p{L}]/iu.test(city));
   if (!city || city.length > 100 || /^[A-Z]{2}$/u.test(city) || !/^[\p{L}][\p{L}\p{M} .’'\-]*$/u.test(city) || (STREET.test(city) && !industrialLocality) || /^(?:ITALIA|ITALY)$/iu.test(city)) return '';
   return upper(city, 100);
 }
