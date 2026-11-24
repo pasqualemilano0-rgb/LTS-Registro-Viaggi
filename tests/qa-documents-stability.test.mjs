@@ -59,6 +59,12 @@ test('reject wrong category, year, unpublished row or oversized result before re
   assert.equal(h.notes.at(-1).error,true);
  }
 });
+test('oversized document page is rejected before rendering',async()=>{
+ const h=harness(),first=h.load();
+ h.pending[0].resolve({documents:Array.from({length:51},(_,i)=>doc('cedolino',2026,String(i)))});await first;
+ assert.equal(h.nodes.documents.rows.length,0);
+ assert.equal(h.notes.at(-1).error,true);
+});
 test('pagination is serialized and a filter switch resets offsets',async()=>{
  const h=harness(),first=h.load();
  h.pending[0].resolve({documents:Array.from({length:50},(_,i)=>doc('cedolino',2026,String(i)))});await first;
