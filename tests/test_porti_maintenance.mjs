@@ -75,10 +75,19 @@ test('Porti iframe stays closed until same-origin LTS handshake',async()=>{
  assert.match(x.imports[0],/^\.\/porti\/app\.js\?v=/);
  assert.match(x.imports[1],/^\.\/porti\/driver-ui\.mjs\?v=/);
  assert.equal(x.body.hidden,false);
+ assert.ok(x.calls.some(c=>c[0]==='message'&&c[1]?.type==='lts-porti-rendered'));
  await listener({origin:ORIGIN,source:x.parent,data:{type:'lts-porti-authorized'}});
  assert.equal(x.imports.length,2,'Repeated messages never reinitialize modules');
 });
 
+test('expired handshake cannot start imports or reveal booking later',async()=>{
+ const x=fixture();
+ const timer=x.calls.find(c=>c[0]==='timer')[1];
+ timer();
+ assert.ok(x.calls.some(c=>c[0]==='message'&&c[1]?.type==='lts-porti-failed'));
+ await x.events.get('message')({origin:ORIGIN,source:x.parent,data:{type:'lts-porti-authorized'}});
+ assert.equal(x.imports.length,0);
+});
 test('Original maintenance notice remains a one-line rollback',()=>{
  assert.match(access,/const MAINTENANCE_ENABLED = false;/);
  const maintenance=access.replace('const MAINTENANCE_ENABLED = false;',
@@ -95,7 +104,7 @@ test('Original maintenance notice remains a one-line rollback',()=>{
 });
 
 test('Protected Pages entry and current PWA cache are required for reopening',()=>{
- assert.match(page,/src="\.\.\/porti-access\.mjs\?v=20261110-porti-freshcode-v2"/);
+ assert.match(page,/src="\.\.\/porti-access\.mjs\?v=20261124-porti-stability-v1"/);
  assert.match(page,/<body hidden>/);
  assert.doesNotMatch(page,/<script(?![^>]*porti-access)[^>]*>/g);
  assert.match(access,/}else if\(!sameOriginParent\(\)\)\{/);
@@ -135,7 +144,7 @@ test('The parent LTS app keeps Register usable and blocks Porti iframe on Sunday
  assert.match(app,/setInterval\(syncPortiSundayState,60_000\)/);
  assert.match(access,/timeZone:'Europe\/Rome',weekday:'short'/);
  assert.match(access,/if\(isPortiSundayInRome\(\)\)\{/);
- assert.match(app,/porti\/index\.html\?v=20261110-porti-freshcode-v2/);
+ assert.match(app,/porti\/index\.html\?v=20261124-porti-stability-v1/);
 });
 
 test('CO.NA.TE.CO. shows ACCETTA CARICO only when acceptance is actually confirmed',()=>{

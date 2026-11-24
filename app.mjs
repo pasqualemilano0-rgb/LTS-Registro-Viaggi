@@ -89,6 +89,7 @@ let refreshView = null;
 let refreshTripCustomerSuggestions=null;
 let refreshTripFareEstimate=null;
 let portiFrame = null;
+let portiStartupPanel=null,portiStartupTimer=null;
 let subscribed = false;
 let realtimeBridge=null;
 // Presentation-only cache. Authorization and PDF ownership remain server-side.
@@ -288,10 +289,32 @@ function refreshDraftCustomers(previous,next){
  const nextById=new Map(next.customers.map(customer=>[customer.id,customer]));
  for(const customer of previous.customers){const current=nextById.get(customer.id);if(current&&customer.name!==current.name)for(const field of ['client','secondClient'])if(D.normalizeText(draft[field])===customer.name)draft[field]=current.name;}
 }
-function unmountPorti(){
+function clearPortiStartupTimer(){
+ if(portiStartupTimer!==null){clearTimeout(portiStartupTimer);portiStartupTimer=null;}
+}
+function disposePortiFrame(){
+ clearPortiStartupTimer();
  if(!portiFrame)return;
  // Leaving Porti stops its polling and discards the in-frame booking query.
- portiFrame.src='about:blank';portiFrame.remove();portiFrame=null;
+ const frame=portiFrame;portiFrame=null;
+ frame.src='about:blank';frame.remove();
+}
+function unmountPorti(){
+ disposePortiFrame();
+ portiStartupPanel?.remove();portiStartupPanel=null;
+}
+function failPortiStartup(frame){
+ if(tab!=='porti'||frame!==portiFrame||!portiStartupPanel?.isConnected)return;
+ disposePortiFrame();
+ portiStartupPanel.setAttribute('aria-busy','false');
+ portiStartupPanel.replaceChildren(
+  el('h2',{},'Porti non disponibili al momento'),
+  el('p',{},'Il caricamento non è riuscito. Controlla la connessione e riprova. Il Registro Viaggi resta disponibile.'),
+  button('Riprova','primary',()=>{
+   if(tab!=='porti'||!store.usingAccount()||!accountAccess.isVerified())return;
+   unmountPorti();render();
+  },'refresh'),
+  button('Torna al registro','secondary',()=>navigate('register'),'calendar'));
 }
 function navigate(next,{keepDraft=false}={}){
  if(next!==tab&&tab==='insert'&&!keepDraft&&tripDraftHasWork(draft,editingId,draftBaselineDate)){
@@ -313,7 +336,7 @@ function render(){
  const nav=el('nav',{class:'bottom-nav','aria-label':'Navigazione principale'},tabs.map(item=>el('button',{type:'button',class:`nav-item${tab===item.id?' active':''}`,'aria-current':tab===item.id?'page':null,on:{click:()=>navigate(item.id)}},icon(item.icon),el('span',{},item.label))));
  // Detaching an iframe, even if the same node is appended again, resets its
  // browsing context. Refresh the shell around the connected Porti document.
- if(tab==='porti'&&portiFrame?.isConnected){
+ if(tab==='porti'&&(portiFrame?.isConnected||portiStartupPanel?.isConnected)){
   document.querySelector('.topbar').replaceWith(header);
   document.querySelector('.bottom-nav').replaceWith(nav);
   document.querySelector('#sync-status')?.replaceWith(syncNode());
@@ -351,9 +374,16 @@ function renderPorti(main){
   );
   return;
  }
- const url=(runtimeConfig.basePath??'/')+'porti/index.html?v=20261110-porti-freshcode-v2';
+ const url=(runtimeConfig.basePath??'/')+'porti/index.html?v=20261124-porti-stability-v1';
+ portiStartupPanel=el('section',{class:'panel',role:'status','aria-live':'polite','aria-busy':'true'},
+  el('h2',{},'Caricamento Porti…'),el('p',{},'Preparazione della ricerca Booking e dei programmi navi.'));
  portiFrame=el('iframe',{class:'porti-frame',src:url,title:'Porti e booking',referrerpolicy:'no-referrer'});
- main.append(el('div',{class:'porti-heading'},el('h1',{},'Porti')),portiFrame);
+ const frame=portiFrame;
+ // Covers the full startup: iframe network, handshake AND both module imports.
+ // Destroy the failed frame so late imports cannot reveal stale controls.
+ portiStartupTimer=setTimeout(()=>failPortiStartup(frame),20000);
+ frame.addEventListener('error',()=>failPortiStartup(frame),{once:true});
+ main.append(el('div',{class:'porti-heading'},el('h1',{},'Porti')),portiStartupPanel,frame);
 }
 function syncPortiSundayState(){
  if(tab==='porti'&&portiLastSuspended!==null&&portiLastSuspended!==isPortiSundayInRome()){
@@ -365,10 +395,17 @@ setInterval(syncPortiSundayState,60_000);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)syncPortiSundayState();});
 // The port module is a subview of a verified LTS account, not a public standalone app.
 window.addEventListener('message',event=>{
- if(event.origin!==location.origin || event.data?.type!=='lts-porti-ready')return;
+ if(event.origin!==location.origin)return;
  if(tab!=='porti'||!portiFrame||event.source!==portiFrame.contentWindow)return;
+ const type=event.data?.type;
+ if(type==='lts-porti-failed'){failPortiStartup(portiFrame);return;}
  if(!store.usingAccount()||!accountAccess.isVerified())return;
- event.source.postMessage({type:'lts-porti-authorized'},location.origin);
+ if(type==='lts-porti-ready'){
+  event.source.postMessage({type:'lts-porti-authorized'},location.origin);
+ }else if(type==='lts-porti-rendered'){
+  clearPortiStartupTimer();
+  portiStartupPanel?.remove();portiStartupPanel=null;
+ }
 });
 function receiveState(record,{source}={}){
  // Local saves finish in persist(); background changes update the open view
@@ -2461,7 +2498,7 @@ let appWorkerChangePending=false,lastAppWorkerCheck=0;
 function safeAppUpdateReload(){
  if(resumingVerification||driverSessionShield.isVisible()||driverSessionShield.isQuiet()||
     root.querySelector('.account-connection-gate'))return false;
- if(!appWorkerChangePending||document.hidden||busy||tab==='insert'||editingId||
+ if(!appWorkerChangePending||document.hidden||busy||tab==='insert'||tab==='porti'||editingId||
     store.getSyncInfo?.().pending||store.getSyncInfo?.().conflict||
     document.querySelector('dialog[open]')||
     document.activeElement?.matches?.('input,textarea,select,[contenteditable="true"]'))return false;
@@ -2473,7 +2510,7 @@ navigator.serviceWorker?.addEventListener('controllerchange',()=>{
  if(!hadAppWorkerAtStartup)return; // First-time service-worker claim is not an update.
  appWorkerChangePending=true;
  if(!safeAppUpdateReload())
-  toast('Aggiornamento disponibile: dopo aver salvato, torna al registro e riapri LTS.');
+  toast(tab==='porti'?'Aggiornamento disponibile: termina la consultazione Porti, poi torna al registro.':'Aggiornamento disponibile: dopo aver salvato, torna al registro e riapri LTS.');
 });
 async function checkInstalledAppVersion(){
  if(document.hidden||navigator.onLine===false||!navigator.serviceWorker)return;
