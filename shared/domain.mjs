@@ -176,7 +176,7 @@ export function createTrip(input, state, existing = null) {
     id: id(existing?.id ?? input.id ?? newId()),
     fareCents: checkCents(findTariff(state, trip.client, trip.city)?.cents ?? (sameFirst ? existing.fareCents : null), 'Trasferta', true),
     secondFareCents: trip.secondCity ? checkCents(findTariff(state, trip.secondClient, trip.secondCity)?.cents ?? (sameSecond ? existing.secondFareCents : null), 'Seconda trasferta', true) : null,
-    sumPickupFares: Boolean(trip.secondCity) && (input.sumPickupFares ?? existing?.sumPickupFares ?? true),
+    sumPickupFares: Boolean(trip.secondCity) && (input.sumPickupFares ?? (existing?.secondCity ? existing.sumPickupFares : true) ?? true),
     extraCents,
     createdAt: timestamp(existing?.createdAt, now),
     updatedAt: now,
