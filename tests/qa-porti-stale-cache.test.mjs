@@ -29,7 +29,7 @@ function workerHarness(){
   fetches.push({path,cache:options?.cache||null});
   if(!online)throw new TypeError('Network offline');
   if(path===rulesPath)return new Response(newCode,{status:200});
-  if(path===pagePath)return new Response('<script type="module" src="../porti-access.mjs?v=20261124-porti-stability-v1"></script>',{status:200});
+  if(path===pagePath)return new Response('<script type="module" src="../porti-access.mjs?v=20261124-pwa-isolation-v1"></script>',{status:200});
   return new Response('OTHER_FILE',{status:200});
  };
  runInNewContext(worker,{self,URL,Response,caches:{
@@ -68,7 +68,7 @@ test('Porti iframe HTML ignores a stale HTTP document cache while online',async(
  h.cacheEntries.set(pagePath,new Response('<script src="old-porti.js"></script>'));
  const fresh=await h.load(pagePath+'?v=20261110-porti-freshcode-v2','navigate');
  assert.equal(fresh.status,200);
- assert.match(fresh.body,/porti-stability-v1/);
+ assert.match(fresh.body,/pwa-isolation-v1/);
  assert.deepEqual(h.fetches.map(x=>x.cache),['reload']);
  h.setOnline(false);
  const cached=await h.load(pagePath+'?v=20261110-porti-freshcode-v2','navigate');
@@ -79,15 +79,15 @@ test('published import chain is fully versioned and displays consistent list/det
  const parent=read('app.mjs'),page=read('porti/index.html');
  const gate=read('porti-access.mjs'),port=read('porti/app.js');
  const rules=read('porti/conateco_rules.mjs');
- assert.match(parent,/porti\/index\.html\?v=20261124-porti-stability-v1/);
- assert.match(page,/porti-access\.mjs\?v=20261124-porti-stability-v1/);
+ assert.match(parent,/porti\/index\.html\?v=20261124-pwa-isolation-v1/);
+ assert.match(page,/porti-access\.mjs\?v=20261124-pwa-isolation-v1/);
  assert.match(gate,/porti\/app\.js\?v=20261110-porti-freshcode-v2/);
  assert.match(port,/conateco_rules\.mjs\?v=20261110-porti-freshcode-v2/);
  assert.match(rules,/kind:'good',label:'ACCETTA CARICO'/);
  assert.doesNotMatch(rules,/NAVE IN ACCETTAZIONE/);
  assert.match(port,/side\.append\(badge\(verdict\.label,verdict\.kind\)/);
  assert.match(port,/results\.append\(deliveryPanel[\s\S]*?badge\(verdict\.label,verdict\.kind\)/);
- assert.match(worker,/20261124-porti-stability-v1/);
+ assert.match(worker,/20261124-pwa-isolation-v1/);
  assert.match(worker,/const isPortCode = isPort &&/);
  assert.match(worker,/NETWORK_FIRST_CODE\.has\(url\.pathname\) \|\| isPortCode/);
  assert.match(worker,/if \(isPort && \(url\.pathname\.startsWith\(PORT_BASE \+ 'data\/'\)/);
