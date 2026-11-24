@@ -7,11 +7,25 @@ const $=id=>document.getElementById(id);
 // to restore the existing register page (including its in-memory UI state).
 // Direct links, fresh tabs and modified clicks keep the ordinary home fallback.
 const openedFromProfile=new URLSearchParams(window.location.search).get('from')==='profile';
+function previousEntryIsRegister(){
+ try{
+  // History length and a query parameter cannot establish the previous page.
+  // If the browser cannot expose the entry, use the explicit ../ link.
+  const navigation=window.navigation;
+  const index=navigation?.currentEntry?.index;
+  if(!Number.isInteger(index)||index<1)return false;
+  const previous=navigation.entries().find(entry=>entry.index===index-1);
+  if(!previous?.url)return false;
+  const url=new URL(previous.url);
+  return url.origin===window.location.origin &&
+   ['/LTS-Registro-Viaggi/','/LTS-Registro-Viaggi/index.html','/LTS-Registro-Viaggi/shell.html'].includes(url.pathname);
+ }catch{return false;}
+}
 for(const link of document.querySelectorAll('a[data-back-to-register]')){
  link.addEventListener('click',event=>{
   if(event.defaultPrevented||event.button!==0||
      event.metaKey||event.ctrlKey||event.shiftKey||event.altKey)return;
-  if(openedFromProfile&&window.history.length>1){
+  if(openedFromProfile&&window.history.length>1&&previousEntryIsRegister()) {
    event.preventDefault();
    window.history.back();
   }
