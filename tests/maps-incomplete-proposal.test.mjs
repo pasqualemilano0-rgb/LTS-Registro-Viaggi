@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {proposalFromMapsHtml} from '../shared/maps-client.mjs';
 import {mergeMapsProposal} from '../shared/maps-client.mjs';
 const canonical='https://www.google.com/maps/place/Cliente+Delta/';
 test('a truncated metadata title cannot hide a valid canonical place name',()=>{
@@ -36,4 +37,28 @@ test("D'Alterio Group: raw and percent-encoded apostrophes preserve the entire a
 test('ordinary street names are not mistaken for postal localities',()=>{
  const p=mergeMapsProposal('https://www.google.com/maps/place/Alfa,+Via+Roma+1,+80100+Via+Verdi+NA/');
  assert.equal(p.city,'');
+});
+
+test('road metadata recognizes multi-digit SS/SP, dotted abbreviations and kilometer markers',()=>{
+ const cases=[
+  ['SS 265, 81025 Marcianise CE','MARCIANISE'],
+  ['SP 335, 81025 Marcianise CE','MARCIANISE'],
+  ['S.S. 265, 81025 Marcianise CE','MARCIANISE'],
+  ['S.P. 335, 81025 Marcianise CE','MARCIANISE'],
+  ['KM 27200, 81025 Marcianise CE','MARCIANISE'],
+  ['KM 27200, SS 265, 81025 Marcianise CE','MARCIANISE'],
+  ['Km. 27.200, SS 265, 81025 Zona Industriale Marcianise Nord CE','ZONA INDUSTRIALE MARCIANISE NORD']
+ ];
+ for(const [address,city] of cases){
+  const parsed=proposalFromMapsHtml('<meta property="og:description" content="'+address+'">');
+  assert.equal(parsed.address,address,address);
+  assert.equal(parsed.city,city,address);
+ }
+});
+test('road-like business labels and coordinates are not accepted as street metadata',()=>{
+ for(const text of ['SS Logistics','SP Trasporti','KM Group','SS 265xyz','41.2, 14.3']){
+  const parsed=proposalFromMapsHtml('<meta property="og:description" content="'+text+'">');
+  assert.equal(parsed.address,undefined,text);
+  assert.equal(parsed.city,undefined,text);
+ }
 });
