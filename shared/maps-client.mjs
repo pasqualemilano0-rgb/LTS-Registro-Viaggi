@@ -2,7 +2,7 @@
 export const MAX_MAPS_LINK_LENGTH = 4096;
 const FULL_HOSTS = new Set(['google.com', 'www.google.com', 'google.it', 'www.google.it']);
 const MAPS_HOSTS = new Set(['maps.google.com', 'maps.google.it']);
-const STREET = /(?:^|[,·|]\s*)(?:VIA|VIALE|PIAZZA|PIAZZALE|CORSO|STRADA|LOCALITÀ|LOCALITA|FRAZIONE|ZONA INDUSTRIALE|LARGO|VICOLO|CONTRADA|SS\s?\d|SP\s?\d)\b/iu;
+const STREET = /(?:^|[,·|]\s*)(?:VIA|VIALE|PIAZZA|PIAZZALE|CORSO|STRADA|LOCALITÀ|LOCALITA|FRAZIONE|ZONA INDUSTRIALE|LARGO|VICOLO|CONTRADA|S\.?\s*[SP]\.?\s*\d+[A-Z]?|KM\.?\s*\d+)\b/iu;
 const ENTITIES = Object.freeze({ amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ', middot: '·', ndash: '–', mdash: '—', agrave: 'à', egrave: 'è', eacute: 'é', igrave: 'ì', ograve: 'ò', ugrave: 'ù', Agrave: 'À', Egrave: 'È', Eacute: 'É', Igrave: 'Ì', Ograve: 'Ò', Ugrave: 'Ù' });
 
 export function decodeHtmlText(value) {
