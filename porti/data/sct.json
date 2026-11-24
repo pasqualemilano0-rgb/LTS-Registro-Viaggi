@@ -1,7 +1,7 @@
 {
   "source": "https://www.salernocontainerterminal.com/ca/an/vessel_schedule.php",
   "source_updated_at": null,
-  "acquired_at": "2026-11-24T15:30:16.620Z",
+  "acquired_at": "2026-11-24T16:00:17.047Z",
   "rows": [
     {
       "vessel": "ULYSSE",
@@ -25,7 +25,7 @@
       "vessel": "X-PRESS SALWEEN",
       "voyage": "648W",
       "eta": "24/11/2026 21:00",
-      "closing": "24/11/2026 17:00",
+      "closing": "24/11/2026 17:00 CLOSED",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
@@ -34,7 +34,7 @@
       "vessel": "MIRIAM BORCHARD",
       "voyage": "1046",
       "eta": "25/11/2026 00:00",
-      "closing": "24/11/2026 17:00",
+      "closing": "24/11/2026 17:00 CLOSED",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
@@ -43,7 +43,7 @@
       "vessel": "ECO OSTRO",
       "voyage": "648W",
       "eta": "25/11/2026 00:00",
-      "closing": "24/11/2026 17:00",
+      "closing": "24/11/2026 17:00 CLOSED",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
@@ -52,7 +52,7 @@
       "vessel": "GABRIEL A",
       "voyage": "0HWLEE1MA",
       "eta": "25/11/2026 00:00",
-      "closing": "24/11/2026 17:00",
+      "closing": "24/11/2026 17:00 CLOSED",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
@@ -61,7 +61,7 @@
       "vessel": "GLASGOW EXPRESS",
       "voyage": "52W48",
       "eta": "25/11/2026 06:00",
-      "closing": "24/11/2026 17:00",
+      "closing": "24/11/2026 17:00 CLOSED",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
@@ -70,7 +70,7 @@
       "vessel": "ALOPO",
       "voyage": "2126W",
       "eta": "25/11/2026 08:00",
-      "closing": "24/11/2026 17:00",
+      "closing": "24/11/2026 17:00 CLOSED",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
@@ -256,6 +256,6 @@
       "status": "PENDING"
     }
   ],
-  "updated_at": "2026-11-24T15:30:16.620Z",
-  "data_changed_at": "2026-11-24T15:00:16.728Z"
+  "updated_at": "2026-11-24T16:00:17.047Z",
+  "data_changed_at": "2026-11-24T16:00:17.047Z"
 }
