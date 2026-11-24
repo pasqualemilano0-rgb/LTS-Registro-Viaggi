@@ -1,6 +1,6 @@
 const BASE = "/LTS-Registro-Viaggi/";
 const PREFIX = "lts-iphone-pages-0aa8d087d02b-";
-const CACHE = PREFIX + '20261124-porti-stability-v1';
+const CACHE = PREFIX + '20261124-pwa-isolation-v1';
 const CORE = [
   "/LTS-Registro-Viaggi/account-access.mjs",
   "/LTS-Registro-Viaggi/app.css",
@@ -30,6 +30,7 @@ const CORE = [
   "/LTS-Registro-Viaggi/driver-session-vault.mjs",
   "/LTS-Registro-Viaggi/driver-session-guard.mjs",
   "/LTS-Registro-Viaggi/index.html",
+  "/LTS-Registro-Viaggi/viaggi/index.html",
   "/LTS-Registro-Viaggi/manifest.webmanifest",
   "/LTS-Registro-Viaggi/porti-access.mjs",
   "/LTS-Registro-Viaggi/porti/app.js",
@@ -114,6 +115,8 @@ self.addEventListener('fetch', event => {
   if (url.pathname.startsWith(BASE + 'api/')) return;
   // Never supply a driver shell or cache response to the separate admin app.
   if (['amministratore','status'].some(area => url.pathname === BASE + area || url.pathname.startsWith(BASE + area + '/'))) return;
+  // Personal document pages remain online-only; never replace them with a cached register.
+  if (['documenti','viaggi/documenti'].some(area => url.pathname === BASE + area || url.pathname.startsWith(BASE + area + '/'))) return;
   const isPort = url.pathname === PORT_BASE.slice(0, -1) || url.pathname.startsWith(PORT_BASE);
   if (isPort && (url.pathname.startsWith(PORT_BASE + 'data/') || url.pathname.endsWith('.json'))) return;
   if (request.mode === 'navigate') {
@@ -127,6 +130,9 @@ self.addEventListener('fetch', event => {
           return Response.redirect(url.origin + PORT_BASE + 'index.html', 302);
         return page;
       }
+      if ([BASE+'viaggi/',BASE+'viaggi/index.html'].includes(url.pathname))
+        return (await caches.match(BASE+'viaggi/index.html', { ignoreVary: true })) || Response.error();
+      if (![BASE,BASE+'index.html',BASE+'shell.html',BASE+'shell'].includes(url.pathname)) return Response.error();
       return (await caches.match(BASE + 'index.html', { ignoreVary: true })) || Response.error();
     }));
     return;

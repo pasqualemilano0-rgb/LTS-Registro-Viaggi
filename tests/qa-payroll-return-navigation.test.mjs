@@ -55,6 +55,10 @@ test('all return controls restore previous page without reloading the register',
  assert.equal(h.backs,3);
  assert.doesNotMatch(driver,/window\.location\.(assign|replace|reload)\(/);
 });
+test('dedicated Viaggi page is a permitted back destination',()=>{
+ const h=navigationHarness('?from=profile',3,'https://example.test/LTS-Registro-Viaggi/viaggi/');
+ assert.equal(h.click(),true);assert.equal(h.backs,1);
+});
 test('directly opened Documents falls back to normal link instead of arbitrary history',()=>{
  const h=navigationHarness('',8);
  assert.equal(h.click(),false);
