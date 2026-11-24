@@ -27,7 +27,11 @@ function usefulName(value) {
 export function checkedGoogleMapsUrl(value) {
   if (typeof value !== 'string' || value.length > MAX_MAPS_LINK_LENGTH || !value.trim()) throw new Error('Incolla un link Google Maps valido.');
   const text = decodeHtmlText(value.trim());
-  const candidate = text.match(/https:\/\/[^\s<>"']+/iu)?.[0];
+  // Apostrophes are valid in a Maps place path (e.g. D'Alterio).
+  const match = /https:\/\/[^\s<>"]+/iu.exec(text);
+  let candidate = match?.[0];
+  // Remove a wrapping single quote only when the copied link was quoted.
+  if (candidate && match.index > 0 && text[match.index - 1] === "'" && candidate.endsWith("'")) candidate = candidate.slice(0, -1);
   if (!candidate) throw new Error('Usa un link HTTPS di Google Maps.');
   let url;
   try { url = new URL(candidate); } catch { throw new Error('Il link Google Maps non è valido.'); }
@@ -50,7 +54,9 @@ export function cityFromItalianAddress(value) {
   let city = postcode ? postcode[1].split(',')[0].trim() : address.split(',').length > 1 ? address.split(',').at(-1).trim() : '';
   if (!postcode && !/.+\s+(?:\([A-Z]{2}\)|[A-Z]{2})$/iu.test(city)) return '';
   city = city.replace(/\s*\([A-Z]{2}\)\s*$/iu, '').replace(/\s+[A-Z]{2}\s*$/iu, '').trim();
-  if (!city || city.length > 100 || /^[A-Z]{2}$/u.test(city) || !/^[\p{L}][\p{L}\p{M} .’'\-]*$/u.test(city) || STREET.test(city) || /^(?:ITALIA|ITALY)$/iu.test(city)) return '';
+  // A CAP plus explicit province can identify a named industrial locality.
+  const industrialLocality = Boolean(postcode && /.+\s+(?:\([A-Z]{2}\)|[A-Z]{2})$/iu.test(postcode[1].split(',')[0].trim()) && /^ZONA INDUSTRIALE\s+[\p{L}]/iu.test(city));
+  if (!city || city.length > 100 || /^[A-Z]{2}$/u.test(city) || !/^[\p{L}][\p{L}\p{M} .’'\-]*$/u.test(city) || (STREET.test(city) && !industrialLocality) || /^(?:ITALIA|ITALY)$/iu.test(city)) return '';
   return upper(city, 100);
 }
 
