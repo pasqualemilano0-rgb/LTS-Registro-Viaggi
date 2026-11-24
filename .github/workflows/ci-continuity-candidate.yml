@@ -130,7 +130,12 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
       - name: Verify exact candidate SHA
-        run: test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+        run: |
+          set -eu
+          # The Playwright container and runner own the checkout with different UIDs.
+          # Trust only this isolated job workspace; never use safe.directory=*.
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
       - name: "Install matching, fixed Playwright Node package"
         run: |
           set -eu
