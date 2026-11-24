@@ -594,7 +594,30 @@ try{
   assert(box.labelSize>=11,width+'px: mobile nav labels remain readable');
  }
  await page.setViewportSize({width:390,height:844});
-
+ // Related navigation follows real tab handlers; reselecting the active view is a no-op.
+ await page.locator('#customers-tab').click();
+ await page.waitForFunction(()=>document.querySelector('#workspace-related button[data-related-target="#rates-tab"]'));
+ assert.equal(await page.locator('#workspace-related').isVisible(),true);
+ await page.locator('#workspace-related button[data-related-target="#rates-tab"]').click();
+ assert.equal(await page.locator('#dashboard').getAttribute('data-view'),'rates');
+ await page.waitForFunction(()=>document.querySelector('#company-rates-count').textContent.includes('tariffe aziendali'));
+ await page.locator('#company-maps-url').fill('https://maps.app.goo.gl/layoutDraft');
+ await page.locator('#admin-nav-more summary').click();
+ await page.locator('#rates-tab').click();
+ assert.equal(await page.locator('#company-maps-url').inputValue(),'https://maps.app.goo.gl/layoutDraft','Repeated active tab preserves the form');
+ await page.locator('#company-maps-url').fill('');
+ await page.locator('#workspace-related button[data-related-target="#customers-tab"]').click();
+ assert.equal(await page.locator('#dashboard').getAttribute('data-home-section'),'customers');
+ await page.locator('#workspace-related button[data-related-target="#rates-tab"]').click();
+ await page.waitForFunction(()=>document.querySelector('#dashboard').dataset.view==='rates');
+ await page.locator('#overview-tab').click();
+ assert.equal(await page.locator('#workspace-related').isVisible(),false);
+ const flow=await page.evaluate(()=>{
+  const home=document.querySelector('#control-center-home');
+  const children=[...home.children];
+  return {actions:children.indexOf(home.querySelector('.cc-quick')),filters:children.indexOf(home.querySelector('.cc-toolbar')),operations:children.indexOf(home.querySelector('.cc-operations')),charts:children.indexOf(home.querySelector('.cc-chart-grid'))};
+ });
+ assert(flow.actions<flow.filters&&flow.operations<flow.charts,'Home puts operational work before filters and charts');
 
  await openAdminTab('analysis-tab');
  assert.equal(await page.locator('#company-rates').isVisible(),false,
