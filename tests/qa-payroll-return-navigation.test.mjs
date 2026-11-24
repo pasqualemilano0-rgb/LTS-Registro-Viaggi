@@ -12,7 +12,7 @@ const app=read('app.mjs');
 const html=read('documenti/index.html');
 const driver=read('documenti/driver-documents.mjs');
 
-function navigationHarness(search,historyLength=2){
+function navigationHarness(search,historyLength=2,previous='https://example.test/LTS-Registro-Viaggi/',supportsNavigation=true){
  const handlers=[];
  let backs=0;
  const links=Array.from({length:3},()=>({
@@ -22,7 +22,8 @@ function navigationHarness(search,historyLength=2){
   assert.equal(selector,'a[data-back-to-register]');
   return links;
  }};
- const window={location:{search},history:{length:historyLength,back(){backs++;}}};
+ const window={location:{search,origin:'https://example.test'},history:{length:historyLength,back(){backs++;}},
+  navigation:supportsNavigation?{currentEntry:{index:historyLength-1},entries:()=>[{index:historyLength-2,url:previous}]}:undefined};
  const first=driver.indexOf('const openedFromProfile=');
  const next=driver.indexOf("let category='cedolino'",first);
  assert.ok(first>=0&&next>first,'back-navigation handler must be initialized before document UI');
@@ -63,6 +64,16 @@ test('fresh window with no previous entry keeps safe ../ fallback',()=>{
  const h=navigationHarness('?from=profile',1);
  assert.equal(h.click(),false);
  assert.equal(h.backs,0);
+});
+test('admin, foreign pages and unknown history never trigger blind back',()=>{
+ for(const previous of ['https://example.test/LTS-Registro-Viaggi/amministratore/','https://example.test/LTS-Registro-Viaggi/status/','https://other.test/LTS-Registro-Viaggi/',null]){
+  const h=navigationHarness('?from=profile',3,previous);
+  assert.equal(h.click(),false);
+  assert.equal(h.backs,0);
+ }
+ const old=navigationHarness('?from=profile',3,undefined,false);
+ assert.equal(old.click(),false);
+ assert.equal(old.backs,0);
 });
 test('modified click and already handled click preserve browser defaults',()=>{
  const cases=[{ctrlKey:true},{metaKey:true},{altKey:true},{shiftKey:true},{button:1},{defaultPrevented:true}];
