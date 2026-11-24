@@ -889,3 +889,16 @@ body.lts-driver-session-blocked dialog[open]{visibility:hidden!important;pointer
 /* Documents uses the same white card, text and PDF icon color as other actions.
    Only size the chevron SVG; backups retain their download/upload arrows. */
 .profile-action-group [data-profile-action="I MIEI DOCUMENTI"] .menu-arrow>.icon{width:18px;height:18px;stroke:currentColor;stroke-width:2.2}
+
+/* Porti startup feedback is an overlay; the iframe retains its full layout. */
+.app-main.view-porti{position:relative}
+.porti-frame[data-porti-starting]{visibility:hidden;pointer-events:none}
+.view-porti .porti-startup[hidden]{display:none!important}
+.view-porti .porti-startup{position:absolute;z-index:1;top:50%;left:50%;transform:translate(-50%,-50%);width:calc(100% - 32px);max-width:360px;max-height:calc(100% - 64px);overflow:auto;padding:16px;display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;color:var(--ink);background:transparent}
+.view-porti .porti-startup h2{font-size:16px;font-weight:700;line-height:1.35;margin:0}
+.view-porti .porti-startup p{font-size:13px;line-height:1.5;color:#587584;margin:0}
+.porti-loading-spinner{box-sizing:border-box;width:34px;height:34px;margin:0 0 6px;border:3px solid #d7e5ea;border-top-color:#006f89;border-radius:50%;animation:lts-porti-spin .85s linear infinite}
+@keyframes lts-porti-spin{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.porti-loading-spinner{animation:none}}
+.view-porti .porti-startup[data-state="error"]{background:#fff;border:1px solid #d6e4eb;border-radius:16px;padding:20px;gap:12px}
+.view-porti .porti-startup[data-state="error"] button{width:100%;min-height:44px;white-space:normal}
