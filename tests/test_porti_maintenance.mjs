@@ -52,6 +52,16 @@ test('Porti must redirect a standalone visitor without starting Booking',()=>{
  assert.equal(x.events.size,0);
 });
 
+test('dedicated driver PWA route can authorize Porti but Admin never can',async()=>{
+ for(const path of [BASE+'viaggi/',BASE+'viaggi/index.html']){
+  const x=fixture({parentPath:path});
+  await x.events.get('message')({origin:ORIGIN,source:x.parent,data:{type:'lts-porti-authorized'}});
+  assert.equal(x.imports.length,2);
+ }
+ const admin=fixture({parentPath:BASE+'amministratore/'});
+ assert.equal(admin.imports.length,0);
+ assert.equal(admin.calls[0][0],'redirect');
+});
 test('Porti must reject an unrelated parent document',()=>{
  const x=fixture({parentPath:BASE+'external.html'});
  assert.equal(x.calls[0][0],'redirect');
