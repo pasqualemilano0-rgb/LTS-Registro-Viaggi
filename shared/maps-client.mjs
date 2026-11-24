@@ -20,7 +20,7 @@ function upper(value, maximum) { return clean(value, maximum).toLocaleUpperCase(
 function decoded(value) { try { return decodeURIComponent(value.replace(/\+/gu, ' ')); } catch { return ''; } }
 function usefulName(value) {
   const name = clean(value, 500).replace(/<[^>]*>/gu, '').replace(/\s*(?:[-–—|]\s*)?Google Maps\s*$/iu, '').trim();
-  return /^(?:Google(?: Maps)?|Maps|Scopri Google Maps|Before you continue|Prima di continuare|Accedi a Google|https?:\/\/|(?:place_id:|cid:|0x)|(?:loc:)?[+\-\d., @]+$)/iu.test(name) ? '' : name;
+  return Array.from(name).length < 2 || /^(?:Google(?: Maps)?|Maps|Scopri Google Maps|Before you continue|Prima di continuare|Accedi a Google|https?:\/\/|(?:place_id:|cid:|0x)|(?:loc:)?[+\-\d., @]+$)/iu.test(name) ? '' : name;
 }
 
 /** Exact allowlist on every outbound hop; no credentials, IPs or custom ports. */
@@ -189,10 +189,10 @@ export function proposalFromMapsHtml(html) {
 export function mergeMapsProposal(url, html = '') {
   const link = checkedGoogleMapsUrl(url);
   const inline = proposalFromMapsUrl(link.href);
-  const page = proposalFromMapsHtml(html);
-  const name = upper(page.name || inline.name, 500);
-  const address = upper(page.address || inline.address, 1000);
-  const city = upper(page.city || inline.city || cityFromItalianAddress(address), 100);
+  const page = link.pathname.includes('/dir/') ? {} : proposalFromMapsHtml(html);
+  const name = upper(inline.name || page.name, 500);
+  const address = upper(inline.address || page.address, 1000);
+  const city = upper(inline.city || cityFromItalianAddress(address) || page.city, 100);
   const warnings = [];
   if (!name) warnings.push('Il link non indica il nome del cliente: inseriscilo manualmente.');
   if (!city) warnings.push('La città non è disponibile nel link: completala manualmente.');
