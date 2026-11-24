@@ -1,7 +1,7 @@
 {
   "source": "https://tfg.bucci.it/@/TFGW_TP_ETA",
-  "source_updated_at": "2026-11-24T10:40:50.000Z",
-  "acquired_at": "2026-11-24T16:00:17.047Z",
+  "source_updated_at": "2026-11-24T16:43:13.000Z",
+  "acquired_at": "2026-11-24T17:00:16.905Z",
   "rows": [
     {
       "vessel": "GSL CHATEAU DIF",
@@ -81,10 +81,21 @@
       "destination": "INTERNO PORTO"
     },
     {
+      "vessel": "ASTRAIOS",
+      "arrival_voyage": "0HWLKE1MA",
+      "departure_voyage": "0HWLKE1MA",
+      "eta": "28/11/26",
+      "acceptance": "NON ACCETTA CARICO",
+      "custom_close_time": "&nbsp;",
+      "fast_corridor_cut_off": "",
+      "gate_cut_off": "",
+      "destination": "INTERNO PORTO"
+    },
+    {
       "vessel": "SUNAID X",
       "arrival_voyage": "019",
       "departure_voyage": "019",
-      "eta": "27/11/26",
+      "eta": "29/11/26",
       "acceptance": "ACCETTA CARICO",
       "custom_close_time": "&nbsp;",
       "fast_corridor_cut_off": "",
@@ -96,7 +107,7 @@
       "arrival_voyage": "AGA0A0S19",
       "departure_voyage": "AGA0A0S19",
       "eta": "30/11/26",
-      "acceptance": "CARICO DAL 24/11/26",
+      "acceptance": "ACCETTA CARICO",
       "custom_close_time": "&nbsp;",
       "fast_corridor_cut_off": "",
       "gate_cut_off": "",
