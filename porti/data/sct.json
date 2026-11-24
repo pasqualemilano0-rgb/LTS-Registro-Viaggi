@@ -1,7 +1,7 @@
 {
   "source": "https://www.salernocontainerterminal.com/ca/an/vessel_schedule.php",
   "source_updated_at": null,
-  "acquired_at": "2026-11-24T22:30:16.933Z",
+  "acquired_at": "2026-11-24T23:00:16.691Z",
   "rows": [
     {
       "vessel": "ULYSSE",
@@ -76,19 +76,10 @@
       "status": "PENDING"
     },
     {
-      "vessel": "CONTSHIP ERA",
-      "voyage": "94E",
+      "vessel": "LIDER TRABZON",
+      "voyage": "1126",
       "eta": "26/11/2026 00:00",
-      "closing": "26/11/2026 17:00",
-      "acceptance_dry": "CARGO ACCEPTED",
-      "acceptance_reef": "CARGO ACCEPTED",
-      "status": "PENDING"
-    },
-    {
-      "vessel": "MEDKON NLS",
-      "voyage": "325",
-      "eta": "26/11/2026 00:00",
-      "closing": "26/11/2026 17:00",
+      "closing": "14/11/2026 10:00 CLOSED",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
@@ -103,6 +94,15 @@
       "status": "PENDING"
     },
     {
+      "vessel": "MEDKON NLS",
+      "voyage": "325",
+      "eta": "26/11/2026 00:00",
+      "closing": "26/11/2026 17:00",
+      "acceptance_dry": "CARGO ACCEPTED",
+      "acceptance_reef": "CARGO ACCEPTED",
+      "status": "PENDING"
+    },
+    {
       "vessel": "VENTO DI LEVANTE",
       "voyage": "639",
       "eta": "26/11/2026 00:00",
@@ -112,10 +112,10 @@
       "status": "PENDING"
     },
     {
-      "vessel": "LIDER TRABZON",
-      "voyage": "1126",
+      "vessel": "CONTSHIP ERA",
+      "voyage": "94E",
       "eta": "26/11/2026 00:00",
-      "closing": "14/11/2026 10:00 CLOSED",
+      "closing": "26/11/2026 17:00",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
@@ -148,6 +148,15 @@
       "status": "PENDING"
     },
     {
+      "vessel": "VENTO DI MAESTRALE",
+      "voyage": "536",
+      "eta": "28/11/2026 00:00",
+      "closing": "25/11/2026 17:00",
+      "acceptance_dry": "CARGO ACCEPTED",
+      "acceptance_reef": "CARGO ACCEPTED",
+      "status": "PENDING"
+    },
+    {
       "vessel": "VENTO DI GRECALE",
       "voyage": "840",
       "eta": "28/11/2026 00:00",
@@ -166,15 +175,6 @@
       "status": "PENDING"
     },
     {
-      "vessel": "VENTO DI MAESTRALE",
-      "voyage": "536",
-      "eta": "28/11/2026 00:00",
-      "closing": "25/11/2026 17:00",
-      "acceptance_dry": "CARGO ACCEPTED",
-      "acceptance_reef": "CARGO ACCEPTED",
-      "status": "PENDING"
-    },
-    {
       "vessel": "ALTAMIRA EXPRESS",
       "voyage": "647W",
       "eta": "28/11/2026 05:00",
@@ -184,19 +184,19 @@
       "status": "PENDING"
     },
     {
-      "vessel": "XIN LIAN YUN GANG",
-      "voyage": "646N",
+      "vessel": "VALUE",
+      "voyage": "MG648W",
       "eta": "29/11/2026 00:00",
-      "closing": "28/11/2026 10:00",
+      "closing": "27/11/2026 17:00",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
     },
     {
-      "vessel": "VALUE",
-      "voyage": "MG648W",
+      "vessel": "XIN LIAN YUN GANG",
+      "voyage": "646N",
       "eta": "29/11/2026 00:00",
-      "closing": "27/11/2026 17:00",
+      "closing": "28/11/2026 10:00",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
@@ -229,8 +229,8 @@
       "status": "PENDING"
     },
     {
-      "vessel": "MSC BARBADOS",
-      "voyage": "CD647A",
+      "vessel": "ATRIA",
+      "voyage": "ATI0626E",
       "eta": "01/12/2026 00:00",
       "closing": "30/11/2026 17:00",
       "acceptance_dry": "CARGO ACCEPTED",
@@ -238,8 +238,8 @@
       "status": "PENDING"
     },
     {
-      "vessel": "ATRIA",
-      "voyage": "ATI0626E",
+      "vessel": "MSC BARBADOS",
+      "voyage": "CD647A",
       "eta": "01/12/2026 00:00",
       "closing": "30/11/2026 17:00",
       "acceptance_dry": "CARGO ACCEPTED",
@@ -254,8 +254,44 @@
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
+    },
+    {
+      "vessel": "ARGENTINIAN",
+      "voyage": "0HWLGE1MA",
+      "eta": "02/12/2026 00:00",
+      "closing": "01/12/2026 17:00",
+      "acceptance_dry": "CARGO ACCEPTED",
+      "acceptance_reef": "CARGO ACCEPTED",
+      "status": "PENDING"
+    },
+    {
+      "vessel": "ARICA EXPRESS",
+      "voyage": "28W49",
+      "eta": "02/12/2026 00:00",
+      "closing": "01/12/2026 17:00",
+      "acceptance_dry": "CARGO ACCEPTED",
+      "acceptance_reef": "CARGO ACCEPTED",
+      "status": "PENDING"
+    },
+    {
+      "vessel": "GREEN OCEAN",
+      "voyage": "649W",
+      "eta": "02/12/2026 00:00",
+      "closing": "01/12/2026 17:00",
+      "acceptance_dry": "CARGO ACCEPTED",
+      "acceptance_reef": "CARGO ACCEPTED",
+      "status": "PENDING"
+    },
+    {
+      "vessel": "NAAMA BORCHARD",
+      "voyage": "0140",
+      "eta": "02/12/2026 08:00",
+      "closing": "01/12/2026 17:00",
+      "acceptance_dry": "CARGO ACCEPTED",
+      "acceptance_reef": "CARGO ACCEPTED",
+      "status": "PENDING"
     }
   ],
-  "updated_at": "2026-11-24T22:30:16.933Z",
-  "data_changed_at": "2026-11-24T19:15:16.596Z"
+  "updated_at": "2026-11-24T23:00:16.691Z",
+  "data_changed_at": "2026-11-24T23:00:16.691Z"
 }
