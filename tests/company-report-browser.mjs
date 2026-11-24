@@ -453,7 +453,7 @@ try{
  assert.match(await page.locator('#smart-results').textContent(),/ABCD1234567/i);
  // V2 contextual read-only previews preserve the active dashboard, search and data.
  await page.locator('#smart-results .smart-result-buttons button').first().click();
- assert.equal(await page.locator('#smart-detail').isVisible(),true);
+ await page.locator('#smart-detail').waitFor({state:'visible',timeout:5000});
  assert.match(await page.locator('#smart-detail-body').textContent(),/ABCD1234567/);
  assert.equal(await page.locator('#dashboard').getAttribute('data-view'),'overview');
  await page.locator('#smart-back').click();
@@ -1090,7 +1090,9 @@ try{
  await page.keyboard.press('Control+k');
  await page.locator('#smart-search').fill('ROSSI');
  await page.locator('#smart-results .smart-result-buttons button').first().click();
- assert.equal(await page.locator('#smart-detail').isVisible(),true);
+ await page.locator('#smart-detail').waitFor({state:'visible',timeout:5000});
+ assert.match(await page.locator('#smart-detail-body').textContent(),/Mario Rossi/,
+  'Before logout, the open preview must display the authorized synthetic driver');
  await page.locator('#logout').evaluate(element=>element.click());
  await page.waitForFunction(()=>document.querySelector('#dashboard').hidden===true);
  assert.equal(await page.locator('#smart-overlay').isVisible(),false);
