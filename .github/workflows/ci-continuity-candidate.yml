@@ -1,15 +1,16 @@
 name: LTS CI continuity candidate
-# Initial parity trial only. No change to existing CircleCI gates or production.
-# Enable regular PR triggers only after parity and administrator-approved cutover.
+# Run once per PR update; main Porti snapshot pushes do not run application CI.
+# Existing CircleCI requirements remain unchanged until administrator cutover.
 on:
-  push:
+  pull_request:
     branches:
-      - ci/continuity-zero-cost
+      - main
+    types: [opened, synchronize, reopened, ready_for_review]
   workflow_dispatch:
 permissions:
   contents: read
 concurrency:
-  group: lts-ci-continuity-${{ github.ref }}
+  group: lts-ci-continuity-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 defaults:
   run:
@@ -28,8 +29,17 @@ jobs:
           ref: ${{ github.sha }}
           fetch-depth: 0
           persist-credentials: false
-      - name: Verify exact candidate SHA
-        run: test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+      - name: Verify exact candidate SHA and PR merge parents
+        env:
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -eu
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          if [ "$GITHUB_EVENT_NAME" = pull_request ]; then
+            test "$(git rev-parse HEAD^2)" = "$PR_HEAD_SHA"
+            test "$(git rev-parse HEAD^1)" = "$PR_BASE_SHA"
+          fi
       - name: "Full JS regression and read-only authorization checks"
         run: |
           set -eu
@@ -55,8 +65,17 @@ jobs:
           ref: ${{ github.sha }}
           fetch-depth: 0
           persist-credentials: false
-      - name: Verify exact candidate SHA
-        run: test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+      - name: Verify exact candidate SHA and PR merge parents
+        env:
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -eu
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          if [ "$GITHUB_EVENT_NAME" = pull_request ]; then
+            test "$(git rev-parse HEAD^2)" = "$PR_HEAD_SHA"
+            test "$(git rev-parse HEAD^1)" = "$PR_BASE_SHA"
+          fi
       - name: "Booking TFG, Supabase session and Porti CSP regressions (offline)"
         run: |
           set -eu
@@ -87,8 +106,17 @@ jobs:
           ref: ${{ github.sha }}
           fetch-depth: 0
           persist-credentials: false
-      - name: Verify exact candidate SHA
-        run: test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+      - name: Verify exact candidate SHA and PR merge parents
+        env:
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -eu
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          if [ "$GITHUB_EVENT_NAME" = pull_request ]; then
+            test "$(git rev-parse HEAD^2)" = "$PR_HEAD_SHA"
+            test "$(git rev-parse HEAD^1)" = "$PR_BASE_SHA"
+          fi
       - name: "Public CNT TFG SCT snapshot safety gates (offline; no publish)"
         run: |
           set -eu
@@ -107,8 +135,17 @@ jobs:
           ref: ${{ github.sha }}
           fetch-depth: 0
           persist-credentials: false
-      - name: Verify exact candidate SHA
-        run: test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+      - name: Verify exact candidate SHA and PR merge parents
+        env:
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -eu
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          if [ "$GITHUB_EVENT_NAME" = pull_request ]; then
+            test "$(git rev-parse HEAD^2)" = "$PR_HEAD_SHA"
+            test "$(git rev-parse HEAD^1)" = "$PR_BASE_SHA"
+          fi
       - name: "KV public snapshot publisher and atomic GitHub commit security checks (offline)"
         run: |
           set -eu
@@ -129,13 +166,19 @@ jobs:
           ref: ${{ github.sha }}
           fetch-depth: 0
           persist-credentials: false
-      - name: Verify exact candidate SHA
+      - name: Verify exact candidate SHA and PR merge parents
+        env:
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: |
           set -eu
-          # The Playwright container and runner own the checkout with different UIDs.
-          # Trust only this isolated job workspace; never use safe.directory=*.
+          # Trust only the isolated Playwright workspace, never a wildcard.
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
           test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          if [ "$GITHUB_EVENT_NAME" = pull_request ]; then
+            test "$(git rev-parse HEAD^2)" = "$PR_HEAD_SHA"
+            test "$(git rev-parse HEAD^1)" = "$PR_BASE_SHA"
+          fi
       - name: "Install matching, fixed Playwright Node package"
         run: |
           set -eu
