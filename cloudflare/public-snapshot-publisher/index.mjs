@@ -66,7 +66,10 @@ export function reportPublishError(error,logger=console){
   if(error instanceof PublishRejected&&error.message==='UNHEALTHY_TERMINAL'&&error.terminalHealth){
     const health=error.terminalHealth;
     logger.error('PUBLIC_PORTI_TERMINAL_HEALTH',
-      JSON.stringify(terminalHealthDiagnostic(health.terminal,health)));
+      JSON.stringify(terminalHealthDiagnostic(health.terminal,{
+        state:health.state,last_error_code:health.error_code,
+        last_attempt_at:health.last_attempt_at,last_success_at:health.last_success_at
+      })));
   }
   logger.error('PUBLIC_PORTI_PUBLISH_ERROR',
     error instanceof PublishRejected?error.message:'UNEXPECTED_FAILURE');
