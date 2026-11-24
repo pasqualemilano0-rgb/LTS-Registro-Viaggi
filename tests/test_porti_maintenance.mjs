@@ -104,7 +104,7 @@ test('Original maintenance notice remains a one-line rollback',()=>{
 });
 
 test('Protected Pages entry and current PWA cache are required for reopening',()=>{
- assert.match(page,/src="\.\.\/porti-access\.mjs\?v=20261124-porti-stability-v1"/);
+ assert.match(page,/src="\.\.\/porti-access\.mjs\?v=20261124-pwa-isolation-v1"/);
  assert.match(page,/<body hidden>/);
  assert.doesNotMatch(page,/<script(?![^>]*porti-access)[^>]*>/g);
  assert.match(access,/}else if\(!sameOriginParent\(\)\)\{/);
@@ -144,7 +144,7 @@ test('The parent LTS app keeps Register usable and blocks Porti iframe on Sunday
  assert.match(app,/setInterval\(syncPortiSundayState,60_000\)/);
  assert.match(access,/timeZone:'Europe\/Rome',weekday:'short'/);
  assert.match(access,/if\(isPortiSundayInRome\(\)\)\{/);
- assert.match(app,/porti\/index\.html\?v=20261124-porti-stability-v1/);
+ assert.match(app,/porti\/index\.html\?v=20261124-pwa-isolation-v1/);
 });
 
 test('CO.NA.TE.CO. shows ACCETTA CARICO only when acceptance is actually confirmed',()=>{
