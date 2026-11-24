@@ -48,16 +48,18 @@ const sameOriginParent=()=>{
  try{return window.parent.location.origin===location.origin
    && PARENT_PATHS.has(window.parent.location.pathname);}catch{return false;}
 };
+const notifyParent=type=>{if(sameOriginParent())window.parent.postMessage({type},location.origin);};
 if(MAINTENANCE_ENABLED){
- showMaintenance();
+ showMaintenance();notifyParent('lts-porti-rendered');
 }else if(isPortiSundayInRome()){
- showMaintenance('sunday');
+ showMaintenance('sunday');notifyParent('lts-porti-rendered');
 }else if(!sameOriginParent()){
  location.replace(BASE);
 }else{
- let authorized=false;
+ let authorized=false,closed=false;
  const denied=()=>{
-  if(authorized)return;
+  if(authorized||closed)return;
+  closed=true;
   document.body.replaceChildren();
   const main=document.createElement('main');
   main.setAttribute('role','alert');
@@ -66,17 +68,19 @@ if(MAINTENANCE_ENABLED){
   link.href=BASE;link.target='_top';link.textContent='Apri LTS Registro Viaggi';
   main.append(document.createElement('p'),link);
   document.body.append(main);document.body.hidden=false;
+  notifyParent('lts-porti-failed');
  };
  const timeout=setTimeout(denied,10000);
  window.addEventListener('message',async event=>{
-  if(authorized||event.source!==window.parent||event.origin!==location.origin
+  if(authorized||closed||event.source!==window.parent||event.origin!==location.origin
     ||event.data?.type!=='lts-porti-authorized')return;
-  if(isPortiSundayInRome()){clearTimeout(timeout);showMaintenance('sunday');return;}
+  if(isPortiSundayInRome()){closed=true;clearTimeout(timeout);showMaintenance('sunday');notifyParent('lts-porti-rendered');return;}
   authorized=true;clearTimeout(timeout);
   try{
    await import('./porti/app.js?v=20261110-porti-freshcode-v2');
    await import('./porti/driver-ui.mjs?v=20261031-v44');
    document.body.hidden=false;
+   notifyParent('lts-porti-rendered');
   }catch{
    authorized=false;denied();
   }
