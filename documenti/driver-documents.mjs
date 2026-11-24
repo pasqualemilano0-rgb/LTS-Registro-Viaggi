@@ -32,7 +32,7 @@ for(const link of document.querySelectorAll('a[data-back-to-register]')){
  });
 }
 let category='cedolino',offset=0,busy=false,activePdfPreview=null;
-let viewGeneration=0;
+let viewGeneration=0,listRequest=0;
 const months=['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
 function note(message='',error=false){
  $('notice').textContent=message;$('notice').hidden=!message;
@@ -45,7 +45,9 @@ function element(tag,cls,text){
 }
 // Clear sensitive content when the app is backgrounded or the account changes.
 function hideDocuments(){
- viewGeneration++;
+ viewGeneration++;listRequest++;busy=false;
+ $('refresh').disabled=false;$('more').disabled=false;$('more').hidden=true;
+ $('documents').setAttribute('aria-busy','false');
  closePdfPreview();
  $('content').hidden=true;
  $('documents').replaceChildren();offset=0;
@@ -192,28 +194,44 @@ function emptyCategoryState(){
 }
 async function load(append=false){
  if(!payrollConfigured()){showNotConfigured();return;}
- if(busy||$('content').hidden)return;
- const generation=viewGeneration;
+ if($('content').hidden||document.hidden||!account.isVerified()||account.getRole()!=='driver')return;
+ // Filter changes supersede an in-flight list. Pagination alone is serialized.
+ if(append&&(busy||$('more').hidden))return;
+ const generation=viewGeneration,request=++listRequest,owner=account.getAccountId();
+ const filter={category,offset:append?offset:0};
+ if($('year').value)filter.year=Number($('year').value);
+ const current=()=>request===listRequest&&generation===viewGeneration&&
+  !$('content').hidden&&!document.hidden&&account.isVerified()&&
+  account.getRole()==='driver'&&account.getAccountId()===owner&&
+  category===filter.category&&($('year').value?Number($('year').value):undefined)===filter.year;
  busy=true;$('refresh').disabled=true;$('more').disabled=true;
- if(!append){offset=0;$('documents').replaceChildren();}
+ $('documents').setAttribute('aria-busy','true');
+ if(!append){offset=0;$('more').hidden=true;$('documents').replaceChildren();}
+ note('Caricamento documenti…');
  try{
-  const filter={category,offset};
-  if($('year').value)filter.year=Number($('year').value);
   const result=await api.documents(filter);
-  if(generation!==viewGeneration||$('content').hidden||document.hidden||
-      !account.isVerified()||account.getRole()!=='driver')return;
-  if(!Array.isArray(result.documents))throw Error('Archivio documenti non valido.');
+  if(!current())return;
+  if(!Array.isArray(result.documents)||result.documents.length>50)throw Error('Archivio documenti non valido.');
+  // Validate the entire page before exposing any row. A stale or unexpected
+  // category/year must never be rendered under the active filter.
   for(const doc of result.documents){
-   if(doc.state!=='published'||!['cedolino','cu','altri'].includes(doc.category))
+   if(!doc||doc.state!=='published'||doc.category!==filter.category||
+      (filter.year!==undefined&&doc.document_year!==filter.year))
     throw Error('Risposta documenti non autorizzata.');
-   $('documents').append(display(doc));
   }
+  const rows=result.documents.map(display);
+  $('documents').append(...rows);
   offset+=result.documents.length;
   $('more').hidden=result.documents.length<50;
   if(!offset)$('documents').append(emptyCategoryState());
   note('');
- }catch(error){note(error.message||'Impossibile aggiornare i documenti.',true);}
- finally{busy=false;$('refresh').disabled=false;$('more').disabled=false;}
+ }catch(error){if(current())note(error.message||'Impossibile aggiornare i documenti.',true);}
+ finally{
+  if(request===listRequest&&generation===viewGeneration){
+   busy=false;$('refresh').disabled=false;$('more').disabled=false;
+   $('documents').setAttribute('aria-busy','false');
+  }
+ }
 }
 for(const button of document.querySelectorAll('[data-category]')){
  button.addEventListener('click',()=>{
