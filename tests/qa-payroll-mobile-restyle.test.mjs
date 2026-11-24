@@ -56,7 +56,7 @@ test('scope restyle to the driver page, keep security and profile-return navigat
  assert.match(html,/data-back-to-register/);
  assert.match(driver,/await account\.verifySession\(\)/);
  assert.match(driver,/account\.getRole\(\)!=='driver'/);
- assert.match(driver,/if\(openedFromProfile&&window\.history\.length>1\)/);
+ assert.match(driver,/if\(openedFromProfile&&window\.history\.length>1&&previousEntryIsRegister\(\)\)/);
  assert.match(css,/@media\(max-width:620px\)/);
  assert.match(css,/\.driver-documents-page \.category-nav/);
  assert.match(css,/\.driver-documents-page \.archive-toolbar/);
