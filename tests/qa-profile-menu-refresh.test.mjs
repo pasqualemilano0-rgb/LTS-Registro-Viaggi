@@ -37,7 +37,8 @@ test('profile section order makes documents first and logout last',()=>{
 test('profile account and document authorization conditions are preserved',()=>{
  assert.match(profile,/if\(payrollProfileEligible\(\)\)\{/);
  assert.match(profile,/menuButton\('I MIEI DOCUMENTI'/);
- assert.match(profile,/if\(store\.usingAccount\(\)\&\&accountAccess\.getRole\(\)==='admin'\&\&accountAccess\.isVerified\(\)\)/);
+ assert.doesNotMatch(profile,/menuButton\('Gestisci autisti'/);
+ assert.doesNotMatch(profile,/location\.assign\(new URL\('amministratore\//);
  assert.match(profile,/if\(store\.usingAccount\(\)\)\{/);
  assert.match(profile,/store\.leaveAccountView\(\)/);
  assert.match(profile,/void accountAccess\.logout\(\)/);
