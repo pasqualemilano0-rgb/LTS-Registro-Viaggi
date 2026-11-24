@@ -112,6 +112,8 @@ self.addEventListener('fetch', event => {
   // The API is on a separate origin. Never cache personal records or API calls.
   if (url.origin !== self.location.origin || request.method !== 'GET' || !url.pathname.startsWith(BASE)) return;
   if (url.pathname.startsWith(BASE + 'api/')) return;
+  // Never supply a driver shell or cache response to the separate admin app.
+  if (['amministratore','status'].some(area => url.pathname === BASE + area || url.pathname.startsWith(BASE + area + '/'))) return;
   const isPort = url.pathname === PORT_BASE.slice(0, -1) || url.pathname.startsWith(PORT_BASE);
   if (isPort && (url.pathname.startsWith(PORT_BASE + 'data/') || url.pathname.endsWith('.json'))) return;
   if (request.mode === 'navigate') {
