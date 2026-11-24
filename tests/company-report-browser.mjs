@@ -1018,6 +1018,31 @@ try{
  assert.equal(await page.locator('#company-maps-save').isDisabled(),true);
  await page.locator('#company-maps-name').fill('CLIENTE DELTA');
  assert.equal(await page.locator('#company-maps-save').isEnabled(),true);
+ // Long synthetic values must wrap, grow, remain editable and fit the mobile viewport.
+ await page.locator('#company-maps-city').fill('ZONA INDUSTRIALE DI COLLAUDO MARCIANISE NORD');
+ await page.locator('#company-maps-address').fill('KM. 27.200, SS 265, 81025 ZONA INDUSTRIALE DI COLLAUDO MARCIANISE NORD CE, INGRESSO MERCI E AREA DI CARICO');
+ const mapsGeometry=await page.evaluate(()=>{
+  const fields=['name','city','address'].map(key=>{
+   const field=document.querySelector('#company-maps-'+key);
+   return {tag:field.tagName,client:field.clientHeight,scroll:field.scrollHeight,width:field.clientWidth,scrollWidth:field.scrollWidth};
+  });
+  return {fields,viewport:innerWidth,documentWidth:document.documentElement.scrollWidth};
+ });
+ for(const field of mapsGeometry.fields){
+  assert.equal(field.tag,'TEXTAREA');
+  assert(field.scroll<=field.client+2,'Maps text must fit vertically');
+  assert(field.scrollWidth<=field.width+2,'Maps text must wrap horizontally');
+ }
+ assert(mapsGeometry.documentWidth<=mapsGeometry.viewport+2,'Maps form must not overflow viewport');
+ await page.locator('#company-maps-save').evaluate(el=>el.scrollIntoView({block:'end',behavior:'instant'}));
+ const saveGeometry=await page.evaluate(()=>{
+  const button=document.querySelector('#company-maps-save').getBoundingClientRect();
+  const nav=document.querySelector('#dashboard>.admin-switch').getBoundingClientRect();
+  return {bottom:button.bottom,navTop:nav.top};
+ });
+ assert(saveGeometry.bottom<=saveGeometry.navTop+1,'Maps save button must clear fixed navigation');
+ await page.locator('#company-maps-city').fill('CASERTA');
+ await page.locator('#company-maps-address').fill('VIA PORTO 8, CASERTA');
  await page.locator('#company-maps-address').fill('');
  assert.equal(await page.locator('#company-maps-save').isDisabled(),true);
  await page.locator('#company-maps-address').fill('VIA PORTO 8, CASERTA');

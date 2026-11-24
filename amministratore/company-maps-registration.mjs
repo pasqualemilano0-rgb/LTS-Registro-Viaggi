@@ -53,6 +53,24 @@ export function setupCompanyMaps(account,{onSaved=async()=>{}}={}){
  let selected=null,existing=null,rate=null,seq=0,busy=false;
  let source=null,sites=[],rates=[],rateKey=null;
  const fields=[name,city,address];
+ // Presentation only: fit the editable text to its content, including narrow mobile layouts.
+ function resizeFields(){
+  if(preview.hidden||!preview.getBoundingClientRect().width)return;
+  for(const field of fields){
+   field.style.height='auto';
+   const borders=field.offsetHeight-field.clientHeight;
+   field.style.height=Math.max(46,field.scrollHeight+borders)+'px';
+   field.dataset.autoGrow='true';
+  }
+ }
+ let previousWidth=0;
+ if(typeof ResizeObserver==='function'){
+  const observer=new ResizeObserver(entries=>{
+   const width=entries[0]?.contentRect.width||0;
+   if(width!==previousWidth){previousWidth=width;if(width)resizeFields();}
+  });
+  observer.observe(preview);
+ }
  const authorized=()=>account.isVerified()&&account.getRole()==='admin'&&
   !byId('dashboard').hidden&&byId('dashboard').dataset.view==='rates';
  function feedback(message,error=false){
@@ -113,6 +131,7 @@ export function setupCompanyMaps(account,{onSaved=async()=>{}}={}){
    city.value=proposal.city;address.value=proposal.address;
    warning.textContent=(proposal.warnings||[]).join(' ');
    amount.value='';preview.hidden=false;
+   resizeFields();
    review(siteResult,rateResult.tariffs);
   }catch(error){
    if(token===seq&&authorized())feedback(error?.message||'Verifica Google Maps non riuscita.',true);
@@ -163,7 +182,7 @@ export function setupCompanyMaps(account,{onSaved=async()=>{}}={}){
    if(saveToken===seq)save.disabled=!selected;
   }
  }
- for(const field of fields)field.addEventListener('input',()=>review());
+ for(const field of fields)field.addEventListener('input',()=>{resizeFields();review();});
  url.addEventListener('input',invalidate);
  read.addEventListener('click',()=>void inspect());
  form.addEventListener('submit',event=>void submit(event));
