@@ -142,3 +142,27 @@
  #company-manual-add .company-manual-fields{grid-template-columns:1fr}
  #company-manual-save{width:100%}
 }
+
+/* Maps review: wrap long values without changing the validation or save flow. */
+#company-maps-preview{grid-template-columns:minmax(0,1fr);min-width:0}
+#company-maps-preview>label{min-width:0}
+#dashboard #company-maps-preview textarea{
+ box-sizing:border-box;display:block;width:100%;min-width:0;max-width:100%;
+ min-height:46px;padding:10px 12px;border:1px solid #c5dde2;border-radius:10px;
+ background:#fcfefe;color:#193f50;font:inherit;font-size:16px;font-weight:650;
+ line-height:1.4;white-space:pre-wrap;overflow-wrap:anywhere;overflow-x:hidden;resize:vertical;
+}
+#dashboard #company-maps-preview textarea[data-auto-grow="true"]{resize:none;overflow-y:hidden}
+#dashboard #company-maps-preview textarea:focus-visible{outline:3px solid #1bafa4;outline-offset:2px}
+@media(max-width:1029px){
+ html:has(#dashboard[data-view="rates"]:not([hidden])){
+  scroll-padding-bottom:calc(104px + env(safe-area-inset-bottom,0px));
+ }
+ #dashboard[data-view="rates"] #company-rates{
+  padding-bottom:calc(92px + env(safe-area-inset-bottom,0px));
+ }
+ #company-maps-preview>button{width:100%;min-height:46px}
+ #company-maps-preview textarea,#company-maps-amount,#company-maps-save{
+  scroll-margin-bottom:12px;
+ }
+}

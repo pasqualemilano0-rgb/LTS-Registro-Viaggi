@@ -19,7 +19,7 @@
   <link rel="stylesheet" href="./dashboard-v6.css?v=20261104-mobile-v7">
   <link rel="stylesheet" href="./smart-console.css?v=20261108-smart-v2">
   <link rel="stylesheet" href="./customer-overview.css?v=20261107-manual-shared-v1">
-  <link rel="stylesheet" href="./company-rates.css?v=20261107-manual-shared-v1">
+  <link rel="stylesheet" href="./company-rates.css?v=20261124-maps-mobile-v1">
   <link rel="stylesheet" href="./driver-records.css?v=20261110-duplicate-guard-v2">
   <link rel="stylesheet" href="../visual-theme.css?v=20261108-rc3-v1">
   <link rel="stylesheet" href="./admin-login-refreshed.css?v=20261110-seamless-resume-v2">
@@ -378,13 +378,13 @@
               <div id="company-maps-preview" class="company-maps-preview" hidden>
                 <h3>Verifica la sede e imposta la tariffa</h3>
                 <label for="company-maps-name">Cliente
-                  <input id="company-maps-name" name="customerName" type="text" maxlength="500" required placeholder="Nome cliente">
+                  <textarea id="company-maps-name" name="customerName" rows="2" maxlength="500" required placeholder="Nome cliente"></textarea>
                 </label>
                 <label for="company-maps-city">Località
-                  <input id="company-maps-city" name="customerCity" type="text" maxlength="100" required placeholder="Comune">
+                  <textarea id="company-maps-city" name="customerCity" rows="2" maxlength="100" required placeholder="Comune"></textarea>
                 </label>
                 <label for="company-maps-address">Indirizzo
-                  <input id="company-maps-address" name="customerAddress" type="text" maxlength="1000" required placeholder="Via, numero civico, CAP">
+                  <textarea id="company-maps-address" name="customerAddress" rows="3" maxlength="1000" required placeholder="Via, numero civico, CAP"></textarea>
                 </label>
                 <p id="company-maps-warning" class="company-maps-notice"></p>
                 <p id="company-maps-duplicate" class="company-maps-notice"></p>
