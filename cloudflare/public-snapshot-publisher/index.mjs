@@ -71,19 +71,50 @@ export function vet(terminal,snapshot,status,previous,now=Date.now()){
   requireTrue(new TextEncoder().encode(body).length<=MAX_BYTES,'OVERSIZED_PUBLIC_SNAPSHOT');
   return{body,acquired,rows:result.rows.length,changed:!previous||acquired>time(previous.acquired_at,'BAD_PREVIOUS_TIME')};
 }
+// KV may return an empty page while more keys remain (expired/deleted tombstones).
+// Preserve the recovery gate: never interpret an incomplete page as a missing backup.
+export async function hasRecoveryPoint(kv,terminal){
+  const prefix='backup:v1:'+terminal+':',seen=new Set();
+  let cursor;
+  for(let page=0;page<10;page++){
+    const options={prefix,limit:100};
+    if(cursor)options.cursor=cursor;
+    const result=await kv.list(options);
+    requireTrue(Array.isArray(result?.keys),'RECOVERY_POINT_LIST_INVALID_'+terminal);
+    if(result.keys.some(key=>typeof key?.name==='string'&&key.name.startsWith(prefix)))return true;
+    if(result.list_complete===true)return false;
+    requireTrue(result.list_complete===false&&typeof result.cursor==='string'&&
+      result.cursor.length>0&&!seen.has(result.cursor),'RECOVERY_POINT_LIST_INVALID_'+terminal);
+    seen.add(result.cursor);
+    cursor=result.cursor;
+  }
+  throw new PublishRejected('RECOVERY_POINT_LIST_INCOMPLETE_'+terminal);
+}
 export async function readAll(env,now=Date.now(),previous={}){
   requireTrue(env&&env.SCHEDULES_KV&&typeof env.SCHEDULES_KV.get==='function'&&typeof env.SCHEDULES_KV.list==='function','KV_UNAVAILABLE');
   const output={};
   for(const terminal of Object.keys(FEEDS)){
-    const [snapshot,status,backups]=await Promise.all([
+    const [snapshot,status,backupPresent]=await Promise.all([
       env.SCHEDULES_KV.get('schedule:'+terminal,'json'),
       env.SCHEDULES_KV.get('status:'+terminal,'json'),
-      env.SCHEDULES_KV.list({prefix:'backup:v1:'+terminal+':',limit:1})
+      hasRecoveryPoint(env.SCHEDULES_KV,terminal)
     ]);
-    requireTrue(Array.isArray(backups?.keys)&&backups.keys.length>0,'RECOVERY_POINT_MISSING_'+terminal);
+    requireTrue(backupPresent,'RECOVERY_POINT_MISSING_'+terminal);
     output[terminal]=vet(terminal,snapshot,status,previous[terminal]??null,now);
   }
   return output;
+}
+// Fixed-category diagnostics: never log GitHub response bodies or token material.
+export function classifyGitHubRef422(payload){
+  if(!payload||typeof payload!=='object')return 'UNKNOWN';
+  const texts=[payload.message];
+  if(Array.isArray(payload.errors))
+    for(const item of payload.errors.slice(0,8))texts.push(item?.message);
+  const signal=texts.filter(v=>typeof v==='string').map(v=>v.slice(0,500).toLowerCase()).join(' ');
+  if(/repository rule violations|ruleset|protected branch|protected ref|changes must be made through a pull request|required status checks|pull request is required/.test(signal))return 'RULESET';
+  if(/not a fast.forward|non.fast.forward|reference update failed|branch was modified|out.of.date ref/.test(signal))return 'NON_FAST_FORWARD';
+  if(/invalid sha|sha does not exist|git object does not exist|object not found/.test(signal))return 'INVALID_REF';
+  return 'UNKNOWN';
 }
 async function github(path,{method='GET',body,token,fetcher=fetch}={}){
   requireTrue(path.startsWith('/git/')||path.startsWith('/contents/'),'UNEXPECTED_GITHUB_ROUTE');
@@ -95,6 +126,19 @@ async function github(path,{method='GET',body,token,fetcher=fetch}={}){
     if(body!==undefined)headers['Content-Type']='application/json';
     const response=await fetcher(BASE+path,{method,headers,body:body===undefined?undefined:JSON.stringify(body),
       redirect:'manual',signal:controller.signal});
+    // HTTP 422 can mean a ruleset block, a stale ref or another validation error.
+    // Limit parsing to 8 KiB and expose only a fixed, non-sensitive category.
+    if(method==='PATCH'&&path==='/git/refs/heads/main'&&response.status===422){
+      let reason='UNKNOWN';
+      const size=Number(response.headers?.get?.('Content-Length')||0);
+      if(Number.isFinite(size)&&size>=0&&size<=8192){
+        try{
+          const raw=await response.text();
+          if(raw.length<=8192)reason=classifyGitHubRef422(JSON.parse(raw));
+        }catch{ /* malformed responses stay UNKNOWN */ }
+      }
+      throw new PublishRejected('GITHUB_PATCH_HTTP_422_'+reason);
+    }
     requireTrue(response.ok&&!response.redirected&&response.status<300,'GITHUB_'+method+'_HTTP_'+response.status);
     const size=Number(response.headers?.get?.('Content-Length')||0);
     requireTrue(size<=2000000,'GITHUB_RESPONSE_OVERSIZED');
