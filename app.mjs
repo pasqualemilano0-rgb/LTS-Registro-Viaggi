@@ -89,7 +89,7 @@ let refreshView = null;
 let refreshTripCustomerSuggestions=null;
 let refreshTripFareEstimate=null;
 let portiFrame = null;
-let portiStartupPanel=null,portiStartupTimer=null;
+let portiStartupPanel=null,portiStartupTimer=null,portiLoadingTimer=null;
 let subscribed = false;
 let realtimeBridge=null;
 // Presentation-only cache. Authorization and PDF ownership remain server-side.
@@ -291,6 +291,7 @@ function refreshDraftCustomers(previous,next){
 }
 function clearPortiStartupTimer(){
  if(portiStartupTimer!==null){clearTimeout(portiStartupTimer);portiStartupTimer=null;}
+ if(portiLoadingTimer!==null){clearTimeout(portiLoadingTimer);portiLoadingTimer=null;}
 }
 function disposePortiFrame(){
  clearPortiStartupTimer();
@@ -306,6 +307,8 @@ function unmountPorti(){
 function failPortiStartup(frame){
  if(tab!=='porti'||frame!==portiFrame||!portiStartupPanel?.isConnected)return;
  disposePortiFrame();
+ portiStartupPanel.hidden=false;
+ portiStartupPanel.setAttribute('data-state','error');
  portiStartupPanel.setAttribute('aria-busy','false');
  portiStartupPanel.replaceChildren(
   el('h2',{},'Porti non disponibili al momento'),
@@ -375,13 +378,19 @@ function renderPorti(main){
   return;
  }
  const url=(runtimeConfig.basePath??'/')+'porti/index.html?v=20261124-pwa-isolation-v1';
- portiStartupPanel=el('section',{class:'panel',role:'status','aria-live':'polite','aria-busy':'true'},
-  el('h2',{},'Caricamento Porti…'),el('p',{},'Preparazione della ricerca Booking e dei programmi navi.'));
- portiFrame=el('iframe',{class:'porti-frame',src:url,title:'Porti e booking',referrerpolicy:'no-referrer'});
+ portiStartupPanel=el('section',{class:'porti-startup',hidden:true,role:'status','aria-live':'polite','aria-busy':'true'},
+  el('span',{class:'porti-loading-spinner','aria-hidden':'true'}),
+  el('h2',{},'Caricamento Porti'),el('p',{},'Connessione ai servizi portuali'));
+ portiFrame=el('iframe',{class:'porti-frame','data-porti-starting':true,src:url,title:'Porti e booking',referrerpolicy:'no-referrer'});
  const frame=portiFrame;
  // Covers the full startup: iframe network, handshake AND both module imports.
  // Destroy the failed frame so late imports cannot reveal stale controls.
  portiStartupTimer=setTimeout(()=>failPortiStartup(frame),20000);
+ // Start fetching immediately; show feedback only for a perceptible wait.
+ portiLoadingTimer=setTimeout(()=>{
+  portiLoadingTimer=null;
+  if(tab==='porti'&&frame===portiFrame&&portiStartupPanel?.isConnected)portiStartupPanel.hidden=false;
+ },300);
  frame.addEventListener('error',()=>failPortiStartup(frame),{once:true});
  main.append(el('div',{class:'porti-heading'},el('h1',{},'Porti')),portiStartupPanel,frame);
 }
@@ -404,6 +413,7 @@ window.addEventListener('message',event=>{
   event.source.postMessage({type:'lts-porti-authorized'},location.origin);
  }else if(type==='lts-porti-rendered'){
   clearPortiStartupTimer();
+  portiFrame.removeAttribute('data-porti-starting');
   portiStartupPanel?.remove();portiStartupPanel=null;
  }
 });
