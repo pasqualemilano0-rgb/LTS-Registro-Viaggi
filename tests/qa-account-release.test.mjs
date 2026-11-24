@@ -363,7 +363,7 @@ test('dedicated admin console loads only verified administrative transport',asyn
  assert.doesNotMatch(adminJs,/archiveRequest\(|deleteUser\(|innerHTML|localStorage|service_role/i);
  assert.ok(css.includes('@media(max-width:630px)'));
  assert.deepEqual(model.driverSummary([{status:'active'},{status:'disabled'}]),{total:2,active:1,blocked:1,pending:0});
- assert.ok(app.includes("new URL('amministratore/',import.meta.url).href"));
+ assert.ok(!app.includes("new URL('amministratore/',import.meta.url).href"));
 });
 
 test('driver remembered login uses AES-GCM vault and online authorization on restart',()=>{
