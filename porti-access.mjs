@@ -25,7 +25,7 @@ function showMaintenance(reason='maintenance') {
   const note=document.createElement('p');
   note.textContent='Per operazioni urgenti verifica direttamente sui siti ufficiali dei terminali. Questa pagina non conferma accettazioni o autorizzazioni al carico.';
   const home=document.createElement('a');
-  home.href='/LTS-Registro-Viaggi/';home.target='_top';
+  home.href=driverHome();home.target='_top';
   home.className='secondary-btn';home.textContent='Torna a Registro Viaggi';
   const sources=document.createElement('div');sources.className='source-grid';
   for(const [name,url] of [
@@ -42,12 +42,15 @@ function showMaintenance(reason='maintenance') {
   document.body.hidden=false;
 }
 const BASE='/LTS-Registro-Viaggi/';
-const PARENT_PATHS=new Set([BASE,BASE+'index.html',BASE+'shell.html']);
+const PARENT_PATHS=new Set([BASE,BASE+'index.html',BASE+'shell.html',BASE+'viaggi/',BASE+'viaggi/index.html']);
 const sameOriginParent=()=>{
  if(window.parent===window)return false;
  try{return window.parent.location.origin===location.origin
    && PARENT_PATHS.has(window.parent.location.pathname);}catch{return false;}
 };
+function driverHome(){
+ return sameOriginParent()&&window.parent.location.pathname.startsWith(BASE+'viaggi/')?BASE+'viaggi/':BASE;
+}
 const notifyParent=type=>{if(sameOriginParent())window.parent.postMessage({type},location.origin);};
 if(MAINTENANCE_ENABLED){
  showMaintenance();notifyParent('lts-porti-rendered');
@@ -65,7 +68,7 @@ if(MAINTENANCE_ENABLED){
   main.setAttribute('role','alert');
   main.textContent='Per usare Porti e booking, accedi a LTS Registro Viaggi e apri la sezione Porti.';
   const link=document.createElement('a');
-  link.href=BASE;link.target='_top';link.textContent='Apri LTS Registro Viaggi';
+  link.href=driverHome();link.target='_top';link.textContent='Apri LTS Registro Viaggi';
   main.append(document.createElement('p'),link);
   document.body.append(main);document.body.hidden=false;
   notifyParent('lts-porti-failed');
