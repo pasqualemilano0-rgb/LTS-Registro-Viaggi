@@ -283,7 +283,7 @@ export const decideMapsApproval=async()=>{throw new Error('Nessuna richiesta di 
 const mockMapsReader=String.raw`
 export const readMapsCustomer=async(link)=>{
  if(link==='https://maps.app.goo.gl/newDepot')
-  return {name:'CLIENTE DELTA',city:'CASERTA',address:'VIA PORTO 8, CASERTA',mapsUrl:link,warnings:[]};
+  return {name:'D',city:'',address:'',mapsUrl:link,warnings:['Località e indirizzo mancanti.']};
  if(link==='https://maps.app.goo.gl/exampleC')
   return {name:'CLIENTE GAMMA',city:'ROMA',address:'VIA INDUSTRIA 25, ROMA',mapsUrl:link,warnings:[]};
  return {name:'CLIENTE ALFA',city:'NAPOLI',address:'VIA TEST 1, NAPOLI',mapsUrl:link,warnings:[]};
@@ -1010,7 +1010,18 @@ try{
  await page.locator('#company-maps-url').fill('https://maps.app.goo.gl/newDepot');
  await page.locator('#company-maps-read').click();
  await page.waitForFunction(()=>!document.querySelector('#company-maps-preview').hidden);
- assert.equal(await page.locator('#company-maps-name').textContent(),'CLIENTE DELTA');
+ assert.equal(await page.locator('#company-maps-name').inputValue(),'');
+ assert.equal(await page.locator('#company-maps-save').isDisabled(),true);
+ await page.locator('#company-maps-name').fill('D');
+ await page.locator('#company-maps-city').fill('CASERTA');
+ await page.locator('#company-maps-address').fill('VIA PORTO 8, CASERTA');
+ assert.equal(await page.locator('#company-maps-save').isDisabled(),true);
+ await page.locator('#company-maps-name').fill('CLIENTE DELTA');
+ assert.equal(await page.locator('#company-maps-save').isEnabled(),true);
+ await page.locator('#company-maps-address').fill('');
+ assert.equal(await page.locator('#company-maps-save').isDisabled(),true);
+ await page.locator('#company-maps-address').fill('VIA PORTO 8, CASERTA');
+ assert.equal(await page.locator('#company-maps-save').isEnabled(),true);
  await page.locator('#company-maps-amount').fill('95,50');
  await page.locator('#company-maps-save').click();
  await page.waitForFunction(()=>document.querySelector('#company-maps-status').textContent.includes('Cliente Google Maps e tariffa salvati insieme'));

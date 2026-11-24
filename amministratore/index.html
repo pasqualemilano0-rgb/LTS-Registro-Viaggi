@@ -377,11 +377,15 @@
               </div>
               <div id="company-maps-preview" class="company-maps-preview" hidden>
                 <h3>Verifica la sede e imposta la tariffa</h3>
-                <dl class="company-maps-details">
-                  <div><dt>Cliente</dt><dd id="company-maps-name">—</dd></div>
-                  <div><dt>Località</dt><dd id="company-maps-city">—</dd></div>
-                  <div><dt>Indirizzo</dt><dd id="company-maps-address">—</dd></div>
-                </dl>
+                <label for="company-maps-name">Cliente
+                  <input id="company-maps-name" name="customerName" type="text" maxlength="500" required placeholder="Nome cliente">
+                </label>
+                <label for="company-maps-city">Località
+                  <input id="company-maps-city" name="customerCity" type="text" maxlength="100" required placeholder="Comune">
+                </label>
+                <label for="company-maps-address">Indirizzo
+                  <input id="company-maps-address" name="customerAddress" type="text" maxlength="1000" required placeholder="Via, numero civico, CAP">
+                </label>
                 <p id="company-maps-warning" class="company-maps-notice"></p>
                 <p id="company-maps-duplicate" class="company-maps-notice"></p>
                 <label for="company-maps-amount">Tariffa aziendale (€)
