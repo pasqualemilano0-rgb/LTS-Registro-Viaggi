@@ -25,7 +25,7 @@ test('profile section order makes documents first and logout last',()=>{
   assert.ok(i>last,'section missing or out of order: '+name);
   last=i;
  }
- assert.match(profile,/\['I MIEI DOCUMENTI','Gestisci autisti','Accedi con account autista'\]/);
+ assert.match(profile,/\['I MIEI DOCUMENTI','Accedi con account autista'\]/);
  assert.match(profile,/\['Risolvi sincronizzazione','Sincronizza adesso','Collega dispositivi'\]/);
  assert.match(profile,/\['Esporta backup','Importa backup','Recupera archivio precedente','Esporta per Android','Ricarica dati online'\]/);
  assert.match(profile,/\['Installa app','Esci dall’account'\]/);
