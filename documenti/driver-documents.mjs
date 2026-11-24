@@ -18,7 +18,7 @@ function previousEntryIsRegister(){
   if(!previous?.url)return false;
   const url=new URL(previous.url);
   return url.origin===window.location.origin &&
-   ['/LTS-Registro-Viaggi/','/LTS-Registro-Viaggi/index.html','/LTS-Registro-Viaggi/shell.html'].includes(url.pathname);
+   ['/LTS-Registro-Viaggi/','/LTS-Registro-Viaggi/index.html','/LTS-Registro-Viaggi/shell.html','/LTS-Registro-Viaggi/viaggi/','/LTS-Registro-Viaggi/viaggi/index.html'].includes(url.pathname);
  }catch{return false;}
 }
 for(const link of document.querySelectorAll('a[data-back-to-register]')){
