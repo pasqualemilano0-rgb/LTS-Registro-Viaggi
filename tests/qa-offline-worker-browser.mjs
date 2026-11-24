@@ -32,7 +32,7 @@ const server=createServer(async(req,res)=>{
   res.writeHead(200,{'Content-Type':'application/json','Cache-Control':'no-store'})
    .end(JSON.stringify({fake:true,data:'synthetic-private-never-cache'}));return;
  }
- const file=resolve(root,relative||'index.html');
+ const file=resolve(root,relative.endsWith('/')?relative+'index.html':relative||'index.html');
  if(!file.startsWith(root+sep)){
   res.writeHead(403).end('Forbidden');return;
  }
@@ -103,7 +103,21 @@ try{
  assert.equal(response?.status(),200,'PWA navigation must use cached index when offline');
  assert.match(await page.title(),/LTS/);
  assert.equal(await page.evaluate(()=>Boolean(navigator.serviceWorker.controller)),true);
+ const scoped=await page.goto(origin+prefix+'viaggi/',{waitUntil:'domcontentloaded',timeout:25000});
+ assert.equal(scoped?.status(),200,'Dedicated driver path must remain usable offline');
+ assert.equal(new URL(page.url()).pathname,prefix+'viaggi/');
+ assert.match(await page.title(),/LTS/);
+ await assert.rejects(page.goto(origin+prefix+'viaggi/documenti/',{waitUntil:'domcontentloaded',timeout:15000}),
+  'Personal documents must not be replaced by the driver shell offline');
  await context.setOffline(false);
+ await page.goto(origin+prefix+'viaggi/',{waitUntil:'domcontentloaded'});
+ const manifest=await (await context.request.get(origin+prefix+'manifest.webmanifest')).json();
+ assert.equal(manifest.start_url,prefix+'viaggi/');
+ assert.equal(manifest.scope,prefix+'viaggi/');
+ assert.equal(manifest.id,prefix);
+ const docs=await context.request.get(origin+prefix+'viaggi/documenti/');
+ assert.equal(docs.status(),200);
+ assert.match(await docs.text(),/I miei documenti/);
  await page.close();
  await context.close();
  console.log('PASS offline PWA: real worker install, cached navigation, CSS/JS, private API bypass');
