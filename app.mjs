@@ -1382,11 +1382,7 @@ function openProfile(required=false){
   if(accountAccess.isEnabled()){
     // Payroll entry is added only after a successful owner-scoped server check.
     // No client-only role/name toggle can grant access to private documents.
-    if(store.usingAccount()&&accountAccess.getRole()==='admin'&&accountAccess.isVerified())
-      body.querySelector('.profile-menu').prepend(menuButton('Gestisci autisti',
-        'Apri il pannello amministratore con inviti, accessi, rimozioni e reinserimenti.','users',()=>{
-          dialog.close();window.location.assign(new URL('amministratore/',import.meta.url).href);
-        }));
+    // Administrative operations belong to the separately opened LTS Admin app.
     if(store.usingAccount()){
       body.querySelector('.profile-menu').prepend(menuButton('Recupera archivio precedente','Salva il vecchio backup e importa i dati conservati su questo telefono.','download',()=>{dialog.close();showLegacyArchiveRecovery();}));
       body.querySelector('.profile-menu').prepend(menuButton('Esci dall’account','Blocca la schermata e conserva il registro online. Prima sincronizza eventuali modifiche.','lock',()=>{
@@ -1423,7 +1419,7 @@ function openProfile(required=false){
     return group;
   };
   addProfileGroup('Accesso rapido','Le funzioni collegate al tuo account.','services',
-    ['I MIEI DOCUMENTI','Gestisci autisti','Accedi con account autista']);
+    ['I MIEI DOCUMENTI','Accedi con account autista']);
   addProfileGroup('Dati e sincronizzazione','Mantieni aggiornato il registro sui tuoi dispositivi.','sync',
     ['Risolvi sincronizzazione','Sincronizza adesso','Collega dispositivi']);
   addProfileGroup('Archivio e backup','Salva, trasferisci o recupera una copia dei tuoi viaggi.','backup',
@@ -1784,7 +1780,7 @@ function accountLoginFields({fromGate=false,initialPhone=''}={}){
       const logged=await accountAccess.login(phone,pass.value);
       pass.value='';
       if(logged.role==='admin'&&logged.mfa_enrolled&&!logged.mfa_verified){
-        window.location.assign(new URL('amministratore/',import.meta.url).href);
+        renderAccountGate('Per completare la verifica amministratore, apri separatamente LTS Admin. Per cambiare account, usa Esci e cambia account.');
         return;
       }
       if(logged.role==='driver'&&!logged.remembered)
