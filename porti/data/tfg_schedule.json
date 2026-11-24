@@ -1,7 +1,7 @@
 {
   "source": "https://tfg.bucci.it/@/TFGW_TP_ETA",
-  "source_updated_at": "2026-11-24T08:22:56.000Z",
-  "acquired_at": "2026-11-24T10:00:16.585Z",
+  "source_updated_at": "2026-11-24T10:40:50.000Z",
+  "acquired_at": "2026-11-24T11:00:16.916Z",
   "rows": [
     {
       "vessel": "GSL CHATEAU DIF",
@@ -73,9 +73,9 @@
       "vessel": "X PRESS SALWEEN",
       "arrival_voyage": "647E",
       "departure_voyage": "648W",
-      "eta": "26/11/26",
+      "eta": "25/11/26 19:00",
       "acceptance": "ACCETTA CARICO",
-      "custom_close_time": "&nbsp;",
+      "custom_close_time": "26/11/26 15:00:00",
       "fast_corridor_cut_off": "",
       "gate_cut_off": "",
       "destination": "INTERNO PORTO"
