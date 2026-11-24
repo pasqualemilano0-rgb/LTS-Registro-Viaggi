@@ -36,12 +36,54 @@ function safeRows(rows,spec){
     }
   }
 }
+// Strictly bounded monitor diagnostics: no arbitrary KV fields or upstream text
+// are permitted in logs. This does not relax snapshot validation or the gate.
+const MONITOR_HEALTH_CODES=new Set([
+  'BAD_SCHEDULE','SOURCE_HTTP','SOURCE_CONTENT_TYPE','SOURCE_TOO_LARGE',
+  'CNT_BAD_CATEGORY','CNT_NO_VALID_ROWS','SCT_HTML_SIZE',
+  'SCT_TOO_MANY_ROWS','SCT_NO_VALID_ROWS','TFG_SOURCE_INVALID',
+  'TFG_NO_PARSER','UNEXPECTED_ROW_DROP','OLDER_TERMINAL_UPDATE',
+  'GITHUB_HTTP','GITHUB_TOO_LARGE','GITHUB_SNAPSHOT_INVALID',
+  'GITHUB_ROW_DROP','GITHUB_OLDER_SOURCE','UPSTREAM_UNAVAILABLE'
+]);
+function safeHealthTimestamp(value){
+  if(typeof value!=='string'||!/^20\d{2}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(value))return null;
+  const ms=Date.parse(value);
+  return Number.isFinite(ms)&&new Date(ms).toISOString()===value?value:null;
+}
+export function terminalHealthDiagnostic(terminal,status){
+  const safe=status&&typeof status==='object'&&!Array.isArray(status)?status:{};
+  return {
+    terminal:Object.hasOwn(FEEDS,terminal)?terminal:'unknown',
+    state:['ok','fallback','error'].includes(safe.state)?safe.state:'unknown',
+    error_code:safe.last_error_code===null?null:
+      MONITOR_HEALTH_CODES.has(safe.last_error_code)?safe.last_error_code:'UNCLASSIFIED',
+    last_attempt_at:safeHealthTimestamp(safe.last_attempt_at),
+    last_success_at:safeHealthTimestamp(safe.last_success_at)
+  };
+}
+export function reportPublishError(error,logger=console){
+  if(error instanceof PublishRejected&&error.message==='UNHEALTHY_TERMINAL'&&error.terminalHealth){
+    const health=error.terminalHealth;
+    logger.error('PUBLIC_PORTI_TERMINAL_HEALTH',
+      JSON.stringify(terminalHealthDiagnostic(health.terminal,{
+        state:health.state,last_error_code:health.error_code,
+        last_attempt_at:health.last_attempt_at,last_success_at:health.last_success_at
+      })));
+  }
+  logger.error('PUBLIC_PORTI_PUBLISH_ERROR',
+    error instanceof PublishRejected?error.message:'UNEXPECTED_FAILURE');
+}
 export function vet(terminal,snapshot,status,previous,now=Date.now()){
   const spec=FEEDS[terminal];requireTrue(!!spec,'UNKNOWN_TERMINAL');
   safeFields(snapshot,ROOT,'UNEXPECTED_SNAPSHOT_FIELD');
   requireTrue(snapshot.source===spec.source&&snapshot.monitor_origin==='cloudflare_official_read','UNVERIFIED_SOURCE');
   safeFields(status,new Set(['state','last_error_code','last_attempt_at','last_success_at','source_updated_at','rows']),'INVALID_STATUS');
-  requireTrue(status.state==='ok'&&status.last_error_code===null,'UNHEALTHY_TERMINAL');
+  if(status.state!=='ok'||status.last_error_code!==null){
+    const error=new PublishRejected('UNHEALTHY_TERMINAL');
+    error.terminalHealth=terminalHealthDiagnostic(terminal,status);
+    throw error;
+  }
   const acquired=time(snapshot.acquired_at,'INVALID_ACQUIRED_AT');
   requireTrue(acquired>=now-MAX_AGE_MS&&acquired<=now+MAX_FUTURE_MS,'STALE_OR_FUTURE');
   requireTrue(time(status.last_success_at,'INVALID_MONITOR_TIME')===acquired,'MONITOR_MISMATCH');
@@ -279,6 +321,6 @@ export default{
   },
   async scheduled(_event,env,ctx){
     ctx.waitUntil(publish(env).then(result=>console.log(JSON.stringify({event:'PUBLIC_PORTI_PUBLISH',status:result.status,terminals:result.updated})))
-      .catch(error=>{console.error('PUBLIC_PORTI_PUBLISH_ERROR',error instanceof PublishRejected?error.message:'UNEXPECTED_FAILURE');throw error;}));
+      .catch(error=>{reportPublishError(error);throw error;}));
   }
 };

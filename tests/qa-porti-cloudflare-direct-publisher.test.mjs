@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {FEEDS,vet,readAll,publish,hasRecoveryPoint,classifyGitHubRef422,PublishRejected,BASE} from '../cloudflare/public-snapshot-publisher/index.mjs';
+import {FEEDS,vet,readAll,publish,hasRecoveryPoint,classifyGitHubRef422,terminalHealthDiagnostic,reportPublishError,PublishRejected,BASE} from '../cloudflare/public-snapshot-publisher/index.mjs';
 
 const NOW=Date.parse('2026-11-12T17:20:00Z');
 const NEW='2026-11-12T17:15:00.000Z',OLD='2026-11-11T21:00:00.000Z';
@@ -240,4 +240,77 @@ test('generic GitHub 422 never exposes response text or secrets',async()=>{
     PUBLISH_ENABLED:'yes',GITHUB_PUBLIC_CONTENTS_TOKEN:'dummy-test-token-with-length',
     SCHEDULES_KV:kv(f)
   },{now:NOW,fetcher}),{message:'GITHUB_PATCH_HTTP_422_UNKNOWN'});
+});
+
+test('terminal health diagnostics identify all three failing ports without exposing KV payloads',async()=>{
+  for(const terminal of Object.keys(FEEDS)){
+    const f=fixture(),g=fakeGit(f.previous);
+    f.statuses[terminal]={...f.statuses[terminal],state:'fallback',
+      last_error_code:'SOURCE_HTTP',last_attempt_at:NEW,last_success_at:OLD};
+    let failure;
+    try{
+      await publish({PUBLISH_ENABLED:'yes',GITHUB_PUBLIC_CONTENTS_TOKEN:'dummy-test-token-with-length',
+        SCHEDULES_KV:kv(f)},{now:NOW,fetcher:g.fetch});
+      assert.fail('unhealthy terminal must prevent publishing');
+    }catch(error){failure=error;}
+    assert.ok(failure instanceof PublishRejected);
+    assert.equal(failure.message,'UNHEALTHY_TERMINAL');
+    assert.deepEqual(failure.terminalHealth,{
+      terminal,state:'fallback',error_code:'SOURCE_HTTP',
+      last_attempt_at:NEW,last_success_at:OLD
+    });
+    const logged=[];
+    reportPublishError(failure,{error:(...args)=>logged.push(args.join(' '))});
+    assert.equal(logged.length,2);
+    assert.ok(logged[0].startsWith('PUBLIC_PORTI_TERMINAL_HEALTH '));
+    assert.deepEqual(JSON.parse(logged[0].slice('PUBLIC_PORTI_TERMINAL_HEALTH '.length)),
+      failure.terminalHealth);
+    assert.equal(logged[1],'PUBLIC_PORTI_PUBLISH_ERROR UNHEALTHY_TERMINAL');
+    assert.ok(g.calls.every(c=>c.method==='GET'),'no blobs, tree, commits or ref writes on unhealthy status');
+  }
+});
+test('unrecognized monitor values and timestamps are always sanitized in diagnostics',()=>{
+  const suspicious='SECRET_TOKEN_MUST_NOT_LEAK';
+  const v=terminalHealthDiagnostic('sct',{state:'error-'+suspicious,
+    last_error_code:suspicious,
+    last_attempt_at:'2026-11-12T17:15:00.000Z '+suspicious,
+    last_success_at:'2026-99-99T17:15:00.000Z'});
+  assert.deepEqual(v,{terminal:'sct',state:'unknown',error_code:'UNCLASSIFIED',
+    last_attempt_at:null,last_success_at:null});
+  assert.equal(JSON.stringify(v).includes(suspicious),false);
+  const failure=new PublishRejected('UNHEALTHY_TERMINAL');
+  failure.terminalHealth={terminal:'sct',state:'fallback',
+    error_code:suspicious,last_attempt_at:suspicious,last_success_at:suspicious,
+    private_key:suspicious};
+  const logged=[];
+  reportPublishError(failure,{error:(...args)=>logged.push(args.join(' '))});
+  assert.equal(logged.length,2);
+  assert.ok(logged[0].includes('"terminal":"sct"'));
+  assert.doesNotMatch(logged.join('\n'),/SECRET_TOKEN_MUST_NOT_LEAK/);
+});
+test('error status without recognized monitor code remains fail-closed and writes nothing',async()=>{
+  const f=fixture(),g=fakeGit(f.previous);
+  f.statuses.tfg.state='error';
+  f.statuses.tfg.last_error_code='UNEXPECTED_SECRET_VALUE';
+  const store=kv(f);
+  await assert.rejects(publish({PUBLISH_ENABLED:'yes',GITHUB_PUBLIC_CONTENTS_TOKEN:'dummy-test-token-with-length',
+    SCHEDULES_KV:store},{now:NOW,fetcher:g.fetch}),error=>{
+    assert.equal(error.message,'UNHEALTHY_TERMINAL');
+    assert.deepEqual(error.terminalHealth,{
+      terminal:'tfg',state:'error',error_code:'UNCLASSIFIED',
+      last_attempt_at:NEW,last_success_at:NEW
+    });
+    return true;
+  });
+  assert.ok(g.calls.every(x=>x.method==='GET'));
+});
+test('other publisher failures retain original generic errors without health details',()=>{
+  const logs=[];
+  reportPublishError(new PublishRejected('RECOVERY_POINT_MISSING_cnt'),
+    {error:(...args)=>logs.push(args.join(' '))});
+  assert.deepEqual(logs,['PUBLIC_PORTI_PUBLISH_ERROR RECOVERY_POINT_MISSING_cnt']);
+  const unrelated=[];
+  reportPublishError(new Error('PRIVATE_TOKEN_DO_NOT_LOG'),
+    {error:(...args)=>unrelated.push(args.join(' '))});
+  assert.deepEqual(unrelated,['PUBLIC_PORTI_PUBLISH_ERROR UNEXPECTED_FAILURE']);
 });
