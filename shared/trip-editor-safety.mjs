@@ -40,6 +40,9 @@ export function restoreTripEditorSnapshot(snapshot,trips){
  };
  const editingId=typeof snapshot.editingId==='string'&&snapshot.editingId.length<129?snapshot.editingId:null;
  const existing=editingId&&Array.isArray(trips)?trips.find(trip=>trip.id===editingId):null;
+ // Recover old scratchpads without silently changing an existing one-fare trip.
+ draft.sumPickupFares=draft.second&&(typeof source.sumPickupFares==='boolean'
+  ?source.sumPickupFares:existing?.sumPickupFares!==false);
  // An edit whose target was deleted remotely is never resurrected with the old ID.
  return {draft,editingId:existing?editingId:null,
   editingBaseline:existing&&typeof snapshot.editingBaseline==='string'?snapshot.editingBaseline:null,
