@@ -23,3 +23,17 @@ test('valid readable place URL supplies all three fields',()=>{
  const proposal=mergeMapsProposal('https://www.google.com/maps/place/Alfa,+Via+Roma+1,+80100+Napoli+NA/');
  assert.equal(proposal.name,'ALFA');assert.equal(proposal.city,'NAPOLI');assert.equal(proposal.address,'VIA ROMA 1, 80100 NAPOLI NA');
 });
+
+test("D'Alterio Group: raw and percent-encoded apostrophes preserve the entire address",()=>{
+ for(const label of ["D'Alterio+Group","D%27Alterio+Group"]){
+  const url="https://www.google.com/maps/place/"+label+",+Km.+27.200,+SS+265,+81025+Zona+Industriale+Marcianise+Nord+CE/";
+  const p=mergeMapsProposal(url);
+  assert.equal(p.name,"D'ALTERIO GROUP");
+  assert.equal(p.city,"ZONA INDUSTRIALE MARCIANISE NORD");
+  assert.equal(p.address,"KM. 27.200, SS 265, 81025 ZONA INDUSTRIALE MARCIANISE NORD CE");
+ }
+});
+test('ordinary street names are not mistaken for postal localities',()=>{
+ const p=mergeMapsProposal('https://www.google.com/maps/place/Alfa,+Via+Roma+1,+80100+Via+Verdi+NA/');
+ assert.equal(p.city,'');
+});
