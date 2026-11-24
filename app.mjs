@@ -374,7 +374,7 @@ function renderPorti(main){
   );
   return;
  }
- const url=(runtimeConfig.basePath??'/')+'porti/index.html?v=20261124-porti-stability-v1';
+ const url=(runtimeConfig.basePath??'/')+'porti/index.html?v=20261124-pwa-isolation-v1';
  portiStartupPanel=el('section',{class:'panel',role:'status','aria-live':'polite','aria-busy':'true'},
   el('h2',{},'Caricamento Porti…'),el('p',{},'Preparazione della ricerca Booking e dei programmi navi.'));
  portiFrame=el('iframe',{class:'porti-frame',src:url,title:'Porti e booking',referrerpolicy:'no-referrer'});
