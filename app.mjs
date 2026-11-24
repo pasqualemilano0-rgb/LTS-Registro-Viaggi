@@ -1500,6 +1500,7 @@ function openProfile(required=false){
         'CEDOLINO · CU · ALTRI DOCUMENTI. Solo i tuoi PDF pubblicati.',
         'pdf',()=>{
           const target=new URL('documenti/',import.meta.url);
+          if(location.pathname.startsWith('/LTS-Registro-Viaggi/viaggi/'))target.pathname='/LTS-Registro-Viaggi/viaggi/documenti/';
           target.searchParams.set('from','profile');
           dialog.close();window.location.assign(target.href);
         });
@@ -1749,7 +1750,7 @@ async function importFile(file){
 }
 async function startInstall(){
  if(isInstalled()){toast('LTS è già aperta come app.');return;}
- if(installPrompt){
+ if(installPrompt&&location.pathname.startsWith('/LTS-Registro-Viaggi/viaggi/')){
   const prompt=installPrompt;installPrompt=null;
   try{await prompt.prompt();const choice=await prompt.userChoice;if(choice?.outcome==='accepted')return;}catch{}
  }
@@ -1767,7 +1768,8 @@ function installDialog(){
  }else{
   steps.append(el('li',{},el('div',{},el('strong',{},'Apri il menu del browser'),el('p',{},'Su telefono cerca il pulsante ⋮ o il menu Condividi.'))),el('li',{},el('div',{},el('strong',{},'Scegli “Installa app”'),el('p',{},'Può chiamarsi anche “Aggiungi alla schermata Home”. Su iPhone usa Condividi in Safari.'))),el('li',{},el('div',{},el('strong',{},'Conferma l’aggiunta'),el('p',{},'Apri LTS dalla nuova icona sul telefono.'))));body.append(steps);
  }
- const manifest=document.querySelector('link[rel="manifest"]');const url=new URL('./',manifest?.href||location.href).href;
+ const url=new URL('viaggi/',import.meta.url).href;
+ if(!location.pathname.startsWith('/LTS-Registro-Viaggi/viaggi/'))body.append(el('a',{href:url,class:'primary-button full'},'Apri la pagina dedicata per installare LTS Viaggi'));
  const link=el('input',{type:'url',value:url,readonly:true,'aria-label':'Link dell’app LTS',class:'install-url'});
  const copy=button('Copia link','secondary',async()=>{try{if(!navigator.clipboard?.writeText)throw new Error();await navigator.clipboard.writeText(url);copy.textContent='Link copiato';}catch{link.focus();link.select();toast('Tieni premuto sul link e scegli Copia.');}},'link');
  body.append(el('div',{class:'install-link'},link,copy),button('Torna al registro','text',()=>dialog.close(),null,{class:'text-button full'}));
