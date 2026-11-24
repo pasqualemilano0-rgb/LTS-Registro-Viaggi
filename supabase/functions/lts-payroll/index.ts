@@ -272,10 +272,17 @@ async function revokeDocument(db,actor,id){
  if(!data)fail(409,'Documento non revocabile.');
  return {id,state:'archived'};
 }
+// Bind the Storage key to the complete document identity, not just its owner prefix.
+function payrollObjectPathMatches(row,id){
+ return !!row&&row.id===id&&UUID.test(row.id||'')&&UUID.test(row.driver_id||'')&&
+  Number.isInteger(row.document_year)&&row.document_year>=2000&&row.document_year<=2100&&
+  typeof row.object_path==='string'&&
+  row.object_path===row.driver_id+'/'+row.document_year+'/'+row.id+'.pdf';
+}
 async function download(db,actor,id){
  validId(id);
  const {data,error}=await db.from('lts_payroll_documents')
-  .select('id,driver_id,object_path,state,category,acknowledged_at').eq('id',id).maybeSingle();
+  .select('id,driver_id,document_year,object_path,state,category,acknowledged_at').eq('id',id).maybeSingle();
  if(error)fail(503);
  if(!data)fail(404);
  if(actor.role==='driver'&&(data.driver_id!==actor.userId||data.state!=='published'))fail(403);
@@ -284,7 +291,7 @@ async function download(db,actor,id){
  // this API before explicit confirmation, even if the browser skips its UI.
  if(actor.role==='driver'&&data.category==='cedolino'&&!data.acknowledged_at)
   fail(409,'Conferma prima la messa a disposizione del cedolino per aprire il PDF.');
- if(!data.object_path.startsWith(data.driver_id+'/'))fail(503);
+ if(!payrollObjectPathMatches(data,id))fail(503);
  const {data:file,error:readErr}=await db.storage.from(BUCKET).download(data.object_path);
  if(readErr||!file)fail(503,'PDF non disponibile.');
  if(actor.role==='driver'){

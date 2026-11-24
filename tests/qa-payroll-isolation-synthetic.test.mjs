@@ -44,9 +44,9 @@ function fixture({adminMfa=true,enabled=true,preview=false,allowedUsers=[A,B,M],
   {auth_user_id:B,first_name:'Mario',last_name:'Rossi'}
  ];
  const docs=[
-  {id:docA,driver_id:A,category:'cedolino',state:'published',object_path:A+'/2026/'+docA+'.pdf',first_accessed_at:null,acknowledged_at:null},
-  {id:docB,driver_id:B,category:'cedolino',state:'published',object_path:B+'/2026/'+docB+'.pdf',first_accessed_at:null,acknowledged_at:null},
-  {id:draftA,driver_id:A,category:'cedolino',state:'draft',object_path:A+'/2026/'+draftA+'.pdf',first_accessed_at:null,acknowledged_at:null}
+  {id:docA,driver_id:A,document_year:2026,category:'cedolino',state:'published',object_path:A+'/2026/'+docA+'.pdf',first_accessed_at:null,acknowledged_at:null},
+  {id:docB,driver_id:B,document_year:2026,category:'cedolino',state:'published',object_path:B+'/2026/'+docB+'.pdf',first_accessed_at:null,acknowledged_at:null},
+  {id:draftA,driver_id:A,document_year:2026,category:'cedolino',state:'draft',object_path:A+'/2026/'+draftA+'.pdf',first_accessed_at:null,acknowledged_at:null}
  ];
  const audit=[],reads=[],writes=[];
  class Query{
@@ -489,4 +489,35 @@ test('credential-free CORS checks reject hostile origins and bypass preflights',
  assert.equal(x.reads.length,0);
  assert.equal(x.docs.length,3);
  assert.equal(x.audit.length,0);
+});
+
+test('PDF Storage key must match document id, owner and year before any read',async()=>{
+ const invalid=[
+  B+'/2026/'+docA+'.pdf',
+  A+'/2025/'+docA+'.pdf',
+  A+'/2026/'+draftA+'.pdf',
+  A+'/2026/'+docA+'.pdf/extra',
+  A+'/2026/../'+docA+'.pdf',
+  A+'/2026/'+docA+'.pdf?download=1',
+  A+'/%32%30%32%36/'+docA+'.pdf',
+  null
+ ];
+ for(const path of invalid){
+  const x=fixture({preview:false});
+  x.docs[0].acknowledged_at='2026-11-18T10:03:00Z';
+  x.docs[0].object_path=path;
+  for(const token of [tokens.a,tokens.admin]){
+   const result=await x.call(token,'download',{id:docA});
+   assert.equal(result.status,503,'reject mismatched key: '+String(path));
+  }
+  assert.equal(x.reads.length,0,'reject before Storage');
+  assert.equal(x.audit.length,0,'no download audit for rejected document');
+ }
+});
+test('PDF Storage identity cannot be reassigned through a different year',async()=>{
+ const x=fixture({preview:false});
+ x.docs[0].document_year=2025;
+ x.docs[0].acknowledged_at='2026-11-18T10:03:00Z';
+ assert.equal((await x.call(tokens.a,'download',{id:docA})).status,503);
+ assert.equal(x.reads.length,0);
 });
