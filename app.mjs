@@ -624,7 +624,6 @@ function companyCustomersPanel(){
 /** Read-only pilot panel; no writes and no duplicate trip submission path. */
 function renderInsert(main){
 
- const amountContext=D.buildTripAmountContext(state);
  const estimateId=editingId||crypto.randomUUID();const estimateCreatedAt=new Date().toISOString();
  const layout=el('div',{class:'form-layout'});const form=el('form',{class:'panel form-panel',novalidate:true});
  const error=el('div',{class:'form-error',role:'alert'});
@@ -865,11 +864,7 @@ function renderInsert(main){
   info.pending?'Viaggi salvati localmente; invio online in attesa.':
   info.status==='synced'?'Registro sincronizzato online.':'Verifica lo stato di sincronizzazione nella barra in alto.';
  layout.append(form);
- const recent=el('aside',{class:'recent-preview'},el('p',{class:'recent-heading'},'L’ULTIMO VIAGGIO'));
- const latest=D.sortTrips(state.trips)[0];
- recent.append(latest?tripCard(latest,amountContext):emptyState('Pronto a partire','Inserisci il primo viaggio: lo ritroverai qui e nel resoconto mensile.','truck'));
- recent.append(el('p',{class:'hint-row'},icon('info'),'Clienti e località vengono ricordati.'));
- layout.append(recent);main.append(layout);
+ main.append(layout);
  refreshView=()=>{
   client.input.value=draft.client;if(secondClient)secondClient.input.value=draft.secondClient;
   updateEstimate();
@@ -878,9 +873,7 @@ function renderInsert(main){
   const nextCities=datalist(cityListId,citySuggestions(client.input.value));cities.replaceWith(nextCities);cities=nextCities;
   refreshTripCustomerSuggestions?.();
   if(secondClient){const list=form.querySelector('#second-cities');list?.replaceWith(datalist('second-cities',citySuggestions(secondClient.input.value)));}
-  const latest=D.sortTrips(state.trips)[0];
-  const currentAmounts=D.buildTripAmountContext(state);
-  recent.replaceChildren(el('p',{class:'recent-heading'},'L’ULTIMO VIAGGIO'),latest?tripCard(latest,currentAmounts):emptyState('Pronto a partire','Inserisci il primo viaggio: lo ritroverai qui e nel resoconto mensile.','truck'),el('p',{class:'hint-row'},icon('info'),'Clienti e località vengono ricordati.'));
+
  };
 }
 function citySuggestions(client){const normalized=D.normalizeText(client);return unique([...companyRates.filter(t=>t.client===normalized).map(t=>t.city),...state.tariffs.filter(t=>t.client===normalized).map(t=>t.city),...state.customers.filter(c=>c.name===normalized).map(c=>c.city),...state.trips.filter(t=>t.client===normalized).map(t=>t.city),...companyCustomers.filter(c=>D.normalizeText(c.name)===normalized).map(c=>D.normalizeText(c.city))]);}
