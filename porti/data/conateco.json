@@ -1,7 +1,7 @@
 {
   "source": "https://api.conateco.it/ConatecoServicesApi/BerthForecast",
   "source_updated_at": null,
-  "acquired_at": "2026-11-25T06:30:16.925Z",
+  "acquired_at": "2026-11-25T07:00:16.495Z",
   "rows": [
     {
       "vessel": "RIJNBORG",
@@ -303,7 +303,7 @@
       "acceptance_flag": "0",
       "acceptance_icon": "",
       "stop_cargo": "",
-      "external_depot": "",
+      "external_depot": "S",
       "opening": "",
       "closing": "",
       "notes": "ACCETT.RETROPORTO 25/11 07:00",
