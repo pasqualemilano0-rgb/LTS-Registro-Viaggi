@@ -1,7 +1,7 @@
 {
   "source": "https://api.conateco.it/ConatecoServicesApi/BerthForecast",
   "source_updated_at": null,
-  "acquired_at": "2026-11-25T07:30:16.935Z",
+  "acquired_at": "2026-11-25T08:00:16.693Z",
   "rows": [
     {
       "vessel": "RIJNBORG",
@@ -276,23 +276,6 @@
       "source_conflict": false
     },
     {
-      "vessel": "RIJNBORG",
-      "voyage": "037S",
-      "eta": "2026-12-03 00:00",
-      "vessel_status": "PRE",
-      "category": "PREVISTE",
-      "voyage_id": "202600398",
-      "carrier": "DIAMOND LINE",
-      "acceptance_flag": "0",
-      "acceptance_icon": "",
-      "stop_cargo": "",
-      "external_depot": "",
-      "opening": "",
-      "closing": "",
-      "notes": "",
-      "source_conflict": false
-    },
-    {
       "vessel": "MSC GISELLE",
       "voyage": "NL645R",
       "eta": "2026-12-04 00:00",
@@ -307,6 +290,23 @@
       "opening": "",
       "closing": "",
       "notes": "ACCETT.RETROPORTO 25/11 07:00",
+      "source_conflict": false
+    },
+    {
+      "vessel": "RIJNBORG",
+      "voyage": "037S",
+      "eta": "2026-12-04 00:00",
+      "vessel_status": "PRE",
+      "category": "PREVISTE",
+      "voyage_id": "202600398",
+      "carrier": "DIAMOND LINE",
+      "acceptance_flag": "0",
+      "acceptance_icon": "",
+      "stop_cargo": "",
+      "external_depot": "",
+      "opening": "",
+      "closing": "",
+      "notes": "",
       "source_conflict": false
     },
     {
@@ -414,7 +414,7 @@
     {
       "vessel": "RIJNBORG",
       "voyage": "038S",
-      "eta": "2026-12-10 00:00",
+      "eta": "2026-12-11 00:00",
       "vessel_status": "PRE",
       "category": "PREVISTE",
       "voyage_id": "202600404",
