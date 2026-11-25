@@ -1,42 +1,8 @@
 {
   "source": "https://api.conateco.it/ConatecoServicesApi/BerthForecast",
   "source_updated_at": null,
-  "acquired_at": "2026-11-25T22:30:16.218Z",
+  "acquired_at": "2026-11-25T23:00:16.701Z",
   "rows": [
-    {
-      "vessel": "RIJNBORG",
-      "voyage": "035S",
-      "eta": "2026-11-17 13:00",
-      "vessel_status": "CHI",
-      "category": "PARTITE",
-      "voyage_id": "202600377",
-      "carrier": "X-PRESS CONTAINER LINE",
-      "acceptance_flag": "0",
-      "acceptance_icon": "CHIUSA",
-      "stop_cargo": "S",
-      "external_depot": "",
-      "opening": "2026-11-10 06:30",
-      "closing": "2026-11-16 12:00",
-      "notes": "",
-      "source_conflict": false
-    },
-    {
-      "vessel": "MSC SWEDEN VI",
-      "voyage": "MG646W",
-      "eta": "2026-11-17 21:45",
-      "vessel_status": "CHI",
-      "category": "PARTITE",
-      "voyage_id": "202600382",
-      "carrier": "MEDITERRANEAN SHIPPING CO. GENEVA",
-      "acceptance_flag": "0",
-      "acceptance_icon": "CHIUSA",
-      "stop_cargo": "S",
-      "external_depot": "",
-      "opening": "2026-11-10 14:00",
-      "closing": "2026-11-16 12:00",
-      "notes": "",
-      "source_conflict": false
-    },
     {
       "vessel": "JOLLY BLUE",
       "voyage": "372",

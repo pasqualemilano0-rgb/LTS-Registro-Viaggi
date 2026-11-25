@@ -1,38 +1,11 @@
 {
   "source": "https://www.salernocontainerterminal.com/ca/an/vessel_schedule.php",
   "source_updated_at": null,
-  "acquired_at": "2026-11-25T22:30:16.218Z",
+  "acquired_at": "2026-11-25T23:00:16.701Z",
   "rows": [
     {
-      "vessel": "ULYSSE",
-      "voyage": "241126E",
-      "eta": "24/11/2026 00:00",
-      "closing": "23/11/2026 17:00 CLOSED",
-      "acceptance_dry": "CARGO ACCEPTED",
-      "acceptance_reef": "CARGO ACCEPTED",
-      "status": "PENDING"
-    },
-    {
-      "vessel": "X-PRESS SALWEEN",
-      "voyage": "648W",
-      "eta": "24/11/2026 19:00",
-      "closing": "24/11/2026 17:00 CLOSED",
-      "acceptance_dry": "CARGO ACCEPTED",
-      "acceptance_reef": "CARGO ACCEPTED",
-      "status": "PENDING"
-    },
-    {
-      "vessel": "RACHEL BORCHARD",
-      "voyage": "1034",
-      "eta": "24/11/2026 20:00",
-      "closing": "23/11/2026 17:00 CLOSED",
-      "acceptance_dry": "CARGO ACCEPTED",
-      "acceptance_reef": "CARGO ACCEPTED",
-      "status": "PENDING"
-    },
-    {
-      "vessel": "MIRIAM BORCHARD",
-      "voyage": "1046",
+      "vessel": "ECO OSTRO",
+      "voyage": "701W",
       "eta": "25/11/2026 00:00",
       "closing": "24/11/2026 17:00 CLOSED",
       "acceptance_dry": "CARGO ACCEPTED",
@@ -40,8 +13,8 @@
       "status": "PENDING"
     },
     {
-      "vessel": "ECO OSTRO",
-      "voyage": "701W",
+      "vessel": "MIRIAM BORCHARD",
+      "voyage": "1046",
       "eta": "25/11/2026 00:00",
       "closing": "24/11/2026 17:00 CLOSED",
       "acceptance_dry": "CARGO ACCEPTED",
@@ -184,10 +157,10 @@
       "status": "PENDING"
     },
     {
-      "vessel": "GRANDE SCANDINAVIA",
-      "voyage": "GSC0826",
+      "vessel": "GRANDE TOGO",
+      "voyage": "GRT0726",
       "eta": "30/11/2026 00:00",
-      "closing": "28/11/2026 10:00",
+      "closing": "25/11/2026 17:00 CLOSED",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
@@ -202,35 +175,17 @@
       "status": "PENDING"
     },
     {
-      "vessel": "GRANDE TOGO",
-      "voyage": "GRT0726",
+      "vessel": "GRANDE SCANDINAVIA",
+      "voyage": "GSC0826",
       "eta": "30/11/2026 00:00",
-      "closing": "25/11/2026 17:00 CLOSED",
-      "acceptance_dry": "CARGO ACCEPTED",
-      "acceptance_reef": "CARGO ACCEPTED",
-      "status": "PENDING"
-    },
-    {
-      "vessel": "MSC BARBADOS",
-      "voyage": "CD647A",
-      "eta": "01/12/2026 00:00",
-      "closing": "30/11/2026 17:00",
-      "acceptance_dry": "CARGO ACCEPTED",
-      "acceptance_reef": "CARGO ACCEPTED",
-      "status": "PENDING"
-    },
-    {
-      "vessel": "MSC KILIMANJARO IV",
-      "voyage": "CD648A",
-      "eta": "01/12/2026 00:00",
       "closing": "28/11/2026 10:00",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
     },
     {
-      "vessel": "ATRIA",
-      "voyage": "ATI0626E",
+      "vessel": "STENA SHIPPER",
+      "voyage": "011226E",
       "eta": "01/12/2026 00:00",
       "closing": "30/11/2026 17:00",
       "acceptance_dry": "CARGO ACCEPTED",
@@ -247,19 +202,37 @@
       "status": "PENDING"
     },
     {
-      "vessel": "VENTO DI GRECALE",
-      "voyage": "840",
+      "vessel": "MSC KILIMANJARO IV",
+      "voyage": "CD648A",
       "eta": "01/12/2026 00:00",
-      "closing": "27/11/2026 17:00",
+      "closing": "28/11/2026 10:00",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
     },
     {
-      "vessel": "STENA SHIPPER",
-      "voyage": "011226E",
+      "vessel": "MSC BARBADOS",
+      "voyage": "CD647A",
       "eta": "01/12/2026 00:00",
       "closing": "30/11/2026 17:00",
+      "acceptance_dry": "CARGO ACCEPTED",
+      "acceptance_reef": "CARGO ACCEPTED",
+      "status": "PENDING"
+    },
+    {
+      "vessel": "ATRIA",
+      "voyage": "ATI0626E",
+      "eta": "01/12/2026 00:00",
+      "closing": "30/11/2026 17:00",
+      "acceptance_dry": "CARGO ACCEPTED",
+      "acceptance_reef": "CARGO ACCEPTED",
+      "status": "PENDING"
+    },
+    {
+      "vessel": "VENTO DI GRECALE",
+      "voyage": "840",
+      "eta": "01/12/2026 00:00",
+      "closing": "27/11/2026 17:00",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
@@ -274,8 +247,8 @@
       "status": "PENDING"
     },
     {
-      "vessel": "ARGENTINIAN",
-      "voyage": "0HWLGE1MA",
+      "vessel": "GREEN OCEAN",
+      "voyage": "649W",
       "eta": "02/12/2026 00:00",
       "closing": "01/12/2026 17:00",
       "acceptance_dry": "CARGO ACCEPTED",
@@ -292,8 +265,8 @@
       "status": "PENDING"
     },
     {
-      "vessel": "GREEN OCEAN",
-      "voyage": "649W",
+      "vessel": "ARGENTINIAN",
+      "voyage": "0HWLGE1MA",
       "eta": "02/12/2026 00:00",
       "closing": "01/12/2026 17:00",
       "acceptance_dry": "CARGO ACCEPTED",
@@ -308,8 +281,26 @@
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
+    },
+    {
+      "vessel": "KATHERINE BORCHARD",
+      "voyage": "1159",
+      "eta": "03/12/2026 00:00",
+      "closing": "02/12/2026 17:00",
+      "acceptance_dry": "CARGO ACCEPTED",
+      "acceptance_reef": "CARGO ACCEPTED",
+      "status": "PENDING"
+    },
+    {
+      "vessel": "GSL CHATEAU DIF",
+      "voyage": "FMX0D0N19",
+      "eta": "03/12/2026 22:00",
+      "closing": "02/12/2026 17:00",
+      "acceptance_dry": "CARGO ACCEPTED",
+      "acceptance_reef": "CARGO ACCEPTED",
+      "status": "PENDING"
     }
   ],
-  "updated_at": "2026-11-25T22:30:16.218Z",
-  "data_changed_at": "2026-11-25T16:15:16.208Z"
+  "updated_at": "2026-11-25T23:00:16.701Z",
+  "data_changed_at": "2026-11-25T23:00:16.701Z"
 }
