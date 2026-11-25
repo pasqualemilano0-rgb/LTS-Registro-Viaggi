@@ -1,7 +1,7 @@
 {
   "source": "https://api.conateco.it/ConatecoServicesApi/BerthForecast",
   "source_updated_at": null,
-  "acquired_at": "2026-11-25T11:30:17.149Z",
+  "acquired_at": "2026-11-25T12:00:16.886Z",
   "rows": [
     {
       "vessel": "RIJNBORG",
@@ -118,7 +118,7 @@
       "stop_cargo": "",
       "external_depot": "",
       "opening": "1206-11-21 07:00",
-      "closing": "2026-11-25 12:00",
+      "closing": "2026-11-26 16:00",
       "notes": "",
       "source_conflict": false
     },
@@ -219,7 +219,7 @@
       "acceptance_icon": "",
       "stop_cargo": "",
       "external_depot": "",
-      "opening": "2026-11-28 06:30",
+      "opening": "2026-11-27 12:00",
       "closing": "2026-12-03 12:00",
       "notes": "",
       "source_conflict": false
