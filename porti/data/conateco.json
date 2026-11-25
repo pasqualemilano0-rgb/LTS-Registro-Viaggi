@@ -1,7 +1,7 @@
 {
   "source": "https://api.conateco.it/ConatecoServicesApi/BerthForecast",
   "source_updated_at": null,
-  "acquired_at": "2026-11-25T14:00:16.947Z",
+  "acquired_at": "2026-11-25T14:30:17.044Z",
   "rows": [
     {
       "vessel": "RIJNBORG",
@@ -191,23 +191,6 @@
       "source_conflict": false
     },
     {
-      "vessel": "MSC MOMBASA",
-      "voyage": "MZ646A",
-      "eta": "2026-12-02 00:00",
-      "vessel_status": "PRE",
-      "category": "PREVISTE",
-      "voyage_id": "202600395",
-      "carrier": "MEDITERRANEAN SHIPPING CO. GENEVA",
-      "acceptance_flag": "1",
-      "acceptance_icon": "ACCETTA_CARICO",
-      "stop_cargo": "",
-      "external_depot": "",
-      "opening": "2026-11-24 10:00",
-      "closing": "2026-12-01 17:00",
-      "notes": "ACCETT.RETROPORTO 20/11 14:00 LOAD DRAGON SERVICE",
-      "source_conflict": false
-    },
-    {
       "vessel": "JOLLY BLUE",
       "voyage": "400",
       "eta": "2026-12-03 00:00",
@@ -256,6 +239,40 @@
       "opening": "2026-11-30 12:00",
       "closing": "2026-12-02 17:00",
       "notes": "ACCETT.RETROPORTO 25/11 07:00",
+      "source_conflict": false
+    },
+    {
+      "vessel": "MSC MOMBASA",
+      "voyage": "MZ646A",
+      "eta": "2026-12-03 00:00",
+      "vessel_status": "PRE",
+      "category": "PREVISTE",
+      "voyage_id": "202600395",
+      "carrier": "MEDITERRANEAN SHIPPING CO. GENEVA",
+      "acceptance_flag": "1",
+      "acceptance_icon": "ACCETTA_CARICO",
+      "stop_cargo": "",
+      "external_depot": "",
+      "opening": "2026-11-24 10:00",
+      "closing": "2026-12-02 17:00",
+      "notes": "ACCETT.RETROPORTO 20/11 14:00 LOAD DRAGON SERVICE",
+      "source_conflict": false
+    },
+    {
+      "vessel": "RIJNBORG",
+      "voyage": "037S",
+      "eta": "2026-12-04 00:01",
+      "vessel_status": "PRE",
+      "category": "PREVISTE",
+      "voyage_id": "202600398",
+      "carrier": "X-PRESS CONTAINER LINE",
+      "acceptance_flag": "0",
+      "acceptance_icon": "",
+      "stop_cargo": "",
+      "external_depot": "",
+      "opening": "2026-11-30 06:30",
+      "closing": "2026-12-03 17:00",
+      "notes": "",
       "source_conflict": false
     },
     {
