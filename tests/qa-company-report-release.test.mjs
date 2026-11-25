@@ -65,7 +65,7 @@ test('consultazione aziendale prima della pubblicazione: informativa esplicita',
  assert.match(privacy,/note di viaggio e importi registrati/);
  assert.match(privacy,/non sono consultabili dall'amministratore/);
  assert.match(privacy,/non sostituisce l'informativa e gli adempimenti del datore di lavoro/);
- assert.match(privacy,/Aggiornamento: 4 novembre 2026/);
+ assert.match(privacy,/Aggiornamento: 24 novembre 2026/);
 });
 
 test('anagrafica dashboard: dati verificati dalla sessione, soli campi pubblici, nessun dato simulato', async()=>{
@@ -391,3 +391,11 @@ test('admin archive displays verified operational filters and conservative statu
  assert.match(helper,/normalizedStreetKey/);
  assert.doesNotMatch(helper,/deleteRecord|window[.]confirm|localStorage/);
 });
+
+ test('informativa aggiornata: documenti, sblocco, cookie, diritti e fornitori',()=>{
+ const privacy=read('privacy/index.html');
+ for(const section of ['basi-giuridiche','documenti','accessi','cookie','destinatari','diritti']) assert.ok(privacy.includes('id="'+section+'"'),section);
+ assert.match(privacy,/non equivale a consenso al trattamento/);
+ assert.match(privacy,/non immagini del volto o impronte digitali/);
+ assert.match(privacy,/da validare prima della pubblicazione/);
+ });
