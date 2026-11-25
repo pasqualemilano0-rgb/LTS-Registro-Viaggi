@@ -1,7 +1,7 @@
 {
   "source": "https://api.conateco.it/ConatecoServicesApi/BerthForecast",
   "source_updated_at": null,
-  "acquired_at": "2026-11-25T21:30:16.234Z",
+  "acquired_at": "2026-11-25T22:00:16.141Z",
   "rows": [
     {
       "vessel": "RIJNBORG",
