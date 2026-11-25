@@ -1,7 +1,7 @@
 {
   "source": "https://www.salernocontainerterminal.com/ca/an/vessel_schedule.php",
   "source_updated_at": null,
-  "acquired_at": "2026-11-25T16:00:16.337Z",
+  "acquired_at": "2026-11-25T16:30:16.228Z",
   "rows": [
     {
       "vessel": "ULYSSE",
@@ -31,8 +31,8 @@
       "status": "PENDING"
     },
     {
-      "vessel": "ECO OSTRO",
-      "voyage": "701W",
+      "vessel": "MIRIAM BORCHARD",
+      "voyage": "1046",
       "eta": "25/11/2026 00:00",
       "closing": "24/11/2026 17:00 CLOSED",
       "acceptance_dry": "CARGO ACCEPTED",
@@ -40,8 +40,8 @@
       "status": "PENDING"
     },
     {
-      "vessel": "MIRIAM BORCHARD",
-      "voyage": "1046",
+      "vessel": "ECO OSTRO",
+      "voyage": "701W",
       "eta": "25/11/2026 00:00",
       "closing": "24/11/2026 17:00 CLOSED",
       "acceptance_dry": "CARGO ACCEPTED",
@@ -166,15 +166,6 @@
       "status": "PENDING"
     },
     {
-      "vessel": "ELYSSA",
-      "voyage": "291126E",
-      "eta": "29/11/2026 00:00",
-      "closing": "28/11/2026 10:00",
-      "acceptance_dry": "CARGO ACCEPTED",
-      "acceptance_reef": "CARGO ACCEPTED",
-      "status": "PENDING"
-    },
-    {
       "vessel": "VALUE",
       "voyage": "MG648W",
       "eta": "29/11/2026 00:00",
@@ -184,10 +175,10 @@
       "status": "PENDING"
     },
     {
-      "vessel": "VENTO DI MAESTRALE",
-      "voyage": "536",
-      "eta": "30/11/2026 00:00",
-      "closing": "25/11/2026 17:00 CLOSED",
+      "vessel": "ELYSSA",
+      "voyage": "291126E",
+      "eta": "29/11/2026 00:00",
+      "closing": "28/11/2026 10:00",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
@@ -202,6 +193,15 @@
       "status": "PENDING"
     },
     {
+      "vessel": "VENTO DI MAESTRALE",
+      "voyage": "536",
+      "eta": "30/11/2026 00:00",
+      "closing": "25/11/2026 17:00 CLOSED",
+      "acceptance_dry": "CARGO ACCEPTED",
+      "acceptance_reef": "CARGO ACCEPTED",
+      "status": "PENDING"
+    },
+    {
       "vessel": "GRANDE TOGO",
       "voyage": "GRT0726",
       "eta": "30/11/2026 00:00",
@@ -211,19 +211,19 @@
       "status": "PENDING"
     },
     {
-      "vessel": "MSC KILIMANJARO IV",
-      "voyage": "CD648A",
+      "vessel": "MSC BARBADOS",
+      "voyage": "CD647A",
       "eta": "01/12/2026 00:00",
-      "closing": "28/11/2026 10:00",
+      "closing": "30/11/2026 17:00",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
     },
     {
-      "vessel": "MSC BARBADOS",
-      "voyage": "CD647A",
+      "vessel": "MSC KILIMANJARO IV",
+      "voyage": "CD648A",
       "eta": "01/12/2026 00:00",
-      "closing": "30/11/2026 17:00",
+      "closing": "28/11/2026 10:00",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
@@ -256,10 +256,28 @@
       "status": "PENDING"
     },
     {
+      "vessel": "STENA SHIPPER",
+      "voyage": "011226E",
+      "eta": "01/12/2026 00:00",
+      "closing": "30/11/2026 17:00",
+      "acceptance_dry": "CARGO ACCEPTED",
+      "acceptance_reef": "CARGO ACCEPTED",
+      "status": "PENDING"
+    },
+    {
       "vessel": "JOANNA BORCHARD",
       "voyage": "1196",
       "eta": "01/12/2026 08:00",
       "closing": "30/11/2026 17:00",
+      "acceptance_dry": "CARGO ACCEPTED",
+      "acceptance_reef": "CARGO ACCEPTED",
+      "status": "PENDING"
+    },
+    {
+      "vessel": "ARGENTINIAN",
+      "voyage": "0HWLGE1MA",
+      "eta": "02/12/2026 00:00",
+      "closing": "01/12/2026 17:00",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
@@ -283,15 +301,6 @@
       "status": "PENDING"
     },
     {
-      "vessel": "ARGENTINIAN",
-      "voyage": "0HWLGE1MA",
-      "eta": "02/12/2026 00:00",
-      "closing": "01/12/2026 17:00",
-      "acceptance_dry": "CARGO ACCEPTED",
-      "acceptance_reef": "CARGO ACCEPTED",
-      "status": "PENDING"
-    },
-    {
       "vessel": "NAAMA BORCHARD",
       "voyage": "0140",
       "eta": "02/12/2026 08:00",
@@ -301,6 +310,6 @@
       "status": "PENDING"
     }
   ],
-  "updated_at": "2026-11-25T16:00:16.337Z",
-  "data_changed_at": "2026-11-25T16:00:16.337Z"
+  "updated_at": "2026-11-25T16:30:16.228Z",
+  "data_changed_at": "2026-11-25T16:15:16.208Z"
 }
