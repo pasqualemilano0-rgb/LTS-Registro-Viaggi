@@ -1,7 +1,7 @@
 {
   "source": "https://www.salernocontainerterminal.com/ca/an/vessel_schedule.php",
   "source_updated_at": null,
-  "acquired_at": "2026-11-25T19:00:16.156Z",
+  "acquired_at": "2026-11-25T19:30:16.370Z",
   "rows": [
     {
       "vessel": "ULYSSE",
@@ -310,6 +310,6 @@
       "status": "PENDING"
     }
   ],
-  "updated_at": "2026-11-25T19:00:16.156Z",
+  "updated_at": "2026-11-25T19:30:16.370Z",
   "data_changed_at": "2026-11-25T16:15:16.208Z"
 }
