@@ -1,7 +1,7 @@
 {
   "source": "https://www.salernocontainerterminal.com/ca/an/vessel_schedule.php",
   "source_updated_at": null,
-  "acquired_at": "2026-11-25T09:30:16.704Z",
+  "acquired_at": "2026-11-25T10:00:16.696Z",
   "rows": [
     {
       "vessel": "ULYSSE",
@@ -40,8 +40,8 @@
       "status": "PENDING"
     },
     {
-      "vessel": "ECO OSTRO",
-      "voyage": "648W",
+      "vessel": "GABRIEL A",
+      "voyage": "0HWLEE1MA",
       "eta": "25/11/2026 00:00",
       "closing": "24/11/2026 17:00 CLOSED",
       "acceptance_dry": "CARGO ACCEPTED",
@@ -49,8 +49,8 @@
       "status": "PENDING"
     },
     {
-      "vessel": "GABRIEL A",
-      "voyage": "0HWLEE1MA",
+      "vessel": "ECO OSTRO",
+      "voyage": "648W",
       "eta": "25/11/2026 00:00",
       "closing": "24/11/2026 17:00 CLOSED",
       "acceptance_dry": "CARGO ACCEPTED",
@@ -94,8 +94,8 @@
       "status": "PENDING"
     },
     {
-      "vessel": "MEDKON NLS",
-      "voyage": "325",
+      "vessel": "CONTSHIP ERA",
+      "voyage": "94E",
       "eta": "26/11/2026 00:00",
       "closing": "26/11/2026 17:00",
       "acceptance_dry": "CARGO ACCEPTED",
@@ -103,17 +103,8 @@
       "status": "PENDING"
     },
     {
-      "vessel": "VENTO DI LEVANTE",
-      "voyage": "639",
-      "eta": "26/11/2026 00:00",
-      "closing": "25/11/2026 17:00",
-      "acceptance_dry": "CARGO ACCEPTED",
-      "acceptance_reef": "CARGO ACCEPTED",
-      "status": "PENDING"
-    },
-    {
-      "vessel": "CONTSHIP ERA",
-      "voyage": "94E",
+      "vessel": "MEDKON NLS",
+      "voyage": "325",
       "eta": "26/11/2026 00:00",
       "closing": "26/11/2026 17:00",
       "acceptance_dry": "CARGO ACCEPTED",
@@ -134,6 +125,15 @@
       "voyage": "MPS0J0W19",
       "eta": "27/11/2026 00:00",
       "closing": "21/11/2026 10:00 CLOSED",
+      "acceptance_dry": "CARGO ACCEPTED",
+      "acceptance_reef": "CARGO ACCEPTED",
+      "status": "PENDING"
+    },
+    {
+      "vessel": "VENTO DI LEVANTE",
+      "voyage": "639",
+      "eta": "27/11/2026 00:00",
+      "closing": "26/11/2026 17:00",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
@@ -292,6 +292,6 @@
       "status": "PENDING"
     }
   ],
-  "updated_at": "2026-11-25T09:30:16.704Z",
-  "data_changed_at": "2026-11-25T08:00:16.693Z"
+  "updated_at": "2026-11-25T10:00:16.696Z",
+  "data_changed_at": "2026-11-25T09:45:16.567Z"
 }
