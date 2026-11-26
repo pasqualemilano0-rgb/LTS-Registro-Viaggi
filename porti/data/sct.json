@@ -1,7 +1,7 @@
 {
   "source": "https://www.salernocontainerterminal.com/ca/an/vessel_schedule.php",
   "source_updated_at": null,
-  "acquired_at": "2026-11-26T15:30:16.328Z",
+  "acquired_at": "2026-11-26T16:00:16.269Z",
   "rows": [
     {
       "vessel": "ECO OSTRO",
@@ -61,7 +61,7 @@
       "vessel": "CONTSHIP ERA",
       "voyage": "94E",
       "eta": "27/11/2026 05:00",
-      "closing": "26/11/2026 17:00",
+      "closing": "26/11/2026 17:00 CLOSED",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
@@ -70,7 +70,7 @@
       "vessel": "CMA CGM ABIDJAN",
       "voyage": "MPS0J0W19",
       "eta": "27/11/2026 07:00",
-      "closing": "26/11/2026 17:00",
+      "closing": "26/11/2026 17:00 CLOSED",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
@@ -319,6 +319,6 @@
       "status": "PENDING"
     }
   ],
-  "updated_at": "2026-11-26T15:30:16.328Z",
-  "data_changed_at": "2026-11-26T15:00:16.283Z"
+  "updated_at": "2026-11-26T16:00:16.269Z",
+  "data_changed_at": "2026-11-26T16:00:16.269Z"
 }
