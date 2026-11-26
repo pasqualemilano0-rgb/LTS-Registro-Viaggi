@@ -1,7 +1,7 @@
 {
   "source": "https://api.conateco.it/ConatecoServicesApi/BerthForecast",
   "source_updated_at": null,
-  "acquired_at": "2026-11-26T07:00:16.236Z",
+  "acquired_at": "2026-11-26T07:30:16.198Z",
   "rows": [
     {
       "vessel": "JOLLY BLUE",
@@ -103,6 +103,23 @@
       "opening": "2026-11-23 12:00",
       "closing": "2026-11-26 17:00",
       "notes": "ACCETT.RETROPORTO 18/11 07:00",
+      "source_conflict": false
+    },
+    {
+      "vessel": "RIJNBORG",
+      "voyage": "036S",
+      "eta": "2026-11-27 00:01",
+      "vessel_status": "PRE",
+      "category": "PREVISTE",
+      "voyage_id": "202600390",
+      "carrier": "X-PRESS CONTAINER LINE",
+      "acceptance_flag": "1",
+      "acceptance_icon": "ACCETTA_CARICO",
+      "stop_cargo": "",
+      "external_depot": "",
+      "opening": "2026-11-21 07:00",
+      "closing": "2026-11-26 12:00",
+      "notes": "ACCETT.RETROPORTO 17/11 07:00",
       "source_conflict": false
     },
     {
