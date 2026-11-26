@@ -74,3 +74,37 @@ test('monthly PDF places only administrative notes after trip rows',()=>{
  assert(!JSON.stringify(calls).includes('SEGRETO'));
  assert.ok(calls[1].startY>calls[0].startY);
 });
+
+import {readFileSync} from 'node:fs';
+import {mergeStates,SyncConflictError} from '../shared/sync-merge.mjs';
+
+test('independent edits and tariff recalculation retain both kinds of notes',()=>{
+ const initial=emptyState();
+ const trip=createTrip(base,initial);
+ const original=validateState({...initial,trips:[trip]});
+ const local=structuredClone(original),remote=structuredClone(original);
+ local.trips[0].note='NOTA PRIVATA MODIFICATA';
+ remote.trips[0].adminNote='NOTA ADMIN MODIFICATA';
+ const merged=mergeStates(original,local,remote);
+ assert.equal(merged.trips[0].note,'NOTA PRIVATA MODIFICATA');
+ assert.equal(merged.trips[0].adminNote,'NOTA ADMIN MODIFICATA');
+ remote.trips[0].note='CONFLITTO';
+ assert.throws(()=>mergeStates(original,local,remote),SyncConflictError);
+});
+test('driver clearing either note requires confirmation and returned values are checked',()=>{
+ const app=readFileSync(new URL('../app.mjs',import.meta.url),'utf8');
+ assert.ok(app.includes("if(previousNotes?.note?.trim()&&!checked.value.note.trim())warnings.push"));
+ assert.ok(app.includes("if(previousNotes?.adminNote?.trim()&&!checked.value.adminNote.trim())warnings.push"));
+ assert.ok(app.includes("(savedTrip.note??'')!==(trip.note??'')"));
+ assert.ok(app.includes("(savedTrip.adminNote??'')!==(trip.adminNote??'')"));
+ assert.ok(app.includes("if(warnings.length)confirmAction"));
+});
+test('QA history is transactionally captured and private by default',()=>{
+ const sql=readFileSync(new URL('../supabase/qa/trip-note-history.sql',import.meta.url),'utf8');
+ assert.match(sql,/ENABLE ROW LEVEL SECURITY/);
+ assert.match(sql,/REVOKE ALL ON lts_internal.trip_note_history FROM PUBLIC, anon, authenticated, service_role/);
+ assert.match(sql,/AFTER INSERT OR UPDATE OR DELETE ON public.lts_account_archives/);
+ assert.match(sql,/Existing trip note omitted from archive update/);
+ assert.match(sql,/LOCK TABLE public.lts_account_archives IN SHARE ROW EXCLUSIVE MODE/);
+ assert.match(sql,/previous_note,current_note/);
+});
