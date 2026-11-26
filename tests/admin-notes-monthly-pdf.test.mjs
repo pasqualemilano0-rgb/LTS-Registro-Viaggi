@@ -78,7 +78,7 @@ test('monthly PDF places only administrative notes after trip rows',()=>{
 import {readFileSync} from 'node:fs';
 import {mergeStates,SyncConflictError} from '../shared/sync-merge.mjs';
 
-test('independent edits and tariff recalculation retain both kinds of notes',()=>{
+test('independent edits retain both kinds of notes and conflicting edits are blocked',()=>{
  const initial=emptyState();
  const trip=createTrip(base,initial);
  const original=validateState({...initial,trips:[trip]});
