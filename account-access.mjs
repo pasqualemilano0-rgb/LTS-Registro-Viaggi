@@ -410,6 +410,18 @@ export async function archiveRequest(method,body){
  return result;
 }
 
+export async function tripNoteHistory(tripId,before=null){
+ if(!isVerified()||getRole()!=='driver')throw new Error('Accesso autista richiesto.');
+ const owner=getAccountId();
+ if(typeof tripId!=='string'||!tripId||tripId.length>128)throw new Error('Viaggio non valido.');
+ const result=await withSessionRetry(
+  ()=>api('archiveEndpoint',{action:'note-history',tripId,before},readStored()?.access_token),
+  async()=>{await verifySession();if(getAccountId()!==owner||getRole()!=='driver')throw new Error('Account cambiato.');});
+ if(!isVerified()||getAccountId()!==owner||result?.userId!==owner||result?.tripId!==tripId||
+    !Array.isArray(result.rows)||result.rows.length>20)throw new Error('Storico note non verificato.');
+ return result;
+}
+
 /** The server independently checks the Supabase JWT, admin role and enabled flag. */
 export async function manageDrivers(action, data = {}) {
  if (!isVerified() || getRole() !== 'admin') throw new Error('Accesso riservato all’amministratore.');
