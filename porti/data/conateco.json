@@ -1,7 +1,7 @@
 {
   "source": "https://api.conateco.it/ConatecoServicesApi/BerthForecast",
   "source_updated_at": null,
-  "acquired_at": "2026-11-26T17:30:16.243Z",
+  "acquired_at": "2026-11-26T18:00:16.274Z",
   "rows": [
     {
       "vessel": "JOLLY BLUE",
@@ -101,7 +101,7 @@
       "stop_cargo": "",
       "external_depot": "",
       "opening": "2026-11-23 12:00",
-      "closing": "2026-11-26 17:00",
+      "closing": "2026-11-27 09:30",
       "notes": "ACCETT.RETROPORTO 18/11 07:00",
       "source_conflict": false
     },
