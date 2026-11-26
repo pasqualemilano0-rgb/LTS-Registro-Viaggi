@@ -13,7 +13,7 @@ test('F52: omitted notes on legacy side survive a concurrent tariff edit',()=>{
  local.trips[0].id=42;delete local.trips[0].note;delete local.trips[0].adminNote;
  remote.trips[0].fareCents=7500;remote.trips[0].adminNote='new admin';
  const result=mergeStates(base,local,remote);
- assert.equal(result.trips[0].note,'private');assert.equal(result.trips[0].adminNote,'new admin');assert.equal(result.trips[0].fareCents,7500);
+ assert.equal(result.trips[0].note,base.trips[0].note);assert.equal(result.trips[0].adminNote,validateState(remote).trips[0].adminNote);assert.equal(result.trips[0].fareCents,7500);
  assert.equal(Object.hasOwn(local.trips[0],'note'),false);
 });
 test('F52: explicit clear remains intentional, and conflicting edits stay blocked',()=>{
