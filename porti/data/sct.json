@@ -1,17 +1,8 @@
 {
   "source": "https://www.salernocontainerterminal.com/ca/an/vessel_schedule.php",
   "source_updated_at": null,
-  "acquired_at": "2026-11-26T12:00:16.243Z",
+  "acquired_at": "2026-11-26T12:30:16.244Z",
   "rows": [
-    {
-      "vessel": "ECO OSTRO",
-      "voyage": "701W",
-      "eta": "25/11/2026 00:00",
-      "closing": "24/11/2026 17:00 CLOSED",
-      "acceptance_dry": "CARGO ACCEPTED",
-      "acceptance_reef": "CARGO ACCEPTED",
-      "status": "PENDING"
-    },
     {
       "vessel": "MIRIAM BORCHARD",
       "voyage": "1046",
@@ -23,7 +14,7 @@
     },
     {
       "vessel": "ECO OSTRO",
-      "voyage": "648W",
+      "voyage": "701W",
       "eta": "25/11/2026 00:00",
       "closing": "24/11/2026 17:00 CLOSED",
       "acceptance_dry": "CARGO ACCEPTED",
@@ -33,6 +24,15 @@
     {
       "vessel": "GABRIEL A",
       "voyage": "0HWLEE1MA",
+      "eta": "25/11/2026 00:00",
+      "closing": "24/11/2026 17:00 CLOSED",
+      "acceptance_dry": "CARGO ACCEPTED",
+      "acceptance_reef": "CARGO ACCEPTED",
+      "status": "PENDING"
+    },
+    {
+      "vessel": "ECO OSTRO",
+      "voyage": "648W",
       "eta": "25/11/2026 00:00",
       "closing": "24/11/2026 17:00 CLOSED",
       "acceptance_dry": "CARGO ACCEPTED",
@@ -53,15 +53,6 @@
       "voyage": "2126W",
       "eta": "25/11/2026 08:00",
       "closing": "24/11/2026 17:00 CLOSED",
-      "acceptance_dry": "CARGO ACCEPTED",
-      "acceptance_reef": "CARGO ACCEPTED",
-      "status": "PENDING"
-    },
-    {
-      "vessel": "LIDER TRABZON",
-      "voyage": "1126",
-      "eta": "26/11/2026 00:00",
-      "closing": "14/11/2026 10:00 CLOSED",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
@@ -130,15 +121,6 @@
       "status": "PENDING"
     },
     {
-      "vessel": "GRANDE INGHILTERRA",
-      "voyage": "GDE0526",
-      "eta": "28/11/2026 08:00",
-      "closing": "09/11/2026 17:00 CLOSED",
-      "acceptance_dry": "CARGO ACCEPTED",
-      "acceptance_reef": "CARGO ACCEPTED",
-      "status": "PENDING"
-    },
-    {
       "vessel": "MAIKE D",
       "voyage": "1426W",
       "eta": "28/11/2026 08:00",
@@ -148,10 +130,10 @@
       "status": "PENDING"
     },
     {
-      "vessel": "VALUE",
-      "voyage": "MG648W",
-      "eta": "29/11/2026 00:00",
-      "closing": "27/11/2026 17:00",
+      "vessel": "GRANDE INGHILTERRA",
+      "voyage": "GDE0526",
+      "eta": "28/11/2026 08:00",
+      "closing": "09/11/2026 17:00 CLOSED",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
@@ -166,10 +148,28 @@
       "status": "PENDING"
     },
     {
-      "vessel": "GRANDE TOGO",
-      "voyage": "GRT0726",
+      "vessel": "VALUE",
+      "voyage": "MG648W",
+      "eta": "29/11/2026 00:00",
+      "closing": "27/11/2026 17:00",
+      "acceptance_dry": "CARGO ACCEPTED",
+      "acceptance_reef": "CARGO ACCEPTED",
+      "status": "PENDING"
+    },
+    {
+      "vessel": "GRANDE SCANDINAVIA",
+      "voyage": "GSC0826",
       "eta": "30/11/2026 00:00",
-      "closing": "25/11/2026 17:00 CLOSED",
+      "closing": "28/11/2026 10:00",
+      "acceptance_dry": "CARGO ACCEPTED",
+      "acceptance_reef": "CARGO ACCEPTED",
+      "status": "PENDING"
+    },
+    {
+      "vessel": "LIDER TRABZON",
+      "voyage": "1126",
+      "eta": "30/11/2026 00:00",
+      "closing": "14/11/2026 10:00 CLOSED",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
@@ -184,10 +184,10 @@
       "status": "PENDING"
     },
     {
-      "vessel": "GRANDE SCANDINAVIA",
-      "voyage": "GSC0826",
+      "vessel": "GRANDE TOGO",
+      "voyage": "GRT0726",
       "eta": "30/11/2026 00:00",
-      "closing": "28/11/2026 10:00",
+      "closing": "25/11/2026 17:00 CLOSED",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
@@ -319,6 +319,6 @@
       "status": "PENDING"
     }
   ],
-  "updated_at": "2026-11-26T12:00:16.243Z",
-  "data_changed_at": "2026-11-26T10:45:16.217Z"
+  "updated_at": "2026-11-26T12:30:16.244Z",
+  "data_changed_at": "2026-11-26T12:30:16.244Z"
 }
