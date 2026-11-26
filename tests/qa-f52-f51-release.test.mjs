@@ -15,11 +15,11 @@ test('F52 F51 routines preserve receipts, note omissions, CAS and tariff RPC',()
  assert.throws(()=>adaptCompanyTariffs('const QA_USERS=new Map();'));
 });
 test('F52 F51 additive migration preserves catalogs and uses private audit',()=>{
- assert.doesNotMatch(sql,/CREATE TABLE public\\.lts_company_tariffs|DROP TABLE|TRUNCATE|INSERT INTO public\\.lts_company_tariffs/i);
- assert.match(sql,/ALTER TABLE lts_internal\\.company_tariff_reprice_audit ENABLE ROW LEVEL SECURITY/);
- assert.match(sql,/REVOKE ALL ON FUNCTION public\\.lts_reprice_company_tariff\\(uuid,bigint,integer,uuid,text,text\\) FROM PUBLIC,anon,authenticated,service_role/);
+ assert.doesNotMatch(sql,/CREATE TABLE public\.lts_company_tariffs|DROP TABLE|TRUNCATE|INSERT INTO public\.lts_company_tariffs/i);
+ assert.match(sql,/ALTER TABLE lts_internal\.company_tariff_reprice_audit ENABLE ROW LEVEL SECURITY/);
+ assert.match(sql,/REVOKE ALL ON FUNCTION public\.lts_reprice_company_tariff\(uuid,bigint,integer,uuid,text,text\) FROM PUBLIC,anon,authenticated,service_role/);
  assert.match(sql,/CREATE TRIGGER lts_retroactive_fares_guard/);
  assert.match(sql,/CREATE TRIGGER lts_tariffs_reprice_after_update/);
- assert.match(sql,/notification_targets\\(text,uuid\\)/);
+ assert.match(sql,/notification_targets\(text,uuid\)/);
  assert.match(sql,/DEFERRABLE INITIALLY DEFERRED/);
 });
