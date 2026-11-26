@@ -902,3 +902,9 @@ body.lts-driver-session-blocked dialog[open]{visibility:hidden!important;pointer
 @media(prefers-reduced-motion:reduce){.porti-loading-spinner{animation:none}}
 .view-porti .porti-startup[data-state="error"]{background:#fff;border:1px solid #d6e4eb;border-radius:16px;padding:20px;gap:12px}
 .view-porti .porti-startup[data-state="error"] button{width:100%;min-height:44px;white-space:normal}
+
+/* Administrative notes are distinct from private notes and remain readable on mobile. */
+.trip-card .trip-admin-note-summary{display:flex;flex-direction:column;align-items:flex-start;gap:4px;padding:9px 11px;border-inline-start:3px solid var(--teal,#0891b2);border-radius:6px;background:rgba(8,145,178,.07);font-size:12px}
+.trip-card .trip-admin-note-summary .trip-note-prefix{color:var(--teal,#0891b2)}
+.trip-card .trip-admin-note-summary .trip-note-text{display:block;max-width:100%;white-space:pre-wrap;overflow-wrap:anywhere;overflow:visible;text-overflow:clip}
+.trip-card .trip-admin-note-summary small{font-size:10px}

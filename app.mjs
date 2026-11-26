@@ -805,7 +805,7 @@ function renderInsert(main){
  form.addEventListener('submit',async event=>{
   event.preventDefault();if(busy)return;collect();error.textContent='';form.querySelectorAll('[aria-invalid]').forEach(n=>n.removeAttribute('aria-invalid'));
   const checked=D.validateTrip(draft);
-  if(!checked.valid){error.textContent=Object.values(checked.errors)[0];const firstKey=Object.keys(checked.errors)[0];if(firstKey==='note'){draft.noteOpen=true;noteEditor.hidden=false;noteToggle.setAttribute('aria-expanded','true');noteSymbol.textContent='−';}const firstBad=form.elements[firstKey];if(firstBad instanceof HTMLElement){firstBad.setAttribute('aria-invalid','true');firstBad.focus();}return;}
+  if(!checked.valid){error.textContent=Object.values(checked.errors)[0];const firstKey=Object.keys(checked.errors)[0];if(firstKey==='note'||firstKey==='adminNote'){draft.noteOpen=true;noteEditor.hidden=false;noteToggle.setAttribute('aria-expanded','true');noteSymbol.textContent='−';}const firstBad=form.elements[firstKey];if(firstBad instanceof HTMLElement){firstBad.setAttribute('aria-invalid','true');firstBad.focus();}return;}
   updateEstimate();
   const duplicate=possibleTripDuplicate(state.trips,draft,editingId);
   const warnings=[];
@@ -832,7 +832,15 @@ function renderInsert(main){
    let next={...state,trips:existing?state.trips.map(t=>t.id===existing.id?trip:t):[...state.trips,trip]};
    const clients=[{name:trip.client,city:trip.city},...(trip.secondClient?[{name:trip.secondClient,city:trip.secondCity}]:[])];
    for(const customer of clients)if(!next.customers.some(c=>c.name===customer.name))next=D.upsertCustomer(next,customer);
-   await persist(next);
+   const persisted=await persist(next);
+   const savedTrip=persisted.trips.find(item=>item.id===trip.id);
+   if(!savedTrip||(savedTrip.adminNote??'')!==(trip.adminNote??'')){
+    // Keep the draft and never report a successful save if the returned note differs.
+    // Retain the attempted identity so a retry cannot create a duplicate.
+    editingId=trip.id;editingBaseline=tripEditVersion(savedTrip||null);
+    keepEditorScratchpad();
+    throw new Error('La nota per amministrazione non è stata confermata. La bozza resta disponibile: verifica la sincronizzazione prima di riprovare o generare il PDF.');
+   }
    const pending=store.getSyncInfo?.().pending;
    const savedDate=draft.date;
    month=savedDate.slice(0,7);registerQuery='';registerFilter='all';registerLimit=REGISTER_PAGE_SIZE;
@@ -881,7 +889,7 @@ function autofillCity(client,city){if(!city.value.trim()){const normalized=D.nor
 function editTrip(trip,{focusNote=false}={}){
  const apply=()=>{
   editingId=trip.id;editingBaseline=tripEditVersion(trip);
-  draft={...trip,services:[...trip.services],second:Boolean(trip.secondClient||trip.secondCity),note:trip.note||'',adminNote:trip.adminNote||'',noteOpen:focusNote||Boolean(trip.note),servicesOpen:true};
+  draft={...trip,services:[...trip.services],second:Boolean(trip.secondClient||trip.secondCity),note:trip.note||'',adminNote:trip.adminNote||'',noteOpen:focusNote||Boolean(trip.note||trip.adminNote),servicesOpen:true};
   keepEditorScratchpad();navigate('insert',{keepDraft:true});
   if(focusNote)document.querySelector('#trip-note')?.focus();
  };
@@ -919,6 +927,7 @@ function tripCard(trip,amountContext){
  })));
  if(trip.note)card.append(el('p',{class:'trip-note-summary'},el('span',{class:'trip-note-prefix'},'Nota:'),el('span',{class:'trip-note-text',title:trip.note},trip.note)));
  else card.append(el('button',{type:'button',class:'trip-option trip-note-add','aria-label':`INSERISCI NOTA · ${trip.container} · ${formatDate(trip.date)}`,on:{click:()=>editTrip(trip,{focusNote:true})}},el('span',{class:'plus-disc','aria-hidden':'true'},'+'),'INSERISCI NOTA'));
+ if(typeof trip.adminNote==='string'&&trip.adminNote.trim())card.append(el('div',{class:'trip-note-summary trip-admin-note-summary'},el('span',{class:'trip-note-prefix'},'Nota per amministrazione'),el('span',{class:'trip-note-text'},trip.adminNote),el('small',{},'Inclusa nel PDF mensile')));
  if(saturday.status!=='none')card.append(el('p',{class:'saturday-note',dataset:{saturdayStatus:saturday.status}},saturdayNoteText(saturday.status)));
  card.append(el('div',{class:'trip-amount-lines'},
   el('div',{class:'trip-amount-line'},el('strong',{},'Trasferta'),el('span',{},D.formatMoney(amount.pickupCents))),
