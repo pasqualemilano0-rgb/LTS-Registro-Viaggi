@@ -809,6 +809,9 @@ function renderInsert(main){
   updateEstimate();
   const duplicate=possibleTripDuplicate(state.trips,draft,editingId);
   const warnings=[];
+  const previousNotes=state.trips.find(t=>t.id===editingId);
+  if(previousNotes?.note?.trim()&&!checked.value.note.trim())warnings.push('Stai cancellando la nota viaggio.');
+  if(previousNotes?.adminNote?.trim()&&!checked.value.adminNote.trim())warnings.push('Stai cancellando la nota per amministrazione.');
   if(duplicate)warnings.push('Esiste già un viaggio del '+formatDate(duplicate.date)+' con questo container, cliente e località.');
   if(missingEstimateTariffs)warnings.push('Una o più tariffe aziendali non sono disponibili: il totale mostrato è parziale.');
   const commit=async()=>{
@@ -834,12 +837,12 @@ function renderInsert(main){
    for(const customer of clients)if(!next.customers.some(c=>c.name===customer.name))next=D.upsertCustomer(next,customer);
    const persisted=await persist(next);
    const savedTrip=persisted.trips.find(item=>item.id===trip.id);
-   if(!savedTrip||(savedTrip.adminNote??'')!==(trip.adminNote??'')){
+   if(!savedTrip||(savedTrip.adminNote??'')!==(trip.adminNote??'')||(savedTrip.note??'')!==(trip.note??'')){
     // Keep the draft and never report a successful save if the returned note differs.
     // Retain the attempted identity so a retry cannot create a duplicate.
     editingId=trip.id;editingBaseline=tripEditVersion(savedTrip||null);
     keepEditorScratchpad();
-    throw new Error('La nota per amministrazione non è stata confermata. La bozza resta disponibile: verifica la sincronizzazione prima di riprovare o generare il PDF.');
+    throw new Error('Le note del viaggio non sono state confermate. La bozza resta disponibile: verifica la sincronizzazione prima di riprovare o generare il PDF.');
    }
    const pending=store.getSyncInfo?.().pending;
    const savedDate=draft.date;
