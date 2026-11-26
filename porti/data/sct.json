@@ -1,7 +1,7 @@
 {
   "source": "https://www.salernocontainerterminal.com/ca/an/vessel_schedule.php",
   "source_updated_at": null,
-  "acquired_at": "2026-11-26T16:00:16.269Z",
+  "acquired_at": "2026-11-26T16:30:16.238Z",
   "rows": [
     {
       "vessel": "ECO OSTRO",
@@ -319,6 +319,6 @@
       "status": "PENDING"
     }
   ],
-  "updated_at": "2026-11-26T16:00:16.269Z",
+  "updated_at": "2026-11-26T16:30:16.238Z",
   "data_changed_at": "2026-11-26T16:00:16.269Z"
 }
