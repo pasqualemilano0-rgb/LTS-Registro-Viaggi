@@ -109,7 +109,7 @@ test('offline worker activates new cache and precaches auth code without caching
 });
 test('HTML entry points are identical and use the new cache buster',()=>{
   assert.equal(html,shell);
-  assert.match(html,/app[.]css[?]v=20261126-note-protection-v1/);
+  assert.match(html,/app[.]css[?]v=20261126-note-protection-v2/);
   assert.match(html,/app[.]mjs[?]v=20\d{6}-[a-z0-9-]+-v\d+/);
   assert.match(html,/<script type="module"/);
 });
