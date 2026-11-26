@@ -26,3 +26,13 @@ test('synthetic demo uses exact tested candidate history UI and no external tran
  assert.match(NOTES_HTML,/nessuna credenziale/);
  assert.match(NOTES_JS,/salvataggio simulato/);
 });
+
+import {integratePasswordlessNotes} from '../supabase/qa/integrate-passwordless-notes.mjs';
+test('worker integration leaves existing protected route gate intact',()=>{
+ const source="import {serveQaReportPreview} from './qa-report-preview.mjs';\n const url=new URL(request.url),path=url.pathname;\n if(!await hasStageAccess(request,env))return json({error:'STAGE_LOGIN_REQUIRED'},401);";
+ const patched=integratePasswordlessNotes(source);
+ assert.ok(patched.includes("if(!await hasStageAccess(request,env))return json({error:'STAGE_LOGIN_REQUIRED'},401);"));
+ assert.ok(patched.indexOf('if(syntheticNotes)return syntheticNotes;')<patched.indexOf('hasStageAccess'));
+ assert.throws(()=>integratePasswordlessNotes(patched));
+ assert.throws(()=>integratePasswordlessNotes('wrong source'));
+});
