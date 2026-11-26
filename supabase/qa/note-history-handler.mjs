@@ -1,7 +1,6 @@
 // QA account-state integration. Call only AFTER the existing authorized() checks.
-import {sessionIdFromJwt} from './lts-session.mjs';
 
-export async function readNoteHistory(req,admin,user,input){
+export async function readNoteHistory(req,admin,user,input,sessionIdFromJwt){
  if(user?.role!=='driver')throw {status:403};
  if(!input||Object.keys(input).some(k=>!['action','tripId','before'].includes(k))||
   typeof input.tripId!=='string'||!input.tripId.trim()||input.tripId.length>128||
