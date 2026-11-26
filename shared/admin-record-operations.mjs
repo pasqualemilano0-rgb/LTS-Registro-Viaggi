@@ -5,7 +5,7 @@ import {validateState,normalizeText,validateTrip,SERVICES} from './domain.mjs';
 const TYPES={trip:'trips',customer:'customers',tariff:'tariffs'};
 const EXTRA_KEYS=new Set(SERVICES.map(s=>s.key));
 const KEYS={
- trip:new Set(['date','client','city','container','secondClient','secondCity','note','services',
+ trip:new Set(['date','client','city','container','secondClient','secondCity','adminNote','services',
   'fareCents','secondFareCents','sumPickupFares','extraCents']),
  customer:new Set(['name','city','address','phone','vat']),
  tariff:new Set(['cents'])

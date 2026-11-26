@@ -149,7 +149,7 @@ function tableRow(trip){
  const fields=[
   ['Seconda presa',trip.secondClient?(trip.secondClient+' · '+trip.secondCity):'Non presente'],
   ['Servizi',trip.services?.length?trip.services.join(', '):'Nessuno'],
-  ['Nota',trip.note||'Nessuna'],
+  ['Nota amministrativa',trip.adminNote||'Nessuna'],
   ['Ultima modifica',trip.updatedAt?new Date(trip.updatedAt).toLocaleString('it-IT'):'—'],
  ];
  for(const [k,v] of fields){

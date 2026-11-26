@@ -72,6 +72,10 @@ async function archive(admin,driverId){
  try{state=validateState(data.payload);}catch{throw {status:503};}
  return {revision:data.revision,state,updatedAt:data.updated_at};
 }
+// Never serialize the driver's personal notes in an administrative response.
+export function redactAdminArchive(state){
+ return {...state,trips:state.trips.map(({note,...trip})=>({...trip,note:''}))};
+}
 async function drivers(admin){
  const {data:accounts,error}=await admin.from('lts_account_access')
   .select('user_id,phone_e164,enabled,removed_at').eq('role','driver').limit(201);
@@ -170,7 +174,7 @@ async function mutate(admin,actorId,input){
   throw {status:503};
  }
  if(!Number.isSafeInteger(data)||data!==current.revision+1)throw {status:503};
- return {revision:data,state:patched.state,affectedTrips:patched.affectedTrips||0,
+ return {revision:data,state:redactAdminArchive(patched.state),affectedTrips:patched.affectedTrips||0,
   preservedLegacyTariffs:patched.preservedLegacyTariffs||0};
 }
 export async function handleAdminRecords(req,{getClients}={}){
@@ -200,7 +204,7 @@ export async function handleAdminRecords(req,{getClients}={}){
   await checkDriver(clients.admin,input.driverId);
   if(input.action==='read'){
    const data=await archive(clients.admin,input.driverId);
-   return json({archive:data,audit:await auditRows(clients.admin,input.driverId)},200,origin);
+   return json({archive:data?{...data,state:redactAdminArchive(data.state)}:null,audit:await auditRows(clients.admin,input.driverId)},200,origin);
   }
   if(input.action==='mutate'){
    const result=await mutate(clients.admin,actor,input);
