@@ -1,7 +1,7 @@
 {
   "source": "https://tfg.bucci.it/@/TFGW_TP_ETA",
-  "source_updated_at": "2026-11-25T13:29:39.000Z",
-  "acquired_at": "2026-11-26T15:00:16.283Z",
+  "source_updated_at": "2026-11-26T15:00:55.000Z",
+  "acquired_at": "2026-11-26T15:30:16.328Z",
   "rows": [
     {
       "vessel": "ADRASTOS",
@@ -81,10 +81,10 @@
       "destination": "INTERNO PORTO"
     },
     {
-      "vessel": "SUNAID X",
-      "arrival_voyage": "019",
-      "departure_voyage": "019",
-      "eta": "29/11/26",
+      "vessel": "ARGENTINIAN",
+      "arrival_voyage": "0HWLGE1MA",
+      "departure_voyage": "0HWLGE1MA",
+      "eta": "01/12/26",
       "acceptance": "ACCETTA CARICO",
       "custom_close_time": "&nbsp;",
       "fast_corridor_cut_off": "",
@@ -95,18 +95,7 @@
       "vessel": "CHRISTINA",
       "arrival_voyage": "AGA0A0S19",
       "departure_voyage": "AGA0A0S19",
-      "eta": "30/11/26",
-      "acceptance": "ACCETTA CARICO",
-      "custom_close_time": "&nbsp;",
-      "fast_corridor_cut_off": "",
-      "gate_cut_off": "",
-      "destination": "INTERNO PORTO"
-    },
-    {
-      "vessel": "ARGENTINIAN",
-      "arrival_voyage": "0HWLGE1MA",
-      "departure_voyage": "0HWLGE1MA",
-      "eta": "01/12/26",
+      "eta": "02/12/26",
       "acceptance": "ACCETTA CARICO",
       "custom_close_time": "&nbsp;",
       "fast_corridor_cut_off": "",
@@ -119,6 +108,17 @@
       "departure_voyage": "648W",
       "eta": "03/12/26",
       "acceptance": "CARICO DAL 27/11/26 08:00:00",
+      "custom_close_time": "&nbsp;",
+      "fast_corridor_cut_off": "",
+      "gate_cut_off": "",
+      "destination": "INTERNO PORTO"
+    },
+    {
+      "vessel": "SUNAID X",
+      "arrival_voyage": "019",
+      "departure_voyage": "019",
+      "eta": "04/12/26",
+      "acceptance": "ACCETTA CARICO",
       "custom_close_time": "&nbsp;",
       "fast_corridor_cut_off": "",
       "gate_cut_off": "",
