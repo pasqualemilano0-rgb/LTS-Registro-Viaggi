@@ -10,8 +10,8 @@ const engine=process.env.LTS_BROWSER_ENGINE==='webkit'?'webkit':'chromium';
 const base='/LTS-Registro-Viaggi/';
 const now='2026-11-27T08:00:00Z';
 const cases=[];
-for(const [internal,flag,icon] of [['good','1','ACCETTA_CARICO'],['bad','0','NO_ACCETTA_CARICO'],['unknown','','']])
- for(const [external,depot] of [['good','S'],['warn','N'],['unknown','']]){
+for(const [internal,flag,icon] of [['good','1','ACCETTA_CARICO'],['bad','0','NO_ACCETTA_CARICO'],['unknown','',''],['uncertain','X','INVALID']])
+ for(const [external,depot] of [['good','S'],['warn','N'],['unknown',''],['uncertain','X']]){
   cases.push({internal,external,row:{vessel:'QA CNT '+internal+' '+external,voyage:String(cases.length+1),category:'PREVISTE',vessel_status:'PRE',acceptance_flag:flag,acceptance_icon:icon,external_depot:depot,stop_cargo:'NO',opening:'2026-11-27 07:00',closing:'2026-11-28 18:00',eta:'2026-11-28 00:00'}});
  }
 const feed={source:'https://api.conateco.it/ConatecoServicesApi/BerthForecast',acquired_at:now,rows:cases.map(c=>c.row)};
@@ -50,19 +50,21 @@ try{
    await button.waitFor({state:'visible'});
    assert.equal(await button.count(),1);
    const compact=button.locator('.cnt-acceptance-item');
-   assert.deepEqual(await compact.evaluateAll(nodes=>nodes.map(n=>n.dataset.state)),[c.internal,c.external]);
-   const labels=[c.internal==='good'?'ACCETTA CARICO':c.internal==='bad'?'NON ACCETTA CARICO':'DA VERIFICARE',c.external==='good'?'ACCETTA CARICO':'DA VERIFICARE'];
+   const expected=[[c.internal,'INTERNO PORTO'],[c.external,'DRYPORT / DEPOSITI ESTERNI']].filter(([k])=>k!=='unknown');
+   const states=expected.map(([k])=>k==='uncertain'?'unknown':k);
+   const labels=states.map(k=>k==='good'?'ACCETTA CARICO':k==='bad'?'NON ACCETTA CARICO':'DA VERIFICARE');
+   assert.deepEqual(await compact.evaluateAll(nodes=>nodes.map(n=>n.dataset.state)),states);
    assert.deepEqual(await compact.locator('.cnt-acceptance-status').allTextContents(),labels);
-   assert.equal(await button.evaluate(n=>n.querySelector('.cnt-acceptance-compact').getBoundingClientRect().width/n.clientWidth>=0.75),true);
+   if(expected.length)assert.equal(await button.evaluate(n=>n.querySelector('.cnt-acceptance-compact').getBoundingClientRect().width/n.clientWidth>=0.75),true);
    await button.screenshot({path:'browser-evidence/cnt-list-'+engine+'-'+width+'-'+c.internal+'-'+c.external+'.png'});
    await button.click();
    const panel=frame.locator('.cnt-acceptance-grid');
    await panel.waitFor({state:'visible'});
    const items=panel.locator('.cnt-acceptance-item');
-   assert.equal(await items.count(),2);
+   assert.equal(await items.count(),expected.length);
    assert.deepEqual(await items.locator('.cnt-acceptance-status').allTextContents(),labels);
-   assert.deepEqual(await items.evaluateAll(nodes=>nodes.map(n=>n.dataset.state)),[c.internal,c.external]);
-   assert.deepEqual(await items.locator('.cnt-acceptance-title').allTextContents(),['INTERNO PORTO','DRYPORT / DEPOSITI ESTERNI']);
+   assert.deepEqual(await items.evaluateAll(nodes=>nodes.map(n=>n.dataset.state)),states);
+   assert.deepEqual(await items.locator('.cnt-acceptance-title').allTextContents(),expected.map(([,title])=>title));
    assert.equal(await frame.locator('.depot-acceptance-panel:visible').count(),0);
    assert.equal(await panel.evaluate(n=>n.scrollWidth<=n.clientWidth+1&&[...n.querySelectorAll('.cnt-acceptance-item')].every(x=>x.scrollWidth<=x.clientWidth+1)),true);
    assert.equal(await panel.evaluate(n=>n.ownerDocument.documentElement.scrollWidth<=n.ownerDocument.documentElement.clientWidth+1),true);
@@ -70,6 +72,6 @@ try{
   }
   assert.deepEqual(errors,[]);
   await ctx.close();
-  console.log('PASS CNT '+engine+' '+width+'px: nine real fleet/detail states, no duplicate panels or horizontal overflow; screenshots saved');
+  console.log('PASS CNT '+engine+' '+width+'px: sixteen real fleet/detail states, no duplicate panels or horizontal overflow; screenshots saved');
  }
 }finally{await browser?.close();await new Promise(ok=>server.close(ok));}
