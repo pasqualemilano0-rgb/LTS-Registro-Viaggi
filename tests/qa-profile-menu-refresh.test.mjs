@@ -25,7 +25,7 @@ test('profile section order makes documents first and logout last',()=>{
   assert.ok(i>last,'section missing or out of order: '+name);
   last=i;
  }
- assert.match(profile,/\['I MIEI DOCUMENTI','Gestisci autisti','Accedi con account autista'\]/);
+ assert.match(profile,/\['I MIEI DOCUMENTI','Accedi con account autista'\]/);
  assert.match(profile,/\['Risolvi sincronizzazione','Sincronizza adesso','Collega dispositivi'\]/);
  assert.match(profile,/\['Esporta backup','Importa backup','Recupera archivio precedente','Esporta per Android','Ricarica dati online'\]/);
  assert.match(profile,/\['Installa app','Esci dall’account'\]/);
@@ -35,9 +35,10 @@ test('profile section order makes documents first and logout last',()=>{
 });
 
 test('profile account and document authorization conditions are preserved',()=>{
- assert.match(profile,/if\(store\.usingAccount\(\)\&\&accountAccess\.getRole\(\)==='driver'\)\{/);
+ assert.match(profile,/if\(payrollProfileEligible\(\)\)\{/);
  assert.match(profile,/menuButton\('I MIEI DOCUMENTI'/);
- assert.match(profile,/if\(store\.usingAccount\(\)\&\&accountAccess\.getRole\(\)==='admin'\&\&accountAccess\.isVerified\(\)\)/);
+ assert.doesNotMatch(profile,/menuButton\('Gestisci autisti'/);
+ assert.doesNotMatch(profile,/location\.assign\(new URL\('amministratore\//);
  assert.match(profile,/if\(store\.usingAccount\(\)\)\{/);
  assert.match(profile,/store\.leaveAccountView\(\)/);
  assert.match(profile,/void accountAccess\.logout\(\)/);
@@ -51,7 +52,12 @@ test('profile account and document authorization conditions are preserved',()=>{
  assert.match(profile,/deviceLinkDialog\(\)/);
  assert.doesNotMatch(profile,/appendPushSettings\(body|push-settings|reminder/i);
  assert.doesNotMatch(app,/import \{ appendPushSettings \}/);
- assert.doesNotMatch(read('runtime-config.mjs'),/payrollEndpoint/);
+ assert.match(read('runtime-config.mjs'),/payrollEndpoint/);
+ assert.match(app,/await listForOwner\(\{offset:0\}\)/);
+ assert.match(app,/await api\.documents\(filter\)/);
+ assert.match(app,/onFirstPageValidated:\(\)=>\{allowed=true;\}/);
+ assert.match(profile,/if\(payrollProfileCached\(accountOwner\)\)showAuthorizedDocuments\(true\)/);
+ assert.match(profile,/accountAccess\.getAccountId\(\)!==accountOwner/);
 });
 
 test('menu buttons are MOVED without discarding handlers or hidden file input',()=>{

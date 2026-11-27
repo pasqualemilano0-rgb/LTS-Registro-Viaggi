@@ -7,18 +7,32 @@ const $=id=>document.getElementById(id);
 // to restore the existing register page (including its in-memory UI state).
 // Direct links, fresh tabs and modified clicks keep the ordinary home fallback.
 const openedFromProfile=new URLSearchParams(window.location.search).get('from')==='profile';
+function previousEntryIsRegister(){
+ try{
+  // History length and a query parameter cannot establish the previous page.
+  // If the browser cannot expose the entry, use the explicit ../ link.
+  const navigation=window.navigation;
+  const index=navigation?.currentEntry?.index;
+  if(!Number.isInteger(index)||index<1)return false;
+  const previous=navigation.entries().find(entry=>entry.index===index-1);
+  if(!previous?.url)return false;
+  const url=new URL(previous.url);
+  return url.origin===window.location.origin &&
+   ['/LTS-Registro-Viaggi/','/LTS-Registro-Viaggi/index.html','/LTS-Registro-Viaggi/shell.html','/LTS-Registro-Viaggi/viaggi/','/LTS-Registro-Viaggi/viaggi/index.html'].includes(url.pathname);
+ }catch{return false;}
+}
 for(const link of document.querySelectorAll('a[data-back-to-register]')){
  link.addEventListener('click',event=>{
   if(event.defaultPrevented||event.button!==0||
      event.metaKey||event.ctrlKey||event.shiftKey||event.altKey)return;
-  if(openedFromProfile&&window.history.length>1){
+  if(openedFromProfile&&window.history.length>1&&previousEntryIsRegister()) {
    event.preventDefault();
    window.history.back();
   }
  });
 }
 let category='cedolino',offset=0,busy=false,activePdfPreview=null;
-let viewGeneration=0;
+let viewGeneration=0,listRequest=0;
 const months=['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
 function note(message='',error=false){
  $('notice').textContent=message;$('notice').hidden=!message;
@@ -31,7 +45,9 @@ function element(tag,cls,text){
 }
 // Clear sensitive content when the app is backgrounded or the account changes.
 function hideDocuments(){
- viewGeneration++;
+ viewGeneration++;listRequest++;busy=false;
+ $('refresh').disabled=false;$('more').disabled=false;$('more').hidden=true;
+ $('documents').setAttribute('aria-busy','false');
  closePdfPreview();
  $('content').hidden=true;
  $('documents').replaceChildren();offset=0;
@@ -161,30 +177,61 @@ function display(doc){
  row.append(details,actions);
  return row;
 }
+function emptyCategoryState(){
+ const labels={
+  cedolino:'Nessun cedolino pubblicato',
+  cu:'Nessuna CU pubblicata',
+  altri:'Nessun documento pubblicato'
+ };
+ const box=element('div','empty-documents');
+ const symbol=element('span','empty-documents-icon');
+ symbol.setAttribute('aria-hidden','true');
+ const copy=element('div','empty-documents-copy');
+ copy.append(element('strong','',labels[category]||'Nessun documento pubblicato'),
+  element('p','','Non ci sono documenti pubblicati in questa categoria. Quando saranno disponibili, compariranno qui.'));
+ box.append(symbol,copy);
+ return box;
+}
 async function load(append=false){
  if(!payrollConfigured()){showNotConfigured();return;}
- if(busy||$('content').hidden)return;
- const generation=viewGeneration;
+ if($('content').hidden||document.hidden||!account.isVerified()||account.getRole()!=='driver')return;
+ // Filter changes supersede an in-flight list. Pagination alone is serialized.
+ if(append&&(busy||$('more').hidden))return;
+ const generation=viewGeneration,request=++listRequest,owner=account.getAccountId();
+ const filter={category,offset:append?offset:0};
+ if($('year').value)filter.year=Number($('year').value);
+ const current=()=>request===listRequest&&generation===viewGeneration&&
+  !$('content').hidden&&!document.hidden&&account.isVerified()&&
+  account.getRole()==='driver'&&account.getAccountId()===owner&&
+  category===filter.category&&($('year').value?Number($('year').value):undefined)===filter.year;
  busy=true;$('refresh').disabled=true;$('more').disabled=true;
- if(!append){offset=0;$('documents').replaceChildren();}
+ $('documents').setAttribute('aria-busy','true');
+ if(!append){offset=0;$('more').hidden=true;$('documents').replaceChildren();}
+ note('Caricamento documenti…');
  try{
-  const filter={category,offset};
-  if($('year').value)filter.year=Number($('year').value);
   const result=await api.documents(filter);
-  if(generation!==viewGeneration||$('content').hidden||document.hidden||
-      !account.isVerified()||account.getRole()!=='driver')return;
-  if(!Array.isArray(result.documents))throw Error('Archivio documenti non valido.');
+  if(!current())return;
+  if(!Array.isArray(result.documents)||result.documents.length>50)throw Error('Archivio documenti non valido.');
+  // Validate the entire page before exposing any row. A stale or unexpected
+  // category/year must never be rendered under the active filter.
   for(const doc of result.documents){
-   if(doc.state!=='published'||!['cedolino','cu','altri'].includes(doc.category))
+   if(!doc||doc.state!=='published'||doc.category!==filter.category||
+      (filter.year!==undefined&&doc.document_year!==filter.year))
     throw Error('Risposta documenti non autorizzata.');
-   $('documents').append(display(doc));
   }
+  const rows=result.documents.map(display);
+  $('documents').append(...rows);
   offset+=result.documents.length;
   $('more').hidden=result.documents.length<50;
-  if(!offset)$('documents').append(element('p','hint','Non ci sono documenti pubblicati in questa categoria.'));
+  if(!offset)$('documents').append(emptyCategoryState());
   note('');
- }catch(error){note(error.message||'Impossibile aggiornare i documenti.',true);}
- finally{busy=false;$('refresh').disabled=false;$('more').disabled=false;}
+ }catch(error){if(current())note(error.message||'Impossibile aggiornare i documenti.',true);}
+ finally{
+  if(request===listRequest&&generation===viewGeneration){
+   busy=false;$('refresh').disabled=false;$('more').disabled=false;
+   $('documents').setAttribute('aria-busy','false');
+  }
+ }
 }
 for(const button of document.querySelectorAll('[data-category]')){
  button.addEventListener('click',()=>{
@@ -194,6 +241,7 @@ for(const button of document.querySelectorAll('[data-category]')){
    item.setAttribute('aria-pressed',String(chosen));
   }
   $('category-title').textContent=category==='cedolino'?'CEDOLINO':category==='cu'?'CU':'ALTRI DOCUMENTI';
+  $('cedolino-info').hidden=category!=='cedolino';
   void load();
  });
 }

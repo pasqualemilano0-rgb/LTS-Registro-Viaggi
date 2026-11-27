@@ -15,9 +15,12 @@ const ORIGIN=(()=>{
   throw Error('LTS payroll origin non autorizzata');
  return value;
 })();
-// Separate operational switch: OFF unless explicitly enabled for this Edge.
-// The public webapp must not configure payrollEndpoint until testing is complete.
+// Admin operations are enabled ONLY behind authenticated live admin session
+// and verified TOTP MFA. No public visitor gains database or Storage access.
+// Driver PDF access remains at the existing strictly allowlisted test stage.
+const PAYROLL_ADMIN_OPERATIONS_ENABLED=true;
 const PAYROLL_ENABLED=Deno.env.get('LTS_PAYROLL_ENABLED')==='yes';
+const PAYROLL_PILOT_LIST_ONLY=true;
 const BUCKET='lts-payroll-private';
 const MAX_FILE=8388608, MAX_MULTIPART=MAX_FILE+32768;
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -99,8 +102,9 @@ async function authorized(req,api){
   const mfa=await requireAdminMfa(api.db,match[1],userId);
   if(!mfa?.enrolled||!mfa?.verified)fail(428);
  }
- // All operations, including list and admin upload, require a live test seat.
- await requirePhase2Tester(api.db,userId,access.role);
+ // Driver accounts remain explicitly allowlisted during rollout. Admin
+ // accounts require the existing production admin role and active verified MFA.
+ if(access.role==='driver')await requirePhase2Tester(api.db,userId,access.role);
  return {userId,role:access.role,sessionId};
 }
 function mustAdmin(actor){if(actor.role!=='admin')fail(403);}
@@ -114,6 +118,32 @@ async function activeDriver(db,id){
  if(!data)fail(404);
  return id;
 }
+/**
+ * Pilot recipient is assigned exclusively through the server-controlled
+ * driver_a allowlist slot. Compare the corresponding identity from the LTS
+ * directory as a second fail-closed check. Neither the browser nor a name
+ * supplied with a request is an authority for document assignment.
+ */
+async function requireMilanoPasqualeRecipient(db,required=true){
+ const {data:seat,error:seatError}=await db.from('lts_payroll_test_allowlist')
+  .select('user_id').eq('slot','driver_a').eq('role','driver')
+  .eq('enabled',true).gt('expires_at',new Date().toISOString()).maybeSingle();
+ if(seatError)fail(503,'Autorizzazione del destinatario temporaneamente non verificabile.');
+ if(!seat?.user_id){
+  if(required)fail(403,'Destinatario di prova non più abilitato.');
+  return null;
+ }
+ const {data:identity,error:identityError}=await db.from('lts_pending_drivers')
+  .select('auth_user_id,first_name,last_name')
+  .eq('auth_user_id',seat.user_id).maybeSingle();
+ if(identityError)fail(503,'Identità del destinatario temporaneamente non verificabile.');
+ const normal=value=>typeof value==='string'?value.trim().toLocaleLowerCase('it'):'';
+ if(!identity||normal(identity.first_name)!=='milano'||normal(identity.last_name)!=='pasquale'){
+  if(required)fail(403,'Il destinatario autorizzato non corrisponde a MILANO PASQUALE.');
+  return null;
+ }
+ return seat.user_id;
+}
 async function roster(db){
  const {data,error}=await db.from('lts_account_access')
   .select('user_id,phone_e164').eq('role','driver')
@@ -126,10 +156,15 @@ async function roster(db){
   .select('auth_user_id,first_name,last_name').in('auth_user_id',ids).limit(201);
  if(e)fail(503);
  const lookup=new Map((names||[]).map(n=>[n.auth_user_id,n]));
+ // Administrators can review the whole archive, but may upload/publish
+ // exclusively to the verified single test recipient.
+ const pilotDriverId=await requireMilanoPasqualeRecipient(db,false);
  return data.map(x=>({id:x.user_id,
   name:[lookup.get(x.user_id)?.first_name,lookup.get(x.user_id)?.last_name]
    .filter(Boolean).join(' ').trim()||'Autista senza nome',
-  phone:x.phone_e164||''})).sort((a,b)=>a.name.localeCompare(b.name,'it'));
+  phone:x.phone_e164||'',
+  documents_enabled:x.user_id===pilotDriverId
+ })).sort((a,b)=>a.name.localeCompare(b.name,'it'));
 }
 async function listDocs(db,actor,q){
  const offset=Number(q.offset??0);
@@ -173,6 +208,9 @@ async function upload(req,db,actor){
  if(!(file instanceof File)||file.size<10||file.size>MAX_FILE||
     !/\.pdf$/i.test(file.name)||(file.type&&file.type!=='application/pdf'))fail(400,'Solo PDF fino a 8 MB.');
  const driverId=await activeDriver(db,String(form.get('driverId')||''));
+ // This check runs before reading PDF bytes into memory or touching Storage.
+ if(driverId!==await requireMilanoPasqualeRecipient(db))
+  fail(403,'Caricamento PDF consentito soltanto per MILANO PASQUALE.');
  const category=String(form.get('category')||'');
  const year=Number(form.get('year'));
  const rawMonth=String(form.get('month')||'');
@@ -212,6 +250,11 @@ async function publish(db,actor,id){
  if(findErr)fail(503);
  if(!doc||doc.state!=='draft')fail(409,'Documento non pubblicabile.');
  await activeDriver(db,doc.driver_id);
+ // The only permissible publication recipient is the same pilot driver.
+ // Legacy drafts for another driver must not bypass the current policy.
+ if(doc.driver_id!==await requireMilanoPasqualeRecipient(db))
+  fail(403,'Pubblicazione riservata a MILANO PASQUALE.');
+ await requirePhase2Tester(db,doc.driver_id,'driver');
  const {data,error}=await db.from('lts_payroll_documents')
   .update({state:'published',published_by:actor.userId,published_at:new Date().toISOString()})
   .eq('id',id).eq('state','draft').select('id').maybeSingle();
@@ -270,10 +313,8 @@ async function acknowledge(db,actor,id){
  return {id,acknowledgedAt:at};
 }
 Deno.serve(async req=>{
- // Fail closed for every method, including CORS and direct API calls. This is
- // separate from JWT/session/MFA authorization enforced when enabled.
- if(!PAYROLL_ENABLED)return new Response(JSON.stringify({error:'Archivio documenti non ancora attivo.'}),{
-  status:503,headers:{...noCache,'Content-Type':'application/json; charset=utf-8'}});
+ // Preview requests still enforce exact CORS, live JWT, session and the
+ // server-side expiring allowlist before returning any metadata.
  if(req.headers.get('origin')!==ORIGIN)return json({error:'Origine non autorizzata.'},403);
  if(req.method==='OPTIONS'){
   const method=req.headers.get('access-control-request-method');
@@ -289,9 +330,18 @@ Deno.serve(async req=>{
  if(req.method!=='POST')return json({error:'Metodo non consentito.'},405);
  try{
   const api=clients(),actor=await authorized(req,api);
-  if((req.headers.get('content-type')||'').startsWith('multipart/form-data;'))
+  if((req.headers.get('content-type')||'').startsWith('multipart/form-data;')){
+   if(!PAYROLL_ADMIN_OPERATIONS_ENABLED||actor.role!=='admin')
+    fail(403,'Caricamento riservato all’amministratore con MFA.');
    return json(await upload(req,api.db,actor),201);
+  }
   const input=await objectBody(req);
+  // Administrative actions are operational with verified MFA. Other drivers
+  // cannot access private PDFs beyond the existing read-only pilot.
+  if(actor.role==='admin'&&!PAYROLL_ADMIN_OPERATIONS_ENABLED)
+   fail(503,'Area amministrativa non attiva.');
+  if(actor.role==='driver'&&(PAYROLL_PILOT_LIST_ONLY||!PAYROLL_ENABLED)&&input.action!=='list')
+   fail(503,'Apertura PDF non ancora attiva per gli autisti.');
   // Every driver operation is authorized by the verified, live LTS session.
   // Document ownership, published-only access and admin MFA remain enforced
   // server-side, independently of any browser controls.

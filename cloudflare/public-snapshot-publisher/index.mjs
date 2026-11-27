@@ -36,12 +36,54 @@ function safeRows(rows,spec){
     }
   }
 }
+// Strictly bounded monitor diagnostics: no arbitrary KV fields or upstream text
+// are permitted in logs. This does not relax snapshot validation or the gate.
+const MONITOR_HEALTH_CODES=new Set([
+  'BAD_SCHEDULE','SOURCE_HTTP','SOURCE_CONTENT_TYPE','SOURCE_TOO_LARGE',
+  'CNT_BAD_CATEGORY','CNT_NO_VALID_ROWS','SCT_HTML_SIZE',
+  'SCT_TOO_MANY_ROWS','SCT_NO_VALID_ROWS','TFG_SOURCE_INVALID',
+  'TFG_NO_PARSER','UNEXPECTED_ROW_DROP','OLDER_TERMINAL_UPDATE',
+  'GITHUB_HTTP','GITHUB_TOO_LARGE','GITHUB_SNAPSHOT_INVALID',
+  'GITHUB_ROW_DROP','GITHUB_OLDER_SOURCE','UPSTREAM_UNAVAILABLE'
+]);
+function safeHealthTimestamp(value){
+  if(typeof value!=='string'||!/^20\d{2}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(value))return null;
+  const ms=Date.parse(value);
+  return Number.isFinite(ms)&&new Date(ms).toISOString()===value?value:null;
+}
+export function terminalHealthDiagnostic(terminal,status){
+  const safe=status&&typeof status==='object'&&!Array.isArray(status)?status:{};
+  return {
+    terminal:Object.hasOwn(FEEDS,terminal)?terminal:'unknown',
+    state:['ok','fallback','error'].includes(safe.state)?safe.state:'unknown',
+    error_code:safe.last_error_code===null?null:
+      MONITOR_HEALTH_CODES.has(safe.last_error_code)?safe.last_error_code:'UNCLASSIFIED',
+    last_attempt_at:safeHealthTimestamp(safe.last_attempt_at),
+    last_success_at:safeHealthTimestamp(safe.last_success_at)
+  };
+}
+export function reportPublishError(error,logger=console){
+  if(error instanceof PublishRejected&&error.message==='UNHEALTHY_TERMINAL'&&error.terminalHealth){
+    const health=error.terminalHealth;
+    logger.error('PUBLIC_PORTI_TERMINAL_HEALTH',
+      JSON.stringify(terminalHealthDiagnostic(health.terminal,{
+        state:health.state,last_error_code:health.error_code,
+        last_attempt_at:health.last_attempt_at,last_success_at:health.last_success_at
+      })));
+  }
+  logger.error('PUBLIC_PORTI_PUBLISH_ERROR',
+    error instanceof PublishRejected?error.message:'UNEXPECTED_FAILURE');
+}
 export function vet(terminal,snapshot,status,previous,now=Date.now()){
   const spec=FEEDS[terminal];requireTrue(!!spec,'UNKNOWN_TERMINAL');
   safeFields(snapshot,ROOT,'UNEXPECTED_SNAPSHOT_FIELD');
   requireTrue(snapshot.source===spec.source&&snapshot.monitor_origin==='cloudflare_official_read','UNVERIFIED_SOURCE');
   safeFields(status,new Set(['state','last_error_code','last_attempt_at','last_success_at','source_updated_at','rows']),'INVALID_STATUS');
-  requireTrue(status.state==='ok'&&status.last_error_code===null,'UNHEALTHY_TERMINAL');
+  if(status.state!=='ok'||status.last_error_code!==null){
+    const error=new PublishRejected('UNHEALTHY_TERMINAL');
+    error.terminalHealth=terminalHealthDiagnostic(terminal,status);
+    throw error;
+  }
   const acquired=time(snapshot.acquired_at,'INVALID_ACQUIRED_AT');
   requireTrue(acquired>=now-MAX_AGE_MS&&acquired<=now+MAX_FUTURE_MS,'STALE_OR_FUTURE');
   requireTrue(time(status.last_success_at,'INVALID_MONITOR_TIME')===acquired,'MONITOR_MISMATCH');
@@ -71,19 +113,50 @@ export function vet(terminal,snapshot,status,previous,now=Date.now()){
   requireTrue(new TextEncoder().encode(body).length<=MAX_BYTES,'OVERSIZED_PUBLIC_SNAPSHOT');
   return{body,acquired,rows:result.rows.length,changed:!previous||acquired>time(previous.acquired_at,'BAD_PREVIOUS_TIME')};
 }
+// KV may return an empty page while more keys remain (expired/deleted tombstones).
+// Preserve the recovery gate: never interpret an incomplete page as a missing backup.
+export async function hasRecoveryPoint(kv,terminal){
+  const prefix='backup:v1:'+terminal+':',seen=new Set();
+  let cursor;
+  for(let page=0;page<10;page++){
+    const options={prefix,limit:100};
+    if(cursor)options.cursor=cursor;
+    const result=await kv.list(options);
+    requireTrue(Array.isArray(result?.keys),'RECOVERY_POINT_LIST_INVALID_'+terminal);
+    if(result.keys.some(key=>typeof key?.name==='string'&&key.name.startsWith(prefix)))return true;
+    if(result.list_complete===true)return false;
+    requireTrue(result.list_complete===false&&typeof result.cursor==='string'&&
+      result.cursor.length>0&&!seen.has(result.cursor),'RECOVERY_POINT_LIST_INVALID_'+terminal);
+    seen.add(result.cursor);
+    cursor=result.cursor;
+  }
+  throw new PublishRejected('RECOVERY_POINT_LIST_INCOMPLETE_'+terminal);
+}
 export async function readAll(env,now=Date.now(),previous={}){
   requireTrue(env&&env.SCHEDULES_KV&&typeof env.SCHEDULES_KV.get==='function'&&typeof env.SCHEDULES_KV.list==='function','KV_UNAVAILABLE');
   const output={};
   for(const terminal of Object.keys(FEEDS)){
-    const [snapshot,status,backups]=await Promise.all([
+    const [snapshot,status,backupPresent]=await Promise.all([
       env.SCHEDULES_KV.get('schedule:'+terminal,'json'),
       env.SCHEDULES_KV.get('status:'+terminal,'json'),
-      env.SCHEDULES_KV.list({prefix:'backup:v1:'+terminal+':',limit:1})
+      hasRecoveryPoint(env.SCHEDULES_KV,terminal)
     ]);
-    requireTrue(Array.isArray(backups?.keys)&&backups.keys.length>0,'RECOVERY_POINT_MISSING_'+terminal);
+    requireTrue(backupPresent,'RECOVERY_POINT_MISSING_'+terminal);
     output[terminal]=vet(terminal,snapshot,status,previous[terminal]??null,now);
   }
   return output;
+}
+// Fixed-category diagnostics: never log GitHub response bodies or token material.
+export function classifyGitHubRef422(payload){
+  if(!payload||typeof payload!=='object')return 'UNKNOWN';
+  const texts=[payload.message];
+  if(Array.isArray(payload.errors))
+    for(const item of payload.errors.slice(0,8))texts.push(item?.message);
+  const signal=texts.filter(v=>typeof v==='string').map(v=>v.slice(0,500).toLowerCase()).join(' ');
+  if(/repository rule violations|ruleset|protected branch|protected ref|changes must be made through a pull request|required status checks|pull request is required/.test(signal))return 'RULESET';
+  if(/not a fast.forward|non.fast.forward|reference update failed|branch was modified|out.of.date ref/.test(signal))return 'NON_FAST_FORWARD';
+  if(/invalid sha|sha does not exist|git object does not exist|object not found/.test(signal))return 'INVALID_REF';
+  return 'UNKNOWN';
 }
 async function github(path,{method='GET',body,token,fetcher=fetch}={}){
   requireTrue(path.startsWith('/git/')||path.startsWith('/contents/'),'UNEXPECTED_GITHUB_ROUTE');
@@ -95,6 +168,19 @@ async function github(path,{method='GET',body,token,fetcher=fetch}={}){
     if(body!==undefined)headers['Content-Type']='application/json';
     const response=await fetcher(BASE+path,{method,headers,body:body===undefined?undefined:JSON.stringify(body),
       redirect:'manual',signal:controller.signal});
+    // HTTP 422 can mean a ruleset block, a stale ref or another validation error.
+    // Limit parsing to 8 KiB and expose only a fixed, non-sensitive category.
+    if(method==='PATCH'&&path==='/git/refs/heads/main'&&response.status===422){
+      let reason='UNKNOWN';
+      const size=Number(response.headers?.get?.('Content-Length')||0);
+      if(Number.isFinite(size)&&size>=0&&size<=8192){
+        try{
+          const raw=await response.text();
+          if(raw.length<=8192)reason=classifyGitHubRef422(JSON.parse(raw));
+        }catch{ /* malformed responses stay UNKNOWN */ }
+      }
+      throw new PublishRejected('GITHUB_PATCH_HTTP_422_'+reason);
+    }
     requireTrue(response.ok&&!response.redirected&&response.status<300,'GITHUB_'+method+'_HTTP_'+response.status);
     const size=Number(response.headers?.get?.('Content-Length')||0);
     requireTrue(size<=2000000,'GITHUB_RESPONSE_OVERSIZED');
@@ -235,6 +321,6 @@ export default{
   },
   async scheduled(_event,env,ctx){
     ctx.waitUntil(publish(env).then(result=>console.log(JSON.stringify({event:'PUBLIC_PORTI_PUBLISH',status:result.status,terminals:result.updated})))
-      .catch(error=>{console.error('PUBLIC_PORTI_PUBLISH_ERROR',error instanceof PublishRejected?error.message:'UNEXPECTED_FAILURE');throw error;}));
+      .catch(error=>{reportPublishError(error);throw error;}));
   }
 };

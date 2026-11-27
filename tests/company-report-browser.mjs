@@ -283,7 +283,7 @@ export const decideMapsApproval=async()=>{throw new Error('Nessuna richiesta di 
 const mockMapsReader=String.raw`
 export const readMapsCustomer=async(link)=>{
  if(link==='https://maps.app.goo.gl/newDepot')
-  return {name:'CLIENTE DELTA',city:'CASERTA',address:'VIA PORTO 8, CASERTA',mapsUrl:link,warnings:[]};
+  return {name:'D',city:'',address:'',mapsUrl:link,warnings:['Località e indirizzo mancanti.']};
  if(link==='https://maps.app.goo.gl/exampleC')
   return {name:'CLIENTE GAMMA',city:'ROMA',address:'VIA INDUSTRIA 25, ROMA',mapsUrl:link,warnings:[]};
  return {name:'CLIENTE ALFA',city:'NAPOLI',address:'VIA TEST 1, NAPOLI',mapsUrl:link,warnings:[]};
@@ -453,7 +453,7 @@ try{
  assert.match(await page.locator('#smart-results').textContent(),/ABCD1234567/i);
  // V2 contextual read-only previews preserve the active dashboard, search and data.
  await page.locator('#smart-results .smart-result-buttons button').first().click();
- assert.equal(await page.locator('#smart-detail').isVisible(),true);
+ await page.locator('#smart-detail').waitFor({state:'visible',timeout:5000});
  assert.match(await page.locator('#smart-detail-body').textContent(),/ABCD1234567/);
  assert.equal(await page.locator('#dashboard').getAttribute('data-view'),'overview');
  await page.locator('#smart-back').click();
@@ -594,7 +594,30 @@ try{
   assert(box.labelSize>=11,width+'px: mobile nav labels remain readable');
  }
  await page.setViewportSize({width:390,height:844});
-
+ // Related navigation follows real tab handlers; reselecting the active view is a no-op.
+ await page.locator('#customers-tab').click();
+ await page.waitForFunction(()=>document.querySelector('#workspace-related button[data-related-target="#rates-tab"]'));
+ assert.equal(await page.locator('#workspace-related').isVisible(),true);
+ await page.locator('#workspace-related button[data-related-target="#rates-tab"]').click();
+ assert.equal(await page.locator('#dashboard').getAttribute('data-view'),'rates');
+ await page.waitForFunction(()=>document.querySelector('#company-rates-count').textContent.includes('tariffe aziendali'));
+ await page.locator('#company-maps-url').fill('https://maps.app.goo.gl/layoutDraft');
+ await page.locator('#admin-nav-more summary').click();
+ await page.locator('#rates-tab').click();
+ assert.equal(await page.locator('#company-maps-url').inputValue(),'https://maps.app.goo.gl/layoutDraft','Repeated active tab preserves the form');
+ await page.locator('#company-maps-url').fill('');
+ await page.locator('#workspace-related button[data-related-target="#customers-tab"]').click();
+ assert.equal(await page.locator('#dashboard').getAttribute('data-home-section'),'customers');
+ await page.locator('#workspace-related button[data-related-target="#rates-tab"]').click();
+ await page.waitForFunction(()=>document.querySelector('#dashboard').dataset.view==='rates');
+ await page.locator('#overview-tab').click();
+ assert.equal(await page.locator('#workspace-related').isVisible(),false);
+ const flow=await page.evaluate(()=>{
+  const home=document.querySelector('#control-center-home');
+  const children=[...home.children];
+  return {actions:children.indexOf(home.querySelector('.cc-quick')),filters:children.indexOf(home.querySelector('.cc-toolbar')),operations:children.indexOf(home.querySelector('.cc-operations')),charts:children.indexOf(home.querySelector('.cc-chart-grid'))};
+ });
+ assert(flow.actions<flow.filters&&flow.operations<flow.charts,'Home puts operational work before filters and charts');
 
  await openAdminTab('analysis-tab');
  assert.equal(await page.locator('#company-rates').isVisible(),false,
@@ -1010,7 +1033,43 @@ try{
  await page.locator('#company-maps-url').fill('https://maps.app.goo.gl/newDepot');
  await page.locator('#company-maps-read').click();
  await page.waitForFunction(()=>!document.querySelector('#company-maps-preview').hidden);
- assert.equal(await page.locator('#company-maps-name').textContent(),'CLIENTE DELTA');
+ assert.equal(await page.locator('#company-maps-name').inputValue(),'');
+ assert.equal(await page.locator('#company-maps-save').isDisabled(),true);
+ await page.locator('#company-maps-name').fill('D');
+ await page.locator('#company-maps-city').fill('CASERTA');
+ await page.locator('#company-maps-address').fill('VIA PORTO 8, CASERTA');
+ assert.equal(await page.locator('#company-maps-save').isDisabled(),true);
+ await page.locator('#company-maps-name').fill('CLIENTE DELTA');
+ assert.equal(await page.locator('#company-maps-save').isEnabled(),true);
+ // Long synthetic values must wrap, grow, remain editable and fit the mobile viewport.
+ await page.locator('#company-maps-city').fill('ZONA INDUSTRIALE DI COLLAUDO MARCIANISE NORD');
+ await page.locator('#company-maps-address').fill('KM. 27.200, SS 265, 81025 ZONA INDUSTRIALE DI COLLAUDO MARCIANISE NORD CE, INGRESSO MERCI E AREA DI CARICO');
+ const mapsGeometry=await page.evaluate(()=>{
+  const fields=['name','city','address'].map(key=>{
+   const field=document.querySelector('#company-maps-'+key);
+   return {tag:field.tagName,client:field.clientHeight,scroll:field.scrollHeight,width:field.clientWidth,scrollWidth:field.scrollWidth};
+  });
+  return {fields,viewport:innerWidth,documentWidth:document.documentElement.scrollWidth};
+ });
+ for(const field of mapsGeometry.fields){
+  assert.equal(field.tag,'TEXTAREA');
+  assert(field.scroll<=field.client+2,'Maps text must fit vertically');
+  assert(field.scrollWidth<=field.width+2,'Maps text must wrap horizontally');
+ }
+ assert(mapsGeometry.documentWidth<=mapsGeometry.viewport+2,'Maps form must not overflow viewport');
+ await page.locator('#company-maps-save').evaluate(el=>el.scrollIntoView({block:'end',behavior:'instant'}));
+ const saveGeometry=await page.evaluate(()=>{
+  const button=document.querySelector('#company-maps-save').getBoundingClientRect();
+  const nav=document.querySelector('#dashboard>.admin-switch').getBoundingClientRect();
+  return {bottom:button.bottom,navTop:nav.top};
+ });
+ assert(saveGeometry.bottom<=saveGeometry.navTop+1,'Maps save button must clear fixed navigation');
+ await page.locator('#company-maps-city').fill('CASERTA');
+ await page.locator('#company-maps-address').fill('VIA PORTO 8, CASERTA');
+ await page.locator('#company-maps-address').fill('');
+ assert.equal(await page.locator('#company-maps-save').isDisabled(),true);
+ await page.locator('#company-maps-address').fill('VIA PORTO 8, CASERTA');
+ assert.equal(await page.locator('#company-maps-save').isEnabled(),true);
  await page.locator('#company-maps-amount').fill('95,50');
  await page.locator('#company-maps-save').click();
  await page.waitForFunction(()=>document.querySelector('#company-maps-status').textContent.includes('Cliente Google Maps e tariffa salvati insieme'));
@@ -1054,7 +1113,9 @@ try{
  await page.keyboard.press('Control+k');
  await page.locator('#smart-search').fill('ROSSI');
  await page.locator('#smart-results .smart-result-buttons button').first().click();
- assert.equal(await page.locator('#smart-detail').isVisible(),true);
+ await page.locator('#smart-detail').waitFor({state:'visible',timeout:5000});
+ assert.match(await page.locator('#smart-detail-body').textContent(),/Mario Rossi/,
+  'Before logout, the open preview must display the authorized synthetic driver');
  await page.locator('#logout').evaluate(element=>element.click());
  await page.waitForFunction(()=>document.querySelector('#dashboard').hidden===true);
  assert.equal(await page.locator('#smart-overlay').isVisible(),false);

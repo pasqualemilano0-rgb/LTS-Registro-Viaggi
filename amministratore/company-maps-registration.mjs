@@ -1,6 +1,6 @@
 /** Protected admin Google Maps onboarding: review before any write.
  * The shared customer API deduplicates links and verified site identities.
- * Customer and fare use separate APIs: report partial success if pricing fails.
+ * Customer and fare are committed together through the atomic API.
  */
 import {readMapsCustomer} from '../maps-reader-client.mjs';
 import {sharedMapsCustomers,saveSharedPricedCustomer} from '../shared-maps-client.mjs?v=20261110-atomic-v1';
@@ -25,6 +25,13 @@ export function parseEuro(value){
 }
 const normalize=value=>String(value??'').normalize('NFC').trim()
  .replace(/\s+/gu,' ').toLocaleUpperCase('it-IT');
+export function completeMapsSite(site){
+ const n=normalize(site?.name),c=normalize(site?.city),a=normalize(site?.address);
+ return Array.from(n).length>=2&&/\p{L}/u.test(n)&&n.length<=500&&
+  Array.from(c).length>=2&&/\p{L}/u.test(c)&&c.length<=100&&
+  a.length>=3&&a.length<=1000&&a!==c&&/\p{L}/u.test(a)&&
+  !/INDIRIZZO (?:STRADALE )?DA CONFERMARE/iu.test(a);
+}
 export function matchingSite(customers,site){
  const key=customerSiteRateKey(site)+'\u0000'+normalize(site.address);
  return (Array.isArray(customers)?customers:[]).find(row=>
@@ -44,24 +51,69 @@ export function setupCompanyMaps(account,{onSaved=async()=>{}}={}){
   warning=byId('company-maps-warning'),amount=byId('company-maps-amount'),
   status=byId('company-maps-status'),duplicate=byId('company-maps-duplicate');
  let selected=null,existing=null,rate=null,seq=0,busy=false;
+ let source=null,sites=[],rates=[],rateKey=null;
+ const fields=[name,city,address];
+ // Presentation only: fit the editable text to its content, including narrow mobile layouts.
+ function resizeFields(){
+  if(preview.hidden||!preview.getBoundingClientRect().width)return;
+  for(const field of fields){
+   field.style.height='auto';
+   const borders=field.offsetHeight-field.clientHeight;
+   field.style.height=Math.max(46,field.scrollHeight+borders)+'px';
+   field.dataset.autoGrow='true';
+  }
+ }
+ let previousWidth=0;
+ if(typeof ResizeObserver==='function'){
+  const observer=new ResizeObserver(entries=>{
+   const width=entries[0]?.contentRect.width||0;
+   if(width!==previousWidth){previousWidth=width;if(width)resizeFields();}
+  });
+  observer.observe(preview);
+ }
  const authorized=()=>account.isVerified()&&account.getRole()==='admin'&&
   !byId('dashboard').hidden&&byId('dashboard').dataset.view==='rates';
  function feedback(message,error=false){
   status.textContent=message;status.dataset.error=String(error);
  }
+ function clearReview(){
+  selected=null;existing=null;rate=null;source=null;sites=[];rates=[];rateKey=null;
+ }
+ function review(siteResult=sites,rateResult=rates){
+  if(!source||busy||!authorized())return;
+  const proposal={...source,name:normalize(name.value),city:normalize(city.value),address:normalize(address.value)};
+  const complete=completeMapsSite(proposal);
+  const linked=siteResult.find(row=>row.mapsUrl===proposal.mapsUrl);
+  const conflict=linked&&customerSiteRateKey(linked)!==customerSiteRateKey(proposal);
+  existing=complete&&!conflict?matchingSite(siteResult,proposal):null;
+  rate=complete&&!conflict?matchingRate(rateResult,existing||proposal):null;
+  const nextKey=complete&&!conflict?customerSiteRateKey(existing||proposal):null;
+  if(nextKey!==rateKey){amount.value=rate?euro(rate.cents):'';rateKey=nextKey;}
+  selected=complete&&!conflict?proposal:null;
+  save.disabled=!selected;
+  duplicate.textContent=conflict
+   ?'Questo link appartiene a una sede già registrata. Verifica nome e località prima di proseguire.'
+   :!complete?'Completa nome, località e indirizzo prima di salvare.'
+   :existing?'Sede già nell’elenco condiviso: non sarà duplicata.'
+   :'Nuova sede: verrà aggiunta all’elenco clienti aziendali.';
+  if(rate)duplicate.textContent+=' Tariffa esistente: '+euro(rate.cents)+' €. Se la cambi verrà richiesta una conferma.';
+  feedback(conflict?'Verifica la sede già associata al link.':
+   complete?'Verifica i dati della sede, indica la tariffa e conferma il salvataggio.':
+    'Dati incompleti: correggi i campi prima di salvare.',Boolean(conflict)||!complete);
+ }
  function reset(){
-  seq++;selected=null;existing=null;rate=null;
+  seq++;clearReview();
   form.reset();preview.hidden=true;read.disabled=busy;url.disabled=busy;save.disabled=true;
   warning.textContent='';duplicate.textContent='';feedback('Incolla un link Google Maps per iniziare.');
  }
  function invalidate(){
-  seq++;selected=null;existing=null;rate=null;
-  preview.hidden=true;save.disabled=true;duplicate.textContent='';
+  seq++;clearReview();
+  preview.hidden=true;save.disabled=true;read.disabled=busy;duplicate.textContent='';
   feedback('Link modificato: premi Leggi Google Maps per verificare la sede.');
  }
  async function inspect(){
   if(busy||!authorized())return;
-  const token=++seq;selected=null;existing=null;rate=null;
+  const token=++seq;clearReview();
   preview.hidden=true;save.disabled=true;read.disabled=true;
   const link=url.value.trim();
   if(!link){read.disabled=false;feedback('Inserisci il link Google Maps.',true);return;}
@@ -74,27 +126,22 @@ export function setupCompanyMaps(account,{onSaved=async()=>{}}={}){
    if(token!==seq||!authorized()||url.value.trim()!==link)return;
    if(!Array.isArray(siteResult)||!Array.isArray(rateResult?.tariffs))
     throw new Error('Non è stato possibile verificare l’elenco clienti e le tariffe.');
-   selected=proposal;
-   existing=matchingSite(siteResult,proposal);
-   rate=matchingRate(rateResult.tariffs,existing||proposal);
-   name.textContent=proposal.name;city.textContent=proposal.city;address.textContent=proposal.address;
+   source=proposal;sites=siteResult;rates=rateResult.tariffs;
+   name.value=Array.from(normalize(proposal.name)).length>=2?proposal.name:'';
+   city.value=proposal.city;address.value=proposal.address;
    warning.textContent=(proposal.warnings||[]).join(' ');
-   duplicate.textContent=existing
-    ?'Sede già nell’elenco condiviso: non sarà duplicata.'
-    :'Nuova sede: verrà aggiunta all’elenco clienti aziendali.';
-   if(rate){
-    amount.value=euro(rate.cents);
-    duplicate.textContent+=' Tariffa esistente: '+euro(rate.cents)+' €. Se la cambi verrà richiesta una conferma.';
-   }else amount.value='';
-   preview.hidden=false;save.disabled=false;
-   feedback('Verifica i dati della sede, indica la tariffa e conferma il salvataggio.');
+   amount.value='';preview.hidden=false;
+   resizeFields();
+   review(siteResult,rateResult.tariffs);
   }catch(error){
    if(token===seq&&authorized())feedback(error?.message||'Verifica Google Maps non riuscita.',true);
   }finally{if(token===seq)read.disabled=false;}
  }
  async function submit(event){
   event.preventDefault();
-  if(busy||!authorized()||!selected||save.disabled)return;
+  if(busy||!authorized()||!source)return;
+  review();
+  if(!selected||save.disabled)return;
   let cents;
   try{cents=parseEuro(amount.value);}
   catch(error){feedback(error.message,true);return;}
@@ -102,6 +149,7 @@ export function setupCompanyMaps(account,{onSaved=async()=>{}}={}){
    'Esiste già una tariffa per '+selected.name+' · '+selected.city+
    '. Sostituire '+euro(rate.cents)+' € con '+euro(cents)+' € per i nuovi viaggi?'))return;
   busy=true;save.disabled=true;read.disabled=true;url.disabled=true;
+  for(const field of fields)field.disabled=true;
   const proposal=selected,accountId=account.getAccountId(),saveToken=seq;
   let confirmed=null;
   try{
@@ -118,7 +166,7 @@ export function setupCompanyMaps(account,{onSaved=async()=>{}}={}){
     ?'Cliente Google Maps e tariffa salvati insieme. Disponibili agli autisti al prossimo aggiornamento.'
     :'Sede già presente: tariffa verificata o aggiornata senza duplicati.');
    if(saveToken===seq){
-    form.reset();selected=null;rate=null;existing=null;preview.hidden=true;
+    form.reset();clearReview();preview.hidden=true;
    }
    try{await onSaved(confirmed.customer);}
    catch{if(saveToken===seq&&authorized())feedback(
@@ -130,9 +178,11 @@ export function setupCompanyMaps(account,{onSaved=async()=>{}}={}){
     (error?.message||'Rileggi la sede prima di riprovare.'),true);
   }finally{
    busy=false;read.disabled=false;url.disabled=false;
+   for(const field of fields)field.disabled=false;
    if(saveToken===seq)save.disabled=!selected;
   }
  }
+ for(const field of fields)field.addEventListener('input',()=>{resizeFields();review();});
  url.addEventListener('input',invalidate);
  read.addEventListener('click',()=>void inspect());
  form.addEventListener('submit',event=>void submit(event));

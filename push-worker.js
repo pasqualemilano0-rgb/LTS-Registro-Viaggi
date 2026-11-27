@@ -41,10 +41,10 @@
     event.waitUntil((async () => {
       const message = info(event.notification.data);
       const scope = new URL(self.registration.scope);
-      const target = new URL(scope.href);
+      const target = new URL('viaggi/', scope);
       target.hash = message.section;
       const allowed = new Set([scope.pathname, scope.pathname + 'index.html',
-        scope.pathname + 'shell.html', scope.pathname + 'shell']);
+        scope.pathname + 'shell.html', scope.pathname + 'shell',target.pathname,target.pathname+'index.html']);
       const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: false });
       for (const client of windows) {
         let address;

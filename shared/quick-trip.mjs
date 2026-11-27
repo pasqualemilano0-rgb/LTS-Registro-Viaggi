@@ -19,6 +19,7 @@ export function quickTripFromRoute(trip, date) {
     secondClient: second ? secondClient : '',
     secondCity: second ? secondCity : '',
     second,
+    sumPickupFares: second && trip.sumPickupFares !== false,
     // Extra, amounts, old notes, identities and timestamps are never inherited.
     services: [],
     note: '',

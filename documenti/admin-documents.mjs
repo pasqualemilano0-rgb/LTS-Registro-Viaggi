@@ -9,8 +9,46 @@ function notice(message='',error=false){
  $('notice').textContent=message;$('notice').hidden=!message;
  $('notice').classList.toggle('error',error);
 }
+const MAX_PDF_SIZE=8388608;
+function uploadFeedback(message='',kind='info'){
+ const status=$('upload-feedback');
+ status.textContent=message;status.hidden=!message;
+ status.classList.toggle('error',kind==='error');
+ status.classList.toggle('success',kind==='success');
+}
+function uploadedFilesLabel(files){
+ if(!files.length)return 'Nessun PDF selezionato.';
+ if(files.length===1)return 'PDF selezionato: '+files[0].name+
+  ' ('+(files[0].size/1048576).toFixed(2)+' MB).';
+ return files.length+' PDF selezionati: '+files.map(file=>file.name).join(', ')+'.';
+}
+function validateUploadFields({recipient,category,year,month,label,files}){
+ if(!recipient?.documents_enabled)
+  return {field:'driver',message:'Destinatario non abilitato: il caricamento è riservato a MILANO PASQUALE.'};
+ if(!['cedolino','cu','altri'].includes(category))
+  return {field:'category',message:'Seleziona una categoria valida.'};
+ if(!Number.isInteger(Number(year))||Number(year)<2000||Number(year)>2100||String(year).trim()==='')
+  return {field:'year',message:'Inserisci un anno valido (dal 2000 al 2100).'};
+ if(category==='cedolino'&&!/^(?:[1-9]|1[0-2])$/.test(String(month)))
+  return {field:'month',message:'Seleziona il mese del cedolino prima di caricare.'};
+ if(!String(label||'').trim()||String(label).trim().length>160)
+  return {field:'label',message:'Inserisci una descrizione del documento (massimo 160 caratteri).'};
+ if(!files.length)
+  return {field:'files',message:'Premi “Scegli file” e seleziona almeno un PDF.'};
+ for(const file of files){
+  if(!file||typeof file.name!=='string'||!file.name.toLowerCase().endsWith('.pdf')||
+     !Number.isFinite(file.size)||file.size<10||file.size>MAX_PDF_SIZE||
+     (file.type&&file.type!=='application/pdf'))
+   return {field:'files',message:'Il file '+(file?.name||'selezionato')+
+    ' non è valido. Utilizza PDF fino a 8 MB ciascuno.'};
+ }
+ return null;
+}
 function view(name){
  for(const id of ['login','mfa','setup','workspace'])$(id).hidden=id!==name;
+ // A previous Android visibilitychange may have left this whole section
+ // inert. Always reconcile it when showing any authenticated view.
+ $('workspace').inert=name==='workspace'&&document.hidden;
 }
 function node(tag,cls,text){
  const n=document.createElement(tag);
@@ -64,12 +102,18 @@ async function refreshRoster(){
   const selected=$('driver').value,filter=$('filter-driver').value;
   $('driver').replaceChildren(option('','Seleziona autista'));
   $('filter-driver').replaceChildren(option('','Tutti gli autisti'));
+  const eligible=roster.filter(x=>x.documents_enabled);
+  // The upload picker intentionally exposes only the backend-approved pilot.
+  // The archive filter still supports viewing existing records for all drivers.
   for(const driver of roster){
-   $('driver').append(option(driver.id,driver.name+' · '+driver.phone));
+   if(driver.documents_enabled)
+    $('driver').append(option(driver.id,driver.name));
    $('filter-driver').append(option(driver.id,driver.name));
   }
-  $('driver').value=roster.some(x=>x.id===selected)?selected:'';
+  $('driver').value=eligible.length===1?eligible[0].id:'';
   $('filter-driver').value=roster.some(x=>x.id===filter)?filter:'';
+  if(eligible.length!==1)
+   notice('Nessun destinatario autorizzato al caricamento. Verifica la scadenza dei test.',true);
  }catch(error){notice(error.message||'Sincronizzazione autisti non riuscita.',true);}
 }
 function metadata(doc){
@@ -105,6 +149,13 @@ function renderRow(doc){
  if(doc.state==='draft'){
   const publish=node('button','primary','Pubblica');
   publish.type='button';
+  const recipient=roster.find(x=>x.id===doc.driver_id);
+  // Defense in depth: the Edge also verifies this at publication time.
+  if(!recipient?.documents_enabled){
+   publish.disabled=true;
+   publish.title='La pubblicazione è possibile solo per gli autisti abilitati al test.';
+   publish.setAttribute('aria-label','Pubblicazione non disponibile per autista non abilitato');
+  }
   publish.addEventListener('click',async()=>{
    const owner=roster.find(x=>x.id===doc.driver_id);
    if(!window.confirm('Pubblicare "'+doc.label+'" per '+(owner?.name||'questo autista')+'?'))return;
@@ -141,7 +192,7 @@ async function refreshDocs(append=false){
   const rows=result.documents;
   for(const doc of rows)$('documents').append(renderRow(doc));
   offset+=rows.length;$('more').hidden=rows.length<50;
-  $('summary').textContent=roster.length+' autisti sincronizzati · '+offset+' documenti visualizzati';
+  $('summary').textContent=roster.length+' autisti sincronizzati · '+roster.filter(d=>d.documents_enabled).length+' abilitati alla ricezione durante i test · '+offset+' documenti visualizzati';
   if(!offset)$('documents').append(node('p','hint','Nessun documento in questa selezione.'));
  }catch(error){notice(error.message||'Archivio documenti non disponibile.',true);}
  finally{busy(false);}
@@ -187,26 +238,80 @@ $('category').addEventListener('change',()=>{
  if(!isPayslip)$('month').value='';
 });
 $('month').required=true;
-$('upload-form').addEventListener('submit',async event=>{
- event.preventDefault();if(loading)return;
+let descriptionEdited=false;
+function suggestDocumentDescription(){
+ if(descriptionEdited)return;
+ const category=$('category').value,year=$('year').value,month=Number($('month').value);
+ if(category==='cedolino'&&!month){$('label').value='';return;}
+ const suggestion=category==='cedolino'
+  ?'Cedolino '+(months[month-1]||'')+' '+year
+  :category==='cu'?'CU '+year:'Documento '+year;
+ $('label').value=suggestion.trim();
+}
+$('label').addEventListener('input',()=>{descriptionEdited=true;});
+$('category').addEventListener('change',suggestDocumentDescription);
+$('month').addEventListener('change',suggestDocumentDescription);
+$('year').addEventListener('change',suggestDocumentDescription);
+$('files').addEventListener('change',()=>{
  const chosen=Array.from($('files').files||[]);
- if(!chosen.length)return;
+ $('file-selection').textContent=uploadedFilesLabel(chosen);
+ if(!loading)uploadFeedback('');
+});
+$('upload-form').addEventListener('input',()=>{if(!loading)uploadFeedback('');});
+$('upload-form').addEventListener('change',()=>{if(!loading)uploadFeedback('');});
+$('upload-form').addEventListener('submit',async event=>{
+ event.preventDefault();
+ if(loading)return;
+ const chosen=Array.from($('files').files||[]);
  const selected=roster.find(x=>x.id===$('driver').value);
- if(!selected){notice('Seleziona un autista valido.',true);return;}
+ const values={recipient:selected,category:$('category').value,year:$('year').value,
+  month:$('month').value,label:$('label').value,files:chosen};
+ const issue=validateUploadFields(values);
+ if(issue){
+  uploadFeedback(issue.message,'error');
+  $(issue.field)?.focus();
+  return;
+ }
  if(!window.confirm('Caricare '+chosen.length+' PDF come BOZZE per '+selected.name+
-   '? Tutti i file saranno assegnati a questo autista, senza pubblicazione.'))return;
+   '? I file non verranno pubblicati automaticamente.')){
+  uploadFeedback('Caricamento annullato. Nessun PDF inviato.');
+  return;
+ }
  busy(true);notice('');
+ $('upload-form').setAttribute('aria-busy','true');
+ $('upload-submit').textContent='Caricamento in corso…';
  let success=0;
  try{
   for(const file of chosen){
-   await api.upload(file,{driverId:selected.id,category:$('category').value,
-    year:Number($('year').value),month:$('month').value||null,label:$('label').value.trim()});
+   uploadFeedback('Caricamento PDF '+(success+1)+' di '+chosen.length+' in corso…');
+   await api.upload(file,{driverId:selected.id,category:values.category,
+    year:Number(values.year),month:values.category==='cedolino'?values.month:null,
+    label:values.label.trim()});
    success++;
   }
   $('files').value='';
-  notice(success+' PDF caricati in bozza per '+selected.name+'. Verifica prima di pubblicare.');
- }catch(error){notice(success+' PDF caricati; operazione interrotta: '+error.message,true);}
- finally{busy(false);await refreshDocs();}
+  $('file-selection').textContent=uploadedFilesLabel([]);
+  uploadFeedback(success+' '+(success===1?'PDF caricato':'PDF caricati')+' in bozza per '+selected.name+
+   '. Ora li trovi nell’archivio qui sotto: per renderli disponibili serve pubblicarli.','success');
+ }catch(error){
+  if(success){
+   $('files').value='';
+   $('file-selection').textContent=uploadedFilesLabel([]);
+  }
+  const uncertain=!error?.status||error?.name==='AbortError';
+  uploadFeedback(success+' '+(success===1?'PDF caricato':'PDF caricati')+' con conferma. '+(uncertain
+   ?'Invio interrotto o non verificabile: controlla l’archivio prima di riprovare.'
+   :'Operazione interrotta: '+(error?.message||'errore imprevisto')),'error');
+ }finally{
+  busy(false);
+  $('upload-form').removeAttribute('aria-busy');
+  $('upload-submit').textContent='Carica in bozza, senza pubblicare';
+  if(success){
+   $('filter-driver').value=selected.id;
+   $('filter-category').value=values.category;
+   await refreshDocs();
+  }
+ }
 });
 $('filter-driver').addEventListener('change',()=>void refreshDocs());
 $('filter-category').addEventListener('change',()=>void refreshDocs());
@@ -217,12 +322,33 @@ setInterval(()=>{
   void refreshRoster().then(()=>refreshDocs());
  }
 },60000);
-// Hide private metadata immediately when the browser moves to the background.
+// Android document pickers and native <select> controls may temporarily
+// background the WebView. Never leave the *entire* workspace inert after
+// returning: an inert parent silently blocks taps on every input, select and
+// file picker even though the controls still look enabled.
+function restoreWorkspaceInteraction(){
+ const workspace=$('workspace');
+ if(workspace.hidden){workspace.inert=false;return;}
+ if(!account.isVerified()||account.getRole()!=='admin'){
+  protect();
+  notice('Sessione amministrativa da verificare nuovamente.',true);
+  return;
+ }
+ // Release pointer/keyboard interaction immediately after foregrounding.
+ // The backend still independently verifies JWT, live session, MFA and role
+ // for each operation; the UI flag is NOT an authorization mechanism.
+ workspace.inert=false;
+ void check();
+}
 document.addEventListener('visibilitychange',()=>{
  if(document.hidden){$('workspace').inert=true;return;}
- if(!$('workspace').hidden){
-  void check().finally(()=>{$('workspace').inert=false;});
- }
+ restoreWorkspaceInteraction();
+});
+// Some Android WebViews miss the visible event after a native file chooser.
+// A focus event must also recover an incorrectly retained inert state.
+window.addEventListener('focus',()=>{
+ if(!document.hidden&&!$('workspace').hidden&&$('workspace').inert)
+  restoreWorkspaceInteraction();
 });
 
 // Always display an independent payroll login, even when LTS Admin is already open.

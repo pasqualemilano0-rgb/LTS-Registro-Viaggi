@@ -1,0 +1,258 @@
+name: LTS CI continuity candidate
+# Run once per PR update; main Porti snapshot pushes do not run application CI.
+# Existing CircleCI requirements remain unchanged until administrator cutover.
+on:
+  pull_request:
+    branches:
+      - main
+    types: [opened, synchronize, reopened, ready_for_review]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: lts-ci-continuity-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+defaults:
+  run:
+    shell: bash
+jobs:
+  webapp-regression:
+    name: webapp-regression
+    if: github.repository == 'pasqualemilano0-rgb/LTS-Registro-Viaggi'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    container:
+      image: cimg/node:22.13
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Verify exact candidate SHA and PR merge parents
+        env:
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -eu
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          if [ "$GITHUB_EVENT_NAME" = pull_request ]; then
+            test "$(git rev-parse HEAD^2)" = "$PR_HEAD_SHA"
+            # GitHub can advance the synthetic merge base after the event snapshot.
+            # Require the actual first parent to descend from the event base
+            # and remain in the protected main history fetched by checkout.
+            actual_base="$(git rev-parse HEAD^1)"
+            git merge-base --is-ancestor "$PR_BASE_SHA" "$actual_base"
+            git merge-base --is-ancestor "$actual_base" refs/remotes/origin/main
+            printf 'Verified PR head %s and main parent %s\n' "$PR_HEAD_SHA" "$actual_base"
+          fi
+      - name: "Full JS regression and read-only authorization checks"
+        run: |
+          set -eu
+          find . -type f -name '*.mjs' ! -path './node_modules/*' -print0 | xargs -0 -n 1 node --check
+          node --check sw.js
+          node --test tests/*.test.mjs
+          node tests/maps-redirect-diagnostic.mjs
+          node tests/qa-report-production-http-smoke.mjs
+          # Non-destructive QA-only payroll boundary checks; no real JWT/PDF.
+          if test -f supabase/qa/functions/lts-payroll-secure-qa/index.ts; then
+            node tests/qa-payroll-secure-live-smoke.mjs
+          fi
+  booking-auth-transport:
+    name: booking-auth-transport
+    if: github.repository == 'pasqualemilano0-rgb/LTS-Registro-Viaggi'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    container:
+      image: cimg/node:22.13
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Verify exact candidate SHA and PR merge parents
+        env:
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -eu
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          if [ "$GITHUB_EVENT_NAME" = pull_request ]; then
+            test "$(git rev-parse HEAD^2)" = "$PR_HEAD_SHA"
+            # GitHub can advance the synthetic merge base after the event snapshot.
+            # Require the actual first parent to descend from the event base
+            # and remain in the protected main history fetched by checkout.
+            actual_base="$(git rev-parse HEAD^1)"
+            git merge-base --is-ancestor "$PR_BASE_SHA" "$actual_base"
+            git merge-base --is-ancestor "$actual_base" refs/remotes/origin/main
+            printf 'Verified PR head %s and main parent %s\n' "$PR_HEAD_SHA" "$actual_base"
+          fi
+      - name: "Booking TFG, Supabase session and Porti CSP regressions (offline)"
+        run: |
+          set -eu
+          node --check account-access.mjs
+          node --check driver-session-vault.mjs
+          node --check porti-access.mjs
+          node --check porti/app.js
+          node --check porti/tfg_booking.mjs
+          node --test tests/test_porti_maintenance.mjs tests/leaked-password-protection.test.mjs
+          node --test tests/qa-ci-transport-retirement.test.mjs
+          node --test tests/qa-driver-refresh-vault-freshness.test.mjs tests/qa-tfg-auth-network-session-retry.test.mjs tests/qa-tfg-booking-stage-diagnostics.test.mjs tests/qa-tfg-booking-offline-diagnostics.test.mjs tests/qa-porti-android-auth-transport-diagnostics.test.mjs tests/qa-account-release.test.mjs tests/qa-regression-contract.test.mjs tests/qa-no-auto-publish.test.mjs
+      - name: "Preserve read-only deployed transport checks on relevant changes"
+        run: |
+          set -eu
+          bash -n scripts/qa-porti-auth-transport.sh
+          # Run on every initial parity trial rather than risk skipping a relevant change.
+          bash scripts/qa-porti-auth-transport.sh
+  snapshot-publisher-contract:
+    name: snapshot-publisher-contract
+    if: github.repository == 'pasqualemilano0-rgb/LTS-Registro-Viaggi'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    container:
+      image: cimg/python:3.12
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Verify exact candidate SHA and PR merge parents
+        env:
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -eu
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          if [ "$GITHUB_EVENT_NAME" = pull_request ]; then
+            test "$(git rev-parse HEAD^2)" = "$PR_HEAD_SHA"
+            # GitHub can advance the synthetic merge base after the event snapshot.
+            # Require the actual first parent to descend from the event base
+            # and remain in the protected main history fetched by checkout.
+            actual_base="$(git rev-parse HEAD^1)"
+            git merge-base --is-ancestor "$PR_BASE_SHA" "$actual_base"
+            git merge-base --is-ancestor "$actual_base" refs/remotes/origin/main
+            printf 'Verified PR head %s and main parent %s\n' "$PR_HEAD_SHA" "$actual_base"
+          fi
+      - name: "Public CNT TFG SCT snapshot safety gates (offline; no publish)"
+        run: |
+          set -eu
+          python -m py_compile scripts/refresh_porti_from_worker.py scripts/check_public_snapshot_freshness.py
+          python -m unittest discover -s tests -p 'test_*.py' -v
+  cloudflare-publisher-contract:
+    name: cloudflare-publisher-contract
+    if: github.repository == 'pasqualemilano0-rgb/LTS-Registro-Viaggi'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    container:
+      image: cimg/node:22.13
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Verify exact candidate SHA and PR merge parents
+        env:
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -eu
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          if [ "$GITHUB_EVENT_NAME" = pull_request ]; then
+            test "$(git rev-parse HEAD^2)" = "$PR_HEAD_SHA"
+            # GitHub can advance the synthetic merge base after the event snapshot.
+            # Require the actual first parent to descend from the event base
+            # and remain in the protected main history fetched by checkout.
+            actual_base="$(git rev-parse HEAD^1)"
+            git merge-base --is-ancestor "$PR_BASE_SHA" "$actual_base"
+            git merge-base --is-ancestor "$actual_base" refs/remotes/origin/main
+            printf 'Verified PR head %s and main parent %s\n' "$PR_HEAD_SHA" "$actual_base"
+          fi
+      - name: "KV public snapshot publisher and atomic GitHub commit security checks (offline)"
+        run: |
+          set -eu
+          node --check cloudflare/public-snapshot-publisher/index.mjs
+          node --test tests/qa-porti-cloudflare-direct-publisher.test.mjs
+          node --test tests/qa-porti-github-app-auth.test.mjs
+          node --input-type=module -e "import {readFileSync} from 'node:fs';import assert from 'node:assert/strict';const cfg=JSON.parse(readFileSync('cloudflare/public-snapshot-publisher/wrangler.jsonc'));assert.equal(cfg.vars.PUBLISH_ENABLED,'no');assert.deepEqual(cfg.triggers.crons,[]);assert.ok(cfg.kv_namespaces.some(x=>x.binding==='SCHEDULES_KV'))"
+  browser-report-parity:
+    name: browser-report-parity
+    if: github.repository == 'pasqualemilano0-rgb/LTS-Registro-Viaggi'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    container:
+      image: mcr.microsoft.com/playwright:v1.56.1-noble@sha256:42f02d323c310069b4d54c94bd91a608966a486c3492c48ae0b1cea747ec5ca2
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Verify exact candidate SHA and PR merge parents
+        env:
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -eu
+          # Trust only the isolated Playwright workspace, never a wildcard.
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          if [ "$GITHUB_EVENT_NAME" = pull_request ]; then
+            test "$(git rev-parse HEAD^2)" = "$PR_HEAD_SHA"
+            # GitHub can advance the synthetic merge base after the event snapshot.
+            # Require the actual first parent to descend from the event base
+            # and remain in the protected main history fetched by checkout.
+            actual_base="$(git rev-parse HEAD^1)"
+            git merge-base --is-ancestor "$PR_BASE_SHA" "$actual_base"
+            git merge-base --is-ancestor "$actual_base" refs/remotes/origin/main
+            printf 'Verified PR head %s and main parent %s\n' "$PR_HEAD_SHA" "$actual_base"
+          fi
+      - name: "Install matching, fixed Playwright Node package"
+        run: |
+          set -eu
+          mkdir -p "$HOME/lts-playwright"
+          npm install --prefix "$HOME/lts-playwright" --no-save --no-package-lock playwright@1.56.1
+          LTS_BROWSER_PLAYWRIGHT="$HOME/lts-playwright" node -e "const fs=require('node:fs');const p=require(process.env.LTS_BROWSER_PLAYWRIGHT+'/node_modules/playwright');for(const b of ['chromium','webkit'])if(!fs.existsSync(p[b].executablePath()))throw Error('Pinned browser missing: '+b);"
+      - name: "Chromium mobile, admin PWA, outbox and IndexedDB"
+        run: |
+          set -eu
+          export LTS_BROWSER_PLAYWRIGHT="$HOME/lts-playwright"
+          mkdir -p browser-evidence
+          node tests/company-report-browser.mjs
+          LTS_CONTROL_REPORT="$PWD/browser-evidence/control-center-chromium.json" node tests/control-center-browser.mjs
+          node tests/qa-register-browser.mjs
+          node tests/qa-cnt-browser.mjs
+          node tests/qa-offline-worker-browser.mjs
+          node tests/qa-admin-installable-browser.mjs
+          node tests/qa-offline-store-browser.mjs
+          node tests/qa-store-cas-browser.mjs
+      - name: "Safari WebKit mobile, offline and account isolation"
+        run: |
+          set -eu
+          export LTS_BROWSER_PLAYWRIGHT="$HOME/lts-playwright"
+          export LTS_BROWSER_ENGINE=webkit
+          mkdir -p browser-evidence
+          node tests/company-report-browser.mjs
+          LTS_CONTROL_REPORT="$PWD/browser-evidence/control-center-webkit.json" node tests/control-center-browser.mjs
+          node tests/qa-register-browser.mjs
+          node tests/qa-cnt-browser.mjs
+          node tests/qa-offline-store-browser.mjs
+          node tests/qa-store-cas-browser.mjs
+      - name: "Read-only production company report CORS and JWT boundary"
+        run: |
+          set -eu
+          node tests/qa-report-production-http-smoke.mjs
+      - name: "Read-only admin records CORS and anonymous write-denial smoke"
+        run: |
+          set -eu
+          node --test tests/qa-admin-records-live.test.mjs
+      - name: Preserve synthetic browser evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: lts-browser-synthetic-evidence
+          path: browser-evidence
+          retention-days: 1
+          if-no-files-found: warn

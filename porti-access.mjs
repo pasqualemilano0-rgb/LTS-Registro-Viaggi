@@ -25,7 +25,7 @@ function showMaintenance(reason='maintenance') {
   const note=document.createElement('p');
   note.textContent='Per operazioni urgenti verifica direttamente sui siti ufficiali dei terminali. Questa pagina non conferma accettazioni o autorizzazioni al carico.';
   const home=document.createElement('a');
-  home.href='/LTS-Registro-Viaggi/';home.target='_top';
+  home.href=driverHome();home.target='_top';
   home.className='secondary-btn';home.textContent='Torna a Registro Viaggi';
   const sources=document.createElement('div');sources.className='source-grid';
   for(const [name,url] of [
@@ -42,41 +42,48 @@ function showMaintenance(reason='maintenance') {
   document.body.hidden=false;
 }
 const BASE='/LTS-Registro-Viaggi/';
-const PARENT_PATHS=new Set([BASE,BASE+'index.html',BASE+'shell.html']);
+const PARENT_PATHS=new Set([BASE,BASE+'index.html',BASE+'shell.html',BASE+'viaggi/',BASE+'viaggi/index.html']);
 const sameOriginParent=()=>{
  if(window.parent===window)return false;
  try{return window.parent.location.origin===location.origin
    && PARENT_PATHS.has(window.parent.location.pathname);}catch{return false;}
 };
+function driverHome(){
+ return sameOriginParent()&&window.parent.location.pathname.startsWith(BASE+'viaggi/')?BASE+'viaggi/':BASE;
+}
+const notifyParent=type=>{if(sameOriginParent())window.parent.postMessage({type},location.origin);};
 if(MAINTENANCE_ENABLED){
- showMaintenance();
+ showMaintenance();notifyParent('lts-porti-rendered');
 }else if(isPortiSundayInRome()){
- showMaintenance('sunday');
+ showMaintenance('sunday');notifyParent('lts-porti-rendered');
 }else if(!sameOriginParent()){
  location.replace(BASE);
 }else{
- let authorized=false;
+ let authorized=false,closed=false;
  const denied=()=>{
-  if(authorized)return;
+  if(authorized||closed)return;
+  closed=true;
   document.body.replaceChildren();
   const main=document.createElement('main');
   main.setAttribute('role','alert');
   main.textContent='Per usare Porti e booking, accedi a LTS Registro Viaggi e apri la sezione Porti.';
   const link=document.createElement('a');
-  link.href=BASE;link.target='_top';link.textContent='Apri LTS Registro Viaggi';
+  link.href=driverHome();link.target='_top';link.textContent='Apri LTS Registro Viaggi';
   main.append(document.createElement('p'),link);
   document.body.append(main);document.body.hidden=false;
+  notifyParent('lts-porti-failed');
  };
  const timeout=setTimeout(denied,10000);
  window.addEventListener('message',async event=>{
-  if(authorized||event.source!==window.parent||event.origin!==location.origin
+  if(authorized||closed||event.source!==window.parent||event.origin!==location.origin
     ||event.data?.type!=='lts-porti-authorized')return;
-  if(isPortiSundayInRome()){clearTimeout(timeout);showMaintenance('sunday');return;}
+  if(isPortiSundayInRome()){closed=true;clearTimeout(timeout);showMaintenance('sunday');notifyParent('lts-porti-rendered');return;}
   authorized=true;clearTimeout(timeout);
   try{
-   await import('./porti/app.js?v=20261110-porti-freshcode-v2');
+   await import('./porti/app.js?v=20261127-cnt-v2');
    await import('./porti/driver-ui.mjs?v=20261031-v44');
    document.body.hidden=false;
+   notifyParent('lts-porti-rendered');
   }catch{
    authorized=false;denied();
   }

@@ -6,16 +6,17 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src https://otrqynkscpbeyuvdlgpg.supabase.co; form-action 'self'; base-uri 'none'; object-src 'none'; frame-ancestors 'none'">
 <meta name="theme-color" content="#006f89">
 <link rel="icon" href="../../assets/icon-192.png">
-<link rel="stylesheet" href="../../documenti/documents.css">
-<script type="module" src="../../documenti/admin-documents.mjs"></script>
+<link rel="stylesheet" href="../../documenti/documents.css?v=20261123-admin-upload-feedback-v1">
+<script type="module" src="../../documenti/admin-documents.mjs?v=20261123-android-controls-v1"></script>
 <title>LTS · Accesso amministrazione documenti</title></head>
-<body>
+<body class="admin-payroll-page">
 <header class="lts-header"><a class="lts-brand" href="../"><img src="../../assets/lts-logo.png" alt="LTS" width="52" height="46"><span>Gestione documenti<small>Accesso amministrativo separato</small></span></a><a class="back" href="../">Dashboard LTS</a></header>
 <main class="shell">
 <div id="notice" class="notice" role="status" aria-live="polite" hidden></div>
 <section id="login" class="login-card">
  <p class="eyebrow">AREA AMMINISTRATIVA RISERVATA</p><h1>Accesso documenti</h1>
- <p>Accedi con l'account amministratore LTS. Il secondo fattore è obbligatorio.</p>
+ <p>Accedi con l’account amministratore LTS. La verifica MFA è obbligatoria per gestire documenti reali.</p>
+ <p class="hint"><a href="./anteprima/">Visualizza soltanto l’anteprima grafica senza credenziali</a></p>
  <form id="login-form" class="fields">
   <label>Numero di cellulare<input name="phone" type="tel" autocomplete="username" inputmode="tel" placeholder="3XXXXXXXXX" required maxlength="40"></label>
   <label>Password<input name="password" type="password" autocomplete="current-password" minlength="12" maxlength="128" required></label>
@@ -40,17 +41,19 @@
  <div class="heading"><div><p class="eyebrow">LTS · CONTROL CENTER</p><h1>CEDOLINI E DOCUMENTI</h1>
  <p>Stessi autisti della dashboard LTS, archivio PDF privato e pubblicazione controllata.</p></div>
  <button id="logout" type="button" class="outline">Esci</button></div>
- <section class="panel"><div class="panel-head"><h2>Carica nuovi documenti</h2><span class="chip">Bozze private</span></div>
- <form id="upload-form" class="form-grid">
+ <section class="panel"><p class="hint" role="status">Gestione operativa attiva con MFA. Durante il collaudo puoi caricare e pubblicare PDF esclusivamente per MILANO PASQUALE. Gli altri autisti sono esclusi dal caricamento.</p><div class="panel-head"><h2>Carica nuovi documenti</h2><span class="chip">Bozze private</span></div>
+ <form id="upload-form" class="form-grid" novalidate>
   <label>Autista destinatario<select id="driver" required><option value="">Seleziona autista</option></select></label>
   <label>Categoria<select id="category" required><option value="cedolino">CEDOLINO</option><option value="cu">CU</option><option value="altri">ALTRI DOCUMENTI</option></select></label>
   <label>Anno<input id="year" type="number" min="2000" max="2100" required></label>
-  <label id="month-wrap">Mese<select id="month"><option value="">Seleziona mese</option></select></label>
+  <label id="month-wrap">Mese <span class="admin-field-help">Obbligatorio per il cedolino</span><select id="month" required><option value="">Seleziona mese</option></select></label>
   <label class="wide">Descrizione<input id="label" maxlength="160" required placeholder="Es. Cedolino novembre, CU 2026"></label>
-  <label class="wide">Documenti PDF (max 8 MB ciascuno)<input id="files" type="file" accept="application/pdf,.pdf" multiple required></label>
-  <button type="submit" class="primary wide">Carica in bozza, senza pubblicare</button>
+  <label class="wide">Documenti PDF (max 8 MB ciascuno)<input id="files" type="file" accept="application/pdf,.pdf" multiple required aria-describedby="file-selection"></label>
+  <p id="file-selection" class="admin-file-selection wide" role="status" aria-live="polite">Nessun PDF selezionato.</p>
+  <button type="submit" id="upload-submit" class="primary wide">Carica in bozza, senza pubblicare</button>
+  <p id="upload-feedback" class="admin-upload-feedback wide" role="status" aria-live="polite" hidden></p>
  </form>
- <p class="hint">Controlla sempre il destinatario. Il sistema non abbina automaticamente i PDF in base al nome.</p><p class="hint">La pubblicazione, la conferma obbligatoria prima del PDF per ogni cedolino e il primo accesso al documento sono eventi distinti. Non costituiscono prova del pagamento o di accettazione degli importi.</p>
+ <p class="hint">Destinatario unico: MILANO PASQUALE. L’autorizzazione viene controllata anche dal server; nessun altro autista può ricevere caricamenti tramite questa pagina.</p><p class="hint">La pubblicazione, la conferma obbligatoria prima del PDF per ogni cedolino e il primo accesso al documento sono eventi distinti. Non costituiscono prova del pagamento o di accettazione degli importi.</p>
  </section>
  <section class="panel">
  <div class="panel-head"><h2>Archivio di tutti gli autisti</h2><button type="button" id="refresh" class="outline">Aggiorna</button></div>

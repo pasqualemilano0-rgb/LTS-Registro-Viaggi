@@ -98,18 +98,29 @@ test('admin payroll page requires distinct login despite existing LTS session',(
  assert.match(admin,/busy\(false\);\s*await check\(\);/);
 });
 
-test('profile always shows I MIEI DOCUMENTI to signed-in drivers, even before payroll activation',()=>{
- assert.match(profile,/if\(store\.usingAccount\(\)\&\&accountAccess\.getRole\(\)==='driver'\)\{/);
+test('profile reuses a server-approved driver check without fetching on every click',()=>{
+ assert.match(profile,/if\(payrollProfileEligible\(\)\)\{/);
+ assert.match(profile,/const accountOwner=accountAccess\.getAccountId\(\)/);
+ assert.match(profile,/if\(payrollProfileCached\(accountOwner\)\)showAuthorizedDocuments\(true\)/);
+ assert.match(profile,/void prefetchPayrollProfileAccess\(\)\.then\(showAuthorizedDocuments\)/);
+ assert.match(profile,/!dialog\.open\|\|!payrollProfileEligible\(\)/);
+ assert.match(profile,/accountAccess\.getAccountId\(\)!==accountOwner/);
+ assert.match(profile,/if\(!authorized\)\{/);
+ assert.match(profile,/current\?\.remove\(\)/);
  assert.match(profile,/menuButton\('I MIEI DOCUMENTI'/);
- assert.match(profile,/Servizio in preparazione\./);
  assert.match(profile,/new URL\('documenti\/',import\.meta\.url\)/);
- const menuGate=profile.slice(profile.indexOf("if(store.usingAccount()&&accountAccess.getRole()==='driver'){"),
-  profile.indexOf("if(store.usingAccount()&&accountAccess.getRole()==='admin'"));
- assert.ok(menuGate.includes("menuButton('I MIEI DOCUMENTI'"));
- assert.ok(!/if\(payrollAvailable\)/.test(menuGate),'payroll config cannot hide profile menu');
- const directPage=text('documenti/driver-documents.mjs');
- assert.match(directPage,/I MIEI DOCUMENTI — In preparazione/);
- assert.match(directPage,/function payrollConfigured\(\)/);
- assert.match(directPage,/if\(!payrollConfigured\(\)\)showNotConfigured\(\)/);
- assert.doesNotMatch(text('runtime-config.mjs'),/payrollEndpoint/);
+ assert.match(profile,/if\(current\)return/);
+ assert.match(profile,/if\(existing\)existing\.prepend\(item\)/);
+ assert.match(profile,/if\(first\)first\.before\(group\);else body\.append\(group\)/);
+ assert.match(profile,/const showAuthorizedDocuments=authorized=>/);
+ assert.match(profile,/if\(payrollProfileEligible\(\)\)/);
+ assert.match(profile,/payrollProfileCached\(accountOwner\)/);
+ assert.match(profile,/prefetchPayrollProfileAccess\(\)/);
+ const prefetch=profile.slice(profile.indexOf('if(payrollProfileEligible()){'));
+ assert.doesNotMatch(prefetch,/await api\.documents/,'profile opening must not wait for network');
+ assert.doesNotMatch(profile,/Deno\.env|getAccountId\(\)===['"][a-f0-9-]{36}/);
+ assert.match(text('runtime-config.mjs'),/"payrollEndpoint":/);
+ const page=text('documenti/driver-documents.mjs');
+ assert.match(page,/const status=await account\.verifySession\(\)/);
+ assert.match(page,/function payrollConfigured\(\)/);
 });

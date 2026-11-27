@@ -51,3 +51,301 @@ input[type=file]{border-style:dashed}
 .document-pdf-frame[hidden]{display:none!important}
 .document-preview{max-width:min(96vw,720px)}
 .preview-actions button{margin:0}
+
+/* Driver documents · mobile-first refinement (scoped; admin payroll CSS unchanged). */
+.driver-documents-page{
+ --ink:#18374b;--accent:#087b89;--deep:#075d70;
+ --line:#e0e9ee;--muted:#677e8b;--bg:#f4f8fa;
+ background:var(--bg);font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+}
+.driver-documents-page .lts-header{
+ height:auto;min-height:76px;padding:11px max(20px,calc((100% - 1050px)/2));
+ box-shadow:0 2px 14px rgba(18,54,74,.035);
+}
+.driver-documents-page .lts-brand{gap:11px;min-width:0}
+.driver-documents-page .lts-brand img{width:66px;height:52px;flex-shrink:0}
+.driver-documents-page .brand-copy{
+ font-size:12px;font-weight:850;letter-spacing:.065em;line-height:1.35;
+ color:#15394c;white-space:nowrap;
+}
+.driver-documents-page .lts-brand small{
+ margin-top:3px;color:#728591;font-size:11px;font-weight:550;
+ letter-spacing:0;text-transform:none;
+}
+.driver-documents-page .back{
+ display:inline-flex;align-items:center;justify-content:center;gap:3px;
+ min-height:39px;padding:8px 11px;background:#f1f7f8;
+ border:1px solid #e0eaed;border-radius:11px;
+ color:#086c7f;font-weight:750;font-size:12px;white-space:nowrap;
+}
+.driver-documents-page .back svg{width:17px;height:17px}
+.driver-documents-page .back:hover{background:#e8f3f5}
+.driver-documents-page .shell{max-width:880px;margin:0 auto;padding:28px 20px 78px}
+.driver-documents-page .heading{
+ display:flex;align-items:center;justify-content:space-between;
+ gap:16px;margin:0 0 22px;
+}
+.driver-documents-page .heading-copy{min-width:0}
+.driver-documents-page .heading h1{
+ font-size:clamp(25px,3.7vw,32px);line-height:1.2;
+ font-weight:850;letter-spacing:-.05em;
+}
+.driver-documents-page .heading .eyebrow{
+ margin-bottom:8px!important;font-size:10px!important;letter-spacing:.11em;
+ color:#0d7c89!important;
+}
+.driver-documents-page .heading-copy>p:last-child{
+ margin:7px 0 0;max-width:500px;color:#6d808d;
+ font-size:13px;line-height:1.5;
+}
+.driver-documents-page #refresh{
+ display:inline-flex;align-items:center;justify-content:center;gap:8px;
+ min-height:42px;padding:10px 14px;border-radius:12px;
+ font-size:12px;flex-shrink:0;
+}
+.driver-documents-page #refresh svg{width:18px;height:18px}
+.driver-documents-page .category-nav{
+ display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
+ gap:9px;margin-bottom:20px;padding:4px;background:#eaf1f4;
+ border-radius:16px;
+}
+.driver-documents-page .category{
+ min-width:0;min-height:47px;padding:10px 8px;
+ border:1px solid transparent;background:transparent;border-radius:12px;
+ font-size:12px;font-weight:800;color:#637f8d;
+ transition:background .15s,border-color .15s,color .15s;
+}
+.driver-documents-page .category:hover{background:#ffffffb0}
+.driver-documents-page .category.selected{
+ background:#fff;color:#075e73;border-color:#c8dfe4;
+ box-shadow:0 2px 8px rgba(10,87,111,.07);
+}
+.driver-documents-page .archive-toolbar{
+ display:flex;align-items:center;justify-content:space-between;
+ gap:12px;margin:0 0 13px;
+}
+.driver-documents-page .archive-heading{
+ display:flex;flex-direction:column;gap:3px;
+}
+.driver-documents-page .archive-caption{
+ font-size:10px;letter-spacing:.10em;color:#087b89;font-weight:850;
+}
+.driver-documents-page .archive-description{
+ font-size:12px;color:#7a8d97;font-weight:550;
+}
+.driver-documents-page .filters{display:block;margin:0;flex:0 0 auto}
+.driver-documents-page .filters label{
+ display:flex;align-items:center;gap:10px;font-size:12px;
+ font-weight:700;color:#536b79;min-width:0;
+}
+.driver-documents-page .filters select{
+ width:auto;min-width:148px;min-height:42px;max-width:180px;
+ padding:9px 33px 9px 12px;font-size:13px;font-weight:650;
+ border-radius:11px;background:#fff;border:1px solid #cfdee5;
+ color:#224459;
+}
+.driver-documents-page .documents-panel{
+ padding:22px 22px 24px;border-radius:20px;
+ background:#fff;border:1px solid #e0e9ed;
+ box-shadow:0 8px 30px rgba(18,53,74,.045);
+}
+.driver-documents-page .documents-panel-heading{
+ display:flex;align-items:center;justify-content:space-between;
+ gap:10px;margin:0 0 15px;
+}
+.driver-documents-page .documents-panel-heading h2{
+ margin:0;font-size:17px;font-weight:850;
+ letter-spacing:-.025em;line-height:1.3;
+}
+.driver-documents-page .private-label{
+ display:inline-flex;gap:5px;align-items:center;flex-shrink:0;
+ color:#61818b;font-weight:750;font-size:11px;
+ padding:6px 9px;background:#f2f7f8;border-radius:99px;
+}
+.driver-documents-page .private-label svg{width:14px;height:14px}
+.driver-documents-page .confirmation-note{
+ display:flex;align-items:flex-start;gap:11px;margin:0 0 16px;
+ padding:13px 14px;border-radius:13px;
+ border:1px solid #d5eaf0;background:#f2f9fa;
+}
+.driver-documents-page .confirmation-icon{
+ display:grid;place-items:center;flex:0 0 auto;
+ width:21px;height:21px;border:1.7px solid #287e90;border-radius:50%;
+ color:#287e90;font:800 13px/1 system-ui,sans-serif;
+}
+.driver-documents-page .confirmation-content{min-width:0}
+.driver-documents-page .confirmation-content>p{
+ margin:0;font-size:12px;color:#315f71;line-height:1.5;
+}
+.driver-documents-page .confirmation-content strong{font-weight:850}
+.driver-documents-page .confirmation-content details{margin-top:5px}
+.driver-documents-page .confirmation-content summary{
+ color:#08718a;font-size:12px;font-weight:750;
+ width:max-content;max-width:100%;cursor:pointer;
+}
+.driver-documents-page .confirmation-content .hint{
+ margin:10px 0 2px;font-size:12px;line-height:1.65;color:#537480;
+}
+.driver-documents-page .document-list{
+ display:grid;gap:10px;margin:0;
+}
+.driver-documents-page .document-row{
+ padding:15px;border:1px solid #dce9ee;
+ border-radius:14px;background:#fff;
+}
+.driver-documents-page .document-row strong{font-size:14px;line-height:1.4;color:#153a4f}
+.driver-documents-page .document-row small{font-size:11px;line-height:1.5}
+.driver-documents-page .actions button{min-height:39px;border-radius:10px}
+.driver-documents-page #more{margin-top:15px}
+.driver-documents-page .empty-documents{
+ display:flex;align-items:center;justify-content:center;gap:17px;
+ padding:27px 20px;min-height:150px;
+ border:1px dashed #d5e4ea;border-radius:15px;
+ background:linear-gradient(145deg,#fbfdfe,#f7fafb);
+}
+.driver-documents-page .empty-documents-icon{
+ display:block;position:relative;flex:0 0 auto;
+ width:56px;height:56px;border-radius:17px;background:#e8f3f6;
+}
+.driver-documents-page .empty-documents-icon:before{
+ content:"";position:absolute;left:17px;top:11px;
+ width:20px;height:29px;border:2px solid #378b9c;border-radius:4px;
+}
+.driver-documents-page .empty-documents-icon:after{
+ content:"";position:absolute;left:22px;top:23px;
+ width:12px;height:2px;background:#378b9c;
+ box-shadow:0 7px 0 #378b9c;
+}
+.driver-documents-page .empty-documents-copy{max-width:330px}
+.driver-documents-page .empty-documents-copy strong{
+ display:block;font-size:14px;font-weight:800;line-height:1.3;
+}
+.driver-documents-page .empty-documents-copy p{
+ margin:6px 0 0;color:#738692;font-size:12px;line-height:1.6;
+}
+.driver-documents-page .notice{
+ border-radius:12px;padding:11px 14px;font-size:12px;
+}
+.driver-documents-page .document-preview{
+ border-radius:20px;padding:20px;
+}
+@media(max-width:620px){
+ .driver-documents-page .lts-header{min-height:68px;padding:10px 15px}
+ .driver-documents-page .lts-brand img{width:54px;height:43px}
+ .driver-documents-page .brand-copy{font-size:11px;letter-spacing:.045em}
+ .driver-documents-page .lts-brand small{font-size:10px}
+ .driver-documents-page .back{padding:7px 9px;min-height:36px;font-size:12px}
+ .driver-documents-page .shell{margin:0;padding:22px 15px 52px}
+ .driver-documents-page .heading{display:flex;align-items:flex-start;gap:10px;margin-bottom:19px}
+ .driver-documents-page .heading h1{font-size:26px}
+ .driver-documents-page .heading-copy>p:last-child{font-size:12px;line-height:1.45}
+ .driver-documents-page #refresh{
+  margin-top:11px;width:41px;min-width:41px;height:41px;padding:0;
+  border-radius:12px;
+ }
+ .driver-documents-page #refresh span{display:none}
+ .driver-documents-page .category-nav{gap:4px;padding:4px;margin-bottom:20px;border-radius:14px}
+ .driver-documents-page .category{min-height:44px;padding:9px 4px;font-size:11px}
+ .driver-documents-page .archive-description{display:none}
+ .driver-documents-page .archive-caption{font-size:10px}
+ .driver-documents-page .filters label{gap:8px;font-size:12px}
+ .driver-documents-page .archive-toolbar{
+  display:grid;grid-template-columns:minmax(0,1fr) minmax(180px,190px);
+  gap:10px;align-items:end;
+ }
+ .driver-documents-page .filters{min-width:0}
+ .driver-documents-page .filters select{
+  display:block;width:100%;min-width:0;max-width:none;min-height:40px;
+  padding-right:33px;white-space:nowrap;
+ }
+ .driver-documents-page .documents-panel{padding:17px;border-radius:18px}
+ .driver-documents-page .documents-panel-heading{margin-bottom:14px}
+ .driver-documents-page .documents-panel-heading h2{font-size:16px}
+ .driver-documents-page .confirmation-note{padding:11px 12px;gap:9px}
+ .driver-documents-page .document-row{padding:13px}
+ .driver-documents-page .empty-documents{
+  flex-direction:column;text-align:center;gap:12px;
+  padding:24px 15px;min-height:190px;
+ }
+ .driver-documents-page .empty-documents-icon{width:52px;height:52px}
+ .driver-documents-page .empty-documents-icon:before{left:15px;top:10px}
+ .driver-documents-page .empty-documents-icon:after{left:20px;top:22px}
+ .driver-documents-page .document-preview{padding:17px}
+}
+@media(max-width:360px){
+ .driver-documents-page .brand-copy{font-size:10px}
+ .driver-documents-page .heading h1{font-size:24px}
+ .driver-documents-page .category{font-size:10px}
+ .driver-documents-page .archive-caption{font-size:9px}
+ .driver-documents-page .archive-toolbar{grid-template-columns:minmax(0,1fr) minmax(174px,185px)}
+ .driver-documents-page .filters select{width:100%;min-width:0;max-width:none}
+}
+
+/* Extra-small screens: never crop "Tutti gli anni" or the archive heading. */
+@media(max-width:330px){
+ .driver-documents-page .archive-toolbar{grid-template-columns:1fr;gap:10px}
+ .driver-documents-page .filters select{width:100%;min-width:0;max-width:none}
+}
+
+/* Mobile fix v3: the Android native select reserves more room for its arrow.
+ * Keep the label on the same line but let the actual select fill the rest.
+ * This override follows every narrower breakpoint, including <=330px.
+ */
+@media(max-width:620px){
+ .driver-documents-page .archive-toolbar{
+  display:grid;
+  grid-template-columns:minmax(0,1fr);
+  gap:11px;
+  align-items:stretch;
+ }
+ .driver-documents-page .filters{
+  display:grid;
+  grid-template-columns:44px minmax(0,1fr);
+  align-items:center;
+  gap:12px;
+  width:100%;
+  min-width:0;
+ }
+ .driver-documents-page .filters label{
+  display:block;
+  min-width:0;
+  font-size:12px;
+ }
+ .driver-documents-page .filters select{
+  display:block;
+  box-sizing:border-box;
+  width:100%;
+  min-width:0;
+  max-width:none;
+  padding:10px 40px 10px 13px;
+  font-size:14px;
+  line-height:1.3;
+ }
+}
+
+/* Administrator-only upload feedback: keep form errors beside the action. */
+.admin-payroll-page .admin-field-help{
+ display:block;font-size:11px;font-weight:500;line-height:1.4;color:var(--muted);
+}
+.admin-payroll-page .admin-file-selection{
+ margin:-6px 0 0;font-size:12px;line-height:1.5;color:#506a78;
+ overflow-wrap:anywhere;
+}
+.admin-payroll-page .admin-upload-feedback{
+ margin:0;padding:12px 14px;border:1px solid #b9d9e3;
+ border-radius:12px;background:#edf8fa;color:#10546a;
+ font-size:13px;font-weight:600;line-height:1.55;
+ overflow-wrap:anywhere;scroll-margin:16px;
+}
+.admin-payroll-page .admin-upload-feedback.error{
+ color:#9b2525;border-color:#efc9c9;background:#fff1f1;
+}
+.admin-payroll-page .admin-upload-feedback.success{
+ color:#17674b;border-color:#b7dccf;background:#ebf8f2;
+}
+.admin-payroll-page #upload-form[aria-busy="true"]{
+ opacity:.82;
+}
+.admin-payroll-page #upload-submit:disabled{
+ cursor:progress;
+}
