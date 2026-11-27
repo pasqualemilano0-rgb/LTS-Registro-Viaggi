@@ -1,7 +1,7 @@
 {
   "source": "https://www.salernocontainerterminal.com/ca/an/vessel_schedule.php",
   "source_updated_at": null,
-  "acquired_at": "2026-11-27T16:00:16.321Z",
+  "acquired_at": "2026-11-27T16:30:16.295Z",
   "rows": [
     {
       "vessel": "CONTSHIP ERA",
@@ -142,7 +142,7 @@
       "vessel": "ALOPO",
       "voyage": "2126W",
       "eta": "30/11/2026 08:00",
-      "closing": "24/11/2026 17:00 CLOSED",
+      "closing": "30/11/2026 17:00",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
@@ -178,7 +178,7 @@
       "vessel": "MSC KILIMANJARO IV",
       "voyage": "CD648A",
       "eta": "01/12/2026 00:00",
-      "closing": "28/11/2026 10:00",
+      "closing": "30/11/2026 17:00",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
@@ -196,7 +196,7 @@
       "vessel": "VENTO DI GRECALE",
       "voyage": "840",
       "eta": "01/12/2026 00:00",
-      "closing": "27/11/2026 17:00 CLOSED",
+      "closing": "01/12/2026 12:00",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
@@ -310,6 +310,6 @@
       "status": "PENDING"
     }
   ],
-  "updated_at": "2026-11-27T16:00:16.321Z",
-  "data_changed_at": "2026-11-27T16:00:16.321Z"
+  "updated_at": "2026-11-27T16:30:16.295Z",
+  "data_changed_at": "2026-11-27T16:30:16.295Z"
 }
