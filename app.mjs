@@ -8,6 +8,7 @@ import {describeBackupConflict} from '/LTS-Registro-Viaggi/shared/backup-conflic
 import * as store from '/LTS-Registro-Viaggi/client-store.mjs';
 import runtimeConfig from '/LTS-Registro-Viaggi/runtime-config.mjs';
 import * as accountAccess from '/LTS-Registro-Viaggi/account-access.mjs';
+import {countUnreadDocuments} from '/LTS-Registro-Viaggi/shared/payroll-unread.mjs';
 import {createDriverSessionShield,transientDriverSessionError} from '/LTS-Registro-Viaggi/driver-session-guard.mjs';
 import {createLtsRealtime} from '/LTS-Registro-Viaggi/realtime-client.mjs';
 import {sharedMapsEnabled,sharedMapsCustomers,saveSharedMapsCustomer} from '/LTS-Registro-Viaggi/shared-maps-client.mjs?v=20261110-maps-approval-v1';
@@ -96,7 +97,7 @@ let realtimeBridge=null;
 const PAYROLL_PROFILE_CHECK_INTERVAL_MS=60000;
 const PAYROLL_PROFILE_DENIED_CHECK_INTERVAL_MS=600000;
 const PAYROLL_PROFILE_RETRY_INTERVAL_MS=30000;
-let payrollProfileAccess={owner:null,allowed:false,retrySoon:false,checkedAt:0,pending:null,generation:0};
+let payrollProfileAccess={owner:null,allowed:false,unread:null,retrySoon:false,checkedAt:0,pending:null,generation:0};
 function payrollProfileEligible(){
  return accountAccess.isEnabled()&&store.usingAccount()&&accountAccess.isVerified()&&
   accountAccess.getRole()==='driver'&&
@@ -104,23 +105,38 @@ function payrollProfileEligible(){
   Boolean(runtimeConfig.accountAuth.payrollEndpoint.trim());
 }
 function resetPayrollProfileAccess(){
- payrollProfileAccess={owner:null,allowed:false,retrySoon:false,checkedAt:0,pending:null,
+ payrollProfileAccess={owner:null,allowed:false,unread:null,retrySoon:false,checkedAt:0,pending:null,
   generation:payrollProfileAccess.generation+1};
+ paintDocumentBadge();
 }
 function payrollProfileCached(owner){
  return payrollProfileEligible()&&Boolean(owner)&&
   payrollProfileAccess.owner===owner&&payrollProfileAccess.allowed;
+}
+function payrollProfileUnread(owner){
+ return payrollProfileCached(owner)?payrollProfileAccess.unread:null;
+}
+function paintDocumentBadge(){
+ const count=payrollProfileUnread(accountAccess.getAccountId());
+ document.querySelectorAll('.profile-button').forEach(profile=>{
+  profile.querySelector('.profile-document-badge')?.remove();
+  profile.setAttribute('aria-label',`Profilo di ${name()||'autista'}`+
+   (count>0?`, ${count>=100?'oltre 99':count} documenti non aperti`:''));
+  if(count>0)profile.append(el('span',{class:'profile-document-badge','aria-hidden':'true'},
+   count>=100?'99+':String(count)));
+ });
 }
 async function prefetchPayrollProfileAccess(force=false){
  if(!payrollProfileEligible()){resetPayrollProfileAccess();return false;}
  const owner=accountAccess.getAccountId();
  if(!owner){resetPayrollProfileAccess();return false;}
  if(payrollProfileAccess.owner!==owner){
-  payrollProfileAccess={owner,allowed:false,retrySoon:false,checkedAt:0,pending:null,
+  payrollProfileAccess={owner,allowed:false,unread:null,retrySoon:false,checkedAt:0,pending:null,
    generation:payrollProfileAccess.generation+1};
+  paintDocumentBadge();
  }
- const interval=payrollProfileAccess.allowed?PAYROLL_PROFILE_CHECK_INTERVAL_MS:
-  payrollProfileAccess.retrySoon?PAYROLL_PROFILE_RETRY_INTERVAL_MS:
+ const interval=payrollProfileAccess.retrySoon?PAYROLL_PROFILE_RETRY_INTERVAL_MS:
+  payrollProfileAccess.allowed?PAYROLL_PROFILE_CHECK_INTERVAL_MS:
   PAYROLL_PROFILE_DENIED_CHECK_INTERVAL_MS;
  if(!force&&payrollProfileAccess.checkedAt&&
     Date.now()-payrollProfileAccess.checkedAt<interval)
@@ -128,20 +144,34 @@ async function prefetchPayrollProfileAccess(force=false){
  if(payrollProfileAccess.pending)return payrollProfileAccess.pending;
  const generation=payrollProfileAccess.generation;
  const request=(async()=>{
-  let allowed=false,retrySoon=false;
+  let allowed=false,retrySoon=false,unread=null;
   try{
    const api=await import(new URL('documenti/document-api.mjs',import.meta.url).href);
-   const result=await api.documents({offset:0});
-   allowed=Array.isArray(result?.documents);
+   // Check identity before and after every page. Never continue a stale request
+   // using a newly logged-in driver's credentials.
+   const listForOwner=async filter=>{
+    const current=()=>generation===payrollProfileAccess.generation&&
+     owner===accountAccess.getAccountId()&&payrollProfileEligible();
+    if(!current())throw Error('Account cambiato.');
+    const result=await api.documents(filter);
+    if(!current())throw Error('Account cambiato.');
+    return result;
+   };
+   const result=await listForOwner({offset:0});
+   unread=await countUnreadDocuments(listForOwner,{owner,firstPage:result,
+    onFirstPageValidated:()=>{allowed=true;}});
   }catch(error){
    // Recheck outages quickly; throttle definitive 401/403/428 denials.
    retrySoon=![401,403,428].includes(Number(error?.status));
+   if(!retrySoon)allowed=false;
   }
   if(generation!==payrollProfileAccess.generation||
      owner!==accountAccess.getAccountId()||!payrollProfileEligible())return false;
   payrollProfileAccess.allowed=allowed;
+  payrollProfileAccess.unread=allowed?unread:null;
   payrollProfileAccess.retrySoon=retrySoon;
   payrollProfileAccess.checkedAt=Date.now();
+  paintDocumentBadge();
   return allowed;
  })();
  payrollProfileAccess.pending=request;
@@ -343,6 +373,7 @@ function render(){
   document.querySelector('.topbar').replaceWith(header);
   document.querySelector('.bottom-nav').replaceWith(nav);
   document.querySelector('#sync-status')?.replaceWith(syncNode());
+  paintDocumentBadge();
   return;
  }
  unmountPorti();
@@ -351,6 +382,7 @@ function render(){
  if(tab==='insert')renderInsert(main); else if(tab==='register')renderRegister(main);else if(tab==='customers')renderCustomers(main);else if(tab==='porti')renderPorti(main);else renderTariffs(main);
  if(tab!=='porti')main.append(syncNode());
  scroll.scrollTop=scrollTop;
+ paintDocumentBadge();
 }
 // Porti follows the Rome calendar, regardless of device timezone.
 function isPortiSundayInRome(at=new Date()){
@@ -434,7 +466,7 @@ function receiveState(record,{source}={}){
  }
  const brandName=document.querySelector('.brand-title');if(brandName)brandName.textContent=name()||'Il tuo registro';
  const profile=document.querySelector('.profile-button');
- if(profile){profile.textContent=initials();profile.setAttribute('aria-label',`Profilo di ${name()||'autista'}`);}
+ if(profile){profile.textContent=initials();paintDocumentBadge();}
  if(refreshView)refreshView();else render();
 }
 function emptyState(title,message,ico='truck',action=null){return el('section',{class:'panel empty-state'},el('div',{class:'empty-icon'},icon(ico)),el('h3',{},title),el('p',{},message),action);}
@@ -2350,7 +2382,7 @@ function resumeDriverWhenVisible(){
  });
  driverBackgroundAt=null;
  if(required)void verifyDriverOnResume();
- else void prefetchPayrollProfileAccess();
+ else void prefetchPayrollProfileAccess(payrollProfileAccess.allowed);
 }
 document.addEventListener('visibilitychange',()=>{
  if(document.hidden){driverBackgroundAt=Date.now();clearResumeRetry();}

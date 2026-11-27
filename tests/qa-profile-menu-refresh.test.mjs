@@ -53,7 +53,9 @@ test('profile account and document authorization conditions are preserved',()=>{
  assert.doesNotMatch(profile,/appendPushSettings\(body|push-settings|reminder/i);
  assert.doesNotMatch(app,/import \{ appendPushSettings \}/);
  assert.match(read('runtime-config.mjs'),/payrollEndpoint/);
- assert.match(app,/await api\.documents\(\{offset:0\}\)/);
+ assert.match(app,/await listForOwner\(\{offset:0\}\)/);
+ assert.match(app,/await api\.documents\(filter\)/);
+ assert.match(app,/onFirstPageValidated:\(\)=>\{allowed=true;\}/);
  assert.match(profile,/if\(payrollProfileCached\(accountOwner\)\)showAuthorizedDocuments\(true\)/);
  assert.match(profile,/accountAccess\.getAccountId\(\)!==accountOwner/);
 });
