@@ -14,7 +14,7 @@ test('dashboard accessibile solo dal pannello admin, CSP e versioni coerenti',()
    'pro-city','pro-container','pro-compare-driver','pro-alerts','pro-alert-count',
    'pro-export-pdf','pro-export-xlsx','pro-records'])
    assert.match(html,new RegExp('id="'+id+'"'));
- assert.match(html,/admin\.mjs\?v=20261124-dashboard-flow-v1/);
+ assert.match(html,/admin\.mjs\?v=20261127-unified-login-qa-v1/);
  assert.match(html,/admin\.css\?v=20261109-alpha-v1/);
  assert.match(js,/account-access\.mjs\?v=20261107-realtime-v1/);
  assert.match(js,/setupReport\(account\)/);
@@ -62,10 +62,10 @@ test('consultazione aziendale prima della pubblicazione: informativa esplicita',
  const privacy=read('privacy/index.html');
  assert.match(privacy,/Consultazione aziendale dei viaggi sincronizzati/);
  assert.match(privacy,/amministratori autorizzati/);
- assert.match(privacy,/note di viaggio e importi registrati/);
+ assert.match(privacy,/note per l’amministrazione e importi registrati/);
  assert.match(privacy,/non sono consultabili dall'amministratore/);
  assert.match(privacy,/non sostituisce l'informativa e gli adempimenti del datore di lavoro/);
- assert.match(privacy,/Aggiornamento: 4 novembre 2026/);
+ assert.match(privacy,/Aggiornamento: 26 novembre 2026/);
 });
 
 test('anagrafica dashboard: dati verificati dalla sessione, soli campi pubblici, nessun dato simulato', async()=>{

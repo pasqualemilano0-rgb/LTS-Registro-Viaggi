@@ -149,7 +149,7 @@ function tableRow(trip){
  const fields=[
   ['Seconda presa',trip.secondClient?(trip.secondClient+' · '+trip.secondCity):'Non presente'],
   ['Servizi',trip.services?.length?trip.services.join(', '):'Nessuno'],
-  ['Nota',trip.note||'Nessuna'],
+  ['Nota amministrativa',trip.adminNote||'Nessuna'],
   ['Ultima modifica',trip.updatedAt?new Date(trip.updatedAt).toLocaleString('it-IT'):'—'],
  ];
  for(const [k,v] of fields){
@@ -225,7 +225,9 @@ export function setupReport(account){
   return insights.load(context);
  }
  function selectDriver(id){
-  if(driver.value===id&&page)return;
+  // The picker can display a new value before the matching report finishes.
+  // Never skip reload merely because the control already shows that value.
+  if(driver.value===id&&page&&!loading&&(pageDriverId||'')===id)return;
   clearReportScope();driver.value=id;rows=[];focusOnDriver=Boolean(id);void load(false);
  }
  function tabs(view){

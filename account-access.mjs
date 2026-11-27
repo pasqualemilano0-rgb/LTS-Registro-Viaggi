@@ -384,6 +384,18 @@ export async function getVerifiedAccessToken(){
  * Tokens are returned in memory to the socket transport, never to URLs or logs.
  * Expiring tokens are rotated using the existing session checks.
  */
+// Routing hint only: identity remains established by the existing server checks.
+// The Realtime server independently validates the signed JWT and live session.
+export function realtimeSessionId(accessToken,userId){
+ if(typeof accessToken!=='string'||accessToken.length>4096||!UUID.test(userId||''))return null;
+ try{
+  const parts=accessToken.split('.');
+  if(parts.length!==3||!/^[A-Za-z0-9_-]+$/.test(parts[1]))return null;
+  const encoded=parts[1].replace(/-/g,'+').replace(/_/g,'/');
+  const claims=JSON.parse(atob(encoded.padEnd(Math.ceil(encoded.length/4)*4,'=')));
+  return claims.sub===userId&&UUID.test(claims.session_id||'')?claims.session_id:null;
+ }catch{return null;}
+}
 export async function getRealtimeCredentials(){
  const previous=readStored();
  if(!verified||!previous)throw new Error('Sessione LTS non verificata.');
@@ -395,7 +407,9 @@ export async function getRealtimeCredentials(){
  if(!verified||!current||!['admin','driver'].includes(current.role)||
     !UUID.test(current.user_id||'')||!ACCESS.test(current.access_token||''))
   throw new Error('Sessione Realtime non autorizzata.');
- return {userId:current.user_id,role:current.role,accessToken:current.access_token};
+ const sessionId=realtimeSessionId(current.access_token,current.user_id);
+ if(!sessionId)throw new Error('Sessione Realtime non autorizzata.');
+ return {userId:current.user_id,role:current.role,sessionId,accessToken:current.access_token};
 }
 export async function archiveRequest(method,body){
  if(!verified||!readStored())throw new Error('Effettua l’accesso per consultare il registro.');
@@ -407,6 +421,18 @@ export async function archiveRequest(method,body){
     !Number.isSafeInteger(result.revision)){
    revoke();throw new Error('Il servizio ha restituito un archivio appartenente a un altro account.');
  }
+ return result;
+}
+
+export async function tripNoteHistory(tripId,before=null){
+ if(!isVerified()||getRole()!=='driver')throw new Error('Accesso autista richiesto.');
+ const owner=getAccountId();
+ if(typeof tripId!=='string'||!tripId||tripId.length>128)throw new Error('Viaggio non valido.');
+ const result=await withSessionRetry(
+  ()=>api('archiveEndpoint',{action:'note-history',tripId,before},readStored()?.access_token),
+  async()=>{await verifySession();if(getAccountId()!==owner||getRole()!=='driver')throw new Error('Account cambiato.');});
+ if(!isVerified()||getAccountId()!==owner||result?.userId!==owner||result?.tripId!==tripId||
+    !Array.isArray(result.rows)||result.rows.length>20)throw new Error('Storico note non verificato.');
  return result;
 }
 

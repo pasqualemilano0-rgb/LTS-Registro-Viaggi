@@ -28,10 +28,10 @@
   <link rel="stylesheet" href="./dashboard-unified-v11.css?v=20261110-rates-visibility-v2">
   <link rel="stylesheet" href="./control-center-home.css?v=20261111-control-center-v1">
   <link rel="stylesheet" href="./control-center-integration.css?v=20261124-dashboard-flow-v1">
-  <link rel="stylesheet" href="./admin-area-choice.css?v=20261118-v1">
+  <link rel="stylesheet" href="./admin-area-choice.css?v=20261127-unified-login-qa-v1">
   <link rel="stylesheet" href="./dashboard-refresh.css?v=20261124-admin-refresh-v1">
-  <script type="module" src="./admin.mjs?v=20261124-dashboard-flow-v1"></script>
-  <script type="module" src="./admin-area-choice.mjs?v=20261118-v1"></script>
+  <script type="module" src="./admin.mjs?v=20261127-unified-login-qa-v1"></script>
+  <script type="module" src="./admin-area-choice.mjs?v=20261127-unified-login-qa-v1"></script>
   <script type="module" src="./install-pwa.mjs?v=20261108-admin-pwa-v1"></script>
   <script type="module" src="./dashboard-mobile-nav.mjs?v=20261124-dashboard-flow-v1"></script>
 </head>
@@ -46,6 +46,7 @@
       <button id="smart-command-open" class="button outline small" type="button" aria-haspopup="dialog" aria-controls="smart-panel" aria-expanded="false" hidden title="Ricerca e comandi rapidi (Ctrl+K)" aria-label="Apri centro comandi LTS">⚡ Azioni</button>
       <button id="install-admin" class="button outline small" type="button" hidden>Installa app</button>
       <button id="logout" class="button outline small" type="button" hidden>Esci</button>
+      <button id="admin-return-areas" class="button outline small" type="button" hidden>Aree</button>
     </div>
   </header>
   <main class="container">
@@ -57,7 +58,7 @@
         <span class="admin-login-identity-label">LTS <small>CONTROL CENTER</small></span>
         <span class="admin-login-secure"><span aria-hidden="true">●</span> Protetto</span>
       </div>
-      <div id="admin-area-choice" aria-labelledby="admin-area-title">
+      <div id="admin-area-choice" aria-labelledby="admin-area-title" hidden>
         <div class="lts-choice-brand">
           <img src="../assets/lts-logo.png" width="380" height="150" alt="Logo ufficiale LTS, logistica trasporti e servizi" loading="eager" decoding="async">
           <p>LOGISTICA <span aria-hidden="true">●</span> TRASPORTI <span aria-hidden="true">●</span> SERVIZI</p>
@@ -77,7 +78,7 @@
         <div class="lts-choice-selection">
           <h1 id="admin-area-title">Seleziona l'area di accesso</h1>
           <div class="admin-area-grid">
-            <button id="select-area-logistica" type="button" class="admin-area-tile" aria-controls="admin-logistica-login" aria-label="Accedi a AREA LOGISTICA: autisti, viaggi, clienti, tariffe, servizi extra e Porti">
+            <button id="select-area-logistica" type="button" class="admin-area-tile" aria-controls="dashboard" aria-label="Apri AREA LOGISTICA con la sessione amministratore già verificata">
               <span class="admin-area-photo">
                 <img src="../assets/admin-card-logistica.svg" width="600" height="280" alt="" loading="lazy" decoding="async">
               </span>
@@ -89,7 +90,7 @@
               <span class="admin-area-tile-link" aria-hidden="true">Accedi <span>›</span></span>
             </button>
             <a id="select-area-amministrativa" class="admin-area-tile" href="./buste-paga/"
-              aria-label="Accedi all’AREA AMMINISTRATIVA con account amministratore e verifica MFA">
+              aria-label="Apri AREA AMMINISTRATIVA con la sessione amministratore già verificata">
               <span class="admin-area-photo">
                 <img src="../assets/admin-card-amministrativa.webp" width="160" height="220" alt="" loading="lazy" decoding="async">
               </span>
@@ -102,14 +103,15 @@
               <span class="admin-area-tile-link" aria-hidden="true">Accedi <span>›</span></span>
             </a>
           </div>
-          <p class="admin-area-choice-hint">Le funzioni di entrambe le aree richiedono l’accesso amministratore con MFA. Anteprima grafica disponibile separatamente.</p>
+          <p class="admin-area-choice-hint">Accesso amministratore e MFA già verificati. Puoi passare tra le aree senza inserire nuovamente le credenziali.</p>
         </div>
         <div class="lts-choice-footer" aria-hidden="true"><span></span><i></i><b></b><em></em><span></span></div>
+        <div class="admin-area-session-bar"><span><span aria-hidden="true">●</span> Sessione amministratore attiva</span><button type="button" id="admin-choice-logout">Esci dall’account</button></div>
       </div>
-      <div id="admin-logistica-login" hidden>
-      <p class="eyebrow">AREA LOGISTICA</p>
-      <h1 id="login-title">Accesso area logistica</h1>
-      <p class="intro-copy">Accedi per gestire autisti, viaggi, clienti, tariffe e operazioni logistiche.</p>
+      <div id="admin-logistica-login">
+      <p class="eyebrow">ACCESSO UNICO · CONTROL CENTER</p>
+      <h1 id="login-title">Accesso amministratore</h1>
+      <p class="intro-copy">Inserisci le credenziali una sola volta. Dopo la verifica MFA potrai scegliere e utilizzare entrambe le aree.</p>
       <form id="login-form" class="stack" autocomplete="on">
         <label for="login-phone">Numero di cellulare <small>+39 automatico</small>
           <input id="login-phone" type="tel" inputmode="tel" autocomplete="username" placeholder="3XXXXXXXXX" maxlength="40" required>
@@ -120,11 +122,11 @@
             <button id="login-password-toggle" type="button" aria-pressed="false" aria-label="Mostra password">Mostra</button>
           </span>
         </label>
-        <button class="button primary admin-login-submit" type="submit"><span class="admin-login-submit-label">Accedi all’area logistica</span><span aria-hidden="true">→</span></button>
+        <button class="button primary admin-login-submit" type="submit"><span class="admin-login-submit-label">Accedi al Control Center</span><span aria-hidden="true">→</span></button>
       </form>
       <p id="login-error" class="error-message" role="alert" hidden></p>
       <p class="admin-login-trust"><span aria-hidden="true">◈</span> Accesso protetto e verifica in due passaggi</p>
-        <button id="admin-area-back" class="text-button admin-area-back" type="button">← Torna alla scelta delle aree</button>
+        <button id="admin-area-back" class="text-button admin-area-back" type="button" hidden>← Torna alla scelta delle aree</button>
       </div>
       <div class="login-footer"><button id="switch-account" class="text-button" type="button" hidden>Esci dalla sessione precedente</button><a href="../">← Torna al Registro Viaggi</a></div>
     </section>
@@ -171,7 +173,7 @@
         <details class="admin-nav-more" id="admin-nav-more" open>
           <summary class="admin-nav-more-toggle" aria-label="Altre sezioni" aria-controls="admin-nav-more-items"><span class="admin-nav-icon"><svg class="admin-nav-svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg></span><span>Altro</span></summary>
           <div class="admin-nav-more-items" id="admin-nav-more-items" role="group" aria-label="Altre sezioni">
-            <a href="./buste-paga/" class="admin-switch-button" aria-label="Gestione documenti paghe, accesso separato"><span class="admin-nav-icon" aria-hidden="true">▣</span><span class="admin-nav-label-full">Documenti paghe</span></a>
+            <a href="./buste-paga/" class="admin-switch-button" aria-label="Gestione documenti paghe, stessa sessione amministratore"><span class="admin-nav-icon" aria-hidden="true">▣</span><span class="admin-nav-label-full">Documenti paghe</span></a>
 <button type="button" id="analysis-tab" class="admin-switch-button" aria-label="Analisi e grafici" aria-pressed="false"><span class="admin-nav-icon"><svg class="admin-nav-svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h16M6 17v-5M12 17V5M18 17V9"/></svg></span><span class="admin-nav-label-full">Analisi e grafici</span><span class="admin-nav-label-short" aria-hidden="true">Analisi</span></button>
             <button type="button" id="records-tab" class="admin-switch-button" aria-label="Archivi autisti e modifiche" aria-pressed="false"><span class="admin-nav-icon" aria-hidden="true">▤</span><span class="admin-nav-label-full">Archivi autisti</span></button>
             <button type="button" id="rates-tab" class="admin-switch-button" aria-label="Tariffe aziendali" aria-pressed="false"><span class="admin-nav-icon"><svg class="admin-nav-svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16v11H4z"/><path d="M4 11h16M15 15h3"/><circle cx="8" cy="15" r="1"/></svg></span><span class="admin-nav-label-full">Tariffe aziendali</span></button>

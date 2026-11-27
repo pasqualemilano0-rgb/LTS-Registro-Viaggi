@@ -1,4 +1,4 @@
-import {tfgScheduleDelivery,conatecoForecastDelivery,conatecoDepotAcceptance} from './delivery_location.mjs?v=20261127-cnt-v2';
+import {tfgScheduleDelivery,conatecoForecastDelivery,conatecoDepotAcceptance} from './delivery_location.mjs?v=20261127-cnt-v3';
 import {normalizeName,parseItalianDate,findSctVessels,evaluateSct,evaluateSctType,isSnapshotRecent,isSctFeedRecent,listSctVoyages,describeVesselStatus,describeClosing} from './rules.mjs?v=20261102-v65';
 import {parseTfgBookingResult} from './tfg.mjs?v=20261031-v41';
 import {validateBooking,bookingTerminal} from './booking_search.mjs?v=20261031-v41';

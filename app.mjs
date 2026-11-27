@@ -8,6 +8,7 @@ import {describeBackupConflict} from '/LTS-Registro-Viaggi/shared/backup-conflic
 import * as store from '/LTS-Registro-Viaggi/client-store.mjs';
 import runtimeConfig from '/LTS-Registro-Viaggi/runtime-config.mjs';
 import * as accountAccess from '/LTS-Registro-Viaggi/account-access.mjs';
+import {countUnreadDocuments} from '/LTS-Registro-Viaggi/shared/payroll-unread.mjs';
 import {createDriverSessionShield,transientDriverSessionError} from '/LTS-Registro-Viaggi/driver-session-guard.mjs';
 import {createLtsRealtime} from '/LTS-Registro-Viaggi/realtime-client.mjs';
 import {sharedMapsEnabled,sharedMapsCustomers,saveSharedMapsCustomer} from '/LTS-Registro-Viaggi/shared-maps-client.mjs?v=20261110-maps-approval-v1';
@@ -96,7 +97,7 @@ let realtimeBridge=null;
 const PAYROLL_PROFILE_CHECK_INTERVAL_MS=60000;
 const PAYROLL_PROFILE_DENIED_CHECK_INTERVAL_MS=600000;
 const PAYROLL_PROFILE_RETRY_INTERVAL_MS=30000;
-let payrollProfileAccess={owner:null,allowed:false,retrySoon:false,checkedAt:0,pending:null,generation:0};
+let payrollProfileAccess={owner:null,allowed:false,unread:null,retrySoon:false,checkedAt:0,pending:null,generation:0};
 function payrollProfileEligible(){
  return accountAccess.isEnabled()&&store.usingAccount()&&accountAccess.isVerified()&&
   accountAccess.getRole()==='driver'&&
@@ -104,23 +105,38 @@ function payrollProfileEligible(){
   Boolean(runtimeConfig.accountAuth.payrollEndpoint.trim());
 }
 function resetPayrollProfileAccess(){
- payrollProfileAccess={owner:null,allowed:false,retrySoon:false,checkedAt:0,pending:null,
+ payrollProfileAccess={owner:null,allowed:false,unread:null,retrySoon:false,checkedAt:0,pending:null,
   generation:payrollProfileAccess.generation+1};
+ paintDocumentBadge();
 }
 function payrollProfileCached(owner){
  return payrollProfileEligible()&&Boolean(owner)&&
   payrollProfileAccess.owner===owner&&payrollProfileAccess.allowed;
+}
+function payrollProfileUnread(owner){
+ return payrollProfileCached(owner)?payrollProfileAccess.unread:null;
+}
+function paintDocumentBadge(){
+ const count=payrollProfileUnread(accountAccess.getAccountId());
+ document.querySelectorAll('.profile-button').forEach(profile=>{
+  profile.querySelector('.profile-document-badge')?.remove();
+  profile.setAttribute('aria-label',`Profilo di ${name()||'autista'}`+
+   (count>0?`, ${count>=100?'oltre 99':count} documenti non aperti`:''));
+  if(count>0)profile.append(el('span',{class:'profile-document-badge','aria-hidden':'true'},
+   count>=100?'99+':String(count)));
+ });
 }
 async function prefetchPayrollProfileAccess(force=false){
  if(!payrollProfileEligible()){resetPayrollProfileAccess();return false;}
  const owner=accountAccess.getAccountId();
  if(!owner){resetPayrollProfileAccess();return false;}
  if(payrollProfileAccess.owner!==owner){
-  payrollProfileAccess={owner,allowed:false,retrySoon:false,checkedAt:0,pending:null,
+  payrollProfileAccess={owner,allowed:false,unread:null,retrySoon:false,checkedAt:0,pending:null,
    generation:payrollProfileAccess.generation+1};
+  paintDocumentBadge();
  }
- const interval=payrollProfileAccess.allowed?PAYROLL_PROFILE_CHECK_INTERVAL_MS:
-  payrollProfileAccess.retrySoon?PAYROLL_PROFILE_RETRY_INTERVAL_MS:
+ const interval=payrollProfileAccess.retrySoon?PAYROLL_PROFILE_RETRY_INTERVAL_MS:
+  payrollProfileAccess.allowed?PAYROLL_PROFILE_CHECK_INTERVAL_MS:
   PAYROLL_PROFILE_DENIED_CHECK_INTERVAL_MS;
  if(!force&&payrollProfileAccess.checkedAt&&
     Date.now()-payrollProfileAccess.checkedAt<interval)
@@ -128,20 +144,34 @@ async function prefetchPayrollProfileAccess(force=false){
  if(payrollProfileAccess.pending)return payrollProfileAccess.pending;
  const generation=payrollProfileAccess.generation;
  const request=(async()=>{
-  let allowed=false,retrySoon=false;
+  let allowed=false,retrySoon=false,unread=null;
   try{
    const api=await import(new URL('documenti/document-api.mjs',import.meta.url).href);
-   const result=await api.documents({offset:0});
-   allowed=Array.isArray(result?.documents);
+   // Check identity before and after every page. Never continue a stale request
+   // using a newly logged-in driver's credentials.
+   const listForOwner=async filter=>{
+    const current=()=>generation===payrollProfileAccess.generation&&
+     owner===accountAccess.getAccountId()&&payrollProfileEligible();
+    if(!current())throw Error('Account cambiato.');
+    const result=await api.documents(filter);
+    if(!current())throw Error('Account cambiato.');
+    return result;
+   };
+   const result=await listForOwner({offset:0});
+   unread=await countUnreadDocuments(listForOwner,{owner,firstPage:result,
+    onFirstPageValidated:()=>{allowed=true;}});
   }catch(error){
    // Recheck outages quickly; throttle definitive 401/403/428 denials.
    retrySoon=![401,403,428].includes(Number(error?.status));
+   if(!retrySoon)allowed=false;
   }
   if(generation!==payrollProfileAccess.generation||
      owner!==accountAccess.getAccountId()||!payrollProfileEligible())return false;
   payrollProfileAccess.allowed=allowed;
+  payrollProfileAccess.unread=allowed?unread:null;
   payrollProfileAccess.retrySoon=retrySoon;
   payrollProfileAccess.checkedAt=Date.now();
+  paintDocumentBadge();
   return allowed;
  })();
  payrollProfileAccess.pending=request;
@@ -343,6 +373,7 @@ function render(){
   document.querySelector('.topbar').replaceWith(header);
   document.querySelector('.bottom-nav').replaceWith(nav);
   document.querySelector('#sync-status')?.replaceWith(syncNode());
+  paintDocumentBadge();
   return;
  }
  unmountPorti();
@@ -351,6 +382,7 @@ function render(){
  if(tab==='insert')renderInsert(main); else if(tab==='register')renderRegister(main);else if(tab==='customers')renderCustomers(main);else if(tab==='porti')renderPorti(main);else renderTariffs(main);
  if(tab!=='porti')main.append(syncNode());
  scroll.scrollTop=scrollTop;
+ paintDocumentBadge();
 }
 // Porti follows the Rome calendar, regardless of device timezone.
 function isPortiSundayInRome(at=new Date()){
@@ -377,7 +409,7 @@ function renderPorti(main){
   );
   return;
  }
- const url=(runtimeConfig.basePath??'/')+'porti/index.html?v=20261127-cnt-v2';
+ const url=(runtimeConfig.basePath??'/')+'porti/index.html?v=20261127-cnt-v3';
  portiStartupPanel=el('section',{class:'porti-startup',hidden:true,role:'status','aria-live':'polite','aria-busy':'true'},
   el('span',{class:'porti-loading-spinner','aria-hidden':'true'}),
   el('h2',{},'Caricamento Porti'),el('p',{},'Connessione ai servizi portuali'));
@@ -434,7 +466,7 @@ function receiveState(record,{source}={}){
  }
  const brandName=document.querySelector('.brand-title');if(brandName)brandName.textContent=name()||'Il tuo registro';
  const profile=document.querySelector('.profile-button');
- if(profile){profile.textContent=initials();profile.setAttribute('aria-label',`Profilo di ${name()||'autista'}`);}
+ if(profile){profile.textContent=initials();paintDocumentBadge();}
  if(refreshView)refreshView();else render();
 }
 function emptyState(title,message,ico='truck',action=null){return el('section',{class:'panel empty-state'},el('div',{class:'empty-icon'},icon(ico)),el('h3',{},title),el('p',{},message),action);}
@@ -745,6 +777,50 @@ function renderInsert(main){
  const adminNoteInput=el('textarea',{id:'trip-admin-note',name:'adminNote',value:draft.adminNote||'',maxlength:2000,rows:3,autocapitalize:'characters',spellcheck:'false',placeholder:'Comunicazione per il PDF mensile'});
  const adminNoteEditor=el('section',{class:'trip-note-editor'},el('label',{class:'field-label',for:'trip-admin-note'},'Nota per amministrazione',el('span',{class:'optional'},'Facoltativa')),adminNoteInput,el('p',{class:'trip-note-help'},'Compare solo in fondo al PDF mensile, separata dalla nota viaggio.'));
  noteEditor.append(adminNoteEditor);
+ if(editingId&&accountAccess.getRole()==='driver'){
+  const historyTripId=editingId,historyOwner=accountAccess.getAccountId();
+  const historyPanel=el('section',{class:'trip-note-editor',hidden:true,'aria-label':'Storico note'});
+  const historyStatus=el('p',{class:'trip-note-help',role:'status','aria-live':'polite'});
+  const historyRows=el('div',{class:'trip-note-history-rows'});
+  const stillEditing=()=>form.isConnected&&editingId===historyTripId&&accountAccess.isVerified()&&accountAccess.getAccountId()===historyOwner;
+  let before=null,loadingHistory=false;
+  const historyMore=el('button',{type:'button',class:'trip-option',hidden:true,on:{click:()=>void loadNoteHistory(false)}},'Altre versioni');
+  async function loadNoteHistory(reset){
+   if(loadingHistory||!stillEditing())return;
+   loadingHistory=true;historyMore.disabled=true;historyStatus.textContent='Caricamento storico…';
+   if(reset){historyRows.replaceChildren();before=null;}
+   try{
+    const data=await accountAccess.tripNoteHistory(historyTripId,before);
+    if(!stillEditing())return;
+    for(const row of data.rows){
+     if(!['note','adminNote'].includes(row.note_kind))continue;
+     const value=typeof row.previous_note==='string'&&row.previous_note.trim()?row.previous_note:row.current_note;
+     if(typeof value!=='string'||!value.trim()||value.length>2000)continue;
+     const target=row.note_kind==='note'?noteInput:adminNoteInput;
+     const label=row.note_kind==='note'?'Nota del viaggio':'Nota per amministrazione';
+     historyRows.append(el('div',{class:'trip-note-history-entry'},
+      el('strong',{},label),el('p',{class:'trip-note-help'},new Date(row.recorded_at).toLocaleString('it-IT')),
+      el('p',{class:'trip-note-history-text'},value),
+      el('button',{type:'button',class:'trip-option',on:{click:()=>{
+       if(!stillEditing())return;
+       confirmAction('Ripristinare questa nota?','La versione scelta sostituirà solo questo campo nella bozza. Salva il viaggio per confermare.',async()=>{
+        if(!stillEditing())return;
+        target.value=value;collect();keepEditorScratchpad();target.focus();
+       },'Ripristina nella bozza');
+      }}},'Ripristina')));
+    }
+    before=data.nextBefore??null;historyMore.hidden=!before;
+    historyStatus.textContent=historyRows.childElementCount?'Seleziona una versione da ripristinare nella bozza.':'Nessuna versione precedente disponibile.';
+   }catch{if(stillEditing())historyStatus.textContent='Storico non disponibile. Le note attuali sono conservate.';}
+   finally{loadingHistory=false;historyMore.disabled=false;}
+  }
+  const historyToggle=el('button',{type:'button',class:'trip-option','aria-expanded':'false',on:{click:()=>{
+   if(!stillEditing())return;
+   historyPanel.hidden=!historyPanel.hidden;historyToggle.setAttribute('aria-expanded',String(!historyPanel.hidden));
+   if(!historyPanel.hidden)void loadNoteHistory(true);
+  }}},'Storico note');
+  historyPanel.append(historyStatus,historyRows,historyMore);noteEditor.append(historyToggle,historyPanel);
+ }
  adminNoteInput.addEventListener('input',()=>{collect();keepEditorScratchpad();});
  noteInput.addEventListener('input',()=>{const start=noteInput.selectionStart,end=noteInput.selectionEnd;const upper=noteInput.value.toLocaleUpperCase('it-IT');if(upper!==noteInput.value){noteInput.value=upper;noteInput.setSelectionRange(start,end);}collect();keepEditorScratchpad();});
  const servicesSymbol=el('span',{class:'plus-disc','aria-hidden':'true'},draft.servicesOpen?'−':'+');
@@ -809,6 +885,9 @@ function renderInsert(main){
   updateEstimate();
   const duplicate=possibleTripDuplicate(state.trips,draft,editingId);
   const warnings=[];
+  const previousNotes=state.trips.find(t=>t.id===editingId);
+  if(previousNotes?.note?.trim()&&!checked.value.note.trim())warnings.push('Stai cancellando la nota viaggio.');
+  if(previousNotes?.adminNote?.trim()&&!checked.value.adminNote.trim())warnings.push('Stai cancellando la nota per amministrazione.');
   if(duplicate)warnings.push('Esiste già un viaggio del '+formatDate(duplicate.date)+' con questo container, cliente e località.');
   if(missingEstimateTariffs)warnings.push('Una o più tariffe aziendali non sono disponibili: il totale mostrato è parziale.');
   const commit=async()=>{
@@ -834,12 +913,12 @@ function renderInsert(main){
    for(const customer of clients)if(!next.customers.some(c=>c.name===customer.name))next=D.upsertCustomer(next,customer);
    const persisted=await persist(next);
    const savedTrip=persisted.trips.find(item=>item.id===trip.id);
-   if(!savedTrip||(savedTrip.adminNote??'')!==(trip.adminNote??'')){
+   if(!savedTrip||(savedTrip.adminNote??'')!==(trip.adminNote??'')||(savedTrip.note??'')!==(trip.note??'')){
     // Keep the draft and never report a successful save if the returned note differs.
     // Retain the attempted identity so a retry cannot create a duplicate.
     editingId=trip.id;editingBaseline=tripEditVersion(savedTrip||null);
     keepEditorScratchpad();
-    throw new Error('La nota per amministrazione non è stata confermata. La bozza resta disponibile: verifica la sincronizzazione prima di riprovare o generare il PDF.');
+    throw new Error('Le note del viaggio non sono state confermate. La bozza resta disponibile: verifica la sincronizzazione prima di riprovare o generare il PDF.');
    }
    const pending=store.getSyncInfo?.().pending;
    const savedDate=draft.date;
@@ -2350,7 +2429,7 @@ function resumeDriverWhenVisible(){
  });
  driverBackgroundAt=null;
  if(required)void verifyDriverOnResume();
- else void prefetchPayrollProfileAccess();
+ else void prefetchPayrollProfileAccess(payrollProfileAccess.allowed);
 }
 document.addEventListener('visibilitychange',()=>{
  if(document.hidden){driverBackgroundAt=Date.now();clearResumeRetry();}

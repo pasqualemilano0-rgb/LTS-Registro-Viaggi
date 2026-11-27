@@ -5,7 +5,7 @@ import {createLtsRealtime} from '../realtime-client.mjs';
 
 const read=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
 const identity={userId:'3bfc2a56-6f4f-490e-bafe-84a6b11c33e4',role:'driver',
- accessToken:'a'.repeat(100)};
+ sessionId:'8b0e1234-6f4f-490e-bafe-84a6b11c33e4',accessToken:'a'.repeat(100)};
 const config={enabled:true,
  url:'wss://otrqynkscpbeyuvdlgpg.supabase.co/realtime/v1/websocket',
  publishableKey:'sb_publishable_testPublicKey42'};
@@ -37,37 +37,37 @@ async function joined(role='driver'){
  await wait(285);
  return {bridge,updates,socket,joins};
 }
-test('driver joins only own archive and company catalog with JWT in private message',async()=>{
+test('driver joins only own session with JWT in private message',async()=>{
  const {bridge,updates,socket,joins}=await joined();
- assert.equal(joins.length,2);
- assert.deepEqual(joins.map(x=>x.topic).sort(),[
-  'realtime:lts:v1:catalog',
-  'realtime:lts:v1:driver:'+identity.userId
- ]);
+ assert.equal(joins.length,1);
+ assert.deepEqual(joins.map(x=>x.topic),['realtime:lts:v2:session:'+identity.sessionId]);
  assert.ok(joins.every(x=>x.payload.config.private&&x.payload.access_token===identity.accessToken));
  assert.ok(!socket.url.includes(identity.accessToken),'never put bearer token in WebSocket URL');
  assert.ok(socket.url.includes('apikey=sb_publishable_'));
  assert.deepEqual(updates,['ready']);
- socket.receive({topic:'realtime:lts:v1:driver:'+identity.userId,event:'broadcast',
+ socket.receive({topic:'realtime:lts:v2:session:'+identity.sessionId,event:'broadcast',
   payload:{event:'changed',type:'broadcast',payload:{kind:'archive'}}});
  await wait(285);
  assert.deepEqual(updates,['ready','archive']);
- socket.receive({topic:'realtime:lts:v1:catalog',event:'broadcast',
+ socket.receive({topic:'realtime:lts:v2:session:'+identity.sessionId,event:'broadcast',
   payload:{event:'changed',type:'broadcast',payload:{kind:'catalog'}}});
  await wait(285);
  assert.deepEqual(updates,['ready','archive','catalog']);
  // Forged/wrong-topic messages must never dispatch refresh callbacks.
+ socket.receive({topic:'realtime:lts:v1:catalog',event:'broadcast',payload:{event:'changed',payload:{kind:'catalog'}}});
+ socket.receive({topic:'realtime:lts:v2:session:847a5fd9-d9f8-4ad3-a9ce-ba18920499f0',event:'broadcast',payload:{event:'changed',payload:{kind:'archive'}}});
+ socket.receive({topic:'realtime:lts:v2:session:'+identity.sessionId,event:'broadcast',payload:{event:'changed',payload:{kind:'roster'}}});
  socket.receive({topic:'realtime:lts:v1:driver:847a5fd9-d9f8-4ad3-a9ce-ba18920499f0',
   event:'broadcast',payload:{event:'changed',payload:{kind:'archive'}}});
- socket.receive({topic:'realtime:lts:v1:catalog',event:'broadcast',
+ socket.receive({topic:'realtime:lts:v2:session:'+identity.sessionId,event:'broadcast',
   payload:{event:'changed',payload:{kind:'secret'}}});
  await wait(285);
  assert.equal(updates.length,3);
  bridge.stop();
 });
-test('admin joins only private admin topic; no driver archive subscriptions',async()=>{
+test('admin joins only its own private session topic',async()=>{
  const {bridge,joins}=await joined('admin');
- assert.deepEqual(joins.map(x=>x.topic),['realtime:lts:v1:admin']);
+ assert.deepEqual(joins.map(x=>x.topic),['realtime:lts:v2:session:'+identity.sessionId]);
  bridge.stop();
 });
 test('offline fallback is harmless and never opens a socket without verified token',async()=>{
@@ -103,6 +103,8 @@ test('backend migration has role-scoped private topics and no sensitive record p
  assert.doesNotMatch(sql,/realtime[.]broadcast_changes/);
  assert.doesNotMatch(sql,/create policy .*for insert/i);
  assert.match(client,/phx_join/);
+ assert.match(client,/lts:v2:session:/);
+ assert.doesNotMatch(client,/lts:v1:/);
  assert.match(client,/access_token/);
  assert.match(client,/setInterval/);
  assert.match(client,/schedule\(\)/);
@@ -116,3 +118,9 @@ test('backend migration has role-scoped private topics and no sensitive record p
  for(const path of ['index.html','shell.html','amministratore/index.html'])
   assert.match(read(path),/wss:\/\/otrqynkscpbeyuvdlgpg[.]supabase[.]co/);
 });
+
+ test('F49 missing session ID fails closed before opening socket',async()=>{
+ SocketMock.connections=[];
+ const bridge=createLtsRealtime({config,authenticate:async()=>({...identity,sessionId:null}),onChange:()=>{},SocketImpl:SocketMock,visible:()=>true,online:()=>true});
+ bridge.start();await wait(5);assert.equal(SocketMock.connections.length,0);bridge.stop();
+ });

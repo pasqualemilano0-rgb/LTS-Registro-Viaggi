@@ -16,9 +16,10 @@ const make=()=>{
 test('admin trip edit preserves the original price snapshot and create date',()=>{
  const original=make();
  const {state,before,after}=applyAdminRecordEdit(original,{
-  action:'update',category:'trip',id:'t1',patch:{note:'Nota revisionata',container:'EFGH1234567'}
+  action:'update',category:'trip',id:'t1',patch:{adminNote:'Nota revisionata',container:'EFGH1234567'}
  },now);
- assert.equal(after.note,'NOTA REVISIONATA');
+ assert.equal(after.adminNote,'NOTA REVISIONATA');
+ assert.equal(after.note,'NOTA ORIGINALE');
  assert.equal(after.fareCents,5000);
  assert.equal(after.createdAt,original.trips[0].createdAt);
  assert.equal(after.updatedAt,now);
@@ -78,7 +79,7 @@ test('extra service rate can be edited independently',()=>{
 test('a new trip can be entered by admin with a known fare snapshot',()=>{
  const {state}=applyAdminRecordEdit(make(),{action:'create',category:'trip',id:'t2',
   patch:{date:'2026-11-07',client:'BETA',city:'BARI',container:'EFGH9876543',
-  note:'INSERITO DA ADMIN',services:[],fareCents:15000}},now);
+  adminNote:'INSERITO DA ADMIN',services:[],fareCents:15000}},now);
  assert.equal(state.trips.length,2);
  assert.equal(state.trips.find(x=>x.id==='t2').fareCents,15000);
 });
@@ -88,7 +89,7 @@ test('unknown edits and duplicate ID are rejected, never silently merged',()=>{
  assert.throws(()=>applyAdminRecordEdit(make(),{action:'create',category:'trip',
   id:'t1',patch:{date:'2026-11-07'}}),/già presente/);
  assert.throws(()=>applyAdminRecordEdit(make(),{action:'update',category:'trip',
-  id:'nonexistent',patch:{note:'TEST'}}),/non trovato/);
+  id:'nonexistent',patch:{adminNote:'TEST'}}),/non trovato/);
  assert.throws(()=>applyAdminRecordEdit(make(),{action:'update',category:'trip',
   id:'t1',patch:{fareCents:-1}}),/centesimi/);
 });
@@ -136,7 +137,7 @@ test('without explicit confirmation customer edit leaves every historical trip u
 test('opt-in cannot be supplied for other edit categories or malformed flags',()=>{
  const current=make();
  assert.throws(()=>applyAdminRecordEdit(current,{action:'update',category:'trip',id:'t1',
-  patch:{note:'TEST'},updateLinkedTrips:true},now),/non consentito/);
+  patch:{adminNote:'TEST'},updateLinkedTrips:true},now),/non consentito/);
  assert.throws(()=>applyAdminRecordEdit(current,{action:'update',category:'customer',id:'c1',
   patch:{name:'TEST'},updateLinkedTrips:'true'},now),/non consentito/);
  assert.equal(linkedCustomerTripCount(current,{name:'ACME',city:''}),0);

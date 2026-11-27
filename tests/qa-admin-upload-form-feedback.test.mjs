@@ -74,7 +74,7 @@ test('Android page submits to custom validation and shows feedback next to the b
  assert.match(html,/id="upload-feedback"[^>]*role="status"[^>]*aria-live="polite"/);
  assert.match(html,/id="file-selection"[^>]*aria-live="polite"/);
  assert.match(html,/id="upload-submit"/);
- assert.match(html,/admin-documents\.mjs\?v=20261123-android-controls-v1/);
+ assert.match(html,/admin-documents\.mjs\?v=20261127-unified-login-qa-v1/);
  assert.match(html,/documents\.css\?v=20261123-admin-upload-feedback-v1/);
  assert.match(css,/\.admin-payroll-page \.admin-upload-feedback\{/);
  assert.match(css,/\.admin-payroll-page \.admin-upload-feedback\.error\{/);

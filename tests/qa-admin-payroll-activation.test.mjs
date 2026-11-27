@@ -13,11 +13,11 @@ const migration=read('supabase/migrations/20261118_private_payroll_documents.sql
 test('the control-center administrative link uses the secured document workspace',()=>{
  assert.match(selector,/id="select-area-amministrativa"[^>]*href="\.\/buste-paga\/"/);
  assert.match(selector,/Cedolini, CU, pubblicazione PDF e archivio riservato/);
- assert.match(selector,/entrambe le aree richiedono l’accesso amministratore con MFA/);
+ assert.match(selector,/Accesso amministratore e MFA già verificati/);
  assert.match(login,/id="login-form"/);
  assert.match(login,/id="mfa-form"/);
  assert.match(login,/id="workspace" hidden/);
- assert.match(login,/admin-documents\.mjs\?v=20261123-android-controls-v1/);
+ assert.match(login,/admin-documents\.mjs\?v=20261127-unified-login-qa-v1/);
  assert.match(login,/href="\.\/anteprima\/"/);
  assert.match(preview,/script-src 'none'/);
  assert.match(preview,/connect-src 'none'/);
@@ -81,7 +81,8 @@ test('audit and immutable first-access evidence stay server-managed',()=>{
 
 test('admin frontend never makes unauthenticated reads of staff or PDFs',()=>{
  assert.match(admin,/account\.verifySession\(\)/);
- assert.match(admin,/account\.verifyAdminTotp/);
+ assert.match(read('amministratore/admin.mjs'),/await account\.verifyAdminTotp\(code,selected\)/);
+ assert.doesNotMatch(admin,/account\.verifyAdminTotp/);
  assert.match(admin,/if\(!account\.isVerified\(\)\|\|account\.getRole\(\)!=='admin'\)/);
  assert.match(admin,/^protect\(\);/m);
  assert.match(login,/id="upload-form"/);

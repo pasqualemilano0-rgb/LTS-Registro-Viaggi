@@ -34,7 +34,7 @@ test('driver worker never substitutes the register for admin, legacy admin or do
  const hits=[];
  const worker={location:{origin},addEventListener(type,fn){if(type==='fetch')handler=fn;}};
  vm.runInNewContext(read('sw.js'),{self:worker,URL,Response,fetch:async()=>{throw Error('offline')},
-  caches:{open:async name=>{assert.match(name,/20261127-cnt-v2$/);return {match:async path=>{hits.push(path);return new Response(path)}}}}});
+  caches:{open:async name=>{assert.match(name,/20261127-cnt-v3-payroll-badge-v2$/);return {match:async path=>{hits.push(path);return new Response(path)}}}}});
  function request(path){
   let response;
   handler({request:{url:origin+BASE+path,method:'GET',mode:'navigate'},respondWith(v){response=v}});

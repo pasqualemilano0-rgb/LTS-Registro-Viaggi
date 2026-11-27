@@ -66,7 +66,7 @@ try{
  });
  await page.waitForFunction(()=>navigator.serviceWorker.controller!==null,null,{timeout:45000});
  const oldCache='lts-iphone-pages-0aa8d087d02b-20261126-admin-notes-visible-v1';
- const newCache='lts-iphone-pages-0aa8d087d02b-20261127-cnt-v2';
+ const newCache='lts-iphone-pages-0aa8d087d02b-20261127-cnt-v3-payroll-badge-v2';
  const synthetic={owner:'account:qa-migration',pending:true,state:{trips:[{id:'qa-trip',note:'Synthetic offline trip'}],customers:[{id:'qa-customer'}]}};
  await page.evaluate(async record=>{
   const req=indexedDB.open('lts-registro-iphone-v1',1);
