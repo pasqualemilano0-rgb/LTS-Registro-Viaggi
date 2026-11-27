@@ -1,7 +1,7 @@
 {
   "source": "https://www.salernocontainerterminal.com/ca/an/vessel_schedule.php",
   "source_updated_at": null,
-  "acquired_at": "2026-11-27T10:00:16.237Z",
+  "acquired_at": "2026-11-27T10:30:16.190Z",
   "rows": [
     {
       "vessel": "CONTSHIP ERA",
@@ -148,15 +148,6 @@
       "status": "PENDING"
     },
     {
-      "vessel": "MSC BARBADOS",
-      "voyage": "CD647A",
-      "eta": "01/12/2026 00:00",
-      "closing": "30/11/2026 17:00",
-      "acceptance_dry": "CARGO ACCEPTED",
-      "acceptance_reef": "CARGO ACCEPTED",
-      "status": "PENDING"
-    },
-    {
       "vessel": "STENA SHIPPER",
       "voyage": "011226E",
       "eta": "01/12/2026 00:00",
@@ -202,8 +193,8 @@
       "status": "PENDING"
     },
     {
-      "vessel": "ARGENTINIAN",
-      "voyage": "0HWLGE1MA",
+      "vessel": "ARICA EXPRESS",
+      "voyage": "28W49",
       "eta": "02/12/2026 00:00",
       "closing": "01/12/2026 17:00",
       "acceptance_dry": "CARGO ACCEPTED",
@@ -220,8 +211,8 @@
       "status": "PENDING"
     },
     {
-      "vessel": "ARICA EXPRESS",
-      "voyage": "28W49",
+      "vessel": "ARGENTINIAN",
+      "voyage": "0HWLGE1MA",
       "eta": "02/12/2026 00:00",
       "closing": "01/12/2026 17:00",
       "acceptance_dry": "CARGO ACCEPTED",
@@ -283,6 +274,6 @@
       "status": "PENDING"
     }
   ],
-  "updated_at": "2026-11-27T10:00:16.237Z",
-  "data_changed_at": "2026-11-26T23:00:16.158Z"
+  "updated_at": "2026-11-27T10:30:16.190Z",
+  "data_changed_at": "2026-11-27T10:30:16.190Z"
 }
