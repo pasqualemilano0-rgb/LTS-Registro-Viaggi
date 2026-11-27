@@ -7,26 +7,27 @@
 <meta name="theme-color" content="#006f89">
 <link rel="icon" href="../../assets/icon-192.png">
 <link rel="stylesheet" href="../../documenti/documents.css?v=20261123-admin-upload-feedback-v1">
-<script type="module" src="../../documenti/admin-documents.mjs?v=20261123-android-controls-v1"></script>
+<script type="module" src="../../documenti/admin-documents.mjs?v=20261123-unified-login-v1"></script>
 <title>LTS · Accesso amministrazione documenti</title></head>
 <body class="admin-payroll-page">
-<header class="lts-header"><a class="lts-brand" href="../"><img src="../../assets/lts-logo.png" alt="LTS" width="52" height="46"><span>Gestione documenti<small>Accesso amministrativo separato</small></span></a><a class="back" href="../">Dashboard LTS</a></header>
+<header class="lts-header"><a class="lts-brand" href="../"><img src="../../assets/lts-logo.png" alt="LTS" width="52" height="46"><span>Gestione documenti<small>Sessione amministratore LTS</small></span></a><a class="back" href="../">Torna alle aree</a></header>
 <main class="shell">
 <div id="notice" class="notice" role="status" aria-live="polite" hidden></div>
 <section id="login" class="login-card">
- <p class="eyebrow">AREA AMMINISTRATIVA RISERVATA</p><h1>Accesso documenti</h1>
- <p>Accedi con l’account amministratore LTS. La verifica MFA è obbligatoria per gestire documenti reali.</p>
+ <p class="eyebrow">AREA AMMINISTRATIVA RISERVATA</p><h1>Accesso dal Control Center</h1>
+ <p>Accedi una sola volta dal Control Center con account amministratore e MFA. Qui verrà riutilizzata la stessa sessione verificata.</p>
  <p class="hint"><a href="./anteprima/">Visualizza soltanto l’anteprima grafica senza credenziali</a></p>
- <form id="login-form" class="fields">
+ <a class="primary link-button" href="../">Vai all’accesso unico LTS</a>
+  <form id="login-form" class="fields" hidden aria-hidden="true">
   <label>Numero di cellulare<input name="phone" type="tel" autocomplete="username" inputmode="tel" placeholder="3XXXXXXXXX" required maxlength="40"></label>
   <label>Password<input name="password" type="password" autocomplete="current-password" minlength="12" maxlength="128" required></label>
   <button type="submit" class="primary">Accedi</button>
  </form>
- <button type="button" id="clear-session" class="text-button">Esci e cambia account</button>
+ <button type="button" id="clear-session" class="text-button" hidden>Esci e cambia account</button>
 </section>
 <section id="mfa" class="login-card" hidden>
  <p class="eyebrow">SECONDO FATTORE</p><h1>Verifica amministratore</h1>
- <p>Inserisci il codice dell'Authenticator registrato su LTS.</p>
+ <p>Se la verifica MFA non è valida, torna al Control Center per completare l’accesso.</p>
  <form id="mfa-form" class="fields"><label>Authenticator<select id="mfa-factor"></select></label>
  <label>Codice temporaneo<input id="mfa-code" type="text" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code" required></label>
  <button type="submit" class="primary">Conferma verifica</button></form>

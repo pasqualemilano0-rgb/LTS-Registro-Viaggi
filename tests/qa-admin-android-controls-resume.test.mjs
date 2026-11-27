@@ -6,7 +6,7 @@ const src=readFileSync(new URL('../documenti/admin-documents.mjs',import.meta.ur
 const page=readFileSync(new URL('../amministratore/buste-paga/index.html',import.meta.url),'utf8');
 const viewSource=src.slice(src.indexOf('function view(name){'),src.indexOf('function node(',src.indexOf('function view(name){')));
 const resumeSource=src.slice(src.indexOf('function restoreWorkspaceInteraction(){'),
- src.indexOf('// Always display an independent payroll login',src.indexOf('function restoreWorkspaceInteraction(){')));
+ src.indexOf('// One shared admin session for Logistics and Documents',src.indexOf('function restoreWorkspaceInteraction(){')));
 assert.ok(viewSource.includes('function view(name)'));
 assert.ok(resumeSource.includes("window.addEventListener('focus'"));
 
@@ -91,11 +91,12 @@ test('failed authorization hides workspace instead of unlocking it',()=>{
 });
 
 test('page refresh loads patched module and leaves upload validation and MFA in place',()=>{
- assert.match(page,/admin-documents\.mjs\?v=20261123-android-controls-v1/);
+ assert.match(page,/admin-documents\.mjs\?v=20261123-unified-login-v1/);
  assert.match(page,/id="category"/);
  assert.match(page,/id="month"/);
  assert.match(page,/id="files"/);
- assert.match(src,/account\.verifyAdminTotp\(/);
+ assert.match(src,/const session=await account\.verifySession\(\)/);
+ assert.doesNotMatch(src,/account\.verifyAdminTotp\(/);
  assert.match(src,/await api\.upload\(/);
  assert.match(src,/validateUploadFields\(values\)/);
  assert.match(src,/if\(!recipient\?\.documents_enabled\)/);
