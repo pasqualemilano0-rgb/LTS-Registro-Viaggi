@@ -1,7 +1,7 @@
 {
   "source": "https://www.salernocontainerterminal.com/ca/an/vessel_schedule.php",
   "source_updated_at": null,
-  "acquired_at": "2026-11-27T00:30:16.157Z",
+  "acquired_at": "2026-11-27T01:00:16.242Z",
   "rows": [
     {
       "vessel": "CONTSHIP ERA",
@@ -283,6 +283,6 @@
       "status": "PENDING"
     }
   ],
-  "updated_at": "2026-11-27T00:30:16.157Z",
+  "updated_at": "2026-11-27T01:00:16.242Z",
   "data_changed_at": "2026-11-26T23:00:16.158Z"
 }
