@@ -1,7 +1,7 @@
 {
   "source": "https://www.salernocontainerterminal.com/ca/an/vessel_schedule.php",
   "source_updated_at": null,
-  "acquired_at": "2026-11-27T15:00:16.214Z",
+  "acquired_at": "2026-11-27T15:30:16.199Z",
   "rows": [
     {
       "vessel": "CONTSHIP ERA",
@@ -58,6 +58,24 @@
       "status": "PENDING"
     },
     {
+      "vessel": "VALUE",
+      "voyage": "MG648W",
+      "eta": "29/11/2026 00:00",
+      "closing": "28/11/2026 12:00",
+      "acceptance_dry": "CARGO ACCEPTED",
+      "acceptance_reef": "CARGO ACCEPTED",
+      "status": "PENDING"
+    },
+    {
+      "vessel": "ELYSSA",
+      "voyage": "291126E",
+      "eta": "29/11/2026 00:00",
+      "closing": "28/11/2026 10:00",
+      "acceptance_dry": "CARGO ACCEPTED",
+      "acceptance_reef": "CARGO ACCEPTED",
+      "status": "PENDING"
+    },
+    {
       "vessel": "RMS ROSE",
       "voyage": "ROS1026E",
       "eta": "29/11/2026 00:00",
@@ -76,24 +94,6 @@
       "status": "PENDING"
     },
     {
-      "vessel": "ELYSSA",
-      "voyage": "291126E",
-      "eta": "29/11/2026 00:00",
-      "closing": "28/11/2026 10:00",
-      "acceptance_dry": "CARGO ACCEPTED",
-      "acceptance_reef": "CARGO ACCEPTED",
-      "status": "PENDING"
-    },
-    {
-      "vessel": "VALUE",
-      "voyage": "MG648W",
-      "eta": "29/11/2026 00:00",
-      "closing": "28/11/2026 12:00",
-      "acceptance_dry": "CARGO ACCEPTED",
-      "acceptance_reef": "CARGO ACCEPTED",
-      "status": "PENDING"
-    },
-    {
       "vessel": "ALTAMIRA EXPRESS",
       "voyage": "647W",
       "eta": "29/11/2026 11:00",
@@ -103,10 +103,10 @@
       "status": "PENDING"
     },
     {
-      "vessel": "VENTO DI MAESTRALE",
-      "voyage": "536",
+      "vessel": "LIDER TRABZON",
+      "voyage": "1126",
       "eta": "30/11/2026 00:00",
-      "closing": "28/11/2026 12:00",
+      "closing": "30/11/2026 12:00",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
@@ -121,8 +121,8 @@
       "status": "PENDING"
     },
     {
-      "vessel": "GRANDE TOGO",
-      "voyage": "GRT0726",
+      "vessel": "VENTO DI MAESTRALE",
+      "voyage": "536",
       "eta": "30/11/2026 00:00",
       "closing": "28/11/2026 12:00",
       "acceptance_dry": "CARGO ACCEPTED",
@@ -130,10 +130,10 @@
       "status": "PENDING"
     },
     {
-      "vessel": "LIDER TRABZON",
-      "voyage": "1126",
+      "vessel": "GRANDE TOGO",
+      "voyage": "GRT0726",
       "eta": "30/11/2026 00:00",
-      "closing": "30/11/2026 12:00",
+      "closing": "28/11/2026 12:00",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
@@ -157,6 +157,15 @@
       "status": "PENDING"
     },
     {
+      "vessel": "GRANDE SVEZIA",
+      "voyage": "GSV0826S",
+      "eta": "01/12/2026 00:00",
+      "closing": "30/11/2026 17:00",
+      "acceptance_dry": "CARGO ACCEPTED",
+      "acceptance_reef": "CARGO ACCEPTED",
+      "status": "PENDING"
+    },
+    {
       "vessel": "STENA SHIPPER",
       "voyage": "011226E",
       "eta": "01/12/2026 00:00",
@@ -170,6 +179,15 @@
       "voyage": "CD648A",
       "eta": "01/12/2026 00:00",
       "closing": "28/11/2026 10:00",
+      "acceptance_dry": "CARGO ACCEPTED",
+      "acceptance_reef": "CARGO ACCEPTED",
+      "status": "PENDING"
+    },
+    {
+      "vessel": "MSC ATHOS",
+      "voyage": "MG649W",
+      "eta": "01/12/2026 00:00",
+      "closing": "30/11/2026 17:00",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
@@ -202,8 +220,8 @@
       "status": "PENDING"
     },
     {
-      "vessel": "ARICA EXPRESS",
-      "voyage": "28W49",
+      "vessel": "GREEN OCEAN",
+      "voyage": "649W",
       "eta": "02/12/2026 00:00",
       "closing": "01/12/2026 17:00",
       "acceptance_dry": "CARGO ACCEPTED",
@@ -211,8 +229,8 @@
       "status": "PENDING"
     },
     {
-      "vessel": "GREEN OCEAN",
-      "voyage": "649W",
+      "vessel": "ARICA EXPRESS",
+      "voyage": "28W49",
       "eta": "02/12/2026 00:00",
       "closing": "01/12/2026 17:00",
       "acceptance_dry": "CARGO ACCEPTED",
@@ -292,6 +310,6 @@
       "status": "PENDING"
     }
   ],
-  "updated_at": "2026-11-27T15:00:16.214Z",
-  "data_changed_at": "2026-11-27T14:45:16.241Z"
+  "updated_at": "2026-11-27T15:30:16.199Z",
+  "data_changed_at": "2026-11-27T15:30:16.199Z"
 }
