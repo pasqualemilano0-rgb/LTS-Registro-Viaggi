@@ -25,9 +25,9 @@ test('one administrator login is shown BEFORE Control Center, never alongside it
  assert.match(entry,/id="admin-area-back"[^>]*hidden/);
  assert.ok(entry.indexOf('id="admin-area-choice"')<entry.indexOf('id="login-form"'),
   'HTML ordering must not be used as authorization: the choice is hidden by default');
- assert.match(entry,/admin\.mjs\?v=20261123-unified-login-v1/);
- assert.match(entry,/admin-area-choice\.mjs\?v=20261123-unified-login-v1/);
- assert.match(entry,/admin-area-choice\.css\?v=20261123-unified-login-v1/);
+ assert.match(entry,/admin\.mjs\?v=20261127-unified-login-v1/);
+ assert.match(entry,/admin-area-choice\.mjs\?v=20261127-unified-login-v1/);
+ assert.match(entry,/admin-area-choice\.css\?v=20261127-unified-login-v1/);
 });
 
 test('verified MFA session reveals the chooser, with no second password prompt',()=>{

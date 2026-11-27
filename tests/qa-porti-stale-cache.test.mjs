@@ -29,7 +29,7 @@ function workerHarness(){
   fetches.push({path,cache:options?.cache||null});
   if(!online)throw new TypeError('Network offline');
   if(path===rulesPath)return new Response(newCode,{status:200});
-  if(path===pagePath)return new Response('<script type="module" src="../porti-access.mjs?v=20261110-porti-freshcode-v2"></script>',{status:200});
+  if(path===pagePath)return new Response('<script type="module" src="../porti-access.mjs?v=20261127-cnt-v2"></script>',{status:200});
   return new Response('OTHER_FILE',{status:200});
  };
  runInNewContext(worker,{self,URL,Response,caches:{
@@ -68,7 +68,7 @@ test('Porti iframe HTML ignores a stale HTTP document cache while online',async(
  h.cacheEntries.set(pagePath,new Response('<script src="old-porti.js"></script>'));
  const fresh=await h.load(pagePath+'?v=20261110-porti-freshcode-v2','navigate');
  assert.equal(fresh.status,200);
- assert.match(fresh.body,/porti-freshcode-v2/);
+ assert.match(fresh.body,/cnt-v2/);
  assert.deepEqual(h.fetches.map(x=>x.cache),['reload']);
  h.setOnline(false);
  const cached=await h.load(pagePath+'?v=20261110-porti-freshcode-v2','navigate');
@@ -79,16 +79,23 @@ test('published import chain is fully versioned and displays consistent list/det
  const parent=read('app.mjs'),page=read('porti/index.html');
  const gate=read('porti-access.mjs'),port=read('porti/app.js');
  const rules=read('porti/conateco_rules.mjs');
- assert.match(parent,/porti\/index\.html\?v=20261110-porti-freshcode-v2/);
- assert.match(page,/porti-access\.mjs\?v=20261110-porti-freshcode-v2/);
- assert.match(gate,/porti\/app\.js\?v=20261110-porti-freshcode-v2/);
+ assert.match(parent,/porti\/index\.html\?v=20261127-cnt-v2/);
+ assert.match(page,/porti-access\.mjs\?v=20261127-cnt-v2/);
+ assert.match(gate,/porti\/app\.js\?v=20261127-cnt-v2/);
  assert.match(port,/conateco_rules\.mjs\?v=20261110-porti-freshcode-v2/);
  assert.match(rules,/kind:'good',label:'ACCETTA CARICO'/);
  assert.doesNotMatch(rules,/NAVE IN ACCETTAZIONE/);
  assert.match(port,/side\.append\(badge\(verdict\.label,verdict\.kind\)/);
- assert.match(port,/results\.append\(deliveryPanel[\s\S]*?badge\(verdict\.label,verdict\.kind\)/);
- assert.match(worker,/20261123-profile-prefetch-v1/);
+ assert.match(port,/results\.append\(deliveryPanel\(conatecoForecastDelivery\(row,feed\)\)\)/);
+ assert.match(worker,/20261127-cnt-v2/);
  assert.match(worker,/const isPortCode = isPort &&/);
  assert.match(worker,/NETWORK_FIRST_CODE\.has\(url\.pathname\) \|\| isPortCode/);
  assert.match(worker,/if \(isPort && \(url\.pathname\.startsWith\(PORT_BASE \+ 'data\/'\)/);
+});
+
+test('CNT release versions agree across all entry points and worker cache',()=>{
+ for(const path of ['index.html','viaggi/index.html','shell.html','app.mjs','porti/index.html','porti-access.mjs','porti/app.js','sw.js']) assert.match(read(path),/20261127-cnt-v2/,path);
+ assert.doesNotMatch(worker,/indexedDB\.deleteDatabase|localStorage\.clear/);
+ assert.match(worker,/name\.startsWith\(PREFIX\) && name !== CACHE/);
+ assert.match(worker,/\(await caches\.open\(CACHE\)\)\.match\(request/);
 });

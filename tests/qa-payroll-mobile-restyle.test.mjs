@@ -27,7 +27,7 @@ test('mobile layout has one page title, compact navigation and original controls
  assert.match(css,/grid-template-columns:44px minmax\(0,1fr\)/);
  assert.match(css,/padding:10px 40px 10px 13px/);
  assert.match(css,/\.driver-documents-page \.filters select\{\s*display:block;width:100%;min-width:0;max-width:none/);
- assert.match(html,/driver-documents\.mjs\?v=20261123-mobile-v1/);
+ assert.match(html,/driver-documents\.mjs\?v=20261124-pwa-isolation-v1/);
 });
 
 test('the cedolino disclosure is preserved and only visible in its own category',()=>{
@@ -56,7 +56,7 @@ test('scope restyle to the driver page, keep security and profile-return navigat
  assert.match(html,/data-back-to-register/);
  assert.match(driver,/await account\.verifySession\(\)/);
  assert.match(driver,/account\.getRole\(\)!=='driver'/);
- assert.match(driver,/if\(openedFromProfile&&window\.history\.length>1\)/);
+ assert.match(driver,/if\(openedFromProfile&&window\.history\.length>1&&previousEntryIsRegister\(\)\)/);
  assert.match(css,/@media\(max-width:620px\)/);
  assert.match(css,/\.driver-documents-page \.category-nav/);
  assert.match(css,/\.driver-documents-page \.archive-toolbar/);

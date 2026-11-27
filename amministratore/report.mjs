@@ -149,7 +149,7 @@ function tableRow(trip){
  const fields=[
   ['Seconda presa',trip.secondClient?(trip.secondClient+' · '+trip.secondCity):'Non presente'],
   ['Servizi',trip.services?.length?trip.services.join(', '):'Nessuno'],
-  ['Nota',trip.note||'Nessuna'],
+  ['Nota amministrativa',trip.adminNote||'Nessuna'],
   ['Ultima modifica',trip.updatedAt?new Date(trip.updatedAt).toLocaleString('it-IT'):'—'],
  ];
  for(const [k,v] of fields){
@@ -434,7 +434,12 @@ export function setupReport(account){
   }
   return false;
  }
- for(const [view,id] of views)el(id).addEventListener('click',()=>open(view));
+ // Re-tapping the active tab must not reset scroll, drafts or reload its data.
+ for(const [view,id] of views)el(id).addEventListener('click',()=>{
+  const dash=el('dashboard');
+  if(dash.dataset.view===view&&(view!=='overview'||!dash.dataset.homeSection))return;
+  open(view);
+ });
  for(const button of document.querySelectorAll('[data-open-private-customers]')){
   button.addEventListener('click',()=>open('records',null,'customer'));
  }
@@ -483,7 +488,11 @@ export function setupReport(account){
   requestAnimationFrame(()=>{el('customer-overview').scrollIntoView({block:'start',behavior:'auto'});el('customer-overview-title').setAttribute('tabindex','-1');el('customer-overview-title').focus({preventScroll:true});});
   return true;
  }
- el('customers-tab').addEventListener('click',openCustomers);
+ el('customers-tab').addEventListener('click',()=>{
+  const dash=el('dashboard');
+  if(dash.dataset.view==='overview'&&dash.dataset.homeSection==='customers')return;
+  openCustomers();
+ });
  return {reset,open,refreshActive,setReportFilters,openCustomers,
   peek(){return page?{summary:page.summary,month:page.month,driverId:pageDriverId,reportedAt:page.reportedAt,stale:reportStale,
    incompleteArchives:page.incompleteArchives,trips:rows,chart:page.chart,drivers:page.drivers}:null;},

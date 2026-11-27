@@ -590,7 +590,7 @@ export function setupDriverRecords(account){
   if(category==='trip')return [item.date,item.client+' · '+item.city,
    'Container: '+item.container+' · Trasferta: '+money(item.fareCents),
    item.secondClient?'Seconda presa: '+item.secondClient+' · '+item.secondCity:'',
-   item.note?'Note: '+item.note:''].filter(Boolean);
+   item.adminNote?'Nota amministrativa: '+item.adminNote:''].filter(Boolean);
   if(category==='customer')return [item.name,item.city||'Località non indicata',
    item.address||'Indirizzo non disponibile',item.phone?'Telefono: '+item.phone:''].filter(Boolean);
   if(category==='tariff')return [item.client,item.city,'Importo personale (storico): '+money(item.cents)];
@@ -633,7 +633,7 @@ export function setupDriverRecords(account){
    }
    details.append(services);
   }else row('Extra','Nessuno');
-  if(item.note)details.append(make('p','records-trip-note','Note: '+item.note));
+  if(item.adminNote)details.append(make('p','records-trip-note','Nota amministrativa: '+item.adminNote));
   body.append(details);
   const total=make('div','records-trip-total');
   total.append(make('span','',amounts.missingTariff?'Totale parziale':'Totale'),make('strong','',money(amounts.totalCents)));
@@ -860,7 +860,7 @@ export function setupDriverRecords(account){
     row.append(label,rate);section.append(row);serviceBoxes.push({key:srv.key,box,rate});
    }
    form.append(section);
-   field(form,'Note del viaggio','note',values.note||'',{kind:'textarea',maxLength:2000});
+   field(form,'Nota per l’amministrazione','adminNote',values.adminNote||'',{kind:'textarea',maxLength:2000});
   }else if(kind==='customer'){
    const name=field(form,'Nome cliente','name',values.name||'',{required:true,maxLength:500});
    const city=field(form,'Località','city',values.city||'',{maxLength:500});
@@ -925,7 +925,7 @@ export function setupDriverRecords(account){
    const patch={};
    try{
     if(kind==='trip'){
-     for(const field of ['date','client','city','container','secondClient','secondCity','note'])
+     for(const field of ['date','client','city','container','secondClient','secondCity','adminNote'])
       patch[field]=input(field).value;
      patch.fareCents=price(input('fareCents').value);
      patch.secondFareCents=price(input('secondFareCents').value);

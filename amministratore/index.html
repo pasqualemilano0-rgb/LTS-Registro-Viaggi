@@ -19,7 +19,7 @@
   <link rel="stylesheet" href="./dashboard-v6.css?v=20261104-mobile-v7">
   <link rel="stylesheet" href="./smart-console.css?v=20261108-smart-v2">
   <link rel="stylesheet" href="./customer-overview.css?v=20261107-manual-shared-v1">
-  <link rel="stylesheet" href="./company-rates.css?v=20261107-manual-shared-v1">
+  <link rel="stylesheet" href="./company-rates.css?v=20261124-maps-mobile-v1">
   <link rel="stylesheet" href="./driver-records.css?v=20261110-duplicate-guard-v2">
   <link rel="stylesheet" href="../visual-theme.css?v=20261108-rc3-v1">
   <link rel="stylesheet" href="./admin-login-refreshed.css?v=20261110-seamless-resume-v2">
@@ -27,12 +27,13 @@
   <link rel="stylesheet" href="./control-center-v10.css?v=20261110-maps-approval-v1">
   <link rel="stylesheet" href="./dashboard-unified-v11.css?v=20261110-rates-visibility-v2">
   <link rel="stylesheet" href="./control-center-home.css?v=20261111-control-center-v1">
-  <link rel="stylesheet" href="./control-center-integration.css?v=20261111-control-center-v1">
-  <link rel="stylesheet" href="./admin-area-choice.css?v=20261123-unified-login-v1">
-  <script type="module" src="./admin.mjs?v=20261123-unified-login-v1"></script>
-  <script type="module" src="./admin-area-choice.mjs?v=20261123-unified-login-v1"></script>
+  <link rel="stylesheet" href="./control-center-integration.css?v=20261124-dashboard-flow-v1">
+  <link rel="stylesheet" href="./admin-area-choice.css?v=20261127-unified-login-v1">
+  <link rel="stylesheet" href="./dashboard-refresh.css?v=20261124-admin-refresh-v1">
+  <script type="module" src="./admin.mjs?v=20261127-unified-login-v1"></script>
+  <script type="module" src="./admin-area-choice.mjs?v=20261127-unified-login-v1"></script>
   <script type="module" src="./install-pwa.mjs?v=20261108-admin-pwa-v1"></script>
-  <script type="module" src="./dashboard-mobile-nav.mjs?v=20261111-control-center-v1"></script>
+  <script type="module" src="./dashboard-mobile-nav.mjs?v=20261124-dashboard-flow-v1"></script>
 </head>
 <body>
   <header class="topbar">
@@ -195,6 +196,7 @@
             <span aria-hidden="true">⌕</span> Cerca o agisci
           </button>
         </div>
+        <div id="workspace-related" class="workspace-related" role="group" aria-label="Azioni e sezioni collegate" hidden></div>
       </header>
       <div id="management-panel">
       <section id="security-console" class="surface console-security" aria-labelledby="security-title">
@@ -379,11 +381,15 @@
               </div>
               <div id="company-maps-preview" class="company-maps-preview" hidden>
                 <h3>Verifica la sede e imposta la tariffa</h3>
-                <dl class="company-maps-details">
-                  <div><dt>Cliente</dt><dd id="company-maps-name">—</dd></div>
-                  <div><dt>Località</dt><dd id="company-maps-city">—</dd></div>
-                  <div><dt>Indirizzo</dt><dd id="company-maps-address">—</dd></div>
-                </dl>
+                <label for="company-maps-name">Cliente
+                  <textarea id="company-maps-name" name="customerName" rows="2" maxlength="500" required placeholder="Nome cliente"></textarea>
+                </label>
+                <label for="company-maps-city">Località
+                  <textarea id="company-maps-city" name="customerCity" rows="2" maxlength="100" required placeholder="Comune"></textarea>
+                </label>
+                <label for="company-maps-address">Indirizzo
+                  <textarea id="company-maps-address" name="customerAddress" rows="3" maxlength="1000" required placeholder="Via, numero civico, CAP"></textarea>
+                </label>
                 <p id="company-maps-warning" class="company-maps-notice"></p>
                 <p id="company-maps-duplicate" class="company-maps-notice"></p>
                 <label for="company-maps-amount">Tariffa aziendale (€)

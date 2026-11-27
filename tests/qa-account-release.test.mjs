@@ -109,7 +109,7 @@ test('offline worker activates new cache and precaches auth code without caching
 });
 test('HTML entry points are identical and use the new cache buster',()=>{
   assert.equal(html,shell);
-  assert.match(html,/app[.]css[?]v=20261123-payroll-private-v1/);
+  assert.match(html,/app[.]css[?]v=20261127-cnt-v2/);
   assert.match(html,/app[.]mjs[?]v=20\d{6}-[a-z0-9-]+-v\d+/);
   assert.match(html,/<script type="module"/);
 });
@@ -125,7 +125,7 @@ test('driver onboarding: admin-only controls, invite activation and guarded endp
   assert.ok(app.includes('function showDriverActivation('));
   assert.ok(app.includes("if(required&&store.usingAccount())body.append(button('Recupera vecchi viaggi'"));
   assert.ok(app.includes("dialog.close();showAccountLogin();"));
-  assert.ok(app.includes("accountAccess.getRole()==='admin'"));
+  assert.ok(app.includes("accountAccess.getRole()!=='admin'"));
   assert.ok(app.includes('activateDriverInvitation'));
   assert.ok(auth.includes('function manageDrivers('));
   assert.ok(auth.includes('function activateDriverInvitation('));
@@ -316,7 +316,7 @@ test('LTS Porti fallback reads LTS public snapshots, not the old Booking reposit
  const lts='https://raw.githubusercontent.com/pasqualemilano0-rgb/LTS-Registro-Viaggi/main/porti/data/';
  assert.equal(port.split(lts).length-1,3);
  assert.ok(!port.includes('raw.githubusercontent.com/pasqualemilano0-rgb/container-booking-web-/'));
- assert.match(index,/porti-access[.]mjs[?]v=20261110-porti-freshcode-v2/);
+ assert.match(index,/porti-access[.]mjs[?]v=20261127-cnt-v2/);
  const files=new Map(provenance.files.map(item=>[item.path,item]));
  assert.equal(files.get('app.js').sha256,'e13b15529d8cee5ba3bc330c1748b49492beb799dae818a523fa63ade66d4095');
  assert.equal(files.get('index.html').sha256,'e214deb437467b2e43ed62f39dcfff8e40008bb8c10116dd092ec3927a058d98');
@@ -353,7 +353,7 @@ test('dedicated admin console loads only verified administrative transport',asyn
  const css=readFileSync(new URL('../amministratore/admin.css',import.meta.url),'utf8');
  const model=await import('../amministratore/model.mjs');
  assert.match(adminHtml,/Content-Security-Policy/);
- assert.match(adminHtml,/src="\.\/admin[.]mjs\?v=20261123-unified-login-v1"/);
+ assert.match(adminHtml,/src="\.\/admin[.]mjs\?v=20261127-unified-login-v1"/);
  assert.match(adminJs,/import \* as account from '\.\.\/account-access[.]mjs\?v=20261107-realtime-v1'/);
  assert.match(adminJs,/await account[.]verifySession\(\)/);
  assert.match(adminJs,/account[.]getRole\(\)!=='admin'/);
@@ -363,7 +363,7 @@ test('dedicated admin console loads only verified administrative transport',asyn
  assert.doesNotMatch(adminJs,/archiveRequest\(|deleteUser\(|innerHTML|localStorage|service_role/i);
  assert.ok(css.includes('@media(max-width:630px)'));
  assert.deepEqual(model.driverSummary([{status:'active'},{status:'disabled'}]),{total:2,active:1,blocked:1,pending:0});
- assert.ok(app.includes("new URL('amministratore/',import.meta.url).href"));
+ assert.ok(!app.includes("new URL('amministratore/',import.meta.url).href"));
 });
 
 test('driver remembered login uses AES-GCM vault and online authorization on restart',()=>{
@@ -452,7 +452,7 @@ test('TOTP admin flow uses verified backend session and never exposes secret in 
  assert.match(html,/id="mfa-warning"/);
  assert.match(html,/pattern="\[0-9\]\{6\}"/);
  assert.match(html,/img-src 'self' data:/);
- assert.match(html,/admin\.mjs\?v=20261123-unified-login-v1/);
+ assert.match(html,/admin\.mjs\?v=20261127-unified-login-v1/);
  assert.match(html,/admin\.css\?v=20261109-alpha-v1/);
  assert.match(admin,/account\.enrollAdminTotp/);
  assert.match(admin,/account\.verifyAdminTotp/);
@@ -473,7 +473,7 @@ test('MFA enrollment requires the latest QR and a correctly synchronized device 
  assert.match(html,/Data e ora automatiche/);
  assert.match(html,/fuso orario automatico/);
  assert.match(html,/codice basato sull'ora/);
- assert.match(html,/admin[.]mjs[?]v=20261123-unified-login-v1/);
+ assert.match(html,/admin[.]mjs[?]v=20261127-unified-login-v1/);
 });
 
 test('Authenticator app switching preserves the existing enrollment instead of regenerating QR',()=>{
@@ -920,7 +920,7 @@ test('Porti keeps the booking and vessel programs, without the two removed notic
  const portal=read('porti/index.html'),ui=read('porti/driver-ui.mjs');
  const appCss=read('app.css'),gate=read('porti-access.mjs'),sw=read('sw.js');
  assert.match(app,/function renderPorti\(main\)/);
- assert.match(app,/porti\/index[.]html[?]v=20261110-porti-freshcode-v2/);
+ assert.match(app,/porti\/index[.]html[?]v=20261127-cnt-v2/);
  assert.doesNotMatch(app,/Stato dei programmi navi|porti-source-overview|describePortSource/);
  assert.doesNotMatch(appCss,/\.porti-source-overview/);
  assert.doesNotMatch(portal,/Consulta solo a veicolo fermo|class="driver-notice"/);
@@ -1010,6 +1010,6 @@ test('admin login and MFA confirmation reuse the just-verified server response',
  assert.match(admin,/Promise[.]allSettled\(\[loadDrivers\(\),/);
  assert.match(access,/const status=await verifySession\(\);[\s\S]*Only drivers get a durable device session/);
  assert.match(access,/saveSession\(result\);\s*const status=await verifySession\(\)/);
- assert.match(html,/admin[.]mjs\?v=20261123-unified-login-v1/);
+ assert.match(html,/admin[.]mjs\?v=20261127-unified-login-v1/);
  assert.doesNotMatch(admin,/sessionStorage|localStorage|innerHTML/);
 });

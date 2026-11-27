@@ -75,3 +75,31 @@ test('driver wiring: account-scoped IndexedDB scratchpad, visible sync and guard
  assert.match(worker,/shared\/trip-editor-safety[.]mjs/);
  assert.doesNotMatch(app,/localStorage[.]setItem\('trip-editor-v1:/);
 });
+
+test('administrative-only draft remains meaningful and survives recovery',()=>{
+ const draft={...base,adminNote:'Addebitare 2 ore',note:''};
+ assert.equal(tripDraftHasWork(draft,null,base.date),true);
+ const restored=restoreTripEditorSnapshot({version:TRIP_DRAFT_VERSION,draft},[]);
+ assert.equal(restored.draft.adminNote,'Addebitare 2 ore');
+ assert.equal(restored.draft.note,'');
+});
+test('administrative notes are distinct and visible in the trip card and editor',()=>{
+ const app=read('app.mjs'),css=read('app.css');
+ assert.ok(app.includes('noteOpen:focusNote||Boolean(trip.note||trip.adminNote)'));
+ assert.ok(app.includes("if(firstKey==='note'||firstKey==='adminNote')"));
+ assert.ok(app.includes("class:'trip-note-summary trip-admin-note-summary'"));
+ assert.ok(app.includes("el('span',{class:'trip-note-text'},trip.adminNote)"));
+ assert.ok(app.includes("'Inclusa nel PDF mensile'"));
+ assert.ok(css.includes('white-space:pre-wrap;overflow-wrap:anywhere'));
+});
+test('unconfirmed administrative note prevents success and draft deletion',()=>{
+ const app=read('app.mjs');
+ const start=app.indexOf('const persisted=await persist(next);');
+ const end=app.indexOf('await store.clearTripEditorDraft()',start);
+ assert.ok(start>=0&&end>start);
+ const guard=app.slice(start,end);
+ assert.ok(guard.includes("(savedTrip.adminNote??'')!==(trip.adminNote??'')"));
+ assert.ok(guard.includes('editingId=trip.id;editingBaseline=tripEditVersion(savedTrip||null)'));
+ assert.ok(guard.includes('keepEditorScratchpad();'));
+ assert.ok(guard.includes('throw new Error('));
+});

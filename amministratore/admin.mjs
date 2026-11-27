@@ -2,11 +2,11 @@ import * as account from '../account-access.mjs?v=20261107-realtime-v1';
 import realtimeConfig from '../runtime-config.mjs';
 import {createLtsRealtime} from '../realtime-client.mjs?v=20261107-roster-realtime-v1';
 import {STATUS_LABELS,driverSummary,filterDrivers,driverInitial} from './model.mjs?v=20261109-alpha-v1';
-import {setupReport} from './report.mjs?v=20261111-control-center-v1';
+import {setupReport} from './report.mjs?v=20261124-dashboard-flow-v1';
 import {mustRevalidateOnReturn} from '../shared/foreground-resume.mjs';
 import {setupSmartConsole} from './smart-console.mjs?v=20261111-control-center-v1';
 import {setupAdminStatus} from './admin-status.mjs';
-import {setupControlCenter} from './control-center-home.mjs?v=20261111-control-center-v1';
+import {setupControlCenter} from './control-center-home.mjs?v=20261124-dashboard-flow-v1';
 import {setupMapsApprovals} from './maps-approvals.mjs?v=20261111-control-center-v1';
 import {rememberPosition,readPosition,clearPosition} from './admin-position.mjs?v=20261110-audit-v1';
 

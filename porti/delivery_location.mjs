@@ -1,3 +1,4 @@
+import {evaluateConateco,isConatecoRecent} from './conateco_rules.mjs?v=20261110-porti-freshcode-v2';
 /** TFG location is ONLY the official "TERMINAL DI CONSEGNA" schedule column.
  * Never infer delivery location from booking text, notes, or acceptance flags. */
 const UNAVAILABLE='LUOGO DA VERIFICARE';
@@ -44,13 +45,12 @@ export function tfgScheduleDelivery(row,feed,now=new Date()){
  * booking authorization or proof that the depot is open right now. */
 export function conatecoDepotAcceptance(row,feed,now=new Date()){
   const flag=basic(row?.external_depot);
-  if(!row || row.source_conflict===true){
+  if(!row || row.source_conflict){
     return {kind:'unknown',value:'DA VERIFICARE',
       note:'Dati assenti o contraddittori. Controlla il Berth Forecast ufficiale.'};
   }
   const acquired=Date.parse(feed?.acquired_at);
-  const fresh=Number.isFinite(acquired)&&acquired<=now.getTime()+300000
-    &&now.getTime()-acquired<=45*60000;
+  const fresh=isConatecoRecent(feed,now);
   // A stale negative signal is NOT evidence that no external depot accepts cargo now.
   if(!fresh){
     return {kind:'stale',value:flag==='S'?'SEGNALATA · DA RICONFERMARE':
@@ -68,31 +68,19 @@ export function conatecoDepotAcceptance(row,feed,now=new Date()){
   return {kind:'unknown',value:flag===''?'NON INDICATA':'DA VERIFICARE',
     note:'Il programma non fornisce una segnalazione di accettazione ai depositi esterni interpretabile. Non dedurre INTERNO PORTO dalla sua assenza.'};
 }
-/** Requested rule of thumb, never a confirmed booking delivery location.
- * S -> INTERNO PORTO or DRYPORT, N/blank -> INTERNO PORTO.
- * These vessel-level options are never inferred if the source is stale. */
+/** Independent vessel-level signals; neither confirms a booking or a depot address. */
 export function conatecoForecastDelivery(row,feed,now=new Date()){
-  const flag=basic(row?.external_depot);
-  const acquired=Date.parse(feed?.acquired_at);
-  const fresh=Number.isFinite(acquired)&&acquired<=now.getTime()+300000
-    &&now.getTime()-acquired<=45*60000;
-  const trustworthy=!!row&&!row.source_conflict&&fresh
-    &&(flag===''||flag==='N'||flag==='S');
-  const metadata={terminal:'cnt',scope:'vessel',acquired_at:feed?.acquired_at??null,
-    source_updated_at:null};
-  if(!trustworthy){
-    return {...metadata,value:UNAVAILABLE,available:false,choices:[],known:false,inferred:false,externalNotice:false,
-      source:'CO.NA.TE.CO. · DATI NON CONFERMATI',
-      note:'Non posso stimare il terminal: dato mancante, non riconosciuto, contraddittorio o vecchio. Verifica Berth Forecast e Booking Export.'};
-  }
-  const external=flag==='S';
-  return {
-    ...metadata,value:external?'INTERNO PORTO / DRYPORT':'INTERNO PORTO',
-    available:true,choices:external?['INTERNO PORTO','DRYPORT']:['INTERNO PORTO'],
-    known:false,inferred:true,externalNotice:external,
-    source:'CO.NA.TE.CO. · BERTH FORECAST · REGOLA INDICATIVA, NON UFFICIALE',
-    note:external
-      ?'INDICAZIONE PRESUNTA: il Berth Forecast segnala depositi esterni (accettazioneesterni=S). La regola operativa mostra INTERNO PORTO / DRYPORT; il programma non specifica il deposito esatto né conferma l’autorizzazione del singolo booking. Verifica Booking Export prima di partire.'
-      :'INDICAZIONE PRESUNTA: accettazioneesterni non segnala depositi esterni. L’assenza della segnalazione NON conferma INTERNO PORTO come luogo di consegna del booking. Verifica Booking Export prima di partire.'
-  };
+  const verdict=evaluateConateco(row,feed,now);
+  const depot=conatecoDepotAcceptance(row,feed,now);
+  const reliableRow=!!row&&!row.source_conflict&&isConatecoRecent(feed,now);
+  const internalAbsent=reliableRow&&verdict.kind==='unknown'&&!basic(row.acceptance_flag)&&!basic(row.acceptance_icon);
+  const externalAbsent=reliableRow&&!basic(row.external_depot);
+  const internal={visible:!internalAbsent,kind:verdict.kind,label:verdict.kind==='good'?'ACCETTA CARICO':verdict.kind==='bad'?'NON ACCETTA CARICO':'DA VERIFICARE',note:verdict.reason};
+  const external={visible:!externalAbsent,kind:depot.kind==='reported'?'good':depot.kind==='not-reported'?'warn':'unknown',
+    label:depot.kind==='reported'?'ACCETTA CARICO':'DA VERIFICARE',
+    note:depot.note};
+  return {terminal:'cnt',scope:'vessel',known:false,available:true,inferred:false,
+    internal,external,acquired_at:feed?.acquired_at??null,source_updated_at:null,
+    source:'CO.NA.TE.CO. · BERTH FORECAST',
+    note:'Stati riferiti alla nave. Il deposito preciso, la sua apertura e il singolo booking devono essere verificati su Booking Export.'};
 }
