@@ -1,4 +1,4 @@
-import {tfgScheduleDelivery,conatecoForecastDelivery,conatecoDepotAcceptance} from './delivery_location.mjs?v=20261102-v62';
+import {tfgScheduleDelivery,conatecoForecastDelivery,conatecoDepotAcceptance} from './delivery_location.mjs?v=20261127-cnt-v2';
 import {normalizeName,parseItalianDate,findSctVessels,evaluateSct,evaluateSctType,isSnapshotRecent,isSctFeedRecent,listSctVoyages,describeVesselStatus,describeClosing} from './rules.mjs?v=20261102-v65';
 import {parseTfgBookingResult} from './tfg.mjs?v=20261031-v41';
 import {validateBooking,bookingTerminal} from './booking_search.mjs?v=20261031-v41';
@@ -168,7 +168,28 @@ function terminalDeliveryPanel(place){
   wrap.append(top,details);
   return wrap;
 }
+function cntAcceptancePanel(place,compact=false){
+  const wrap=node(compact?'span':'section',compact?'cnt-acceptance-compact':'cnt-acceptance-grid');
+  for(const [title,status] of [['INTERNO PORTO',place.internal],['DRYPORT / DEPOSITI ESTERNI',place.external]]){
+    if(status.visible===false)continue;
+    const item=node(compact?'span':'div','cnt-acceptance-item');
+    item.dataset.state=status.kind;
+    item.append(node('span','cnt-acceptance-title',title),node('strong','cnt-acceptance-status',status.label));
+    if(!compact)item.append(node('small','cnt-acceptance-note',status.note));
+    wrap.append(item);
+  }
+  if(compact&&!wrap.childElementCount)wrap.hidden=true;
+  if(!compact){
+    const details=node('details','delivery-source-details');
+    details.append(node('summary','','Fonte e aggiornamento'),node('p','delivery-spot-source',place.source),
+      node('p','delivery-spot-note',place.note),
+      facts([['Lettura effettuata',tfgTextDate(place.acquired_at)],['Aggiornamento interno','Non pubblicato']]));
+    wrap.append(details);
+  }
+  return wrap;
+}
 function deliveryPanel(place){
+  if(place.terminal==='cnt')return cntAcceptancePanel(place);
   if((place.terminal==='tfg'&&place.published)||(place.terminal==='cnt'&&place.available))
     return terminalDeliveryPanel(place);
   const wrap=node('div','delivery-spot'+(place.known?'':' delivery-spot-unknown')
@@ -189,6 +210,7 @@ function deliveryPanel(place){
   return wrap;
 }
 function deliveryChip(place){
+  if(place.terminal==='cnt')return cntAcceptancePanel(place,true);
   const cnt=place.terminal==='cnt'&&place.available;
   const styled=cnt||(place.terminal==='tfg'&&place.published);
   const chip=node('span','delivery-chip'+(place.known?'':' delivery-chip-unknown')
@@ -563,7 +585,7 @@ function renderConatecoAcceptance(output,verdict,feed){
   output.dataset.state=verdict.kind;
   const label=badge(verdict.kind==='good'?'ACCETTA CARICO (NAVE)':verdict.label,verdict.kind);
   label.classList.add('booking-acceptance-label');
-  output.replaceChildren(node('span','booking-vessel-label','STATO NAVE · BERTH FORECAST'),label,
+  output.replaceChildren(node('span','booking-vessel-label','INTERNO PORTO · BERTH FORECAST'),label,
     node('small','booking-acceptance-source',
       'Fonte: CO.NA.TE.CO. · Berth Forecast · '+(feed?.copy_origin||'Copia non disponibile')+
       ' · Acquisito: '+tfgTextDate(feed?.acquired_at)));
@@ -603,8 +625,7 @@ function renderConatecoVesselContext(data,feed,output,acceptance,deliveryOutput)
   output.append(textBlock(vesselVerdict.reason,'note'));
   if(selected.kind==='match'){
     output.append(facts([['Nave nel Berth Forecast',selected.row.vessel],
-      ['Viaggio nel Berth Forecast',selected.row.voyage||'Non indicato'],
-      ['Depot esterni',conatecoDepotAcceptance(selected.row,feed).value]]));
+      ['Viaggio nel Berth Forecast',selected.row.voyage||'Non indicato']]));
     if(selected.basis==='vessel-name')output.append(textBlock(
       'Corrispondenza per nome nave. Il viaggio del booking non è verificato.','booking-source'));
   }
@@ -1404,11 +1425,9 @@ async function loadCntSnapshot() {
 }
 function renderCntShipDetails(row,feed) {
   cancelBookingLookup();
-  const verdict=evaluateConateco(row,feed);
   openResults('Nave CO.NA.TE.CO.','PROGRAMMA PUBBLICO','neutral',
     'Informazioni riferite alla nave. Non è una verifica del tuo booking.');
-  results.append(deliveryPanel(conatecoForecastDelivery(row,feed)),
-    depotAcceptancePanel(conatecoDepotAcceptance(row,feed)),badge(verdict.label,verdict.kind));
+  results.append(deliveryPanel(conatecoForecastDelivery(row,feed)));
   results.append(facts([
     ['Nave',row.vessel||'—'],
     ['Viaggio imbarco',row.voyage||'—'],
@@ -1419,14 +1438,13 @@ function renderCntShipDetails(row,feed) {
     ['Chiusura prevista',row.closing||'Da verificare'],
     ['Segnale accettazione',row.acceptance_icon||'Non disponibile'],
     ['Blocco carico',row.stop_cargo||'Non segnalato'],
-    ['Accettazione su depositi esterni (Berth Forecast)',conatecoDepotAcceptance(row,feed).value],
     ['Note terminal',row.notes||'Nessuna'],
     ['Acquisito da CO.NA.TE.CO.',tfgTextDate(feed.acquired_at)]
   ]));
   const warning=node('div','ops-alert');
   warning.dataset.state='warning';
   warning.textContent='ATTENZIONE · Il Berth Forecast segnala lo stato della nave, non autorizza un booking o l’ingresso. Controlla Booking Export e le eventuali variazioni del terminal.';
-  results.append(textBlock(verdict.reason,'note'),warning,
+  results.append(warning,
     link('Verifica Berth Forecast sul sito ufficiale',urls.cntForecast),
     link('Controlla il booking CO.NA.TE.CO.',urls.cntBooking));
 }
@@ -1458,7 +1476,6 @@ function renderCntFleet(){
   cntArchiveToggle.setAttribute('aria-pressed',String(cntShowArchived));
   cntList.replaceChildren();
   for(const {row,index} of choices.slice(0,cntVisibleCount)){
-    const verdict=evaluateConateco(row,cntFeed);
     const button=node('button','vessel-row');
     button.type='button';
     button.dataset.cntRow=String(index);
@@ -1467,7 +1484,7 @@ function renderCntFleet(){
       node('span','vessel-meta','Viaggio '+(row.voyage||'?')+' · '+(row.eta||'ETA N/D')),
       deliveryChip(conatecoForecastDelivery(row,cntFeed)));
     const side=node('span','vessel-right');
-    side.append(badge(verdict.label,verdict.kind),node('span','row-chevron','›'));
+    side.append(node('span','row-chevron','›'));
     button.append(main,side);
     cntList.append(button);
   }

@@ -1,6 +1,6 @@
 const BASE = "/LTS-Registro-Viaggi/";
 const PREFIX = "lts-iphone-pages-0aa8d087d02b-";
-const CACHE = PREFIX + '20261126-note-protection-v4';
+const CACHE = PREFIX + '20261127-cnt-v2';
 const CORE = [
   "/LTS-Registro-Viaggi/account-access.mjs",
   "/LTS-Registro-Viaggi/app.css",
@@ -124,16 +124,16 @@ self.addEventListener('fetch', event => {
     // Always revalidate the Porti document when connected, retaining offline fallback.
     event.respondWith(fetch(request, { cache: isPort ? 'reload' : 'default' }).catch(async () => {
       if (isPort) {
-        const page = await caches.match(PORT_BASE + 'index.html', { ignoreVary: true });
+        const page = await (await caches.open(CACHE)).match(PORT_BASE + 'index.html', { ignoreVary: true });
         if (!page) return Response.error();
         if (url.pathname !== PORT_BASE && url.pathname !== PORT_BASE + 'index.html')
           return Response.redirect(url.origin + PORT_BASE + 'index.html', 302);
         return page;
       }
       if ([BASE+'viaggi/',BASE+'viaggi/index.html'].includes(url.pathname))
-        return (await caches.match(BASE+'viaggi/index.html', { ignoreVary: true })) || Response.error();
+        return (await (await caches.open(CACHE)).match(BASE+'viaggi/index.html', { ignoreVary: true })) || Response.error();
       if (![BASE,BASE+'index.html',BASE+'shell.html',BASE+'shell'].includes(url.pathname)) return Response.error();
-      return (await caches.match(BASE + 'index.html', { ignoreVary: true })) || Response.error();
+      return (await (await caches.open(CACHE)).match(BASE + 'index.html', { ignoreVary: true })) || Response.error();
     }));
     return;
   }
@@ -152,12 +152,12 @@ self.addEventListener('fetch', event => {
           try { await (await caches.open(CACHE)).put(url.pathname, fresh.clone()); } catch {}
           return fresh;
         } catch {
-          return (await caches.match(request, { ignoreVary: true, ignoreSearch: true })) || Response.error();
+          return (await (await caches.open(CACHE)).match(request, { ignoreVary: true, ignoreSearch: true })) || Response.error();
         }
       })());
       return;
     }
-    event.respondWith((async () => (await caches.match(request, { ignoreVary: true, ignoreSearch: true })) || fetch(request))());
+    event.respondWith((async () => (await (await caches.open(CACHE)).match(request, { ignoreVary: true, ignoreSearch: true })) || fetch(request))());
   }
 });
 

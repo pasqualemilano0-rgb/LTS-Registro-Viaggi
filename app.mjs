@@ -377,7 +377,7 @@ function renderPorti(main){
   );
   return;
  }
- const url=(runtimeConfig.basePath??'/')+'porti/index.html?v=20261124-pwa-isolation-v1';
+ const url=(runtimeConfig.basePath??'/')+'porti/index.html?v=20261127-cnt-v2';
  portiStartupPanel=el('section',{class:'porti-startup',hidden:true,role:'status','aria-live':'polite','aria-busy':'true'},
   el('span',{class:'porti-loading-spinner','aria-hidden':'true'}),
   el('h2',{},'Caricamento Porti'),el('p',{},'Connessione ai servizi portuali'));

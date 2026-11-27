@@ -1,7 +1,7 @@
 {
   "source": "https://tfg.bucci.it/@/TFGW_TP_ETA",
-  "source_updated_at": "2026-11-25T13:29:39.000Z",
-  "acquired_at": "2026-11-26T13:30:16.244Z",
+  "source_updated_at": "2026-11-27T13:57:10.000Z",
+  "acquired_at": "2026-11-27T16:00:16.321Z",
   "rows": [
     {
       "vessel": "ADRASTOS",
@@ -63,7 +63,7 @@
       "arrival_voyage": "647E",
       "departure_voyage": "648W",
       "eta": "25/11/26 19:00",
-      "acceptance": "ACCETTA CARICO",
+      "acceptance": "NAVE CHIUSA",
       "custom_close_time": "26/11/26 15:00:00",
       "fast_corridor_cut_off": "25/11/2610:00:00",
       "gate_cut_off": "",
@@ -76,29 +76,7 @@
       "eta": "28/11/26",
       "acceptance": "NON ACCETTA CARICO",
       "custom_close_time": "&nbsp;",
-      "fast_corridor_cut_off": "",
-      "gate_cut_off": "",
-      "destination": "INTERNO PORTO"
-    },
-    {
-      "vessel": "SUNAID X",
-      "arrival_voyage": "019",
-      "departure_voyage": "019",
-      "eta": "29/11/26",
-      "acceptance": "ACCETTA CARICO",
-      "custom_close_time": "&nbsp;",
-      "fast_corridor_cut_off": "",
-      "gate_cut_off": "",
-      "destination": "INTERNO PORTO"
-    },
-    {
-      "vessel": "CHRISTINA",
-      "arrival_voyage": "AGA0A0S19",
-      "departure_voyage": "AGA0A0S19",
-      "eta": "30/11/26",
-      "acceptance": "ACCETTA CARICO",
-      "custom_close_time": "&nbsp;",
-      "fast_corridor_cut_off": "",
+      "fast_corridor_cut_off": "27/11/2614:00:00",
       "gate_cut_off": "",
       "destination": "INTERNO PORTO"
     },
@@ -114,11 +92,33 @@
       "destination": "INTERNO PORTO"
     },
     {
+      "vessel": "CHRISTINA",
+      "arrival_voyage": "AGA0A0S19",
+      "departure_voyage": "AGA0A0S19",
+      "eta": "02/12/26",
+      "acceptance": "ACCETTA CARICO",
+      "custom_close_time": "&nbsp;",
+      "fast_corridor_cut_off": "",
+      "gate_cut_off": "",
+      "destination": "INTERNO PORTO"
+    },
+    {
       "vessel": "X PRESS SAGARMALA",
       "arrival_voyage": "648E",
       "departure_voyage": "648W",
       "eta": "03/12/26",
-      "acceptance": "CARICO DAL 27/11/26 08:00:00",
+      "acceptance": "ACCETTA CARICO",
+      "custom_close_time": "&nbsp;",
+      "fast_corridor_cut_off": "",
+      "gate_cut_off": "",
+      "destination": "INTERNO PORTO"
+    },
+    {
+      "vessel": "SUNAID X",
+      "arrival_voyage": "019",
+      "departure_voyage": "019",
+      "eta": "04/12/26",
+      "acceptance": "ACCETTA CARICO",
       "custom_close_time": "&nbsp;",
       "fast_corridor_cut_off": "",
       "gate_cut_off": "",
