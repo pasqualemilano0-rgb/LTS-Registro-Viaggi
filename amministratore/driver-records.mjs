@@ -10,6 +10,7 @@ import {attachPersonalCustomerCertification} from './personal-customer-maps-ui.m
 import {RECORD_FILTERS,assessPersonalCustomer,archiveCustomerMetrics,
  customerMatchesQuickFilter,tripWorklistSummary,archiveMatchesSearch,archivedRestoreStatus}
  from './records-intelligence.mjs?v=20261108-rc3-v1';
+import {snapshotAdminTripForm,buildAdminTripPatch} from './admin-trip-patch.mjs?v=20261127-partial-v1';
 const $=id=>document.getElementById(id);
 const make=(tag,className='',txt='')=>{
  const e=document.createElement(tag);
@@ -918,6 +919,8 @@ export function setupDriverRecords(account){
     control.getAttribute('aria-label')||control.name||'Campo';
    showFeedback('Salvataggio non inviato: verifica «'+label+'».');
   },true);
+  const tripBaseline=kind==='trip'&&item
+   ?snapshotAdminTripForm(name=>form.elements.namedItem(name),serviceBoxes):null;
   form.addEventListener('submit',async event=>{
    event.preventDefault();
    feedback.hidden=true;saveToast.hidden=true;
@@ -925,13 +928,8 @@ export function setupDriverRecords(account){
    const patch={};
    try{
     if(kind==='trip'){
-     for(const field of ['date','client','city','container','secondClient','secondCity','adminNote'])
-      patch[field]=input(field).value;
-     patch.fareCents=price(input('fareCents').value);
-     patch.secondFareCents=price(input('secondFareCents').value);
-     patch.sumPickupFares=input('sumPickupFares').checked;
-     patch.services=serviceBoxes.filter(x=>x.box.checked).map(x=>x.key);
-     patch.extraCents=Object.fromEntries(serviceBoxes.map(x=>[x.key,price(x.rate.value)]));
+     Object.assign(patch,buildAdminTripPatch(snapshotAdminTripForm(input,serviceBoxes),tripBaseline,price));
+     if(item&&!Object.keys(patch).length)throw new Error('Nessuna modifica selezionata.');
     }else if(kind==='customer'){
      for(const field of ['name','city','address','phone','vat'])patch[field]=input(field).value;
     }else patch.cents=price(input('cents').value);
