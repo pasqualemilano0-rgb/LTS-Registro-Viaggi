@@ -81,12 +81,12 @@ test('published import chain is fully versioned and displays consistent list/det
  const rules=read('porti/conateco_rules.mjs');
  assert.match(parent,/porti\/index\.html\?v=20261124-pwa-isolation-v1/);
  assert.match(page,/porti-access\.mjs\?v=20261124-pwa-isolation-v1/);
- assert.match(gate,/porti\/app\.js\?v=20261110-porti-freshcode-v2/);
+ assert.match(gate,/porti\/app\.js\?v=20261127-cnt-v1/);
  assert.match(port,/conateco_rules\.mjs\?v=20261110-porti-freshcode-v2/);
  assert.match(rules,/kind:'good',label:'ACCETTA CARICO'/);
  assert.doesNotMatch(rules,/NAVE IN ACCETTAZIONE/);
  assert.match(port,/side\.append\(badge\(verdict\.label,verdict\.kind\)/);
- assert.match(port,/results\.append\(deliveryPanel[\s\S]*?badge\(verdict\.label,verdict\.kind\)/);
+ assert.match(port,/results\.append\(deliveryPanel\(conatecoForecastDelivery\(row,feed\)\)\)/);
  assert.match(worker,/20261126-admin-notes-visible-v1/);
  assert.match(worker,/const isPortCode = isPort &&/);
  assert.match(worker,/NETWORK_FIRST_CODE\.has\(url\.pathname\) \|\| isPortCode/);
