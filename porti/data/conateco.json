@@ -1,25 +1,8 @@
 {
   "source": "https://api.conateco.it/ConatecoServicesApi/BerthForecast",
   "source_updated_at": null,
-  "acquired_at": "2026-11-27T22:30:16.240Z",
+  "acquired_at": "2026-11-27T23:00:16.273Z",
   "rows": [
-    {
-      "vessel": "JOLLY BLUE",
-      "voyage": "372",
-      "eta": "2026-11-19 19:10",
-      "vessel_status": "CHI",
-      "category": "PARTITE",
-      "voyage_id": "202600391",
-      "carrier": "LINEA I.MESSINA",
-      "acceptance_flag": "0",
-      "acceptance_icon": "CHIUSA",
-      "stop_cargo": "S",
-      "external_depot": "",
-      "opening": "2026-11-16 06:30",
-      "closing": "2026-11-19 12:00",
-      "notes": "",
-      "source_conflict": false
-    },
     {
       "vessel": "MSC BRITTANY",
       "voyage": "NL643R",
@@ -76,7 +59,7 @@
       "voyage": "373",
       "eta": "2026-11-27 00:05",
       "vessel_status": "CHI",
-      "category": "PRESENTI",
+      "category": "PARTITE",
       "voyage_id": "202600399",
       "carrier": "LINEA I.MESSINA",
       "acceptance_flag": "0",
@@ -120,6 +103,23 @@
       "opening": "2026-11-23 12:00",
       "closing": "2026-11-27 09:30",
       "notes": "ACCETT.RETROPORTO 18/11 07:00",
+      "source_conflict": false
+    },
+    {
+      "vessel": "VALUE",
+      "voyage": "MG648W",
+      "eta": "2026-11-28 00:00",
+      "vessel_status": "ANN",
+      "category": "PRESENTI",
+      "voyage_id": "202600397",
+      "carrier": "MEDITERRANEAN SHIPPING CO. GENEVA",
+      "acceptance_flag": "0",
+      "acceptance_icon": "",
+      "stop_cargo": "",
+      "external_depot": "",
+      "opening": "",
+      "closing": "",
+      "notes": "",
       "source_conflict": false
     },
     {

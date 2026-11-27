@@ -1,7 +1,7 @@
 {
   "source": "https://www.salernocontainerterminal.com/ca/an/vessel_schedule.php",
   "source_updated_at": null,
-  "acquired_at": "2026-11-27T22:30:16.240Z",
+  "acquired_at": "2026-11-27T23:00:16.273Z",
   "rows": [
     {
       "vessel": "CONTSHIP ERA",
@@ -211,8 +211,8 @@
       "status": "PENDING"
     },
     {
-      "vessel": "ARICA EXPRESS",
-      "voyage": "28W49",
+      "vessel": "GREEN OCEAN",
+      "voyage": "649W",
       "eta": "02/12/2026 00:00",
       "closing": "01/12/2026 17:00",
       "acceptance_dry": "CARGO ACCEPTED",
@@ -220,8 +220,8 @@
       "status": "PENDING"
     },
     {
-      "vessel": "GREEN OCEAN",
-      "voyage": "649W",
+      "vessel": "ARICA EXPRESS",
+      "voyage": "28W49",
       "eta": "02/12/2026 00:00",
       "closing": "01/12/2026 17:00",
       "acceptance_dry": "CARGO ACCEPTED",
@@ -299,8 +299,26 @@
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
+    },
+    {
+      "vessel": "MEDKON PERLA",
+      "voyage": "647E",
+      "eta": "05/12/2026 00:00",
+      "closing": "04/12/2026 17:00",
+      "acceptance_dry": "CARGO NOT ACCEPTED",
+      "acceptance_reef": "CARGO NOT ACCEPTED",
+      "status": "PENDING"
+    },
+    {
+      "vessel": "COSCO ANTWERP",
+      "voyage": "648N",
+      "eta": "05/12/2026 00:00",
+      "closing": "04/12/2026 17:00",
+      "acceptance_dry": "CARGO ACCEPTED",
+      "acceptance_reef": "CARGO ACCEPTED",
+      "status": "PENDING"
     }
   ],
-  "updated_at": "2026-11-27T22:30:16.240Z",
-  "data_changed_at": "2026-11-27T22:00:16.220Z"
+  "updated_at": "2026-11-27T23:00:16.273Z",
+  "data_changed_at": "2026-11-27T23:00:16.273Z"
 }
