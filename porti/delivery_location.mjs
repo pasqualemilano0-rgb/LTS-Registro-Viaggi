@@ -45,7 +45,7 @@ export function tfgScheduleDelivery(row,feed,now=new Date()){
  * booking authorization or proof that the depot is open right now. */
 export function conatecoDepotAcceptance(row,feed,now=new Date()){
   const flag=basic(row?.external_depot);
-  if(!row || row.source_conflict===true){
+  if(!row || row.source_conflict){
     return {kind:'unknown',value:'DA VERIFICARE',
       note:'Dati assenti o contraddittori. Controlla il Berth Forecast ufficiale.'};
   }
@@ -72,8 +72,11 @@ export function conatecoDepotAcceptance(row,feed,now=new Date()){
 export function conatecoForecastDelivery(row,feed,now=new Date()){
   const verdict=evaluateConateco(row,feed,now);
   const depot=conatecoDepotAcceptance(row,feed,now);
-  const internal={kind:verdict.kind,label:verdict.kind==='good'?'ACCETTA CARICO':verdict.kind==='bad'?'NON ACCETTA CARICO':'DA VERIFICARE',note:verdict.reason};
-  const external={kind:depot.kind==='reported'?'good':depot.kind==='not-reported'?'warn':'unknown',
+  const reliableRow=!!row&&!row.source_conflict&&isConatecoRecent(feed,now);
+  const internalAbsent=reliableRow&&verdict.kind==='unknown'&&!basic(row.acceptance_flag)&&!basic(row.acceptance_icon);
+  const externalAbsent=reliableRow&&!basic(row.external_depot);
+  const internal={visible:!internalAbsent,kind:verdict.kind,label:verdict.kind==='good'?'ACCETTA CARICO':verdict.kind==='bad'?'NON ACCETTA CARICO':'DA VERIFICARE',note:verdict.reason};
+  const external={visible:!externalAbsent,kind:depot.kind==='reported'?'good':depot.kind==='not-reported'?'warn':'unknown',
     label:depot.kind==='reported'?'ACCETTA CARICO':'DA VERIFICARE',
     note:depot.note};
   return {terminal:'cnt',scope:'vessel',known:false,available:true,inferred:false,

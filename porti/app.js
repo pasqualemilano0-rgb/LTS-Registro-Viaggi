@@ -1,4 +1,4 @@
-import {tfgScheduleDelivery,conatecoForecastDelivery,conatecoDepotAcceptance} from './delivery_location.mjs?v=20261127-cnt-v1';
+import {tfgScheduleDelivery,conatecoForecastDelivery,conatecoDepotAcceptance} from './delivery_location.mjs?v=20261127-cnt-v2';
 import {normalizeName,parseItalianDate,findSctVessels,evaluateSct,evaluateSctType,isSnapshotRecent,isSctFeedRecent,listSctVoyages,describeVesselStatus,describeClosing} from './rules.mjs?v=20261102-v65';
 import {parseTfgBookingResult} from './tfg.mjs?v=20261031-v41';
 import {validateBooking,bookingTerminal} from './booking_search.mjs?v=20261031-v41';
@@ -171,12 +171,14 @@ function terminalDeliveryPanel(place){
 function cntAcceptancePanel(place,compact=false){
   const wrap=node(compact?'span':'section',compact?'cnt-acceptance-compact':'cnt-acceptance-grid');
   for(const [title,status] of [['INTERNO PORTO',place.internal],['DRYPORT / DEPOSITI ESTERNI',place.external]]){
+    if(status.visible===false)continue;
     const item=node(compact?'span':'div','cnt-acceptance-item');
     item.dataset.state=status.kind;
     item.append(node('span','cnt-acceptance-title',title),node('strong','cnt-acceptance-status',status.label));
     if(!compact)item.append(node('small','cnt-acceptance-note',status.note));
     wrap.append(item);
   }
+  if(compact&&!wrap.childElementCount)wrap.hidden=true;
   if(!compact){
     const details=node('details','delivery-source-details');
     details.append(node('summary','','Fonte e aggiornamento'),node('p','delivery-spot-source',place.source),

@@ -10,6 +10,7 @@ for(const [kind,fields] of Object.entries(states))for(const [flag,expected] of [
   const row={...base,...fields,external_depot:flag},feed={rows:[row],acquired_at:now.toISOString()};
   const p=conatecoForecastDelivery(row,feed,now);
   assert.equal(p.internal.kind,kind);assert.equal(p.external.kind,expected);assert.equal(p.known,false);
+  assert.equal(p.internal.visible,kind!=='unknown');assert.equal(p.external.visible,flag!=='');
   assert.match(p.note,/booking/);
   assert.equal(p.internal.label,kind==='good'?'ACCETTA CARICO':kind==='bad'?'NON ACCETTA CARICO':'DA VERIFICARE');
   assert.equal(p.external.label,expected==='good'?'ACCETTA CARICO':'DA VERIFICARE');
@@ -18,7 +19,7 @@ for(const [kind,fields] of Object.entries(states))for(const [flag,expected] of [
 test('stale, failed, conflicting and missing data never show green',()=>{
  const row={...base,external_depot:'S'},feed={rows:[row],acquired_at:now.toISOString()};
  for(const [r,f] of [[row,{...feed,acquired_at:'2026-11-26T00:00:00Z'}],[row,{...feed,refresh_failed:true}],[{...row,source_conflict:true},feed],[null,feed]]){
-  const p=conatecoForecastDelivery(r,f,now);assert.equal(p.internal.kind,'unknown');assert.equal(p.external.kind,'unknown');
+  const p=conatecoForecastDelivery(r,f,now);assert.equal(p.internal.kind,'unknown');assert.equal(p.external.kind,'unknown');assert.equal(p.internal.visible,true);assert.equal(p.external.visible,true);
  }
 });
 test('blocked and expired internal status never suppresses the external signal',()=>{
@@ -33,4 +34,13 @@ test('CNT detail and fleet use independent presentation, not duplicated panel',(
  assert.match(app,/if\(place.terminal==='cnt'\)return cntAcceptancePanel\(place,true\)/);
  const detail=app.slice(app.indexOf('function renderCntShipDetails'),app.indexOf('function renderCntFleet'));
  assert.doesNotMatch(detail,/depotAcceptancePanel|badge\(verdict/);
+});
+
+test('missing fields hide only on fresh coherent rows; malformed and stale signals remain visible',()=>{
+ const row={...base,acceptance_flag:'',acceptance_icon:'',external_depot:''};
+ const feed={rows:[row],acquired_at:now.toISOString()};
+ const absent=conatecoForecastDelivery(row,feed,now);assert.equal(absent.internal.visible,false);assert.equal(absent.external.visible,false);
+ for(const [r,f] of [[{...row,acceptance_flag:'X',external_depot:'X'},feed],[row,{...feed,refresh_failed:true}],[{...row,source_conflict:true},feed]]){
+  const p=conatecoForecastDelivery(r,f,now);assert.equal(p.internal.visible,true);assert.equal(p.external.visible,true);assert.equal(p.internal.label,'DA VERIFICARE');assert.equal(p.external.label,'DA VERIFICARE');
+ }
 });
