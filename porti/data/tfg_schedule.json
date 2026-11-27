@@ -1,7 +1,7 @@
 {
   "source": "https://tfg.bucci.it/@/TFGW_TP_ETA",
-  "source_updated_at": "2026-11-27T08:43:50.000Z",
-  "acquired_at": "2026-11-27T12:30:16.218Z",
+  "source_updated_at": "2026-11-27T12:59:25.000Z",
+  "acquired_at": "2026-11-27T13:00:16.320Z",
   "rows": [
     {
       "vessel": "ADRASTOS",
@@ -73,9 +73,9 @@
       "vessel": "ASTRAIOS",
       "arrival_voyage": "0HWLKE1MA",
       "departure_voyage": "0HWLKE1MA",
-      "eta": "28/11/26",
+      "eta": "29/11/26 14:00",
       "acceptance": "NON ACCETTA CARICO",
-      "custom_close_time": "&nbsp;",
+      "custom_close_time": "30/11/26 10:00:00",
       "fast_corridor_cut_off": "",
       "gate_cut_off": "",
       "destination": "INTERNO PORTO"
@@ -107,7 +107,7 @@
       "arrival_voyage": "648E",
       "departure_voyage": "648W",
       "eta": "03/12/26",
-      "acceptance": "CARICO DAL 27/11/26 08:00:00",
+      "acceptance": "ACCETTA CARICO",
       "custom_close_time": "&nbsp;",
       "fast_corridor_cut_off": "",
       "gate_cut_off": "",
