@@ -1477,3 +1477,15 @@ footer { padding: 12px 0 18px; border: 0; font-size: 10px; }
 @media(prefers-reduced-motion:reduce) {
  .booking-collapsible,.extra-filters {scroll-behavior:auto}
 }
+
+/* CNT: independent vessel acceptance signals, never a booking confirmation. */
+.cnt-acceptance-grid,.cnt-acceptance-compact{display:grid;gap:8px;min-width:0}
+.cnt-acceptance-item{display:grid;gap:4px;padding:12px;border:1px solid #b8c8d0;border-radius:12px;background:#f1f5f7;color:#243b47;overflow-wrap:anywhere}
+.cnt-acceptance-item[data-state="good"]{background:#e8f5ec;border-color:#83b99a;color:#14532d}
+.cnt-acceptance-item[data-state="bad"]{background:#fcebec;border-color:#dba1a8;color:#991b1b}
+.cnt-acceptance-item[data-state="warn"]{background:#fff5df;border-color:#d5b36b;color:#78350f}
+.cnt-acceptance-title{font-size:.78rem;font-weight:800}
+.cnt-acceptance-status{font-size:1.1rem;line-height:1.25}
+.cnt-acceptance-note{font-size:.83rem;line-height:1.4}
+.cnt-acceptance-compact .cnt-acceptance-item{padding:6px 8px;border-radius:8px}
+.cnt-acceptance-compact .cnt-acceptance-status{font-size:.8rem}

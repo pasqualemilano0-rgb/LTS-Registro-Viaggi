@@ -223,6 +223,7 @@ jobs:
           node tests/company-report-browser.mjs
           LTS_CONTROL_REPORT="$PWD/browser-evidence/control-center-chromium.json" node tests/control-center-browser.mjs
           node tests/qa-register-browser.mjs
+          node tests/qa-cnt-browser.mjs
           node tests/qa-offline-worker-browser.mjs
           node tests/qa-admin-installable-browser.mjs
           node tests/qa-offline-store-browser.mjs
@@ -236,6 +237,7 @@ jobs:
           node tests/company-report-browser.mjs
           LTS_CONTROL_REPORT="$PWD/browser-evidence/control-center-webkit.json" node tests/control-center-browser.mjs
           node tests/qa-register-browser.mjs
+          node tests/qa-cnt-browser.mjs
           node tests/qa-offline-store-browser.mjs
           node tests/qa-store-cas-browser.mjs
       - name: "Read-only production company report CORS and JWT boundary"

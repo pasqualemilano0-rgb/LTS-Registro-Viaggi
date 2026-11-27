@@ -177,5 +177,5 @@ test('CO.NA.TE.CO. shows ACCETTA CARICO only when acceptance is actually confirm
  const porti=readFileSync(resolve(ROOT,'porti/app.js'),'utf8');
  assert.match(porti,/badge\(verdict\.label,verdict\.kind\)/);
  assert.match(porti,/conateco_rules\.mjs\?v=20261110-porti-freshcode-v2/);
- assert.match(access,/porti\/app\.js\?v=20261110-porti-freshcode-v2/);
+ assert.match(access,/porti\/app\.js\?v=20261127-cnt-v1/);
 });
