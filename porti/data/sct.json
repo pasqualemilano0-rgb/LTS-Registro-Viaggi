@@ -1,7 +1,7 @@
 {
   "source": "https://www.salernocontainerterminal.com/ca/an/vessel_schedule.php",
   "source_updated_at": null,
-  "acquired_at": "2026-11-27T14:30:16.325Z",
+  "acquired_at": "2026-11-27T15:00:16.214Z",
   "rows": [
     {
       "vessel": "CONTSHIP ERA",
@@ -58,8 +58,17 @@
       "status": "PENDING"
     },
     {
-      "vessel": "VALUE",
-      "voyage": "MG648W",
+      "vessel": "RMS ROSE",
+      "voyage": "ROS1026E",
+      "eta": "29/11/2026 00:00",
+      "closing": "28/11/2026 12:00",
+      "acceptance_dry": "CARGO ACCEPTED",
+      "acceptance_reef": "CARGO ACCEPTED",
+      "status": "PENDING"
+    },
+    {
+      "vessel": "MEDKON NLS",
+      "voyage": "325",
       "eta": "29/11/2026 00:00",
       "closing": "28/11/2026 12:00",
       "acceptance_dry": "CARGO ACCEPTED",
@@ -76,17 +85,8 @@
       "status": "PENDING"
     },
     {
-      "vessel": "MEDKON NLS",
-      "voyage": "325",
-      "eta": "29/11/2026 00:00",
-      "closing": "28/11/2026 12:00",
-      "acceptance_dry": "CARGO ACCEPTED",
-      "acceptance_reef": "CARGO ACCEPTED",
-      "status": "PENDING"
-    },
-    {
-      "vessel": "RMS ROSE",
-      "voyage": "ROS1026E",
+      "vessel": "VALUE",
+      "voyage": "MG648W",
       "eta": "29/11/2026 00:00",
       "closing": "28/11/2026 12:00",
       "acceptance_dry": "CARGO ACCEPTED",
@@ -97,15 +97,6 @@
       "vessel": "ALTAMIRA EXPRESS",
       "voyage": "647W",
       "eta": "29/11/2026 11:00",
-      "closing": "28/11/2026 12:00",
-      "acceptance_dry": "CARGO ACCEPTED",
-      "acceptance_reef": "CARGO ACCEPTED",
-      "status": "PENDING"
-    },
-    {
-      "vessel": "GRANDE TOGO",
-      "voyage": "GRT0726",
-      "eta": "30/11/2026 00:00",
       "closing": "28/11/2026 12:00",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
@@ -130,10 +121,28 @@
       "status": "PENDING"
     },
     {
+      "vessel": "GRANDE TOGO",
+      "voyage": "GRT0726",
+      "eta": "30/11/2026 00:00",
+      "closing": "28/11/2026 12:00",
+      "acceptance_dry": "CARGO ACCEPTED",
+      "acceptance_reef": "CARGO ACCEPTED",
+      "status": "PENDING"
+    },
+    {
       "vessel": "LIDER TRABZON",
       "voyage": "1126",
       "eta": "30/11/2026 00:00",
       "closing": "30/11/2026 12:00",
+      "acceptance_dry": "CARGO ACCEPTED",
+      "acceptance_reef": "CARGO ACCEPTED",
+      "status": "PENDING"
+    },
+    {
+      "vessel": "ALOPO",
+      "voyage": "2126W",
+      "eta": "30/11/2026 08:00",
+      "closing": "24/11/2026 17:00 CLOSED",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
@@ -157,19 +166,19 @@
       "status": "PENDING"
     },
     {
-      "vessel": "VENTO DI GRECALE",
-      "voyage": "840",
+      "vessel": "MSC KILIMANJARO IV",
+      "voyage": "CD648A",
       "eta": "01/12/2026 00:00",
-      "closing": "27/11/2026 17:00",
+      "closing": "28/11/2026 10:00",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
     },
     {
-      "vessel": "MSC KILIMANJARO IV",
-      "voyage": "CD648A",
+      "vessel": "VENTO DI GRECALE",
+      "voyage": "840",
       "eta": "01/12/2026 00:00",
-      "closing": "28/11/2026 10:00",
+      "closing": "27/11/2026 17:00",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
@@ -283,6 +292,6 @@
       "status": "PENDING"
     }
   ],
-  "updated_at": "2026-11-27T14:30:16.325Z",
-  "data_changed_at": "2026-11-27T13:45:16.195Z"
+  "updated_at": "2026-11-27T15:00:16.214Z",
+  "data_changed_at": "2026-11-27T14:45:16.241Z"
 }

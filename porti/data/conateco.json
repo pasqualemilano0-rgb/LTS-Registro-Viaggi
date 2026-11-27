@@ -1,7 +1,7 @@
 {
   "source": "https://api.conateco.it/ConatecoServicesApi/BerthForecast",
   "source_updated_at": null,
-  "acquired_at": "2026-11-27T14:30:16.325Z",
+  "acquired_at": "2026-11-27T15:00:16.214Z",
   "rows": [
     {
       "vessel": "JOLLY BLUE",
@@ -225,6 +225,23 @@
       "source_conflict": false
     },
     {
+      "vessel": "MSC EDITH II",
+      "voyage": "AG648A",
+      "eta": "2026-12-04 00:00",
+      "vessel_status": "PRE",
+      "category": "PREVISTE",
+      "voyage_id": "202600392",
+      "carrier": "MEDITERRANEAN SHIPPING CO. GENEVA",
+      "acceptance_flag": "1",
+      "acceptance_icon": "ACCETTA_CARICO",
+      "stop_cargo": "",
+      "external_depot": "",
+      "opening": "2026-11-16 16:00",
+      "closing": "2026-12-03 12:00",
+      "notes": "",
+      "source_conflict": false
+    },
+    {
       "vessel": "RIJNBORG",
       "voyage": "037S",
       "eta": "2026-12-04 00:00",
@@ -239,23 +256,6 @@
       "opening": "2026-11-30 06:30",
       "closing": "2026-12-03 17:00",
       "notes": "ACCETT.RETROPORTO 27/11 12:00",
-      "source_conflict": false
-    },
-    {
-      "vessel": "MSC EDITH II",
-      "voyage": "AG648A",
-      "eta": "2026-12-05 00:00",
-      "vessel_status": "PRE",
-      "category": "PREVISTE",
-      "voyage_id": "202600392",
-      "carrier": "MEDITERRANEAN SHIPPING CO. GENEVA",
-      "acceptance_flag": "1",
-      "acceptance_icon": "ACCETTA_CARICO",
-      "stop_cargo": "",
-      "external_depot": "",
-      "opening": "2026-11-16 16:00",
-      "closing": "2026-12-04 12:00",
-      "notes": "",
       "source_conflict": false
     },
     {
@@ -327,6 +327,23 @@
       "source_conflict": false
     },
     {
+      "vessel": "MSC GRETA III",
+      "voyage": "AC650A",
+      "eta": "2026-12-10 00:00",
+      "vessel_status": "PRE",
+      "category": "PREVISTE",
+      "voyage_id": "202600417",
+      "carrier": "MEDITERRANEAN SHIPPING CO. GENEVA",
+      "acceptance_flag": "0",
+      "acceptance_icon": "",
+      "stop_cargo": "",
+      "external_depot": "",
+      "opening": "2026-11-30 12:00",
+      "closing": "2026-12-09 12:00",
+      "notes": "",
+      "source_conflict": false
+    },
+    {
       "vessel": "MSC LAGOS X",
       "voyage": "NL646R",
       "eta": "2026-12-10 00:00",
@@ -340,23 +357,6 @@
       "external_depot": "",
       "opening": "",
       "closing": "",
-      "notes": "",
-      "source_conflict": false
-    },
-    {
-      "vessel": "MSC GRETA III",
-      "voyage": "AC650A",
-      "eta": "2026-12-11 00:00",
-      "vessel_status": "PRE",
-      "category": "PREVISTE",
-      "voyage_id": "202600417",
-      "carrier": "MEDITERRANEAN SHIPPING CO. GENEVA",
-      "acceptance_flag": "0",
-      "acceptance_icon": "",
-      "stop_cargo": "",
-      "external_depot": "",
-      "opening": "2026-11-30 12:00",
-      "closing": "2026-12-10 12:00",
       "notes": "",
       "source_conflict": false
     },
