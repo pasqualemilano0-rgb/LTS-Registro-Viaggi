@@ -1489,3 +1489,8 @@ footer { padding: 12px 0 18px; border: 0; font-size: 10px; }
 .cnt-acceptance-note{font-size:.83rem;line-height:1.4}
 .cnt-acceptance-compact .cnt-acceptance-item{padding:6px 8px;border-radius:8px}
 .cnt-acceptance-compact .cnt-acceptance-status{font-size:.8rem}
+
+/* CNT only: reserve space for the chevron, not a second status column. */
+.vessel-list .vessel-row[data-cnt-row] .vessel-right{flex:0 0 auto;min-width:0;width:auto}
+.vessel-list .vessel-row[data-cnt-row] .vessel-main{flex:1 1 0;min-width:0}
+.cnt-acceptance-compact{width:100%;box-sizing:border-box}

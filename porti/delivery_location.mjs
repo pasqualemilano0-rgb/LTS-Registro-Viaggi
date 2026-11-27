@@ -72,9 +72,9 @@ export function conatecoDepotAcceptance(row,feed,now=new Date()){
 export function conatecoForecastDelivery(row,feed,now=new Date()){
   const verdict=evaluateConateco(row,feed,now);
   const depot=conatecoDepotAcceptance(row,feed,now);
-  const internal={kind:verdict.kind,label:verdict.label,note:verdict.reason};
+  const internal={kind:verdict.kind,label:verdict.kind==='good'?'ACCETTA CARICO':verdict.kind==='bad'?'NON ACCETTA CARICO':'DA VERIFICARE',note:verdict.reason};
   const external={kind:depot.kind==='reported'?'good':depot.kind==='not-reported'?'warn':'unknown',
-    label:depot.kind==='reported'?'ACCETTAZIONE SEGNALATA':depot.kind==='not-reported'?'NON SEGNALATA':'DA VERIFICARE',
+    label:depot.kind==='reported'?'ACCETTA CARICO':'DA VERIFICARE',
     note:depot.note};
   return {terminal:'cnt',scope:'vessel',known:false,available:true,inferred:false,
     internal,external,acquired_at:feed?.acquired_at??null,source_updated_at:null,
