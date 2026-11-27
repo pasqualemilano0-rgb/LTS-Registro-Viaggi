@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
 import {buildAdminTripPatch,snapshotAdminTripForm} from '../amministratore/admin-trip-patch.mjs';
 import {toCents} from '../shared/domain.mjs';
 const price=value=>String(value??'').trim()?toCents(String(value)):null;
@@ -48,4 +49,9 @@ test('form snapshot is independent of future edits',()=>{
  const snap=snapshotAdminTripForm(k=>controls[k],boxes);
  controls.client.value='CLIENTE B';boxes[1].rate.value='5,00';
  assert.deepEqual(buildAdminTripPatch(snapshotAdminTripForm(k=>controls[k],boxes),snap,price),{client:'CLIENTE B',extraCents:{preOrario:500}});
+});
+test('administrative note control remains optional in the protected editor',()=>{
+ const editor=readFileSync(new URL('../amministratore/driver-records.mjs',import.meta.url),'utf8');
+ assert.match(editor,/field\(form,'Nota per l’amministrazione','adminNote',values[.]adminNote\|\|'',\{kind:'textarea',maxLength:2000\}\)/);
+ assert.doesNotMatch(editor,/adminNote[^\n]{0,100}required:true/);
 });
