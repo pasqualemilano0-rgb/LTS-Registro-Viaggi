@@ -12,7 +12,7 @@ const api=read('supabase/functions/lts-payroll/index.ts');
 test('admin chooser enters the protected workspace; static preview remains separate',()=>{
  assert.match(chooser,/id="select-area-amministrativa"[^>]+href="\.\/buste-paga\/"/);
  assert.match(chooser,/Cedolini, CU, pubblicazione PDF e archivio riservato/);
- assert.match(chooser,/Le funzioni di entrambe le aree richiedono l’accesso amministratore con MFA/);
+ assert.match(chooser,/Accesso amministratore e MFA già verificati/);
  assert.match(preview,/MODALITÀ ANTEPRIMA — senza credenziali/);
  assert.match(preview,/ANTEPRIMA NON OPERATIVA/);
  assert.match(preview,/class="button-primary active-link" href="\.\.\/"/);
@@ -38,7 +38,8 @@ test('protected admin document flow and server checks remain untouched',()=>{
  assert.match(guarded,/id="mfa-form"/);
  assert.match(guarded,/id="workspace" hidden/);
  assert.match(secure,/^protect\(\);/m);
- assert.match(secure,/account\.verifyAdminTotp/);
+ assert.match(read('amministratore/admin.mjs'),/await account\.verifyAdminTotp\(code,selected\)/);
+ assert.doesNotMatch(secure,/account\.verifyAdminTotp/);
  assert.match(api,/await checkLtsSession\(/);
  assert.match(api,/await requireAdminMfa\(/);
  assert.match(api,/PAYROLL_PILOT_LIST_ONLY=true/);

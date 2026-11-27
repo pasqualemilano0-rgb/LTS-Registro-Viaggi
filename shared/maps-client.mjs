@@ -2,7 +2,7 @@
 export const MAX_MAPS_LINK_LENGTH = 4096;
 const FULL_HOSTS = new Set(['google.com', 'www.google.com', 'google.it', 'www.google.it']);
 const MAPS_HOSTS = new Set(['maps.google.com', 'maps.google.it']);
-const STREET = /(?:^|[,·|]\s*)(?:VIA|VIALE|PIAZZA|PIAZZALE|CORSO|STRADA|LOCALITÀ|LOCALITA|FRAZIONE|ZONA INDUSTRIALE|LARGO|VICOLO|CONTRADA|SS\s?\d|SP\s?\d)\b/iu;
+const STREET = /(?:^|[,·|]\s*)(?:VIA|VIALE|PIAZZA|PIAZZALE|CORSO|STRADA|LOCALITÀ|LOCALITA|FRAZIONE|ZONA INDUSTRIALE|LARGO|VICOLO|CONTRADA|S\.?\s*[SP]\.?\s*\d+[A-Z]?|KM\.?\s*\d+)\b/iu;
 const ENTITIES = Object.freeze({ amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ', middot: '·', ndash: '–', mdash: '—', agrave: 'à', egrave: 'è', eacute: 'é', igrave: 'ì', ograve: 'ò', ugrave: 'ù', Agrave: 'À', Egrave: 'È', Eacute: 'É', Igrave: 'Ì', Ograve: 'Ò', Ugrave: 'Ù' });
 
 export function decodeHtmlText(value) {
@@ -20,14 +20,18 @@ function upper(value, maximum) { return clean(value, maximum).toLocaleUpperCase(
 function decoded(value) { try { return decodeURIComponent(value.replace(/\+/gu, ' ')); } catch { return ''; } }
 function usefulName(value) {
   const name = clean(value, 500).replace(/<[^>]*>/gu, '').replace(/\s*(?:[-–—|]\s*)?Google Maps\s*$/iu, '').trim();
-  return /^(?:Google(?: Maps)?|Maps|Scopri Google Maps|Before you continue|Prima di continuare|Accedi a Google|https?:\/\/|(?:place_id:|cid:|0x)|(?:loc:)?[+\-\d., @]+$)/iu.test(name) ? '' : name;
+  return Array.from(name).length < 2 || /^(?:Google(?: Maps)?|Maps|Scopri Google Maps|Before you continue|Prima di continuare|Accedi a Google|https?:\/\/|(?:place_id:|cid:|0x)|(?:loc:)?[+\-\d., @]+$)/iu.test(name) ? '' : name;
 }
 
 /** Exact allowlist on every outbound hop; no credentials, IPs or custom ports. */
 export function checkedGoogleMapsUrl(value) {
   if (typeof value !== 'string' || value.length > MAX_MAPS_LINK_LENGTH || !value.trim()) throw new Error('Incolla un link Google Maps valido.');
   const text = decodeHtmlText(value.trim());
-  const candidate = text.match(/https:\/\/[^\s<>"']+/iu)?.[0];
+  // Apostrophes are valid in a Maps place path (e.g. D'Alterio).
+  const match = /https:\/\/[^\s<>"]+/iu.exec(text);
+  let candidate = match?.[0];
+  // Remove a wrapping single quote only when the copied link was quoted.
+  if (candidate && match.index > 0 && text[match.index - 1] === "'" && candidate.endsWith("'")) candidate = candidate.slice(0, -1);
   if (!candidate) throw new Error('Usa un link HTTPS di Google Maps.');
   let url;
   try { url = new URL(candidate); } catch { throw new Error('Il link Google Maps non è valido.'); }
@@ -46,11 +50,15 @@ export function checkedGoogleMapsUrl(value) {
 /** Italian locality inference only from a postcode or an explicit province suffix. */
 export function cityFromItalianAddress(value) {
   const address = clean(value, 1000).replace(/(?:,\s*|\s+)(?:Italia|Italy)\s*$/iu, '').trim();
-  const postcode = /(?:^|[\s,])(?:IT[- ]?)?\d{5}[\s,]+(.+)$/u.exec(address);
-  let city = postcode ? postcode[1].split(',')[0].trim() : address.split(',').length > 1 ? address.split(',').at(-1).trim() : '';
+  // Prefer the final postal token: a preceding kilometer can also have five digits.
+  const postcode = [...address.matchAll(/(?:^|[\s,])(?:IT[- ]?)?\d{5}(?=[\s,])/gu)].at(-1);
+  const postalTail = postcode ? address.slice(postcode.index + postcode[0].length).replace(/^[\s,]+/u, '') : '';
+  let city = postcode ? postalTail.split(',')[0].trim() : address.split(',').length > 1 ? address.split(',').at(-1).trim() : '';
   if (!postcode && !/.+\s+(?:\([A-Z]{2}\)|[A-Z]{2})$/iu.test(city)) return '';
   city = city.replace(/\s*\([A-Z]{2}\)\s*$/iu, '').replace(/\s+[A-Z]{2}\s*$/iu, '').trim();
-  if (!city || city.length > 100 || /^[A-Z]{2}$/u.test(city) || !/^[\p{L}][\p{L}\p{M} .’'\-]*$/u.test(city) || STREET.test(city) || /^(?:ITALIA|ITALY)$/iu.test(city)) return '';
+  // A CAP plus explicit province can identify a named industrial locality.
+  const industrialLocality = Boolean(postcode && /.+\s+(?:\([A-Z]{2}\)|[A-Z]{2})$/iu.test(postalTail.split(',')[0].trim()) && /^ZONA INDUSTRIALE\s+[\p{L}]/iu.test(city));
+  if (!city || city.length > 100 || /^[A-Z]{2}$/u.test(city) || !/^[\p{L}][\p{L}\p{M} .’'\-]*$/u.test(city) || (STREET.test(city) && !industrialLocality) || /^(?:ITALIA|ITALY)$/iu.test(city)) return '';
   return upper(city, 100);
 }
 
@@ -189,10 +197,10 @@ export function proposalFromMapsHtml(html) {
 export function mergeMapsProposal(url, html = '') {
   const link = checkedGoogleMapsUrl(url);
   const inline = proposalFromMapsUrl(link.href);
-  const page = proposalFromMapsHtml(html);
-  const name = upper(page.name || inline.name, 500);
-  const address = upper(page.address || inline.address, 1000);
-  const city = upper(page.city || inline.city || cityFromItalianAddress(address), 100);
+  const page = link.pathname.includes('/dir/') ? {} : proposalFromMapsHtml(html);
+  const name = upper(inline.name || page.name, 500);
+  const address = upper(inline.address || page.address, 1000);
+  const city = upper(inline.city || cityFromItalianAddress(address) || page.city, 100);
   const warnings = [];
   if (!name) warnings.push('Il link non indica il nome del cliente: inseriscilo manualmente.');
   if (!city) warnings.push('La città non è disponibile nel link: completala manualmente.');

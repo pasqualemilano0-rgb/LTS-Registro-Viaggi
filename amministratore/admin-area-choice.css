@@ -303,3 +303,36 @@ body:has(#login-panel:not([hidden]) #admin-area-choice:not([hidden])) #notice{
 /* A visible, non-clickable placeholder until the payroll API is enabled. */
 .admin-area-tile.area-unavailable{opacity:.65;cursor:not-allowed;filter:grayscale(.16)}
 .admin-area-tile.area-unavailable .admin-area-tile-link{font-weight:800}
+
+/* Single admin sign-in: the chooser is displayed only after verified MFA. */
+#admin-area-choice .admin-area-session-bar{
+ display:flex;align-items:center;justify-content:space-between;gap:14px;
+ padding:15px clamp(18px,4vw,52px);background:#f1f6fa;
+ border-top:1px solid #d9e7ef;color:#184b69;font-size:13px;font-weight:750
+}
+#admin-area-choice .admin-area-session-bar span span{color:#168161;margin-right:6px}
+#admin-choice-logout{
+ appearance:none;background:#fff;border:1px solid #b5d0dd;border-radius:11px;
+ padding:10px 15px;min-height:40px;color:#0b5573;font-weight:750;font-size:13px;line-height:1.2;font-family:inherit;cursor:pointer
+}
+#admin-choice-logout:focus-visible{outline:3px solid #0c97c9;outline-offset:3px}
+@media(max-width:480px){
+ #admin-area-choice .admin-area-session-bar{font-size:11px;gap:8px;padding:12px 17px}
+ #admin-choice-logout{padding:9px 11px;font-size:11px}
+}
+
+/* Compact same-session area switch on mobile logistics toolbar. */
+#admin-return-areas:not([hidden]){font-weight:800;white-space:nowrap}
+@media(max-width:420px){
+ .topbar #admin-return-areas{min-width:40px;min-height:40px;padding:6px 8px;font-size:11px}
+}
+
+/* Three controls (search, area switch, sign-out) must not overflow 320px. */
+@media(max-width:390px){
+ .topbar .brand img{width:48px;height:30px}
+ .topbar .brand strong{font-size:11px;max-width:88px}
+ .topbar .brand small{font-size:8px}
+ .topbar .top-actions{gap:2px}
+ .topbar .top-actions .button{min-width:35px;min-height:36px;padding:4px 5px;font-size:10px}
+ .topbar #admin-return-areas{min-width:35px;min-height:36px;padding:4px 5px;font-size:10px}
+}

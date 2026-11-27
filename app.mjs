@@ -89,6 +89,7 @@ let refreshView = null;
 let refreshTripCustomerSuggestions=null;
 let refreshTripFareEstimate=null;
 let portiFrame = null;
+let portiStartupPanel=null,portiStartupTimer=null,portiLoadingTimer=null;
 let subscribed = false;
 let realtimeBridge=null;
 // Presentation-only cache. Authorization and PDF ownership remain server-side.
@@ -175,7 +176,7 @@ window.addEventListener('appinstalled',()=>{installPrompt=null;document.querySel
 standaloneMode.addEventListener?.('change',updateInstallButtons);
 const tabs = [{id:'insert',label:'Inserisci viaggio',icon:'addTrip'},{id:'register',label:'Registro viaggi',icon:'calendar'},{id:'customers',label:'Clienti',icon:'users'},{id:'tariffs',label:'Tariffe',icon:'wallet'},{id:'porti',label:'Porti',icon:'ship'}];
 
-function newDraft() { return {date:today(),client:'',city:'',container:'',secondClient:'',secondCity:'',services:[],second:false,note:'',adminNote:'',noteOpen:false,servicesOpen:false}; }
+function newDraft() { return {date:today(),client:'',city:'',container:'',secondClient:'',secondCity:'',services:[],second:false,sumPickupFares:false,note:'',adminNote:'',noteOpen:false,servicesOpen:false}; }
 const editorVersion = value => JSON.stringify(value ?? null);
 function requireCurrentEditor(expected,current,label){
  if(expected!==editorVersion(current))throw new Error(`${label} è stato aggiornato o eliminato su un altro dispositivo. I dati del modulo sono conservati: chiudi e riapri la scheda aggiornata prima di salvare.`);
@@ -288,10 +289,35 @@ function refreshDraftCustomers(previous,next){
  const nextById=new Map(next.customers.map(customer=>[customer.id,customer]));
  for(const customer of previous.customers){const current=nextById.get(customer.id);if(current&&customer.name!==current.name)for(const field of ['client','secondClient'])if(D.normalizeText(draft[field])===customer.name)draft[field]=current.name;}
 }
-function unmountPorti(){
+function clearPortiStartupTimer(){
+ if(portiStartupTimer!==null){clearTimeout(portiStartupTimer);portiStartupTimer=null;}
+ if(portiLoadingTimer!==null){clearTimeout(portiLoadingTimer);portiLoadingTimer=null;}
+}
+function disposePortiFrame(){
+ clearPortiStartupTimer();
  if(!portiFrame)return;
  // Leaving Porti stops its polling and discards the in-frame booking query.
- portiFrame.src='about:blank';portiFrame.remove();portiFrame=null;
+ const frame=portiFrame;portiFrame=null;
+ frame.src='about:blank';frame.remove();
+}
+function unmountPorti(){
+ disposePortiFrame();
+ portiStartupPanel?.remove();portiStartupPanel=null;
+}
+function failPortiStartup(frame){
+ if(tab!=='porti'||frame!==portiFrame||!portiStartupPanel?.isConnected)return;
+ disposePortiFrame();
+ portiStartupPanel.hidden=false;
+ portiStartupPanel.setAttribute('data-state','error');
+ portiStartupPanel.setAttribute('aria-busy','false');
+ portiStartupPanel.replaceChildren(
+  el('h2',{},'Porti non disponibili al momento'),
+  el('p',{},'Il caricamento non è riuscito. Controlla la connessione e riprova. Il Registro Viaggi resta disponibile.'),
+  button('Riprova','primary',()=>{
+   if(tab!=='porti'||!store.usingAccount()||!accountAccess.isVerified())return;
+   unmountPorti();render();
+  },'refresh'),
+  button('Torna al registro','secondary',()=>navigate('register'),'calendar'));
 }
 function navigate(next,{keepDraft=false}={}){
  if(next!==tab&&tab==='insert'&&!keepDraft&&tripDraftHasWork(draft,editingId,draftBaselineDate)){
@@ -313,7 +339,7 @@ function render(){
  const nav=el('nav',{class:'bottom-nav','aria-label':'Navigazione principale'},tabs.map(item=>el('button',{type:'button',class:`nav-item${tab===item.id?' active':''}`,'aria-current':tab===item.id?'page':null,on:{click:()=>navigate(item.id)}},icon(item.icon),el('span',{},item.label))));
  // Detaching an iframe, even if the same node is appended again, resets its
  // browsing context. Refresh the shell around the connected Porti document.
- if(tab==='porti'&&portiFrame?.isConnected){
+ if(tab==='porti'&&(portiFrame?.isConnected||portiStartupPanel?.isConnected)){
   document.querySelector('.topbar').replaceWith(header);
   document.querySelector('.bottom-nav').replaceWith(nav);
   document.querySelector('#sync-status')?.replaceWith(syncNode());
@@ -351,9 +377,22 @@ function renderPorti(main){
   );
   return;
  }
- const url=(runtimeConfig.basePath??'/')+'porti/index.html?v=20261110-porti-freshcode-v2';
- portiFrame=el('iframe',{class:'porti-frame',src:url,title:'Porti e booking',referrerpolicy:'no-referrer'});
- main.append(el('div',{class:'porti-heading'},el('h1',{},'Porti')),portiFrame);
+ const url=(runtimeConfig.basePath??'/')+'porti/index.html?v=20261127-cnt-v2';
+ portiStartupPanel=el('section',{class:'porti-startup',hidden:true,role:'status','aria-live':'polite','aria-busy':'true'},
+  el('span',{class:'porti-loading-spinner','aria-hidden':'true'}),
+  el('h2',{},'Caricamento Porti'),el('p',{},'Connessione ai servizi portuali'));
+ portiFrame=el('iframe',{class:'porti-frame','data-porti-starting':true,src:url,title:'Porti e booking',referrerpolicy:'no-referrer'});
+ const frame=portiFrame;
+ // Covers the full startup: iframe network, handshake AND both module imports.
+ // Destroy the failed frame so late imports cannot reveal stale controls.
+ portiStartupTimer=setTimeout(()=>failPortiStartup(frame),20000);
+ // Start fetching immediately; show feedback only for a perceptible wait.
+ portiLoadingTimer=setTimeout(()=>{
+  portiLoadingTimer=null;
+  if(tab==='porti'&&frame===portiFrame&&portiStartupPanel?.isConnected)portiStartupPanel.hidden=false;
+ },300);
+ frame.addEventListener('error',()=>failPortiStartup(frame),{once:true});
+ main.append(el('div',{class:'porti-heading'},el('h1',{},'Porti')),portiStartupPanel,frame);
 }
 function syncPortiSundayState(){
  if(tab==='porti'&&portiLastSuspended!==null&&portiLastSuspended!==isPortiSundayInRome()){
@@ -365,10 +404,18 @@ setInterval(syncPortiSundayState,60_000);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)syncPortiSundayState();});
 // The port module is a subview of a verified LTS account, not a public standalone app.
 window.addEventListener('message',event=>{
- if(event.origin!==location.origin || event.data?.type!=='lts-porti-ready')return;
+ if(event.origin!==location.origin)return;
  if(tab!=='porti'||!portiFrame||event.source!==portiFrame.contentWindow)return;
+ const type=event.data?.type;
+ if(type==='lts-porti-failed'){failPortiStartup(portiFrame);return;}
  if(!store.usingAccount()||!accountAccess.isVerified())return;
- event.source.postMessage({type:'lts-porti-authorized'},location.origin);
+ if(type==='lts-porti-ready'){
+  event.source.postMessage({type:'lts-porti-authorized'},location.origin);
+ }else if(type==='lts-porti-rendered'){
+  clearPortiStartupTimer();
+  portiFrame.removeAttribute('data-porti-starting');
+  portiStartupPanel?.remove();portiStartupPanel=null;
+ }
 });
 function receiveState(record,{source}={}){
  // Local saves finish in persist(); background changes update the open view
@@ -577,7 +624,6 @@ function companyCustomersPanel(){
 /** Read-only pilot panel; no writes and no duplicate trip submission path. */
 function renderInsert(main){
 
- const amountContext=D.buildTripAmountContext(state);
  const estimateId=editingId||crypto.randomUUID();const estimateCreatedAt=new Date().toISOString();
  const layout=el('div',{class:'form-layout'});const form=el('form',{class:'panel form-panel',novalidate:true});
  const error=el('div',{class:'form-error',role:'alert'});
@@ -635,13 +681,20 @@ function renderInsert(main){
  const suggestionRefreshes=[];
  form.append(el('div',{class:'trip-fields'},container.wrap,tripCustomerAutocomplete(client,city),city.wrap),datalist(customerListId,[...state.customers.map(c=>c.name),...state.trips.map(t=>t.client),...companyCustomers.map(c=>c.name)]));
  let cities=datalist(cityListId,citySuggestions(draft.client));form.append(cities);
- const add=el('button',{type:'button',class:'add-pickup trip-option','aria-label':draft.second?'Rimuovi seconda presa':'Aggiungi una seconda presa','aria-expanded':String(Boolean(draft.second)),on:{click:()=>{collect();draft.second=!draft.second;if(!draft.second){draft.secondClient='';draft.secondCity='';}keepEditorScratchpad();render();}}},icon('pin'),el('span',{class:'tile-label'},'Seconda presa'),el('span',{class:'plus-disc','aria-hidden':'true'},draft.second?'−':'+'));
+ const add=el('button',{type:'button',class:'add-pickup trip-option','aria-label':draft.second?'Rimuovi seconda presa':'Aggiungi una seconda presa','aria-expanded':String(Boolean(draft.second)),on:{click:()=>{collect();draft.second=!draft.second;draft.sumPickupFares=draft.second;if(!draft.second){draft.secondClient='';draft.secondCity='';}keepEditorScratchpad();render();}}},icon('pin'),el('span',{class:'tile-label'},'Seconda presa'),el('span',{class:'plus-disc','aria-hidden':'true'},draft.second?'−':'+'));
  const options=el('div',{class:'trip-options','aria-label':'Opzioni del viaggio'},add);form.append(options);
- let secondClient=null,secondCity=null;
+ let secondClient=null,secondCity=null, fareMode=null;
  if(draft.second){
   secondClient=field('Cliente','secondClient',draft.secondClient,{placeholder:'Cliente seconda presa',required:true,maxlength:500});
   secondCity=field('Località','secondCity',draft.secondCity,{placeholder:'Città seconda presa',list:'second-cities',required:true,maxlength:500});
   form.append(el('section',{class:'second-pickup'},el('div',{class:'pickup-heading'},'Seconda presa · stesso container'),tripCustomerAutocomplete(secondClient,secondCity,true),secondCity.wrap,datalist('second-cities',citySuggestions(draft.secondClient))));
+  fareMode=el('select',{id:'pickup-fare-mode',name:'sumPickupFares','aria-label':'Numero tariffe del viaggio'},
+   el('option',{value:'one'},'Una tariffa · due clienti'),
+   el('option',{value:'two'},'Due tariffe · due clienti'));
+  fareMode.value=draft.sumPickupFares===false?'one':'two';
+  form.append(el('label',{class:'field'},el('span',{class:'field-label'},'Tariffe del viaggio'),fareMode,
+   el('span',{class:'field-hint'},'Gli importi sono stabiliti dall’amministrazione. Con una tariffa viene conteggiata solo la prima presa.')));
+  fareMode.addEventListener('change',()=>{collect();updateEstimate();keepEditorScratchpad();});
   secondClient.input.addEventListener('change',()=>{autofillCity(secondClient.input,secondCity.input);updateEstimate();});
  }
  /** Client suggestions appear beneath the existing input, without another search field. */
@@ -692,6 +745,50 @@ function renderInsert(main){
  const adminNoteInput=el('textarea',{id:'trip-admin-note',name:'adminNote',value:draft.adminNote||'',maxlength:2000,rows:3,autocapitalize:'characters',spellcheck:'false',placeholder:'Comunicazione per il PDF mensile'});
  const adminNoteEditor=el('section',{class:'trip-note-editor'},el('label',{class:'field-label',for:'trip-admin-note'},'Nota per amministrazione',el('span',{class:'optional'},'Facoltativa')),adminNoteInput,el('p',{class:'trip-note-help'},'Compare solo in fondo al PDF mensile, separata dalla nota viaggio.'));
  noteEditor.append(adminNoteEditor);
+ if(editingId&&accountAccess.getRole()==='driver'){
+  const historyTripId=editingId,historyOwner=accountAccess.getAccountId();
+  const historyPanel=el('section',{class:'trip-note-editor',hidden:true,'aria-label':'Storico note'});
+  const historyStatus=el('p',{class:'trip-note-help',role:'status','aria-live':'polite'});
+  const historyRows=el('div',{class:'trip-note-history-rows'});
+  const stillEditing=()=>form.isConnected&&editingId===historyTripId&&accountAccess.isVerified()&&accountAccess.getAccountId()===historyOwner;
+  let before=null,loadingHistory=false;
+  const historyMore=el('button',{type:'button',class:'trip-option',hidden:true,on:{click:()=>void loadNoteHistory(false)}},'Altre versioni');
+  async function loadNoteHistory(reset){
+   if(loadingHistory||!stillEditing())return;
+   loadingHistory=true;historyMore.disabled=true;historyStatus.textContent='Caricamento storico…';
+   if(reset){historyRows.replaceChildren();before=null;}
+   try{
+    const data=await accountAccess.tripNoteHistory(historyTripId,before);
+    if(!stillEditing())return;
+    for(const row of data.rows){
+     if(!['note','adminNote'].includes(row.note_kind))continue;
+     const value=typeof row.previous_note==='string'&&row.previous_note.trim()?row.previous_note:row.current_note;
+     if(typeof value!=='string'||!value.trim()||value.length>2000)continue;
+     const target=row.note_kind==='note'?noteInput:adminNoteInput;
+     const label=row.note_kind==='note'?'Nota del viaggio':'Nota per amministrazione';
+     historyRows.append(el('div',{class:'trip-note-history-entry'},
+      el('strong',{},label),el('p',{class:'trip-note-help'},new Date(row.recorded_at).toLocaleString('it-IT')),
+      el('p',{class:'trip-note-history-text'},value),
+      el('button',{type:'button',class:'trip-option',on:{click:()=>{
+       if(!stillEditing())return;
+       confirmAction('Ripristinare questa nota?','La versione scelta sostituirà solo questo campo nella bozza. Salva il viaggio per confermare.',async()=>{
+        if(!stillEditing())return;
+        target.value=value;collect();keepEditorScratchpad();target.focus();
+       },'Ripristina nella bozza');
+      }}},'Ripristina')));
+    }
+    before=data.nextBefore??null;historyMore.hidden=!before;
+    historyStatus.textContent=historyRows.childElementCount?'Seleziona una versione da ripristinare nella bozza.':'Nessuna versione precedente disponibile.';
+   }catch{if(stillEditing())historyStatus.textContent='Storico non disponibile. Le note attuali sono conservate.';}
+   finally{loadingHistory=false;historyMore.disabled=false;}
+  }
+  const historyToggle=el('button',{type:'button',class:'trip-option','aria-expanded':'false',on:{click:()=>{
+   if(!stillEditing())return;
+   historyPanel.hidden=!historyPanel.hidden;historyToggle.setAttribute('aria-expanded',String(!historyPanel.hidden));
+   if(!historyPanel.hidden)void loadNoteHistory(true);
+  }}},'Storico note');
+  historyPanel.append(historyStatus,historyRows,historyMore);noteEditor.append(historyToggle,historyPanel);
+ }
  adminNoteInput.addEventListener('input',()=>{collect();keepEditorScratchpad();});
  noteInput.addEventListener('input',()=>{const start=noteInput.selectionStart,end=noteInput.selectionEnd;const upper=noteInput.value.toLocaleUpperCase('it-IT');if(upper!==noteInput.value){noteInput.value=upper;noteInput.setSelectionRange(start,end);}collect();keepEditorScratchpad();});
  const servicesSymbol=el('span',{class:'plus-disc','aria-hidden':'true'},draft.servicesOpen?'−':'+');
@@ -710,7 +807,7 @@ function renderInsert(main){
  const draftStatus=el('p',{id:'trip-draft-state',class:'trip-draft-state',role:'status','aria-live':'polite'},'Le modifiche vengono conservate sul dispositivo durante la compilazione.');
  const syncDetail=el('p',{id:'trip-save-hint',class:'trip-save-hint',role:'status','aria-live':'polite'});
  form.append(save,draftStatus,syncDetail,el('p',{class:'privacy-footnote'},icon('lock'),'Le note viaggio restano private; solo le note per amministrazione sono riportate nel PDF.'));
- function collect(){draft={date:date.input.value,container:container.input.value,client:client.input.value,city:city.input.value,secondClient:secondClient?.input.value||'',secondCity:secondCity?.input.value||'',services:[...form.querySelectorAll('[name=service]:checked')].map(n=>n.value).concat(retiredReeferInEdit?['reefer']:[]),second:draft.second,note:noteInput.value,adminNote:adminNoteInput.value,noteOpen:Boolean(draft.noteOpen),servicesOpen:Boolean(draft.servicesOpen)};}
+ function collect(){draft={date:date.input.value,container:container.input.value,client:client.input.value,city:city.input.value,secondClient:secondClient?.input.value||'',secondCity:secondCity?.input.value||'',services:[...form.querySelectorAll('[name=service]:checked')].map(n=>n.value).concat(retiredReeferInEdit?['reefer']:[]),second:draft.second,sumPickupFares:Boolean(draft.second&&fareMode?.value==='two'),note:noteInput.value,adminNote:adminNoteInput.value,noteOpen:Boolean(draft.noteOpen),servicesOpen:Boolean(draft.servicesOpen)};}
  let missingEstimateTariffs=false;
  function updateEstimate(){
   collect();
@@ -728,18 +825,18 @@ function renderInsert(main){
   const candidate={...draft,id:estimateId,createdAt:existing?.createdAt||estimateCreatedAt,
    fareCents:companyFareSnapshot(companyRates,companyRatesLoaded,draft.client,draft.city,{unchanged:Boolean(sameFirst),previous:existing?.fareCents}),
    secondFareCents:draft.second&&draft.secondCity?companyFareSnapshot(companyRates,companyRatesLoaded,draft.secondClient,draft.secondCity,{unchanged:Boolean(sameSecond),previous:existing?.secondFareCents}):null,
-   sumPickupFares:Boolean(draft.second&&draft.secondCity),extraCents};
+   sumPickupFares:Boolean(draft.second&&draft.secondCity&&draft.sumPickupFares),extraCents};
   const previewContext=D.buildTripAmountContext([...state.trips.filter(trip=>trip.id!==editingId),candidate]);
   const amount=D.tripAmounts(candidate,previewContext);const saturday=D.saturdayAllowanceStatus(candidate,previewContext);
   hint.textContent=firstTariff?`Tariffa aziendale · ${D.formatMoney(firstTariff.cents)}`:'';
-  estimate.replaceChildren(el('span',{},icon('wallet'),draft.second?'Trasferte + extra':'Trasferta + extra'),draft.client&&draft.city?el('strong',{},D.formatMoney(amount.totalCents)):el('small',{},'Scegli cliente e città'));
+  estimate.replaceChildren(el('span',{},icon('wallet'),draft.second&&draft.sumPickupFares?'Trasferte + extra':'Trasferta + extra'),draft.client&&draft.city?el('strong',{},D.formatMoney(amount.totalCents)):el('small',{},'Scegli cliente e città'));
   estimateBreakdown.replaceChildren(
    el('div',{},el('span',{},'Prima presa'),el('strong',{},draft.client&&draft.city?D.formatMoney(candidate.fareCents):'—')),
-   ...(draft.second?[el('div',{},el('span',{},'Seconda presa'),el('strong',{},draft.secondClient&&draft.secondCity?D.formatMoney(candidate.secondFareCents):'—'))]:[]),
+   ...(draft.second?[el('div',{},el('span',{},'Seconda presa'),el('strong',{},!draft.sumPickupFares?'Non sommata':draft.secondClient&&draft.secondCity?D.formatMoney(candidate.secondFareCents):'—'))]:[]),
    el('div',{},el('span',{},'Servizi extra'),el('strong',{},D.formatMoney(amount.extraCents)))
   );
   saturdayNote.textContent=saturdayNoteText(saturday.status);saturdayNote.hidden=saturday.status==='none';saturdayNote.dataset.saturdayStatus=saturday.status;
-  const hasAny=Boolean(draft.client||draft.city||draft.services.length);const unknown=(candidate.fareCents===null&&Boolean(draft.client&&draft.city))||(draft.second&&candidate.secondFareCents===null&&Boolean(draft.secondClient&&draft.secondCity))||draft.services.some(key=>extraCents[key]===null&&!(key==='sabatoTrasferta'&&saturday.status==='included'));
+  const hasAny=Boolean(draft.client||draft.city||draft.services.length);const unknown=(candidate.fareCents===null&&Boolean(draft.client&&draft.city))||(draft.second&&draft.sumPickupFares&&candidate.secondFareCents===null&&Boolean(draft.secondClient&&draft.secondCity))||draft.services.some(key=>extraCents[key]===null&&!(key==='sabatoTrasferta'&&saturday.status==='included'));
   missingEstimateTariffs=Boolean(hasAny&&unknown);
   missing.textContent=missingEstimateTariffs?'Alcune tariffe non sono impostate. Prima del salvataggio dovrai confermare il totale parziale.':'';
   missing.style.marginBottom=missing.textContent?'16px':'0';
@@ -752,10 +849,13 @@ function renderInsert(main){
  form.addEventListener('submit',async event=>{
   event.preventDefault();if(busy)return;collect();error.textContent='';form.querySelectorAll('[aria-invalid]').forEach(n=>n.removeAttribute('aria-invalid'));
   const checked=D.validateTrip(draft);
-  if(!checked.valid){error.textContent=Object.values(checked.errors)[0];const firstKey=Object.keys(checked.errors)[0];if(firstKey==='note'){draft.noteOpen=true;noteEditor.hidden=false;noteToggle.setAttribute('aria-expanded','true');noteSymbol.textContent='−';}const firstBad=form.elements[firstKey];if(firstBad instanceof HTMLElement){firstBad.setAttribute('aria-invalid','true');firstBad.focus();}return;}
+  if(!checked.valid){error.textContent=Object.values(checked.errors)[0];const firstKey=Object.keys(checked.errors)[0];if(firstKey==='note'||firstKey==='adminNote'){draft.noteOpen=true;noteEditor.hidden=false;noteToggle.setAttribute('aria-expanded','true');noteSymbol.textContent='−';}const firstBad=form.elements[firstKey];if(firstBad instanceof HTMLElement){firstBad.setAttribute('aria-invalid','true');firstBad.focus();}return;}
   updateEstimate();
   const duplicate=possibleTripDuplicate(state.trips,draft,editingId);
   const warnings=[];
+  const previousNotes=state.trips.find(t=>t.id===editingId);
+  if(previousNotes?.note?.trim()&&!checked.value.note.trim())warnings.push('Stai cancellando la nota viaggio.');
+  if(previousNotes?.adminNote?.trim()&&!checked.value.adminNote.trim())warnings.push('Stai cancellando la nota per amministrazione.');
   if(duplicate)warnings.push('Esiste già un viaggio del '+formatDate(duplicate.date)+' con questo container, cliente e località.');
   if(missingEstimateTariffs)warnings.push('Una o più tariffe aziendali non sono disponibili: il totale mostrato è parziale.');
   const commit=async()=>{
@@ -779,7 +879,15 @@ function renderInsert(main){
    let next={...state,trips:existing?state.trips.map(t=>t.id===existing.id?trip:t):[...state.trips,trip]};
    const clients=[{name:trip.client,city:trip.city},...(trip.secondClient?[{name:trip.secondClient,city:trip.secondCity}]:[])];
    for(const customer of clients)if(!next.customers.some(c=>c.name===customer.name))next=D.upsertCustomer(next,customer);
-   await persist(next);
+   const persisted=await persist(next);
+   const savedTrip=persisted.trips.find(item=>item.id===trip.id);
+   if(!savedTrip||(savedTrip.adminNote??'')!==(trip.adminNote??'')||(savedTrip.note??'')!==(trip.note??'')){
+    // Keep the draft and never report a successful save if the returned note differs.
+    // Retain the attempted identity so a retry cannot create a duplicate.
+    editingId=trip.id;editingBaseline=tripEditVersion(savedTrip||null);
+    keepEditorScratchpad();
+    throw new Error('Le note del viaggio non sono state confermate. La bozza resta disponibile: verifica la sincronizzazione prima di riprovare o generare il PDF.');
+   }
    const pending=store.getSyncInfo?.().pending;
    const savedDate=draft.date;
    month=savedDate.slice(0,7);registerQuery='';registerFilter='all';registerLimit=REGISTER_PAGE_SIZE;
@@ -811,11 +919,7 @@ function renderInsert(main){
   info.pending?'Viaggi salvati localmente; invio online in attesa.':
   info.status==='synced'?'Registro sincronizzato online.':'Verifica lo stato di sincronizzazione nella barra in alto.';
  layout.append(form);
- const recent=el('aside',{class:'recent-preview'},el('p',{class:'recent-heading'},'L’ULTIMO VIAGGIO'));
- const latest=D.sortTrips(state.trips)[0];
- recent.append(latest?tripCard(latest,amountContext):emptyState('Pronto a partire','Inserisci il primo viaggio: lo ritroverai qui e nel resoconto mensile.','truck'));
- recent.append(el('p',{class:'hint-row'},icon('info'),'Clienti e località vengono ricordati.'));
- layout.append(recent);main.append(layout);
+ main.append(layout);
  refreshView=()=>{
   client.input.value=draft.client;if(secondClient)secondClient.input.value=draft.secondClient;
   updateEstimate();
@@ -824,9 +928,7 @@ function renderInsert(main){
   const nextCities=datalist(cityListId,citySuggestions(client.input.value));cities.replaceWith(nextCities);cities=nextCities;
   refreshTripCustomerSuggestions?.();
   if(secondClient){const list=form.querySelector('#second-cities');list?.replaceWith(datalist('second-cities',citySuggestions(secondClient.input.value)));}
-  const latest=D.sortTrips(state.trips)[0];
-  const currentAmounts=D.buildTripAmountContext(state);
-  recent.replaceChildren(el('p',{class:'recent-heading'},'L’ULTIMO VIAGGIO'),latest?tripCard(latest,currentAmounts):emptyState('Pronto a partire','Inserisci il primo viaggio: lo ritroverai qui e nel resoconto mensile.','truck'),el('p',{class:'hint-row'},icon('info'),'Clienti e località vengono ricordati.'));
+
  };
 }
 function citySuggestions(client){const normalized=D.normalizeText(client);return unique([...companyRates.filter(t=>t.client===normalized).map(t=>t.city),...state.tariffs.filter(t=>t.client===normalized).map(t=>t.city),...state.customers.filter(c=>c.name===normalized).map(c=>c.city),...state.trips.filter(t=>t.client===normalized).map(t=>t.city),...companyCustomers.filter(c=>D.normalizeText(c.name)===normalized).map(c=>D.normalizeText(c.city))]);}
@@ -834,7 +936,7 @@ function autofillCity(client,city){if(!city.value.trim()){const normalized=D.nor
 function editTrip(trip,{focusNote=false}={}){
  const apply=()=>{
   editingId=trip.id;editingBaseline=tripEditVersion(trip);
-  draft={...trip,services:[...trip.services],second:Boolean(trip.secondClient||trip.secondCity),note:trip.note||'',adminNote:trip.adminNote||'',noteOpen:focusNote||Boolean(trip.note),servicesOpen:true};
+  draft={...trip,services:[...trip.services],second:Boolean(trip.secondClient||trip.secondCity),note:trip.note||'',adminNote:trip.adminNote||'',noteOpen:focusNote||Boolean(trip.note||trip.adminNote),servicesOpen:true};
   keepEditorScratchpad();navigate('insert',{keepDraft:true});
   if(focusNote)document.querySelector('#trip-note')?.focus();
  };
@@ -872,6 +974,7 @@ function tripCard(trip,amountContext){
  })));
  if(trip.note)card.append(el('p',{class:'trip-note-summary'},el('span',{class:'trip-note-prefix'},'Nota:'),el('span',{class:'trip-note-text',title:trip.note},trip.note)));
  else card.append(el('button',{type:'button',class:'trip-option trip-note-add','aria-label':`INSERISCI NOTA · ${trip.container} · ${formatDate(trip.date)}`,on:{click:()=>editTrip(trip,{focusNote:true})}},el('span',{class:'plus-disc','aria-hidden':'true'},'+'),'INSERISCI NOTA'));
+ if(typeof trip.adminNote==='string'&&trip.adminNote.trim())card.append(el('div',{class:'trip-note-summary trip-admin-note-summary'},el('span',{class:'trip-note-prefix'},'Nota per amministrazione'),el('span',{class:'trip-note-text'},trip.adminNote),el('small',{},'Inclusa nel PDF mensile')));
  if(saturday.status!=='none')card.append(el('p',{class:'saturday-note',dataset:{saturdayStatus:saturday.status}},saturdayNoteText(saturday.status)));
  card.append(el('div',{class:'trip-amount-lines'},
   el('div',{class:'trip-amount-line'},el('strong',{},'Trasferta'),el('span',{},D.formatMoney(amount.pickupCents))),
@@ -918,7 +1021,7 @@ function duplicateRegisteredTrip(trip){
   editingId=null;editingBaseline=null;
   draft={...newDraft(),date:today(),client:trip.client,city:trip.city,
    secondClient:trip.secondClient||'',secondCity:trip.secondCity||'',
-   second:Boolean(trip.secondCity),services:[...(trip.services||[])],
+   second:Boolean(trip.secondCity),sumPickupFares:Boolean(trip.secondCity)&&trip.sumPickupFares!==false,services:[...(trip.services||[])],
    note:trip.note||'',noteOpen:Boolean(trip.note),servicesOpen:Boolean(trip.services?.length)};
   draftBaselineDate=draft.date;keepEditorScratchpad();navigate('insert',{keepDraft:true});
   document.querySelector('input[name="container"]')?.focus();
@@ -1382,11 +1485,7 @@ function openProfile(required=false){
   if(accountAccess.isEnabled()){
     // Payroll entry is added only after a successful owner-scoped server check.
     // No client-only role/name toggle can grant access to private documents.
-    if(store.usingAccount()&&accountAccess.getRole()==='admin'&&accountAccess.isVerified())
-      body.querySelector('.profile-menu').prepend(menuButton('Gestisci autisti',
-        'Apri il pannello amministratore con inviti, accessi, rimozioni e reinserimenti.','users',()=>{
-          dialog.close();window.location.assign(new URL('amministratore/',import.meta.url).href);
-        }));
+    // Administrative operations belong to the separately opened LTS Admin app.
     if(store.usingAccount()){
       body.querySelector('.profile-menu').prepend(menuButton('Recupera archivio precedente','Salva il vecchio backup e importa i dati conservati su questo telefono.','download',()=>{dialog.close();showLegacyArchiveRecovery();}));
       body.querySelector('.profile-menu').prepend(menuButton('Esci dall’account','Blocca la schermata e conserva il registro online. Prima sincronizza eventuali modifiche.','lock',()=>{
@@ -1423,7 +1522,7 @@ function openProfile(required=false){
     return group;
   };
   addProfileGroup('Accesso rapido','Le funzioni collegate al tuo account.','services',
-    ['I MIEI DOCUMENTI','Gestisci autisti','Accedi con account autista']);
+    ['I MIEI DOCUMENTI','Accedi con account autista']);
   addProfileGroup('Dati e sincronizzazione','Mantieni aggiornato il registro sui tuoi dispositivi.','sync',
     ['Risolvi sincronizzazione','Sincronizza adesso','Collega dispositivi']);
   addProfileGroup('Archivio e backup','Salva, trasferisci o recupera una copia dei tuoi viaggi.','backup',
@@ -1460,6 +1559,7 @@ function openProfile(required=false){
         'CEDOLINO · CU · ALTRI DOCUMENTI. Solo i tuoi PDF pubblicati.',
         'pdf',()=>{
           const target=new URL('documenti/',import.meta.url);
+          if(location.pathname.startsWith('/LTS-Registro-Viaggi/viaggi/'))target.pathname='/LTS-Registro-Viaggi/viaggi/documenti/';
           target.searchParams.set('from','profile');
           dialog.close();window.location.assign(target.href);
         });
@@ -1709,7 +1809,7 @@ async function importFile(file){
 }
 async function startInstall(){
  if(isInstalled()){toast('LTS è già aperta come app.');return;}
- if(installPrompt){
+ if(installPrompt&&location.pathname.startsWith('/LTS-Registro-Viaggi/viaggi/')){
   const prompt=installPrompt;installPrompt=null;
   try{await prompt.prompt();const choice=await prompt.userChoice;if(choice?.outcome==='accepted')return;}catch{}
  }
@@ -1727,7 +1827,8 @@ function installDialog(){
  }else{
   steps.append(el('li',{},el('div',{},el('strong',{},'Apri il menu del browser'),el('p',{},'Su telefono cerca il pulsante ⋮ o il menu Condividi.'))),el('li',{},el('div',{},el('strong',{},'Scegli “Installa app”'),el('p',{},'Può chiamarsi anche “Aggiungi alla schermata Home”. Su iPhone usa Condividi in Safari.'))),el('li',{},el('div',{},el('strong',{},'Conferma l’aggiunta'),el('p',{},'Apri LTS dalla nuova icona sul telefono.'))));body.append(steps);
  }
- const manifest=document.querySelector('link[rel="manifest"]');const url=new URL('./',manifest?.href||location.href).href;
+ const url=new URL('viaggi/',import.meta.url).href;
+ if(!location.pathname.startsWith('/LTS-Registro-Viaggi/viaggi/'))body.append(el('a',{href:url,class:'primary-button full'},'Apri la pagina dedicata per installare LTS Viaggi'));
  const link=el('input',{type:'url',value:url,readonly:true,'aria-label':'Link dell’app LTS',class:'install-url'});
  const copy=button('Copia link','secondary',async()=>{try{if(!navigator.clipboard?.writeText)throw new Error();await navigator.clipboard.writeText(url);copy.textContent='Link copiato';}catch{link.focus();link.select();toast('Tieni premuto sul link e scegli Copia.');}},'link');
  body.append(el('div',{class:'install-link'},link,copy),button('Torna al registro','text',()=>dialog.close(),null,{class:'text-button full'}));
@@ -1784,7 +1885,7 @@ function accountLoginFields({fromGate=false,initialPhone=''}={}){
       const logged=await accountAccess.login(phone,pass.value);
       pass.value='';
       if(logged.role==='admin'&&logged.mfa_enrolled&&!logged.mfa_verified){
-        window.location.assign(new URL('amministratore/',import.meta.url).href);
+        renderAccountGate('Per completare la verifica amministratore, apri separatamente LTS Admin. Per cambiare account, usa Esci e cambia account.');
         return;
       }
       if(logged.role==='driver'&&!logged.remembered)
@@ -2458,7 +2559,7 @@ let appWorkerChangePending=false,lastAppWorkerCheck=0;
 function safeAppUpdateReload(){
  if(resumingVerification||driverSessionShield.isVisible()||driverSessionShield.isQuiet()||
     root.querySelector('.account-connection-gate'))return false;
- if(!appWorkerChangePending||document.hidden||busy||tab==='insert'||editingId||
+ if(!appWorkerChangePending||document.hidden||busy||tab==='insert'||tab==='porti'||editingId||
     store.getSyncInfo?.().pending||store.getSyncInfo?.().conflict||
     document.querySelector('dialog[open]')||
     document.activeElement?.matches?.('input,textarea,select,[contenteditable="true"]'))return false;
@@ -2470,7 +2571,7 @@ navigator.serviceWorker?.addEventListener('controllerchange',()=>{
  if(!hadAppWorkerAtStartup)return; // First-time service-worker claim is not an update.
  appWorkerChangePending=true;
  if(!safeAppUpdateReload())
-  toast('Aggiornamento disponibile: dopo aver salvato, torna al registro e riapri LTS.');
+  toast(tab==='porti'?'Aggiornamento disponibile: termina la consultazione Porti, poi torna al registro.':'Aggiornamento disponibile: dopo aver salvato, torna al registro e riapri LTS.');
 });
 async function checkInstalledAppVersion(){
  if(document.hidden||navigator.onLine===false||!navigator.serviceWorker)return;

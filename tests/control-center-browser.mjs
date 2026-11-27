@@ -38,7 +38,7 @@ window.__ccQA={data,home,records,monthItems,sum,report,roster,customers,approval
 home.refresh();
 window.__ccReady=true;
 `;
-const shell=`<!doctype html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/amministratore/admin.css"><link rel="stylesheet" href="/amministratore/control-center-home.css"></head><body><main class="container"><div id="dashboard" data-view="overview"><section id="report-panel"><section id="control-center-home"></section></section></div></main><script type="module" src="/fixture.mjs"></script></body></html>`;
+const shell=`<!doctype html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/amministratore/admin.css"><link rel="stylesheet" href="/amministratore/control-center-home.css"><link rel="stylesheet" href="/amministratore/dashboard-refresh.css"></head><body><main class="container"><div id="dashboard" data-view="overview"><section id="report-panel"><section id="control-center-home"></section></section></div></main><script type="module" src="/fixture.mjs"></script></body></html>`;
 const mime={'.html':'text/html','.mjs':'text/javascript','.css':'text/css','.png':'image/png','.webp':'image/webp','.svg':'image/svg+xml'};
 let outside=0;
 const server=createServer(async(req,res)=>{
@@ -61,6 +61,10 @@ try{
  await page.goto(origin+'/fixture',{waitUntil:'networkidle'});await page.waitForFunction(()=>window.__ccReady);
  await page.waitForFunction(()=>document.getElementById('cc-kpi-anomalies')?.textContent.includes('2'));
  assert.equal(await page.locator('.cc-kpi').count(),8);note('eight KPI cards use confirmed sources');
+ const style=await page.locator('#cc-kpi-driversTotal').evaluate(node=>({background:getComputedStyle(node).backgroundColor,gradient:getComputedStyle(node).backgroundImage,value:getComputedStyle(node.querySelector('.cc-kpi-value')).color}));
+ assert.equal(style.background,'rgb(255, 255, 255)');assert.equal(style.gradient,'none');assert.equal(style.value,'rgb(23, 59, 74)');
+ const warning=await page.locator('#cc-kpi-anomalies .cc-kpi-top > svg').evaluate(node=>getComputedStyle(node).color);
+ assert.equal(warning,'rgb(146, 91, 27)');note('LTS refresh uses readable white KPI cards and amber warning icon');
  const values=await page.evaluate(()=>Object.fromEntries(['driversTotal','driversActive','tripsToday','tripsMonth','faresMonthCents','companyCustomers','anomalies','pendingApprovals'].map(id=>[id,document.getElementById('cc-kpi-'+id)?.textContent])));
  assert.match(values.driversTotal,/2/);assert.match(values.driversActive,/1/);assert.match(values.companyCustomers,/2/);assert.match(values.pendingApprovals,/1/);
  const expectedMonthly=await page.evaluate(()=>{const q=window.__ccQA;return {today:q.monthItems.filter(x=>x.date==='2026-11-11').length,trips:q.monthItems.length,money:new Intl.NumberFormat('it-IT',{style:'currency',currency:'EUR'}).format(q.sum(q.monthItems).totalCents/100)};});

@@ -11,18 +11,20 @@ const runner=process.env.LTS_BROWSER_PLAYWRIGHT||'/tmp/lts-browser-test';
 const {chromium,webkit}=createRequire(import.meta.url)(runner+'/node_modules/playwright');
 const engine=process.env.LTS_BROWSER_ENGINE==='webkit'?'webkit':'chromium';
 const mockAccount=String.raw`
-export const hasSession=()=>true;
-export const isVerified=()=>true;
-export const getRole=()=> 'admin';
+const mockAdminPresent=()=>globalThis.__mockAdminAuthorized!==false;
+export const hasSession=()=>mockAdminPresent();
+export const isVerified=()=>mockAdminPresent();
+export const getRole=()=>mockAdminPresent()?'admin':null;
 export const getAccountId=()=> 'account:33333333-3333-4333-8333-333333333333';
 let mockVerifyMode='ok';
 export const mockSetVerifyMode=value=>{mockVerifyMode=value;};
 export const verifySession=async()=>{
+ if(!mockAdminPresent())throw new Error('QA: sessione non autenticata');
  if(mockVerifyMode==='offline'){
   const error=new Error('Rete mobile temporaneamente non disponibile.');
   error.offline=true;throw error;
  }
- return {mfa_enrolled:true,mfa_verified:true};
+ return {user_id:'33333333-3333-4333-8333-333333333333',role:'admin',mfa_enrolled:true,mfa_verified:globalThis.__mockAdminMfaVerified!==false};
 };
 export const listAdminMfaFactors=async()=>[{label:'Principale',id:'a'}];
 export const manageDrivers=async(action)=>action==='list'?{drivers:[
@@ -62,7 +64,7 @@ const removedPersonalRecords=new Map();
 let adminArchive={
  schemaVersion:1,profile:{firstName:'Mario',lastName:'Rossi'},
  trips:[{id:'t1',date:'2026-11-04',client:'CLIENTE ALFA',city:'NAPOLI',
-  container:'ABCD1234567',secondClient:'',secondCity:'',note:'NOTA INIZIALE',
+  container:'ABCD1234567',secondClient:'',secondCity:'',note:'',adminNote:'NOTA INIZIALE',
   services:[],fareCents:15000,secondFareCents:null,sumPickupFares:false,
   extraCents:{adr:null,reefer:null,pernotto:null,preOrario:0,sabatoPorto:null,
    sabatoTrasferta:null,facchinaggioBilico:null,facchinaggioReefer:null},
@@ -154,11 +156,11 @@ export const companyReport=async({month,offset=0,limit=40,driverId=null})=>{
  const trips=month==='2026-11'?[
  {id:'1',driverId:drivers[0].id,driverName:drivers[0].name,date:'2026-11-04',
   container:'ABCD1234567',client:'CLIENTE ALFA',city:'NAPOLI',secondClient:'',secondCity:'',
-  services:['reefer'],note:'<img src=x onerror=alert(1)>',totalCents:15000,
+  services:['reefer'],adminNote:'<img src=x onerror=alert(1)>',totalCents:15000,
   missingTariff:false,updatedAt:'2026-11-04T08:00:00Z'},
  {id:'2',driverId:drivers[0].id,driverName:drivers[0].name,date:'2026-11-03',
   container:'WXYZ1234567',client:'CLIENTE BETA',city:'SALERNO',secondClient:'ALTRO',secondCity:'NAPOLI',
-  services:[],note:'',totalCents:10000,missingTariff:true,updatedAt:'2026-11-03T07:00:00Z'}
+  services:[],adminNote:'',totalCents:10000,missingTariff:true,updatedAt:'2026-11-03T07:00:00Z'}
  ]:[];
  const selected=driverId?trips.filter(t=>t.driverId===driverId):trips;
  const missing=selected.filter(t=>t.missingTariff).length;
@@ -283,19 +285,44 @@ export const decideMapsApproval=async()=>{throw new Error('Nessuna richiesta di 
 const mockMapsReader=String.raw`
 export const readMapsCustomer=async(link)=>{
  if(link==='https://maps.app.goo.gl/newDepot')
-  return {name:'CLIENTE DELTA',city:'CASERTA',address:'VIA PORTO 8, CASERTA',mapsUrl:link,warnings:[]};
+  return {name:'D',city:'',address:'',mapsUrl:link,warnings:['Località e indirizzo mancanti.']};
  if(link==='https://maps.app.goo.gl/exampleC')
   return {name:'CLIENTE GAMMA',city:'ROMA',address:'VIA INDUSTRIA 25, ROMA',mapsUrl:link,warnings:[]};
  return {name:'CLIENTE ALFA',city:'NAPOLI',address:'VIA TEST 1, NAPOLI',mapsUrl:link,warnings:[]};
 };
 `;
+// Browser-only fake Documents API: local response; never uses Supabase or real JWT.
+const mockPayrollApi=String.raw`
+globalThis.__mockPayrollCalls=[];
+export const drivers=async()=>{
+ globalThis.__mockPayrollCalls.push('drivers');
+ return {drivers:[{id:'11111111-1111-4111-8111-111111111111',
+  name:'Autista QA sintetico',documents_enabled:true}]};
+};
+export const documents=async()=>{
+ globalThis.__mockPayrollCalls.push('documents');
+ return {documents:[]};
+};
+export const publish=async()=>{throw Error('QA: no document publishing');};
+export const revoke=async()=>{throw Error('QA: no document revocation');};
+export const upload=async()=>{throw Error('QA: no document uploading');};
+export const download=async()=>{throw Error('QA: no document download');};
+export const acknowledge=async()=>{throw Error('QA: no acknowledgments');};
+export const savePdf=()=>{throw Error('QA: no document bytes');};
+`;
 const root=resolve(dir),mime={'.html':'text/html','.css':'text/css','.mjs':'text/javascript','.png':'image/png'};
 const server=createServer(async(req,res)=>{
  const path=new URL(req.url,'http://localhost').pathname;
  if(path==='/account-access.mjs'){res.writeHead(200,{'Content-Type':'text/javascript','Cache-Control':'no-store'}).end(mockAccount);return;}
+ if(path==='/documenti/document-api.mjs'){
+  res.writeHead(200,{'Content-Type':'text/javascript','Cache-Control':'no-store'}).end(mockPayrollApi);
+  return;
+ }
  if(path==='/shared-maps-client.mjs'){res.writeHead(200,{'Content-Type':'text/javascript','Cache-Control':'no-store'}).end(mockSharedMaps);return;}
   if(path==='/maps-reader-client.mjs'){res.writeHead(200,{'Content-Type':'text/javascript','Cache-Control':'no-store'}).end(mockMapsReader);return;}
- const file=path==='/amministratore/'?'amministratore/index.html':path.slice(1);
+ const file=path==='/amministratore/'?'amministratore/index.html':
+   path==='/amministratore/buste-paga/'?'amministratore/buste-paga/index.html':
+   path.slice(1);
  const target=resolve(root,file);
  if(target!==root&&!target.startsWith(root+sep)){res.writeHead(403).end();return;}
  try{const data=await readFile(target);res.writeHead(200,{'Content-Type':mime[extname(target)]||'application/octet-stream'}).end(data);}
@@ -317,6 +344,11 @@ try{
   await page.locator('#'+id).click();
  }
  await page.goto(origin+'/amministratore/',{waitUntil:'networkidle',timeout:20000});
+ await page.locator('#admin-area-choice').waitFor({state:'visible'});
+ assert.equal(await page.locator('#dashboard').isVisible(),false);
+ assert.equal(await page.locator('#admin-logistica-login').isVisible(),false,
+  'A verified session must not show a second login form');
+ await page.locator('#select-area-logistica').click();
  await page.locator('#dashboard').waitFor({state:'visible'});
  assert.equal(await page.locator('#dashboard').getAttribute('data-view'),'overview','Protected overview should open after verified admin MFA');
  assert.equal(await page.locator('#control-center-home').isVisible(),true);
@@ -453,7 +485,7 @@ try{
  assert.match(await page.locator('#smart-results').textContent(),/ABCD1234567/i);
  // V2 contextual read-only previews preserve the active dashboard, search and data.
  await page.locator('#smart-results .smart-result-buttons button').first().click();
- assert.equal(await page.locator('#smart-detail').isVisible(),true);
+ await page.locator('#smart-detail').waitFor({state:'visible',timeout:5000});
  assert.match(await page.locator('#smart-detail-body').textContent(),/ABCD1234567/);
  assert.equal(await page.locator('#dashboard').getAttribute('data-view'),'overview');
  await page.locator('#smart-back').click();
@@ -594,7 +626,30 @@ try{
   assert(box.labelSize>=11,width+'px: mobile nav labels remain readable');
  }
  await page.setViewportSize({width:390,height:844});
-
+ // Related navigation follows real tab handlers; reselecting the active view is a no-op.
+ await page.locator('#customers-tab').click();
+ await page.waitForFunction(()=>document.querySelector('#workspace-related button[data-related-target="#rates-tab"]'));
+ assert.equal(await page.locator('#workspace-related').isVisible(),true);
+ await page.locator('#workspace-related button[data-related-target="#rates-tab"]').click();
+ assert.equal(await page.locator('#dashboard').getAttribute('data-view'),'rates');
+ await page.waitForFunction(()=>document.querySelector('#company-rates-count').textContent.includes('tariffe aziendali'));
+ await page.locator('#company-maps-url').fill('https://maps.app.goo.gl/layoutDraft');
+ await page.locator('#admin-nav-more summary').click();
+ await page.locator('#rates-tab').click();
+ assert.equal(await page.locator('#company-maps-url').inputValue(),'https://maps.app.goo.gl/layoutDraft','Repeated active tab preserves the form');
+ await page.locator('#company-maps-url').fill('');
+ await page.locator('#workspace-related button[data-related-target="#customers-tab"]').click();
+ assert.equal(await page.locator('#dashboard').getAttribute('data-home-section'),'customers');
+ await page.locator('#workspace-related button[data-related-target="#rates-tab"]').click();
+ await page.waitForFunction(()=>document.querySelector('#dashboard').dataset.view==='rates');
+ await page.locator('#overview-tab').click();
+ assert.equal(await page.locator('#workspace-related').isVisible(),false);
+ const flow=await page.evaluate(()=>{
+  const home=document.querySelector('#control-center-home');
+  const children=[...home.children];
+  return {actions:children.indexOf(home.querySelector('.cc-quick')),filters:children.indexOf(home.querySelector('.cc-toolbar')),operations:children.indexOf(home.querySelector('.cc-operations')),charts:children.indexOf(home.querySelector('.cc-chart-grid'))};
+ });
+ assert(flow.actions<flow.filters&&flow.operations<flow.charts,'Home puts operational work before filters and charts');
 
  await openAdminTab('analysis-tab');
  assert.equal(await page.locator('#company-rates').isVisible(),false,
@@ -688,8 +743,26 @@ try{
  assert.equal(await page.locator('#report-profile-days').textContent(),'0');
  assert.equal(await page.locator('#report-profile-average').textContent(),'—');
  assert.equal(await page.locator('#report-amount-chart .report-bar-row').count(),0);
+ // Wait for the driver selector and its report to agree before switching back.
+ assert.equal(await page.locator('#report-driver').inputValue(),
+  '22222222-2222-4222-8222-222222222222');
  await page.locator('#report-show-all').click();
- await page.waitForFunction(()=>document.querySelector('#report-count').textContent==='2');
+ try{
+  await page.waitForFunction(()=>document.querySelector('#report-driver')?.value===''&&
+   document.querySelector('#report-count')?.textContent==='2',null,{timeout:15000});
+ }catch(error){
+  const info=await page.evaluate(()=>({
+   driver:document.querySelector('#report-driver')?.value,
+   count:document.querySelector('#report-count')?.textContent,
+   month:document.querySelector('#report-month')?.value,
+   view:document.querySelector('#dashboard')?.dataset.view,
+   status:document.querySelector('#report-status')?.textContent,
+   reportError:document.querySelector('#report-error')?.textContent,
+   reportErrorHidden:document.querySelector('#report-error')?.hidden,
+   calls:globalThis.__mockCompanyReportCalls?.slice(-5)
+  }));
+  throw new Error('Show-all filter/report mismatch '+JSON.stringify(info),{cause:error});
+ }
  assert.equal(await page.locator('#report-driver-profile').isVisible(),false);
  await page.locator('#report-driver').selectOption('');
  await page.waitForFunction(()=>document.querySelector('#report-count').textContent==='2');
@@ -812,16 +885,16 @@ try{
  assert.equal(await page.locator('#records-editor input[name="fareCents"]').inputValue(),'76,00');
  await primarySite.locator('.records-site-apply-fare').click();
  assert.equal(await page.locator('#records-editor input[name="fareCents"]').inputValue(),'150,00');
- await page.locator('#records-editor textarea[name="note"]').fill('BOZZA NON SALVATA');
+ await page.locator('#records-editor textarea[name="adminNote"]').fill('BOZZA NON SALVATA');
  await page.locator('#records-search').fill('NESSUN RISULTATO');
- assert.equal(await page.locator('#records-editor textarea[name="note"]').inputValue(),'BOZZA NON SALVATA',
+ assert.equal(await page.locator('#records-editor textarea[name="adminNote"]').inputValue(),'BOZZA NON SALVATA',
   'Search must not destroy an unsaved editor');
  await page.locator('#records-search').fill('');
  page.once('dialog',dialog=>dialog.dismiss());
  await openAdminTab('management-tab');
  assert.equal(await page.locator('#dashboard').getAttribute('data-view'),'records');
- assert.equal(await page.locator('#records-editor textarea[name="note"]').inputValue(),'BOZZA NON SALVATA');
- await page.locator('#records-editor textarea[name="note"]').fill('NOTA CORRETTA DA ADMIN');
+ assert.equal(await page.locator('#records-editor textarea[name="adminNote"]').inputValue(),'BOZZA NON SALVATA');
+ await page.locator('#records-editor textarea[name="adminNote"]').fill('NOTA CORRETTA DA ADMIN');
  await page.locator('#records-editor button[type="submit"]').click();
  await page.waitForFunction(()=>document.querySelector('#records-driver').disabled);
  assert.equal(await page.locator('#records-driver').isDisabled(),true);
@@ -1010,7 +1083,43 @@ try{
  await page.locator('#company-maps-url').fill('https://maps.app.goo.gl/newDepot');
  await page.locator('#company-maps-read').click();
  await page.waitForFunction(()=>!document.querySelector('#company-maps-preview').hidden);
- assert.equal(await page.locator('#company-maps-name').textContent(),'CLIENTE DELTA');
+ assert.equal(await page.locator('#company-maps-name').inputValue(),'');
+ assert.equal(await page.locator('#company-maps-save').isDisabled(),true);
+ await page.locator('#company-maps-name').fill('D');
+ await page.locator('#company-maps-city').fill('CASERTA');
+ await page.locator('#company-maps-address').fill('VIA PORTO 8, CASERTA');
+ assert.equal(await page.locator('#company-maps-save').isDisabled(),true);
+ await page.locator('#company-maps-name').fill('CLIENTE DELTA');
+ assert.equal(await page.locator('#company-maps-save').isEnabled(),true);
+ // Long synthetic values must wrap, grow, remain editable and fit the mobile viewport.
+ await page.locator('#company-maps-city').fill('ZONA INDUSTRIALE DI COLLAUDO MARCIANISE NORD');
+ await page.locator('#company-maps-address').fill('KM. 27.200, SS 265, 81025 ZONA INDUSTRIALE DI COLLAUDO MARCIANISE NORD CE, INGRESSO MERCI E AREA DI CARICO');
+ const mapsGeometry=await page.evaluate(()=>{
+  const fields=['name','city','address'].map(key=>{
+   const field=document.querySelector('#company-maps-'+key);
+   return {tag:field.tagName,client:field.clientHeight,scroll:field.scrollHeight,width:field.clientWidth,scrollWidth:field.scrollWidth};
+  });
+  return {fields,viewport:innerWidth,documentWidth:document.documentElement.scrollWidth};
+ });
+ for(const field of mapsGeometry.fields){
+  assert.equal(field.tag,'TEXTAREA');
+  assert(field.scroll<=field.client+2,'Maps text must fit vertically');
+  assert(field.scrollWidth<=field.width+2,'Maps text must wrap horizontally');
+ }
+ assert(mapsGeometry.documentWidth<=mapsGeometry.viewport+2,'Maps form must not overflow viewport');
+ await page.locator('#company-maps-save').evaluate(el=>el.scrollIntoView({block:'end',behavior:'instant'}));
+ const saveGeometry=await page.evaluate(()=>{
+  const button=document.querySelector('#company-maps-save').getBoundingClientRect();
+  const nav=document.querySelector('#dashboard>.admin-switch').getBoundingClientRect();
+  return {bottom:button.bottom,navTop:nav.top};
+ });
+ assert(saveGeometry.bottom<=saveGeometry.navTop+1,'Maps save button must clear fixed navigation');
+ await page.locator('#company-maps-city').fill('CASERTA');
+ await page.locator('#company-maps-address').fill('VIA PORTO 8, CASERTA');
+ await page.locator('#company-maps-address').fill('');
+ assert.equal(await page.locator('#company-maps-save').isDisabled(),true);
+ await page.locator('#company-maps-address').fill('VIA PORTO 8, CASERTA');
+ assert.equal(await page.locator('#company-maps-save').isEnabled(),true);
  await page.locator('#company-maps-amount').fill('95,50');
  await page.locator('#company-maps-save').click();
  await page.waitForFunction(()=>document.querySelector('#company-maps-status').textContent.includes('Cliente Google Maps e tariffa salvati insieme'));
@@ -1054,7 +1163,43 @@ try{
  await page.keyboard.press('Control+k');
  await page.locator('#smart-search').fill('ROSSI');
  await page.locator('#smart-results .smart-result-buttons button').first().click();
- assert.equal(await page.locator('#smart-detail').isVisible(),true);
+ await page.locator('#smart-detail').waitFor({state:'visible',timeout:5000});
+ assert.match(await page.locator('#smart-detail-body').textContent(),/Mario Rossi/,
+  'Before an area switch, the open preview must display the authorized synthetic driver');
+ // Close the active modal before clicking the toolbar behind its scrim.
+ // Background clicks must remain blocked while the dialog is open.
+ await page.locator('#smart-close').click();
+ assert.equal(await page.locator('#smart-overlay').isVisible(),false);
+ // Cross-area navigation remains within one verified admin MFA session.
+ await page.locator('#admin-return-areas').click();
+ assert.equal(await page.locator('#admin-area-choice').isVisible(),true);
+ assert.equal(await page.locator('#admin-logistica-login').isVisible(),false);
+ // The real payroll page MUST reuse the existing admin MFA session in this tab.
+ // All responses below come from the local mock API above (zero credentials).
+ await page.locator('#select-area-amministrativa').click();
+ await page.waitForURL('**/amministratore/buste-paga/');
+ await page.locator('#workspace').waitFor({state:'visible'});
+ assert.equal(await page.locator('#login-form').isVisible(),false,
+  'Entering Documents must never ask for another password');
+ assert.equal(await page.locator('#mfa').isVisible(),false,
+  'Entering Documents must not request another TOTP');
+ await page.waitForFunction(()=>globalThis.__mockPayrollCalls?.join(',')==='drivers,documents');
+ assert.deepEqual(await page.evaluate(()=>globalThis.__mockPayrollCalls),
+  ['drivers','documents'],'Documents fetches private data only after verified session');
+ await page.locator('.lts-header a.back').click();
+ await page.waitForURL('**/amministratore/');
+ await page.locator('#admin-area-choice').waitFor({state:'visible'});
+ assert.equal(await page.locator('#admin-logistica-login').isVisible(),false,
+  'Returning to area selection must reuse the same verified admin session');
+ await page.locator('#select-area-logistica').click();
+ await page.locator('#dashboard').waitFor({state:'visible'});
+ // Reopen an authorized preview so logout still verifies protected-state cleanup.
+ await page.keyboard.press('Control+k');
+ await page.locator('#smart-search').fill('ROSSI');
+ await page.locator('#smart-results .smart-result-buttons button').first().click();
+ await page.locator('#smart-detail').waitFor({state:'visible',timeout:5000});
+ assert.match(await page.locator('#smart-detail-body').textContent(),/Mario Rossi/,
+  'Before logout, the open preview must display the authorized synthetic driver');
  await page.locator('#logout').evaluate(element=>element.click());
  await page.waitForFunction(()=>document.querySelector('#dashboard').hidden===true);
  assert.equal(await page.locator('#smart-overlay').isVisible(),false);
@@ -1069,8 +1214,8 @@ try{
  assert.equal(await page.locator('#pro-records .pro-record').count(),0);
  assert.equal(await page.locator('#pro-export-pdf').isDisabled(),true);
  assert.equal(await page.locator('#login-panel').isVisible(),true);
- assert.equal(await page.locator('#admin-area-choice').isVisible(),true);
- await page.locator('#select-area-logistica').click();
+ assert.equal(await page.locator('#admin-area-choice').isVisible(),false,
+  'After logout the area choice must not stay visible');
  assert.equal(await page.locator('#admin-logistica-login').isVisible(),true);
  await page.locator('#login-password').fill('example-password-for-visibility');
  assert.equal(await page.locator('#login-password').getAttribute('type'),'password');
@@ -1084,11 +1229,34 @@ try{
  assert.equal(await page.locator('#report-month').inputValue(),'2026-11');
  console.log('PASS '+engine+' mobile 390px: ten real pages, admin MFA, charts, filters, PDF/Excel, anomaly drill-down, security, logout wipe');
  await page.close();
+ // Deep links to Documents must fail closed without a session, or without MFA.
+ for(const kind of ['no-session','missing-mfa']){
+  const denied=await browser.newPage({viewport:{width:390,height:844}});
+  await denied.addInitScript(kind=>{
+   if(kind==='no-session')globalThis.__mockAdminAuthorized=false;
+   else globalThis.__mockAdminMfaVerified=false;
+  },kind);
+  const errorsDenied=[];denied.on('pageerror',e=>errorsDenied.push(String(e)));
+  await denied.goto(origin+'/amministratore/buste-paga/',{waitUntil:'networkidle',timeout:20000});
+  await denied.locator('#login').waitFor({state:'visible'});
+  if(kind==='missing-mfa')await denied.waitForFunction(()=>
+   document.querySelector('#notice')?.textContent.includes('MFA'));
+  assert.equal(await denied.locator('#workspace').isVisible(),false,
+   'No unauthorized Documents workspace: '+kind);
+  assert.equal(await denied.locator('#login-form').isVisible(),false,
+   'No alternate password form available: '+kind);
+  assert.equal(await denied.evaluate(()=>globalThis.__mockPayrollCalls.length),0,
+   'Denied sessions must not call even the mocked document API: '+kind);
+  assert.equal(errorsDenied.length,0,errorsDenied.join(';'));
+  await denied.close();
+ }
  // Desktop navigation: the protected dashboard must retain working tabs with its
  // new dark sidebar; never make a non-verified page visible via CSS.
  const desktop=await browser.newPage({viewport:{width:1440,height:900}});
  const desktopErrors=[];desktop.on('pageerror',e=>desktopErrors.push(String(e)));
  await desktop.goto(origin+'/amministratore/',{waitUntil:'networkidle',timeout:20000});
+ await desktop.locator('#admin-area-choice').waitFor({state:'visible'});
+ await desktop.locator('#select-area-logistica').click();
  await desktop.locator('#dashboard').waitFor({state:'visible'});
  const nav=desktop.locator('#dashboard>.admin-switch');
  const navBox=await nav.boundingBox(),contentBox=await desktop.locator('#report-panel').boundingBox();

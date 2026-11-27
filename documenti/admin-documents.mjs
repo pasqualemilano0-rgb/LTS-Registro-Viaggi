@@ -3,6 +3,12 @@ import runtime from '../runtime-config.mjs';
 import * as api from './document-api.mjs';
 const $=id=>document.getElementById(id);
 let roster=[],offset=0,loading=false;
+// Async responses cannot revive private UI after logout or account changes.
+let accessGeneration=0,checkSequence=0;
+function mayRenderPrivate(generation,owner){
+ return generation===accessGeneration&&account.hasSession()&&account.isVerified()&&
+  account.getRole()==='admin'&&account.getAccountId()===owner&&!$('workspace').hidden;
+}
 const months=['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
 const labels={cedolino:'CEDOLINO',cu:'CU',altri:'ALTRI DOCUMENTI'};
 function notice(message='',error=false){
@@ -64,10 +70,13 @@ function busy(value){
  for(const b of document.querySelectorAll('button[type=submit],#refresh,#more'))b.disabled=value;
 }
 function protect(){
+ accessGeneration++;checkSequence++;
  roster=[];offset=0;$('documents').replaceChildren();$('summary').textContent='';
  $('driver').replaceChildren(option('','Seleziona autista'));
  $('filter-driver').replaceChildren(option('','Tutti gli autisti'));
  view('login');
+ // Pending requests from a logged-out account must not lock the next login.
+ busy(false);
 }
 async function mfa(){
  view('mfa');
@@ -79,24 +88,38 @@ async function mfa(){
  }catch(error){notice(error.message||'Impossibile caricare la verifica MFA.',true);}
 }
 async function check(){
- if(!account.hasSession()){protect();return;}
+ const serial=++checkSequence,generation=accessGeneration,owner=account.getAccountId();
+ if(!account.hasSession()||account.getRole()!=='admin'){protect();return;}
  try{
   const session=await account.verifySession();
+  if(serial!==checkSequence||generation!==accessGeneration||
+     !account.hasSession()||account.getAccountId()!==owner)return;
   if(session.role!=='admin'){protect();notice('È richiesto un account amministratore LTS.',true);return;}
-  if(!session.mfa_enrolled){view('setup');return;}
-  if(!session.mfa_verified||!account.isVerified()){await mfa();return;}
+  if(!session.mfa_enrolled||!session.mfa_verified||!account.isVerified()){
+   protect();
+   notice('La verifica MFA va completata nel Control Center. Torna all’accesso unico LTS.',true);
+   return;
+  }
   await startWorkspace();
- }catch(error){protect();notice(error.message||'Accesso non verificato.',true);}
+ }catch(error){
+  if(serial!==checkSequence||generation!==accessGeneration)return;
+  protect();notice(error.message||'Accesso non verificato.',true);
+ }
 }
 async function startWorkspace(){
  if(!account.isVerified()||account.getRole()!=='admin'){protect();return;}
+ const generation=accessGeneration,owner=account.getAccountId();
  view('workspace');
- await refreshRoster();
+ const populated=await refreshRoster();
+ if(populated!==true||!mayRenderPrivate(generation,owner))return;
  await refreshDocs();
 }
 async function refreshRoster(){
+ const generation=accessGeneration,owner=account.getAccountId();
+ if(!mayRenderPrivate(generation,owner))return false;
  try{
   const result=await api.drivers();
+  if(!mayRenderPrivate(generation,owner))return false;
   if(!Array.isArray(result.drivers))throw Error('Elenco autisti non valido.');
   roster=result.drivers;
   const selected=$('driver').value,filter=$('filter-driver').value;
@@ -114,7 +137,12 @@ async function refreshRoster(){
   $('filter-driver').value=roster.some(x=>x.id===filter)?filter:'';
   if(eligible.length!==1)
    notice('Nessun destinatario autorizzato al caricamento. Verifica la scadenza dei test.',true);
- }catch(error){notice(error.message||'Sincronizzazione autisti non riuscita.',true);}
+  return true;
+ }catch(error){
+  if(mayRenderPrivate(generation,owner))
+   notice(error.message||'Sincronizzazione autisti non riuscita.',true);
+  return false;
+ }
 }
 function metadata(doc){
  const type=labels[doc.category]||doc.category;
@@ -141,7 +169,11 @@ function renderRow(doc){
  download.type='button';download.disabled=doc.state==='archived';
  download.addEventListener('click',async()=>{
   download.disabled=true;notice('');
-  try{const file=await api.download(doc.id);api.savePdf(file,doc.original_filename);}
+  try{
+    const generation=accessGeneration,owner=account.getAccountId();
+    const file=await api.download(doc.id);
+    if(mayRenderPrivate(generation,owner))api.savePdf(file,doc.original_filename);
+   }
   catch(error){notice(error.message||'Impossibile aprire il PDF.',true);}
   finally{download.disabled=false;}
  });
@@ -181,6 +213,8 @@ function renderRow(doc){
 }
 async function refreshDocs(append=false){
  if(loading)return;
+ const generation=accessGeneration,owner=account.getAccountId();
+ if(!mayRenderPrivate(generation,owner))return;
  busy(true);
  if(!append){offset=0;$('documents').replaceChildren();}
  try{
@@ -188,37 +222,24 @@ async function refreshDocs(append=false){
   if($('filter-driver').value)q.driverId=$('filter-driver').value;
   if($('filter-category').value)q.category=$('filter-category').value;
   const result=await api.documents(q);
+  if(!mayRenderPrivate(generation,owner))return;
   if(!Array.isArray(result.documents))throw Error('Elenco documenti non valido.');
   const rows=result.documents;
   for(const doc of rows)$('documents').append(renderRow(doc));
   offset+=rows.length;$('more').hidden=rows.length<50;
   $('summary').textContent=roster.length+' autisti sincronizzati · '+roster.filter(d=>d.documents_enabled).length+' abilitati alla ricezione durante i test · '+offset+' documenti visualizzati';
   if(!offset)$('documents').append(node('p','hint','Nessun documento in questa selezione.'));
- }catch(error){notice(error.message||'Archivio documenti non disponibile.',true);}
- finally{busy(false);}
+ }catch(error){
+  if(mayRenderPrivate(generation,owner))
+   notice(error.message||'Archivio documenti non disponibile.',true);
+ }
+ finally{if(generation===accessGeneration)busy(false);}
 }
-$('login-form').addEventListener('submit',async event=>{
- event.preventDefault();if(loading)return;
- const form=event.currentTarget;const password=form.elements.password.value;
- form.elements.password.value='';busy(true);notice('');
- try{
-  if(account.hasSession())account.signOut();
-  const result=await account.login(form.elements.phone.value.trim(),password);
-  if(result.role!=='admin'){account.signOut();throw Error('Accesso riservato all’amministratore.');}
-  // The dedicated sign-in is complete; unblock the initial protected data loads.
-  busy(false);
-  await check();
- }catch(error){protect();notice(error.message||'Accesso non riuscito.',true);}
- finally{busy(false);}
-});
-$('mfa-form').addEventListener('submit',async event=>{
- event.preventDefault();if(loading)return;busy(true);notice('');
- try{await account.verifyAdminTotp($('mfa-code').value.trim(),$('mfa-factor').value||null);busy(false);await check();}
- catch(error){$('mfa-code').value='';notice(error.message||'Verifica MFA fallita.',true);}
- finally{busy(false);}
-});
+// Password and MFA are entered ONLY in the unified Control Center entry.
+// This page never initiates its own sign-in; it verifies the existing session.
 async function logout(){
- view('login');busy(true);notice('');
+ // Cancel UI authorization immediately, without waiting for online revocation.
+ protect();busy(true);notice('');
  try{
   const result=await account.logout();
   if(!result.revoked)notice('Sessione locale chiusa; revoca online non confermata.',true);
@@ -351,7 +372,10 @@ window.addEventListener('focus',()=>{
   restoreWorkspaceInteraction();
 });
 
-// Always display an independent payroll login, even when LTS Admin is already open.
+// One shared admin session for Logistics and Documents: never ask for a
+// second password or OTP after Control Center has verified both.
+// Navigation stays in the same tab, using the existing sessionStorage-backed
+// account session. No token is copied into URLs or persistent storage.
 protect();
 if(typeof runtime.accountAuth?.payrollEndpoint!=='string'||!runtime.accountAuth.payrollEndpoint.trim()){
  $('login').querySelector('h1').textContent='Gestione documenti — In preparazione';
@@ -359,4 +383,17 @@ if(typeof runtime.accountAuth?.payrollEndpoint!=='string'||!runtime.accountAuth.
  $('login-form').hidden=true;
  $('clear-session').hidden=true;
 }
-window.addEventListener('pageshow',event=>{if(event.persisted)protect();});
+function restoreUnifiedAdminSession(){
+ if(!account.hasSession()||account.getRole()!=='admin'){
+  protect();return;
+ }
+ // Do not flash the separate login while awaiting server verification.
+ $('login').hidden=true;
+ notice('Verifica della sessione amministrativa in corso…');
+ void check();
+}
+if(typeof runtime.accountAuth?.payrollEndpoint==='string'&&
+   runtime.accountAuth.payrollEndpoint.trim())restoreUnifiedAdminSession();
+window.addEventListener('pageshow',event=>{
+ if(event.persisted)restoreUnifiedAdminSession();
+});

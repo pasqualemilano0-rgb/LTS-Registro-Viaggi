@@ -121,10 +121,11 @@ export function validateTrip(input) {
   draft.container = normalizeContainer(draft.container);
   if (!validDate(input.date)) errors.date = 'Scegli una data valida.';
   draft.date = input.date;
-  if (Boolean(draft.secondClient) !== Boolean(draft.secondCity)) {
+  if (input.second === true || Boolean(draft.secondClient) !== Boolean(draft.secondCity)) {
     if (!draft.secondClient) errors.secondClient = 'Inserisci il cliente della seconda presa.';
     if (!draft.secondCity) errors.secondCity = 'Inserisci la località della seconda presa.';
   }
+  if (input.sumPickupFares !== undefined && typeof input.sumPickupFares !== 'boolean') errors.sumPickupFares = 'Modalità tariffa non valida.';
   const services = input.services ?? [];
   if (!Array.isArray(services) || services.some(key => !SERVICE_KEYS.has(key))) errors.services = 'Servizio non riconosciuto.';
   else draft.services = SERVICES.filter(service => services.includes(service.key)).map(service => service.key);
@@ -175,7 +176,7 @@ export function createTrip(input, state, existing = null) {
     id: id(existing?.id ?? input.id ?? newId()),
     fareCents: checkCents(findTariff(state, trip.client, trip.city)?.cents ?? (sameFirst ? existing.fareCents : null), 'Trasferta', true),
     secondFareCents: trip.secondCity ? checkCents(findTariff(state, trip.secondClient, trip.secondCity)?.cents ?? (sameSecond ? existing.secondFareCents : null), 'Seconda trasferta', true) : null,
-    sumPickupFares: Boolean(trip.secondCity),
+    sumPickupFares: Boolean(trip.secondCity) && (input.sumPickupFares ?? (existing?.secondCity ? existing.sumPickupFares : true) ?? true),
     extraCents,
     createdAt: timestamp(existing?.createdAt, now),
     updatedAt: now,

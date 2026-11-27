@@ -1,58 +1,13 @@
 {
   "source": "https://www.salernocontainerterminal.com/ca/an/vessel_schedule.php",
   "source_updated_at": null,
-  "acquired_at": "2026-11-23T07:30:17.136Z",
+  "acquired_at": "2026-11-27T21:30:16.422Z",
   "rows": [
     {
-      "vessel": "MSC NIOVI VIII",
-      "voyage": "MG647W",
-      "eta": "22/11/2026 00:00",
-      "closing": "21/11/2026 12:00 CLOSED",
-      "acceptance_dry": "CARGO ACCEPTED",
-      "acceptance_reef": "CARGO ACCEPTED",
-      "status": "PENDING"
-    },
-    {
-      "vessel": "MAIKE D",
-      "voyage": "1426W",
-      "eta": "23/11/2026 08:00",
-      "closing": "21/11/2026 10:00 CLOSED",
-      "acceptance_dry": "CARGO ACCEPTED",
-      "acceptance_reef": "CARGO ACCEPTED",
-      "status": "PENDING"
-    },
-    {
-      "vessel": "GLASGOW EXPRESS",
-      "voyage": "52W48",
-      "eta": "24/11/2026 00:00",
-      "closing": "24/11/2026 17:00",
-      "acceptance_dry": "CARGO ACCEPTED",
-      "acceptance_reef": "CARGO ACCEPTED",
-      "status": "PENDING"
-    },
-    {
-      "vessel": "ULYSSE",
-      "voyage": "241126E",
-      "eta": "24/11/2026 00:00",
-      "closing": "23/11/2026 17:00",
-      "acceptance_dry": "CARGO ACCEPTED",
-      "acceptance_reef": "CARGO ACCEPTED",
-      "status": "PENDING"
-    },
-    {
-      "vessel": "MEDKON NLS",
-      "voyage": "325",
-      "eta": "24/11/2026 00:00",
-      "closing": "23/11/2026 17:00",
-      "acceptance_dry": "CARGO ACCEPTED",
-      "acceptance_reef": "CARGO ACCEPTED",
-      "status": "PENDING"
-    },
-    {
-      "vessel": "RACHEL BORCHARD",
-      "voyage": "1034",
-      "eta": "24/11/2026 00:00",
-      "closing": "23/11/2026 17:00",
+      "vessel": "CONTSHIP ERA",
+      "voyage": "94E",
+      "eta": "27/11/2026 05:00",
+      "closing": "26/11/2026 17:00 CLOSED",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
@@ -60,80 +15,8 @@
     {
       "vessel": "CMA CGM ABIDJAN",
       "voyage": "MPS0J0W19",
-      "eta": "24/11/2026 00:00",
-      "closing": "21/11/2026 10:00 CLOSED",
-      "acceptance_dry": "CARGO ACCEPTED",
-      "acceptance_reef": "CARGO ACCEPTED",
-      "status": "PENDING"
-    },
-    {
-      "vessel": "MIRIAM BORCHARD",
-      "voyage": "1046",
-      "eta": "25/11/2026 00:00",
-      "closing": "24/11/2026 17:00",
-      "acceptance_dry": "CARGO ACCEPTED",
-      "acceptance_reef": "CARGO ACCEPTED",
-      "status": "PENDING"
-    },
-    {
-      "vessel": "X-PRESS SALWEEN",
-      "voyage": "648W",
-      "eta": "25/11/2026 00:00",
-      "closing": "24/11/2026 17:00",
-      "acceptance_dry": "CARGO ACCEPTED",
-      "acceptance_reef": "CARGO ACCEPTED",
-      "status": "PENDING"
-    },
-    {
-      "vessel": "GABRIEL A",
-      "voyage": "0HWLEE1MA",
-      "eta": "25/11/2026 00:00",
-      "closing": "24/11/2026 17:00",
-      "acceptance_dry": "CARGO ACCEPTED",
-      "acceptance_reef": "CARGO ACCEPTED",
-      "status": "PENDING"
-    },
-    {
-      "vessel": "ECO OSTRO",
-      "voyage": "648W",
-      "eta": "25/11/2026 00:00",
-      "closing": "24/11/2026 17:00",
-      "acceptance_dry": "CARGO ACCEPTED",
-      "acceptance_reef": "CARGO ACCEPTED",
-      "status": "PENDING"
-    },
-    {
-      "vessel": "ALOPO",
-      "voyage": "2126W",
-      "eta": "25/11/2026 08:00",
-      "closing": "24/11/2026 17:00",
-      "acceptance_dry": "CARGO ACCEPTED",
-      "acceptance_reef": "CARGO ACCEPTED",
-      "status": "PENDING"
-    },
-    {
-      "vessel": "GRANDE TOGO",
-      "voyage": "GRT0726",
-      "eta": "26/11/2026 00:00",
-      "closing": "25/11/2026 17:00",
-      "acceptance_dry": "CARGO ACCEPTED",
-      "acceptance_reef": "CARGO ACCEPTED",
-      "status": "PENDING"
-    },
-    {
-      "vessel": "VENTO DI MAESTRALE",
-      "voyage": "536",
-      "eta": "26/11/2026 00:00",
-      "closing": "25/11/2026 17:00",
-      "acceptance_dry": "CARGO ACCEPTED",
-      "acceptance_reef": "CARGO ACCEPTED",
-      "status": "PENDING"
-    },
-    {
-      "vessel": "VENTO DI LEVANTE",
-      "voyage": "639",
-      "eta": "26/11/2026 00:00",
-      "closing": "25/11/2026 17:00",
+      "eta": "27/11/2026 07:00",
+      "closing": "26/11/2026 17:00 CLOSED",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
@@ -141,17 +24,35 @@
     {
       "vessel": "AMELIE BORCHARD",
       "voyage": "0209",
-      "eta": "26/11/2026 08:00",
-      "closing": "25/11/2026 17:00",
+      "eta": "27/11/2026 20:00",
+      "closing": "27/11/2026 17:00 CLOSED",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
     },
     {
-      "vessel": "ALTAMIRA EXPRESS",
-      "voyage": "647W",
-      "eta": "27/11/2026 00:00",
-      "closing": "26/11/2026 17:00",
+      "vessel": "VENTO DI LEVANTE",
+      "voyage": "639",
+      "eta": "28/11/2026 00:00",
+      "closing": "27/11/2026 17:00 CLOSED",
+      "acceptance_dry": "CARGO ACCEPTED",
+      "acceptance_reef": "CARGO ACCEPTED",
+      "status": "PENDING"
+    },
+    {
+      "vessel": "MAIKE D",
+      "voyage": "1426W",
+      "eta": "28/11/2026 08:00",
+      "closing": "27/11/2026 17:00 CLOSED",
+      "acceptance_dry": "CARGO ACCEPTED",
+      "acceptance_reef": "CARGO ACCEPTED",
+      "status": "PENDING"
+    },
+    {
+      "vessel": "GRANDE INGHILTERRA",
+      "voyage": "GDE0526",
+      "eta": "28/11/2026 14:30",
+      "closing": "09/11/2026 17:00 CLOSED",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
@@ -159,35 +60,62 @@
     {
       "vessel": "VALUE",
       "voyage": "MG648W",
-      "eta": "28/11/2026 00:00",
-      "closing": "27/11/2026 17:00",
+      "eta": "29/11/2026 00:00",
+      "closing": "28/11/2026 12:00",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
     },
     {
-      "vessel": "VENTO DI GRECALE",
-      "voyage": "840",
-      "eta": "28/11/2026 00:00",
-      "closing": "27/11/2026 17:00",
-      "acceptance_dry": "CARGO ACCEPTED",
-      "acceptance_reef": "CARGO ACCEPTED",
-      "status": "PENDING"
-    },
-    {
-      "vessel": "XIN LIAN YUN GANG",
-      "voyage": "646N",
-      "eta": "30/11/2026 00:00",
+      "vessel": "ELYSSA",
+      "voyage": "291126E",
+      "eta": "29/11/2026 00:00",
       "closing": "28/11/2026 10:00",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
     },
     {
-      "vessel": "MSC KILIMANJARO IV",
-      "voyage": "CD648A",
+      "vessel": "MEDKON NLS",
+      "voyage": "325",
+      "eta": "29/11/2026 00:00",
+      "closing": "28/11/2026 12:00",
+      "acceptance_dry": "CARGO ACCEPTED",
+      "acceptance_reef": "CARGO ACCEPTED",
+      "status": "PENDING"
+    },
+    {
+      "vessel": "RMS ROSE",
+      "voyage": "ROS1026E",
+      "eta": "29/11/2026 00:00",
+      "closing": "28/11/2026 12:00",
+      "acceptance_dry": "CARGO ACCEPTED",
+      "acceptance_reef": "CARGO ACCEPTED",
+      "status": "PENDING"
+    },
+    {
+      "vessel": "ALTAMIRA EXPRESS",
+      "voyage": "647W",
+      "eta": "29/11/2026 11:00",
+      "closing": "28/11/2026 12:00",
+      "acceptance_dry": "CARGO ACCEPTED",
+      "acceptance_reef": "CARGO ACCEPTED",
+      "status": "PENDING"
+    },
+    {
+      "vessel": "GRANDE TOGO",
+      "voyage": "GRT0726",
       "eta": "30/11/2026 00:00",
-      "closing": "28/11/2026 10:00",
+      "closing": "28/11/2026 12:00",
+      "acceptance_dry": "CARGO ACCEPTED",
+      "acceptance_reef": "CARGO ACCEPTED",
+      "status": "PENDING"
+    },
+    {
+      "vessel": "VENTO DI MAESTRALE",
+      "voyage": "536",
+      "eta": "30/11/2026 00:00",
+      "closing": "28/11/2026 12:00",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
@@ -200,8 +128,179 @@
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
+    },
+    {
+      "vessel": "LIDER TRABZON",
+      "voyage": "1126",
+      "eta": "30/11/2026 00:00",
+      "closing": "30/11/2026 12:00",
+      "acceptance_dry": "CARGO ACCEPTED",
+      "acceptance_reef": "CARGO ACCEPTED",
+      "status": "PENDING"
+    },
+    {
+      "vessel": "ALOPO",
+      "voyage": "2126W",
+      "eta": "30/11/2026 08:00",
+      "closing": "30/11/2026 17:00",
+      "acceptance_dry": "CARGO ACCEPTED",
+      "acceptance_reef": "CARGO ACCEPTED",
+      "status": "PENDING"
+    },
+    {
+      "vessel": "ATRIA",
+      "voyage": "ATI0626E",
+      "eta": "01/12/2026 00:00",
+      "closing": "30/11/2026 17:00",
+      "acceptance_dry": "CARGO ACCEPTED",
+      "acceptance_reef": "CARGO ACCEPTED",
+      "status": "PENDING"
+    },
+    {
+      "vessel": "GRANDE SVEZIA",
+      "voyage": "GSV0826S",
+      "eta": "01/12/2026 00:00",
+      "closing": "30/11/2026 17:00",
+      "acceptance_dry": "CARGO ACCEPTED",
+      "acceptance_reef": "CARGO ACCEPTED",
+      "status": "PENDING"
+    },
+    {
+      "vessel": "STENA SHIPPER",
+      "voyage": "011226E",
+      "eta": "01/12/2026 00:00",
+      "closing": "30/11/2026 17:00",
+      "acceptance_dry": "CARGO ACCEPTED",
+      "acceptance_reef": "CARGO ACCEPTED",
+      "status": "PENDING"
+    },
+    {
+      "vessel": "MSC KILIMANJARO IV",
+      "voyage": "CD648A",
+      "eta": "01/12/2026 00:00",
+      "closing": "30/11/2026 17:00",
+      "acceptance_dry": "CARGO ACCEPTED",
+      "acceptance_reef": "CARGO ACCEPTED",
+      "status": "PENDING"
+    },
+    {
+      "vessel": "VENTO DI GRECALE",
+      "voyage": "840",
+      "eta": "01/12/2026 00:00",
+      "closing": "01/12/2026 12:00",
+      "acceptance_dry": "CARGO ACCEPTED",
+      "acceptance_reef": "CARGO ACCEPTED",
+      "status": "PENDING"
+    },
+    {
+      "vessel": "JOANNA BORCHARD",
+      "voyage": "1196",
+      "eta": "01/12/2026 08:00",
+      "closing": "30/11/2026 17:00",
+      "acceptance_dry": "CARGO ACCEPTED",
+      "acceptance_reef": "CARGO ACCEPTED",
+      "status": "PENDING"
+    },
+    {
+      "vessel": "XIN LIAN YUN GANG",
+      "voyage": "646N",
+      "eta": "01/12/2026 20:00",
+      "closing": "28/11/2026 10:00",
+      "acceptance_dry": "CARGO ACCEPTED",
+      "acceptance_reef": "CARGO ACCEPTED",
+      "status": "PENDING"
+    },
+    {
+      "vessel": "ARICA EXPRESS",
+      "voyage": "28W49",
+      "eta": "02/12/2026 00:00",
+      "closing": "01/12/2026 17:00",
+      "acceptance_dry": "CARGO ACCEPTED",
+      "acceptance_reef": "CARGO ACCEPTED",
+      "status": "PENDING"
+    },
+    {
+      "vessel": "GREEN OCEAN",
+      "voyage": "649W",
+      "eta": "02/12/2026 00:00",
+      "closing": "01/12/2026 17:00",
+      "acceptance_dry": "CARGO ACCEPTED",
+      "acceptance_reef": "CARGO ACCEPTED",
+      "status": "PENDING"
+    },
+    {
+      "vessel": "ARGENTINIAN",
+      "voyage": "0HWLGE1MA",
+      "eta": "02/12/2026 00:00",
+      "closing": "01/12/2026 17:00",
+      "acceptance_dry": "CARGO ACCEPTED",
+      "acceptance_reef": "CARGO ACCEPTED",
+      "status": "PENDING"
+    },
+    {
+      "vessel": "NAAMA BORCHARD",
+      "voyage": "0140",
+      "eta": "02/12/2026 08:00",
+      "closing": "01/12/2026 17:00",
+      "acceptance_dry": "CARGO ACCEPTED",
+      "acceptance_reef": "CARGO ACCEPTED",
+      "status": "PENDING"
+    },
+    {
+      "vessel": "KATHERINE BORCHARD",
+      "voyage": "1159",
+      "eta": "03/12/2026 00:00",
+      "closing": "02/12/2026 17:00",
+      "acceptance_dry": "CARGO ACCEPTED",
+      "acceptance_reef": "CARGO ACCEPTED",
+      "status": "PENDING"
+    },
+    {
+      "vessel": "OYKU A",
+      "voyage": "537",
+      "eta": "03/12/2026 00:00",
+      "closing": "02/12/2026 17:00",
+      "acceptance_dry": "CARGO ACCEPTED",
+      "acceptance_reef": "CARGO ACCEPTED",
+      "status": "PENDING"
+    },
+    {
+      "vessel": "GSL CHATEAU DIF",
+      "voyage": "FMX0D0N19",
+      "eta": "03/12/2026 22:00",
+      "closing": "02/12/2026 17:00",
+      "acceptance_dry": "CARGO ACCEPTED",
+      "acceptance_reef": "CARGO ACCEPTED",
+      "status": "PENDING"
+    },
+    {
+      "vessel": "AMSTERDAM EXPRESS",
+      "voyage": "648W",
+      "eta": "04/12/2026 00:00",
+      "closing": "03/12/2026 17:00",
+      "acceptance_dry": "CARGO ACCEPTED",
+      "acceptance_reef": "CARGO ACCEPTED",
+      "status": "PENDING"
+    },
+    {
+      "vessel": "MAIKE D",
+      "voyage": "1526W",
+      "eta": "04/12/2026 00:00",
+      "closing": "03/12/2026 17:00",
+      "acceptance_dry": "CARGO ACCEPTED",
+      "acceptance_reef": "CARGO ACCEPTED",
+      "status": "PENDING"
+    },
+    {
+      "vessel": "MARGUERITE A",
+      "voyage": "MAS32E26",
+      "eta": "04/12/2026 00:00",
+      "closing": "03/12/2026 17:00",
+      "acceptance_dry": "CARGO ACCEPTED",
+      "acceptance_reef": "CARGO ACCEPTED",
+      "status": "PENDING"
     }
   ],
-  "updated_at": "2026-11-23T07:30:17.136Z",
-  "data_changed_at": "2026-11-23T06:45:16.538Z"
+  "updated_at": "2026-11-27T21:30:16.422Z",
+  "data_changed_at": "2026-11-27T17:45:16.147Z"
 }

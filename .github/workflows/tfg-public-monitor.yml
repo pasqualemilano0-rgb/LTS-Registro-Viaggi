@@ -1,0 +1,29 @@
+name: LTS TFG public monitor
+on:
+  schedule:
+    - cron: '19 */6 * * *'
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/tfg-public-monitor.yml'
+      - 'scripts/qa_tfg_public_backend.py'
+      - 'tests/test_tfg_public_monitor.py'
+permissions:
+  contents: read
+concurrency:
+  group: lts-tfg-public-monitor
+  cancel-in-progress: false
+jobs:
+  tfg-public-read-only:
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Run offline monitor contract tests
+        run: python3 -I -B -m unittest discover -s tests -p test_tfg_public_monitor.py -v
+      - name: Verify anonymous TFG API, CORS and freshness
+        run: python3 -I -B scripts/qa_tfg_public_backend.py

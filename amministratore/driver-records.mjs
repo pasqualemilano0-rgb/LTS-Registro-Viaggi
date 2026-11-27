@@ -10,6 +10,7 @@ import {attachPersonalCustomerCertification} from './personal-customer-maps-ui.m
 import {RECORD_FILTERS,assessPersonalCustomer,archiveCustomerMetrics,
  customerMatchesQuickFilter,tripWorklistSummary,archiveMatchesSearch,archivedRestoreStatus}
  from './records-intelligence.mjs?v=20261108-rc3-v1';
+import {snapshotAdminTripForm,buildAdminTripPatch} from './admin-trip-patch.mjs?v=20261127-partial-v1';
 const $=id=>document.getElementById(id);
 const make=(tag,className='',txt='')=>{
  const e=document.createElement(tag);
@@ -590,7 +591,7 @@ export function setupDriverRecords(account){
   if(category==='trip')return [item.date,item.client+' · '+item.city,
    'Container: '+item.container+' · Trasferta: '+money(item.fareCents),
    item.secondClient?'Seconda presa: '+item.secondClient+' · '+item.secondCity:'',
-   item.note?'Note: '+item.note:''].filter(Boolean);
+   item.adminNote?'Nota amministrativa: '+item.adminNote:''].filter(Boolean);
   if(category==='customer')return [item.name,item.city||'Località non indicata',
    item.address||'Indirizzo non disponibile',item.phone?'Telefono: '+item.phone:''].filter(Boolean);
   if(category==='tariff')return [item.client,item.city,'Importo personale (storico): '+money(item.cents)];
@@ -633,7 +634,7 @@ export function setupDriverRecords(account){
    }
    details.append(services);
   }else row('Extra','Nessuno');
-  if(item.note)details.append(make('p','records-trip-note','Note: '+item.note));
+  if(item.adminNote)details.append(make('p','records-trip-note','Nota amministrativa: '+item.adminNote));
   body.append(details);
   const total=make('div','records-trip-total');
   total.append(make('span','',amounts.missingTariff?'Totale parziale':'Totale'),make('strong','',money(amounts.totalCents)));
@@ -860,7 +861,7 @@ export function setupDriverRecords(account){
     row.append(label,rate);section.append(row);serviceBoxes.push({key:srv.key,box,rate});
    }
    form.append(section);
-   field(form,'Note del viaggio','note',values.note||'',{kind:'textarea',maxLength:2000});
+   field(form,'Nota per l’amministrazione','adminNote',values.adminNote||'',{kind:'textarea',maxLength:2000});
   }else if(kind==='customer'){
    const name=field(form,'Nome cliente','name',values.name||'',{required:true,maxLength:500});
    const city=field(form,'Località','city',values.city||'',{maxLength:500});
@@ -918,6 +919,8 @@ export function setupDriverRecords(account){
     control.getAttribute('aria-label')||control.name||'Campo';
    showFeedback('Salvataggio non inviato: verifica «'+label+'».');
   },true);
+  const tripBaseline=kind==='trip'&&item
+   ?snapshotAdminTripForm(name=>form.elements.namedItem(name),serviceBoxes):null;
   form.addEventListener('submit',async event=>{
    event.preventDefault();
    feedback.hidden=true;saveToast.hidden=true;
@@ -925,13 +928,8 @@ export function setupDriverRecords(account){
    const patch={};
    try{
     if(kind==='trip'){
-     for(const field of ['date','client','city','container','secondClient','secondCity','note'])
-      patch[field]=input(field).value;
-     patch.fareCents=price(input('fareCents').value);
-     patch.secondFareCents=price(input('secondFareCents').value);
-     patch.sumPickupFares=input('sumPickupFares').checked;
-     patch.services=serviceBoxes.filter(x=>x.box.checked).map(x=>x.key);
-     patch.extraCents=Object.fromEntries(serviceBoxes.map(x=>[x.key,price(x.rate.value)]));
+     Object.assign(patch,buildAdminTripPatch(snapshotAdminTripForm(input,serviceBoxes),tripBaseline,price));
+     if(item&&!Object.keys(patch).length)throw new Error('Nessuna modifica selezionata.');
     }else if(kind==='customer'){
      for(const field of ['name','city','address','phone','vat'])patch[field]=input(field).value;
     }else patch.cents=price(input('cents').value);

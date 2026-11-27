@@ -1,6 +1,6 @@
 const BASE = "/LTS-Registro-Viaggi/";
 const PREFIX = "lts-iphone-pages-0aa8d087d02b-";
-const CACHE = PREFIX + '20261123-profile-prefetch-v1';
+const CACHE = PREFIX + '20261127-cnt-v2';
 const CORE = [
   "/LTS-Registro-Viaggi/account-access.mjs",
   "/LTS-Registro-Viaggi/app.css",
@@ -30,6 +30,7 @@ const CORE = [
   "/LTS-Registro-Viaggi/driver-session-vault.mjs",
   "/LTS-Registro-Viaggi/driver-session-guard.mjs",
   "/LTS-Registro-Viaggi/index.html",
+  "/LTS-Registro-Viaggi/viaggi/index.html",
   "/LTS-Registro-Viaggi/manifest.webmanifest",
   "/LTS-Registro-Viaggi/porti-access.mjs",
   "/LTS-Registro-Viaggi/porti/app.js",
@@ -84,7 +85,7 @@ const NETWORK_FIRST_CODE = new Set([
   BASE + 'app.css', BASE + 'visual-theme.css',
   BASE + 'app.mjs', BASE + 'driver-session-guard.mjs', BASE + 'porti-access.mjs', BASE + 'account-access.mjs', BASE + 'driver-session-vault.mjs',
   BASE + 'runtime-config.mjs', BASE + 'client-store.mjs', BASE + 'realtime-client.mjs', BASE + 'porti/app.js',
-  BASE + 'shared/trip-customer-choices.mjs', BASE + 'shared/trip-editor-safety.mjs', BASE + 'shared/register-explorer.mjs', BASE + 'shared/maps-company-routing.mjs',
+  BASE + 'shared/quick-trip.mjs', BASE + 'shared/trip-customer-choices.mjs', BASE + 'shared/trip-editor-safety.mjs', BASE + 'shared/register-explorer.mjs', BASE + 'shared/maps-company-routing.mjs',
   BASE + 'shared/customer-site-matches.mjs', BASE + 'shared/foreground-resume.mjs', BASE + 'shared/backup-conflict-details.mjs', BASE + 'shared/sync-merge.mjs', BASE + 'shared-maps-client.mjs',
   BASE + 'maps-reader-client.mjs',
   BASE + 'shared/company-fares.mjs', BASE + 'shared/company-extras.mjs', BASE + 'shared/domain.mjs', BASE + 'shared/pdf.mjs'
@@ -112,6 +113,10 @@ self.addEventListener('fetch', event => {
   // The API is on a separate origin. Never cache personal records or API calls.
   if (url.origin !== self.location.origin || request.method !== 'GET' || !url.pathname.startsWith(BASE)) return;
   if (url.pathname.startsWith(BASE + 'api/')) return;
+  // Never supply a driver shell or cache response to the separate admin app.
+  if (['amministratore','status'].some(area => url.pathname === BASE + area || url.pathname.startsWith(BASE + area + '/'))) return;
+  // Personal document pages remain online-only; never replace them with a cached register.
+  if (['documenti','viaggi/documenti'].some(area => url.pathname === BASE + area || url.pathname.startsWith(BASE + area + '/'))) return;
   const isPort = url.pathname === PORT_BASE.slice(0, -1) || url.pathname.startsWith(PORT_BASE);
   if (isPort && (url.pathname.startsWith(PORT_BASE + 'data/') || url.pathname.endsWith('.json'))) return;
   if (request.mode === 'navigate') {
@@ -119,13 +124,16 @@ self.addEventListener('fetch', event => {
     // Always revalidate the Porti document when connected, retaining offline fallback.
     event.respondWith(fetch(request, { cache: isPort ? 'reload' : 'default' }).catch(async () => {
       if (isPort) {
-        const page = await caches.match(PORT_BASE + 'index.html', { ignoreVary: true });
+        const page = await (await caches.open(CACHE)).match(PORT_BASE + 'index.html', { ignoreVary: true });
         if (!page) return Response.error();
         if (url.pathname !== PORT_BASE && url.pathname !== PORT_BASE + 'index.html')
           return Response.redirect(url.origin + PORT_BASE + 'index.html', 302);
         return page;
       }
-      return (await caches.match(BASE + 'index.html', { ignoreVary: true })) || Response.error();
+      if ([BASE+'viaggi/',BASE+'viaggi/index.html'].includes(url.pathname))
+        return (await (await caches.open(CACHE)).match(BASE+'viaggi/index.html', { ignoreVary: true })) || Response.error();
+      if (![BASE,BASE+'index.html',BASE+'shell.html',BASE+'shell'].includes(url.pathname)) return Response.error();
+      return (await (await caches.open(CACHE)).match(BASE + 'index.html', { ignoreVary: true })) || Response.error();
     }));
     return;
   }
@@ -144,12 +152,12 @@ self.addEventListener('fetch', event => {
           try { await (await caches.open(CACHE)).put(url.pathname, fresh.clone()); } catch {}
           return fresh;
         } catch {
-          return (await caches.match(request, { ignoreVary: true, ignoreSearch: true })) || Response.error();
+          return (await (await caches.open(CACHE)).match(request, { ignoreVary: true, ignoreSearch: true })) || Response.error();
         }
       })());
       return;
     }
-    event.respondWith((async () => (await caches.match(request, { ignoreVary: true, ignoreSearch: true })) || fetch(request))());
+    event.respondWith((async () => (await (await caches.open(CACHE)).match(request, { ignoreVary: true, ignoreSearch: true })) || fetch(request))());
   }
 });
 

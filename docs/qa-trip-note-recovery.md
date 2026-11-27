@@ -1,0 +1,7 @@
+# Trip note history — QA only
+
+The SQL candidate in `supabase/qa/trip-note-history.sql` is not a production migration. It was applied to the existing QA project only. History is transactional, separated by owner, trip ID and note kind; unchanged fares or other unrelated fields create no history entries. It captures previous and current note text, including a cleared field or a deleted trip. It cannot recreate text lost before activation.
+
+The history table and trigger are not available to browser users, anonymous users or the service role. No direct public restore endpoint exists. A trusted database operator can retrieve the exact previous version for a verified owner and trip, without returning other users' notes. The authorized driver can restore that value through the existing trip edit flow, with revision checks, authentication and existing validation. Do not restore a whole archive or a deleted trip automatically; do not turn a private note into an administrative note. Do not publish note contents in CI logs, GitHub, screenshots or artifacts.
+
+Before production: confirm approved access/retention and erasure policy for historical notes; implement and test a session-validated owner-only history and restore UI if self-service is required, with separate permissions for administrative notes. Test live concurrent edit and revision checks in the existing QA. No production deployment, new QA project, or permission relaxation is authorized by this candidate.

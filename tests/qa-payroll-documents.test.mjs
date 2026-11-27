@@ -91,11 +91,17 @@ test('pre-PDF availability confirmation is required, restricted, and not proof o
  assert.match(text('documenti/index.html'),/non equivale a firma, pagamento dello stipendio/);
 });
 
-test('admin payroll page requires distinct login despite existing LTS session',()=>{
- assert.match(admin,/Always display an independent payroll login/);
+test('admin document workspace reuses the one verified Control Center MFA session',()=>{
+ const payrollHtml=text('amministratore/buste-paga/index.html');
+ const control=text('amministratore/admin.mjs');
+ assert.match(payrollHtml,/id="login-form"[^>]*hidden/);
+ assert.match(payrollHtml,/Vai all’accesso unico LTS/);
+ assert.match(admin,/function restoreUnifiedAdminSession\(\)/);
  assert.match(admin,/^protect\(\);/m);
- assert.match(admin,/account\.verifyAdminTotp/);
- assert.match(admin,/busy\(false\);\s*await check\(\);/);
+ assert.match(admin,/const session=await account\.verifySession\(\)/);
+ assert.match(admin,/if\(!session\.mfa_enrolled\|\|!session\.mfa_verified\|\|!account\.isVerified\(\)\)/);
+ assert.doesNotMatch(admin,/account\.login\(|account\.verifyAdminTotp\(/);
+ assert.match(control,/await account\.verifyAdminTotp\(code,selected\)/);
 });
 
 test('profile reuses a server-approved driver check without fetching on every click',()=>{
