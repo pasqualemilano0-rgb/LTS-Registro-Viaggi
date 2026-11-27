@@ -11,6 +11,8 @@ for(const [kind,fields] of Object.entries(states))for(const [flag,expected] of [
   const p=conatecoForecastDelivery(row,feed,now);
   assert.equal(p.internal.kind,kind);assert.equal(p.external.kind,expected);assert.equal(p.known,false);
   assert.match(p.note,/booking/);
+  assert.equal(p.internal.label,kind==='good'?'ACCETTA CARICO':kind==='bad'?'NON ACCETTA CARICO':'DA VERIFICARE');
+  assert.equal(p.external.label,expected==='good'?'ACCETTA CARICO':'DA VERIFICARE');
  });
 }
 test('stale, failed, conflicting and missing data never show green',()=>{

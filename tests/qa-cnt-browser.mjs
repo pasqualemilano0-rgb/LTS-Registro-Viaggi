@@ -51,11 +51,16 @@ try{
    assert.equal(await button.count(),1);
    const compact=button.locator('.cnt-acceptance-item');
    assert.deepEqual(await compact.evaluateAll(nodes=>nodes.map(n=>n.dataset.state)),[c.internal,c.external]);
+   const labels=[c.internal==='good'?'ACCETTA CARICO':c.internal==='bad'?'NON ACCETTA CARICO':'DA VERIFICARE',c.external==='good'?'ACCETTA CARICO':'DA VERIFICARE'];
+   assert.deepEqual(await compact.locator('.cnt-acceptance-status').allTextContents(),labels);
+   assert.equal(await button.evaluate(n=>n.querySelector('.cnt-acceptance-compact').getBoundingClientRect().width/n.clientWidth>=0.75),true);
+   await button.screenshot({path:'browser-evidence/cnt-list-'+engine+'-'+width+'-'+c.internal+'-'+c.external+'.png'});
    await button.click();
    const panel=frame.locator('.cnt-acceptance-grid');
    await panel.waitFor({state:'visible'});
    const items=panel.locator('.cnt-acceptance-item');
    assert.equal(await items.count(),2);
+   assert.deepEqual(await items.locator('.cnt-acceptance-status').allTextContents(),labels);
    assert.deepEqual(await items.evaluateAll(nodes=>nodes.map(n=>n.dataset.state)),[c.internal,c.external]);
    assert.deepEqual(await items.locator('.cnt-acceptance-title').allTextContents(),['INTERNO PORTO','DRYPORT / DEPOSITI ESTERNI']);
    assert.equal(await frame.locator('.depot-acceptance-panel:visible').count(),0);
