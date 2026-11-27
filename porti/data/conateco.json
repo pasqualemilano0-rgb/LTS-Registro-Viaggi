@@ -1,7 +1,7 @@
 {
   "source": "https://api.conateco.it/ConatecoServicesApi/BerthForecast",
   "source_updated_at": null,
-  "acquired_at": "2026-11-27T06:30:16.222Z",
+  "acquired_at": "2026-11-27T07:00:16.218Z",
   "rows": [
     {
       "vessel": "JOLLY BLUE",
@@ -72,23 +72,6 @@
       "source_conflict": false
     },
     {
-      "vessel": "JOLLY BLUE",
-      "voyage": "373",
-      "eta": "2026-11-27 00:00",
-      "vessel_status": "ARR",
-      "category": "ORMEGGIATE",
-      "voyage_id": "202600399",
-      "carrier": "LINEA I.MESSINA",
-      "acceptance_flag": "0",
-      "acceptance_icon": "NO_ACCETTA_CARICO",
-      "stop_cargo": "S",
-      "external_depot": "",
-      "opening": "1206-11-21 07:00",
-      "closing": "2026-11-26 16:00",
-      "notes": "",
-      "source_conflict": false
-    },
-    {
       "vessel": "MSC ABIDJAN",
       "voyage": "NL644R",
       "eta": "2026-11-27 00:00",
@@ -103,6 +86,23 @@
       "opening": "2026-11-23 12:00",
       "closing": "2026-11-27 09:30",
       "notes": "ACCETT.RETROPORTO 18/11 07:00",
+      "source_conflict": false
+    },
+    {
+      "vessel": "JOLLY BLUE",
+      "voyage": "373",
+      "eta": "2026-11-27 00:05",
+      "vessel_status": "ARR",
+      "category": "ORMEGGIATE",
+      "voyage_id": "202600399",
+      "carrier": "LINEA I.MESSINA",
+      "acceptance_flag": "0",
+      "acceptance_icon": "NO_ACCETTA_CARICO",
+      "stop_cargo": "S",
+      "external_depot": "",
+      "opening": "1206-11-21 07:00",
+      "closing": "2026-11-26 16:00",
+      "notes": "",
       "source_conflict": false
     },
     {
