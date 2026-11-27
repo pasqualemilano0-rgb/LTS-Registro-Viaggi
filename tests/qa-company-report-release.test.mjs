@@ -62,10 +62,10 @@ test('consultazione aziendale prima della pubblicazione: informativa esplicita',
  const privacy=read('privacy/index.html');
  assert.match(privacy,/Consultazione aziendale dei viaggi sincronizzati/);
  assert.match(privacy,/amministratori autorizzati/);
- assert.match(privacy,/note di viaggio e importi registrati/);
+ assert.match(privacy,/note per l’amministrazione e importi registrati/);
  assert.match(privacy,/non sono consultabili dall'amministratore/);
  assert.match(privacy,/non sostituisce l'informativa e gli adempimenti del datore di lavoro/);
- assert.match(privacy,/Aggiornamento: 4 novembre 2026/);
+ assert.match(privacy,/Aggiornamento: 26 novembre 2026/);
 });
 
 test('anagrafica dashboard: dati verificati dalla sessione, soli campi pubblici, nessun dato simulato', async()=>{

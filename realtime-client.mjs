@@ -2,7 +2,7 @@
  * Realtime transports NO business data, only commit-triggered change hints.
  * The authenticated Edge APIs remain the only trusted data source.
  *
- * Subscriptions: driver -> own archive + company catalog; admin -> admin hints.
+ * F49 subscriptions: one private channel per verified session; no v1 fallback.
  * All listeners are RLS-checked by realtime.messages policy on the server.
  * Polling remains the independent recovery mechanism when this socket is down.
  */
@@ -62,7 +62,7 @@ export function createLtsRealtime({config,authenticate,onChange,
   try{
    const fresh=await authenticate();
    if(sessionId!==connectId||ws!==socket)return;
-   if(fresh?.userId!==identity?.userId||fresh?.role!==identity?.role||
+   if(fresh?.userId!==identity?.userId||fresh?.role!==identity?.role||fresh?.sessionId!==identity?.sessionId||
       !UUID.test(fresh.userId||'')||!VALID_ROLES.has(fresh.role))throw new Error('LTS identity changed');
    if(fresh.accessToken!==token){
     token=fresh.accessToken;
@@ -78,12 +78,11 @@ export function createLtsRealtime({config,authenticate,onChange,
   try{
    const credentials=await authenticate();
    if(!started||nonce!==connectId||!visible()||!online())return;
-   if(!UUID.test(credentials?.userId||'')||!VALID_ROLES.has(credentials?.role)||
+   if(!UUID.test(credentials?.userId||'')||!UUID.test(credentials?.sessionId||'')||!VALID_ROLES.has(credentials?.role)||
       typeof credentials?.accessToken!=='string'||credentials.accessToken.length<80)
     throw new Error('Realtime authentication unavailable');
-   identity={userId:credentials.userId,role:credentials.role};token=credentials.accessToken;
-   const names=identity.role==='admin'
-    ?['lts:v1:admin']:['lts:v1:driver:'+identity.userId,'lts:v1:catalog'];
+   identity={userId:credentials.userId,role:credentials.role,sessionId:credentials.sessionId};token=credentials.accessToken;
+   const names=['lts:v2:session:'+identity.sessionId];
    const url=new URL(config.url);
    url.searchParams.set('apikey',config.publishableKey);
    url.searchParams.set('vsn','1.0.0');
@@ -118,7 +117,7 @@ export function createLtsRealtime({config,authenticate,onChange,
      }
     }else if(msg.event==='broadcast'&&msg.payload?.event==='changed'&&lastReady){
      const kind=msg.payload?.payload?.kind;
-     if(allowedKinds.has(kind))queue(kind);
+     if(allowedKinds.has(kind)&&(kind!=='roster'||identity?.role==='admin'))queue(kind);
     }else if(msg.event==='phx_error'||msg.event==='phx_close'||
        msg.event==='system'&&msg.payload?.status==='error'){
      try{ws.close();}catch{}

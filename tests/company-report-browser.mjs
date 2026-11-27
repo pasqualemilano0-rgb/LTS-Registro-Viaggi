@@ -62,7 +62,7 @@ const removedPersonalRecords=new Map();
 let adminArchive={
  schemaVersion:1,profile:{firstName:'Mario',lastName:'Rossi'},
  trips:[{id:'t1',date:'2026-11-04',client:'CLIENTE ALFA',city:'NAPOLI',
-  container:'ABCD1234567',secondClient:'',secondCity:'',note:'NOTA INIZIALE',
+  container:'ABCD1234567',secondClient:'',secondCity:'',note:'',adminNote:'NOTA INIZIALE',
   services:[],fareCents:15000,secondFareCents:null,sumPickupFares:false,
   extraCents:{adr:null,reefer:null,pernotto:null,preOrario:0,sabatoPorto:null,
    sabatoTrasferta:null,facchinaggioBilico:null,facchinaggioReefer:null},
@@ -154,11 +154,11 @@ export const companyReport=async({month,offset=0,limit=40,driverId=null})=>{
  const trips=month==='2026-11'?[
  {id:'1',driverId:drivers[0].id,driverName:drivers[0].name,date:'2026-11-04',
   container:'ABCD1234567',client:'CLIENTE ALFA',city:'NAPOLI',secondClient:'',secondCity:'',
-  services:['reefer'],note:'<img src=x onerror=alert(1)>',totalCents:15000,
+  services:['reefer'],adminNote:'<img src=x onerror=alert(1)>',totalCents:15000,
   missingTariff:false,updatedAt:'2026-11-04T08:00:00Z'},
  {id:'2',driverId:drivers[0].id,driverName:drivers[0].name,date:'2026-11-03',
   container:'WXYZ1234567',client:'CLIENTE BETA',city:'SALERNO',secondClient:'ALTRO',secondCity:'NAPOLI',
-  services:[],note:'',totalCents:10000,missingTariff:true,updatedAt:'2026-11-03T07:00:00Z'}
+  services:[],adminNote:'',totalCents:10000,missingTariff:true,updatedAt:'2026-11-03T07:00:00Z'}
  ]:[];
  const selected=driverId?trips.filter(t=>t.driverId===driverId):trips;
  const missing=selected.filter(t=>t.missingTariff).length;
@@ -835,16 +835,16 @@ try{
  assert.equal(await page.locator('#records-editor input[name="fareCents"]').inputValue(),'76,00');
  await primarySite.locator('.records-site-apply-fare').click();
  assert.equal(await page.locator('#records-editor input[name="fareCents"]').inputValue(),'150,00');
- await page.locator('#records-editor textarea[name="note"]').fill('BOZZA NON SALVATA');
+ await page.locator('#records-editor textarea[name="adminNote"]').fill('BOZZA NON SALVATA');
  await page.locator('#records-search').fill('NESSUN RISULTATO');
- assert.equal(await page.locator('#records-editor textarea[name="note"]').inputValue(),'BOZZA NON SALVATA',
+ assert.equal(await page.locator('#records-editor textarea[name="adminNote"]').inputValue(),'BOZZA NON SALVATA',
   'Search must not destroy an unsaved editor');
  await page.locator('#records-search').fill('');
  page.once('dialog',dialog=>dialog.dismiss());
  await openAdminTab('management-tab');
  assert.equal(await page.locator('#dashboard').getAttribute('data-view'),'records');
- assert.equal(await page.locator('#records-editor textarea[name="note"]').inputValue(),'BOZZA NON SALVATA');
- await page.locator('#records-editor textarea[name="note"]').fill('NOTA CORRETTA DA ADMIN');
+ assert.equal(await page.locator('#records-editor textarea[name="adminNote"]').inputValue(),'BOZZA NON SALVATA');
+ await page.locator('#records-editor textarea[name="adminNote"]').fill('NOTA CORRETTA DA ADMIN');
  await page.locator('#records-editor button[type="submit"]').click();
  await page.waitForFunction(()=>document.querySelector('#records-driver').disabled);
  assert.equal(await page.locator('#records-driver').isDisabled(),true);

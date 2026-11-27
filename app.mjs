@@ -745,6 +745,50 @@ function renderInsert(main){
  const adminNoteInput=el('textarea',{id:'trip-admin-note',name:'adminNote',value:draft.adminNote||'',maxlength:2000,rows:3,autocapitalize:'characters',spellcheck:'false',placeholder:'Comunicazione per il PDF mensile'});
  const adminNoteEditor=el('section',{class:'trip-note-editor'},el('label',{class:'field-label',for:'trip-admin-note'},'Nota per amministrazione',el('span',{class:'optional'},'Facoltativa')),adminNoteInput,el('p',{class:'trip-note-help'},'Compare solo in fondo al PDF mensile, separata dalla nota viaggio.'));
  noteEditor.append(adminNoteEditor);
+ if(editingId&&accountAccess.getRole()==='driver'){
+  const historyTripId=editingId,historyOwner=accountAccess.getAccountId();
+  const historyPanel=el('section',{class:'trip-note-editor',hidden:true,'aria-label':'Storico note'});
+  const historyStatus=el('p',{class:'trip-note-help',role:'status','aria-live':'polite'});
+  const historyRows=el('div',{class:'trip-note-history-rows'});
+  const stillEditing=()=>form.isConnected&&editingId===historyTripId&&accountAccess.isVerified()&&accountAccess.getAccountId()===historyOwner;
+  let before=null,loadingHistory=false;
+  const historyMore=el('button',{type:'button',class:'trip-option',hidden:true,on:{click:()=>void loadNoteHistory(false)}},'Altre versioni');
+  async function loadNoteHistory(reset){
+   if(loadingHistory||!stillEditing())return;
+   loadingHistory=true;historyMore.disabled=true;historyStatus.textContent='Caricamento storico…';
+   if(reset){historyRows.replaceChildren();before=null;}
+   try{
+    const data=await accountAccess.tripNoteHistory(historyTripId,before);
+    if(!stillEditing())return;
+    for(const row of data.rows){
+     if(!['note','adminNote'].includes(row.note_kind))continue;
+     const value=typeof row.previous_note==='string'&&row.previous_note.trim()?row.previous_note:row.current_note;
+     if(typeof value!=='string'||!value.trim()||value.length>2000)continue;
+     const target=row.note_kind==='note'?noteInput:adminNoteInput;
+     const label=row.note_kind==='note'?'Nota del viaggio':'Nota per amministrazione';
+     historyRows.append(el('div',{class:'trip-note-history-entry'},
+      el('strong',{},label),el('p',{class:'trip-note-help'},new Date(row.recorded_at).toLocaleString('it-IT')),
+      el('p',{class:'trip-note-history-text'},value),
+      el('button',{type:'button',class:'trip-option',on:{click:()=>{
+       if(!stillEditing())return;
+       confirmAction('Ripristinare questa nota?','La versione scelta sostituirà solo questo campo nella bozza. Salva il viaggio per confermare.',async()=>{
+        if(!stillEditing())return;
+        target.value=value;collect();keepEditorScratchpad();target.focus();
+       },'Ripristina nella bozza');
+      }}},'Ripristina')));
+    }
+    before=data.nextBefore??null;historyMore.hidden=!before;
+    historyStatus.textContent=historyRows.childElementCount?'Seleziona una versione da ripristinare nella bozza.':'Nessuna versione precedente disponibile.';
+   }catch{if(stillEditing())historyStatus.textContent='Storico non disponibile. Le note attuali sono conservate.';}
+   finally{loadingHistory=false;historyMore.disabled=false;}
+  }
+  const historyToggle=el('button',{type:'button',class:'trip-option','aria-expanded':'false',on:{click:()=>{
+   if(!stillEditing())return;
+   historyPanel.hidden=!historyPanel.hidden;historyToggle.setAttribute('aria-expanded',String(!historyPanel.hidden));
+   if(!historyPanel.hidden)void loadNoteHistory(true);
+  }}},'Storico note');
+  historyPanel.append(historyStatus,historyRows,historyMore);noteEditor.append(historyToggle,historyPanel);
+ }
  adminNoteInput.addEventListener('input',()=>{collect();keepEditorScratchpad();});
  noteInput.addEventListener('input',()=>{const start=noteInput.selectionStart,end=noteInput.selectionEnd;const upper=noteInput.value.toLocaleUpperCase('it-IT');if(upper!==noteInput.value){noteInput.value=upper;noteInput.setSelectionRange(start,end);}collect();keepEditorScratchpad();});
  const servicesSymbol=el('span',{class:'plus-disc','aria-hidden':'true'},draft.servicesOpen?'−':'+');
@@ -809,6 +853,9 @@ function renderInsert(main){
   updateEstimate();
   const duplicate=possibleTripDuplicate(state.trips,draft,editingId);
   const warnings=[];
+  const previousNotes=state.trips.find(t=>t.id===editingId);
+  if(previousNotes?.note?.trim()&&!checked.value.note.trim())warnings.push('Stai cancellando la nota viaggio.');
+  if(previousNotes?.adminNote?.trim()&&!checked.value.adminNote.trim())warnings.push('Stai cancellando la nota per amministrazione.');
   if(duplicate)warnings.push('Esiste già un viaggio del '+formatDate(duplicate.date)+' con questo container, cliente e località.');
   if(missingEstimateTariffs)warnings.push('Una o più tariffe aziendali non sono disponibili: il totale mostrato è parziale.');
   const commit=async()=>{
@@ -834,12 +881,12 @@ function renderInsert(main){
    for(const customer of clients)if(!next.customers.some(c=>c.name===customer.name))next=D.upsertCustomer(next,customer);
    const persisted=await persist(next);
    const savedTrip=persisted.trips.find(item=>item.id===trip.id);
-   if(!savedTrip||(savedTrip.adminNote??'')!==(trip.adminNote??'')){
+   if(!savedTrip||(savedTrip.adminNote??'')!==(trip.adminNote??'')||(savedTrip.note??'')!==(trip.note??'')){
     // Keep the draft and never report a successful save if the returned note differs.
     // Retain the attempted identity so a retry cannot create a duplicate.
     editingId=trip.id;editingBaseline=tripEditVersion(savedTrip||null);
     keepEditorScratchpad();
-    throw new Error('La nota per amministrazione non è stata confermata. La bozza resta disponibile: verifica la sincronizzazione prima di riprovare o generare il PDF.');
+    throw new Error('Le note del viaggio non sono state confermate. La bozza resta disponibile: verifica la sincronizzazione prima di riprovare o generare il PDF.');
    }
    const pending=store.getSyncInfo?.().pending;
    const savedDate=draft.date;
