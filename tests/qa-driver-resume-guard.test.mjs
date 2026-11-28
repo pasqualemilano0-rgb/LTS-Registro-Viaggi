@@ -88,8 +88,9 @@ test('Driver returns via retry, not password form; server denial stays protected
  assert.match(css,/body[.]lts-driver-session-blocked #app/);
  assert.match(css,/body[.]lts-driver-session-blocked dialog\[open\]/);
  assert.match(worker,/driver-session-guard[.]mjs/);
- assert.match(worker,/20261127-cnt-v2/);
- assert.match(html,/app[.]mjs[?]v=20261127-cnt-v2/);
+ // A role-boundary change must invalidate the module and its worker cache together.
+ assert.match(worker,/20261128-role-navigation-v1/);
+ assert.match(html,/app[.]mjs[?]v=20261128-role-navigation-v1/);
 });
 
 test('Short session checks preserve the driver form without rendering a full-screen guard',()=>{
