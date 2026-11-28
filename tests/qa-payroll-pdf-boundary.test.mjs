@@ -3,6 +3,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {validatePayrollPdf} from '../supabase/functions/lts-payroll/pdf-security.mjs';
+import {validatePayrollPdf as validateQaPayrollPdf} from '../supabase/qa/functions/lts-payroll-secure-qa/pdf-security.mjs';
 
 function samplePdf(extra='',version='1.7',lineEnd='\n'){
  const header='%PDF-'+version+lineEnd;
@@ -20,6 +21,13 @@ test('bounded classic PDF with valid cross-reference pointer is admitted',()=>{
   assert.deepEqual(validatePayrollPdf(samplePdf('',v)),{ok:true},v);
  }
  assert.deepEqual(validatePayrollPdf(samplePdf('','1.7','\r\n')),{ok:true});
+});
+
+test('QA deployment uses the same PDF admission boundary',()=>{
+ const safe=samplePdf();
+ const active=samplePdf('/OpenAction');
+ assert.deepEqual(validateQaPayrollPdf(safe),{ok:true});
+ assert.equal(validateQaPayrollPdf(active).ok,false);
 });
 
 test('truncated, prepended, appended and malformed PDF containers are rejected',()=>{
