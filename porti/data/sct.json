@@ -1,7 +1,7 @@
 {
   "source": "https://www.salernocontainerterminal.com/ca/an/vessel_schedule.php",
   "source_updated_at": null,
-  "acquired_at": "2026-11-28T01:00:16.246Z",
+  "acquired_at": "2026-11-28T06:30:16.287Z",
   "rows": [
     {
       "vessel": "CONTSHIP ERA",
@@ -28,7 +28,7 @@
       "closing": "27/11/2026 17:00 CLOSED",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
-      "status": "ARRIVED"
+      "status": "DEPARTED"
     },
     {
       "vessel": "VENTO DI LEVANTE",
@@ -319,6 +319,6 @@
       "status": "PENDING"
     }
   ],
-  "updated_at": "2026-11-28T01:00:16.246Z",
-  "data_changed_at": "2026-11-27T23:00:16.273Z"
+  "updated_at": "2026-11-28T06:30:16.287Z",
+  "data_changed_at": "2026-11-28T06:30:16.287Z"
 }
