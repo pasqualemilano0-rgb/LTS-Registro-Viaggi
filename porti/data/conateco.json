@@ -1,7 +1,7 @@
 {
   "source": "https://api.conateco.it/ConatecoServicesApi/BerthForecast",
   "source_updated_at": null,
-  "acquired_at": "2026-11-28T06:30:16.287Z",
+  "acquired_at": "2026-11-28T07:00:16.218Z",
   "rows": [
     {
       "vessel": "MSC BRITTANY",
