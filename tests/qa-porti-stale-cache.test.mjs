@@ -87,14 +87,15 @@ test('published import chain is fully versioned and displays consistent list/det
  assert.doesNotMatch(rules,/NAVE IN ACCETTAZIONE/);
  assert.match(port,/side\.append\(badge\(verdict\.label,verdict\.kind\)/);
  assert.match(port,/results\.append\(deliveryPanel\(conatecoForecastDelivery\(row,feed\)\)\)/);
- assert.match(worker,/20261127-cnt-v2/);
+ assert.match(worker,/20261128-role-documents-v1/);
  assert.match(worker,/const isPortCode = isPort &&/);
  assert.match(worker,/NETWORK_FIRST_CODE\.has\(url\.pathname\) \|\| isPortCode/);
  assert.match(worker,/if \(isPort && \(url\.pathname\.startsWith\(PORT_BASE \+ 'data\/'\)/);
 });
 
-test('CNT release versions agree across all entry points and worker cache',()=>{
- for(const path of ['index.html','viaggi/index.html','shell.html','app.mjs','porti/index.html','porti-access.mjs','porti/app.js','sw.js']) assert.match(read(path),/20261127-cnt-v2/,path);
+test('role-document shell cache and CNT Porti import chain remain independently versioned',()=>{
+ for(const path of ['index.html','viaggi/index.html','shell.html','sw.js']) assert.match(read(path),/20261128-role-documents-v1/,path);
+ for(const path of ['app.mjs','porti/index.html','porti-access.mjs','porti/app.js']) assert.match(read(path),/20261127-cnt-v2/,path);
  assert.doesNotMatch(worker,/indexedDB\.deleteDatabase|localStorage\.clear/);
  assert.match(worker,/name\.startsWith\(PREFIX\) && name !== CACHE/);
  assert.match(worker,/\(await caches\.open\(CACHE\)\)\.match\(request/);

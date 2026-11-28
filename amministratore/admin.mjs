@@ -335,6 +335,11 @@ function immediatelyVerifiedAdminStatus(status){
 }
 async function authenticate(freshStatus=null){
  if(!account.hasSession()){lock('');return;}
+ // Navigation from the driver register must not sign out or change its identity.
+ if(account.getRole()!=='admin'){
+   lock('Sessione autista ancora attiva. Esci esplicitamente dalla sessione precedente per accedere come amministratore.');
+   return;
+ }
  // A verified login or MFA response is already an online session check:
  // do not request a duplicate network round trip before showing the next step.
  const statusFromCompletedVerification=immediatelyVerifiedAdminStatus(freshStatus);
@@ -574,6 +579,8 @@ byId('login-form').addEventListener('submit',async event=>{
  byId('login-password').value='';
  setPasswordVisibility(false);
  try{
+   if(account.hasSession()&&account.getRole()!=='admin')
+     throw new Error('Esci esplicitamente dalla sessione autista prima di accedere come amministratore.');
    if(account.hasSession())account.signOut();
    const verifiedLogin=await account.login(byId('login-phone').value.trim(),password);
    if(account.getRole()!=='admin'){account.signOut();throw new Error('Permesso amministratore non presente.');}

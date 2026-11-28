@@ -21,6 +21,17 @@ import { parseCustomerCsv, mergeCustomerCsv, exportCustomerCsv, MAX_CUSTOMER_CSV
 import {restoreDeletedPersonalCustomer,customerCsvChanges} from '/LTS-Registro-Viaggi/shared/customer-quality.mjs';
 
 const root = document.querySelector('#app');
+// Returning from Control Center is navigation, never permission to restore an account.
+// Keep the gate active across retries and reloads until an explicit verified driver login.
+let manualRegisterEntry=new URL(location.href).searchParams.get('accesso')==='manuale';
+function completeManualRegisterEntry(logged){
+ if(!manualRegisterEntry)return true;
+ if(logged?.role!=='driver'||!accountAccess.isVerified()||accountAccess.getRole()!=='driver')return false;
+ manualRegisterEntry=false;
+ const url=new URL(location.href);url.searchParams.delete('accesso');
+ try{history.replaceState(history.state,'',url.href);}catch{}
+ return true;
+}
 const today = () => { const now = new Date(); return `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`; };
 let state = D.emptyState();
 let companyCustomers=[]; // In-memory shared list, never part of personal archive/backup.
@@ -1882,8 +1893,14 @@ function accountLoginFields({fromGate=false,initialPhone=''}={}){
         throw new Error('Sincronizza prima le modifiche dell’archivio dispositivo oppure esporta un backup.');
       let phone=tel.value.trim();
       if(/^3\\d{9}$/.test(phone))phone='+39'+phone;
+      if(manualRegisterEntry&&accountAccess.hasSession())
+        throw new Error('Chiudi esplicitamente la sessione precedente prima di cambiare account.');
       const logged=await accountAccess.login(phone,pass.value);
       pass.value='';
+      if(!completeManualRegisterEntry(logged)){
+        renderAccountGate('Per accedere al Registro Viaggi serve un account autista. Torna al Control Center oppure esci e cambia account.');
+        return;
+      }
       if(logged.role==='admin'&&logged.mfa_enrolled&&!logged.mfa_verified){
         renderAccountGate('Per completare la verifica amministratore, apri separatamente LTS Admin. Per cambiare account, usa Esci e cambia account.');
         return;
@@ -2039,6 +2056,7 @@ function showDriverActivation(){
          accountAccess.signOut();
          throw new Error('Identità autista non verificata.');
        }
+       if(!completeManualRegisterEntry(logged))throw new Error('Identità autista non verificata.');
        tab='register';month=today().slice(0,7);
        activationFirstOpen=true;activationWelcome=true;
        await initialize();
@@ -2289,7 +2307,7 @@ function renderAccountGate(message=''){
  companyExtraRates=[];companyExtrasLoaded=false;companyRatesRequest++;
  const hasPreviousSession=accountAccess.hasSession();
  const recovery=hasPreviousSession?el('div',{class:'account-session-recovery'},
-   el('p',{},'Questo dispositivo conserva una sessione precedente. Per rientrare nello stesso account, inserisci nuovamente la password. Per usare un altro account, esci prima.'),
+   el('p',{},manualRegisterEntry?'La sessione precedente è ancora conservata. Per accedere come autista, esci esplicitamente e inserisci le credenziali.':'Questo dispositivo conserva una sessione precedente. Per rientrare nello stesso account, inserisci nuovamente la password. Per usare un altro account, esci prima.'),
    button('Esci e cambia account','secondary',()=>{
      // The offline/archive copy stays stored under its original owner.
      void accountAccess.logout().then(result=>{
@@ -2315,11 +2333,14 @@ function renderAccountGate(message=''){
     el('div',{class:'account-login-stage'},
       message?el('p',{class:'form-error account-gate-error',role:'alert'},message):null,
       recovery,
-      accountLoginFields({fromGate:true}),
+      manualRegisterEntry&&hasPreviousSession?null:accountLoginFields({fromGate:true}),
       accountInstallBanner(),
-      el('div',{class:'account-login-extras'},
-        button('Riprova accesso automatico','secondary',()=>initialize(),'refresh',
-          {class:'secondary-button account-retry-button'})),
+      manualRegisterEntry
+        ?el('div',{class:'account-login-extras'},
+          el('a',{href:'/LTS-Registro-Viaggi/amministratore/',class:'secondary-button'},'Torna al Control Center'))
+        :el('div',{class:'account-login-extras'},
+          button('Riprova accesso automatico','secondary',()=>initialize(),'refresh',
+            {class:'secondary-button account-retry-button'})),
       el('div',{class:'account-footnote'},icon('lock'),
         el('p',{},'I dati precedenti restano sul dispositivo. Dopo l’accesso potrai eseguire un backup e recuperarli nel tuo account.'))));
   root.replaceChildren(gate);
@@ -2478,6 +2499,10 @@ window.addEventListener('online',()=>{
 
 async function initialize(){
  try{
+  if(manualRegisterEntry){
+    await renderFirstBootGate('Accesso autista richiesto. Nessun account viene aperto automaticamente dal Control Center.');
+    return;
+  }
   let result;
   if(accountAccess.accountGateRequired()){
     if(!accountAccess.hasSession()){
