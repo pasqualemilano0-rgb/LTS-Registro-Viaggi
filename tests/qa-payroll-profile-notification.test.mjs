@@ -67,5 +67,5 @@ test('offline cache contains only the pure helper and does not intercept private
  assert.doesNotMatch(sw,/"\/LTS-Registro-Viaggi\/documenti\//);
  assert.match(sw,/\['documenti','viaggi\/documenti'\].*return;/);
  assert.match(sw,/request\.method !== 'GET'/);
- assert.match(read('index.html'),/app\.mjs\?v=[^" ]+payroll-badge-v2/);
+ assert.match(read('index.html'),/app\.mjs\?v=20261128-role-documents-v1/);
 });
