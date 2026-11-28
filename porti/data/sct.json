@@ -1,7 +1,7 @@
 {
   "source": "https://www.salernocontainerterminal.com/ca/an/vessel_schedule.php",
   "source_updated_at": null,
-  "acquired_at": "2026-11-28T10:30:16.159Z",
+  "acquired_at": "2026-11-28T11:00:16.193Z",
   "rows": [
     {
       "vessel": "CONTSHIP ERA",
@@ -61,7 +61,7 @@
       "vessel": "VALUE",
       "voyage": "MG648W",
       "eta": "29/11/2026 00:00",
-      "closing": "28/11/2026 12:00",
+      "closing": "28/11/2026 12:00 CLOSED",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
@@ -79,7 +79,7 @@
       "vessel": "MEDKON NLS",
       "voyage": "325",
       "eta": "29/11/2026 00:00",
-      "closing": "28/11/2026 12:00",
+      "closing": "28/11/2026 12:00 CLOSED",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
@@ -88,7 +88,7 @@
       "vessel": "RMS ROSE",
       "voyage": "ROS1026E",
       "eta": "29/11/2026 00:00",
-      "closing": "28/11/2026 12:00",
+      "closing": "28/11/2026 12:00 CLOSED",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
@@ -97,7 +97,7 @@
       "vessel": "ALTAMIRA EXPRESS",
       "voyage": "647W",
       "eta": "29/11/2026 11:00",
-      "closing": "28/11/2026 12:00",
+      "closing": "28/11/2026 12:00 CLOSED",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
@@ -106,7 +106,7 @@
       "vessel": "GRANDE TOGO",
       "voyage": "GRT0726",
       "eta": "30/11/2026 00:00",
-      "closing": "28/11/2026 12:00",
+      "closing": "28/11/2026 12:00 CLOSED",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
@@ -115,7 +115,7 @@
       "vessel": "VENTO DI MAESTRALE",
       "voyage": "536",
       "eta": "30/11/2026 00:00",
-      "closing": "28/11/2026 12:00",
+      "closing": "28/11/2026 12:00 CLOSED",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
@@ -319,6 +319,6 @@
       "status": "PENDING"
     }
   ],
-  "updated_at": "2026-11-28T10:30:16.159Z",
-  "data_changed_at": "2026-11-28T09:00:16.191Z"
+  "updated_at": "2026-11-28T11:00:16.193Z",
+  "data_changed_at": "2026-11-28T11:00:16.193Z"
 }
