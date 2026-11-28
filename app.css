@@ -910,3 +910,16 @@ body.lts-driver-session-blocked dialog[open]{visibility:hidden!important;pointer
 .trip-card .trip-admin-note-summary small{font-size:10px}
 
 .trip-note-history-entry{margin:10px 0;padding:10px;border:1px solid var(--border,#d6e4eb);border-radius:8px;min-width:0}.trip-note-history-text{white-space:pre-wrap;overflow-wrap:anywhere;font-size:13px;line-height:1.5}.trip-note-history-entry .trip-option{margin-top:6px}
+
+/* Unopened PDFs: profile-only presentation; no data persisted. */
+.profile-button{position:relative;overflow:visible}
+.profile-button .profile-document-badge{
+ position:absolute;top:-7px;right:-7px;z-index:1;
+ display:flex;align-items:center;justify-content:center;
+ min-width:20px;height:20px;padding:0 5px;
+ border-radius:999px;border:2px solid #fff;
+ background:#d51f38;color:#fff;
+ font:800 11px/1 system-ui,-apple-system,"Segoe UI",sans-serif;
+ letter-spacing:0;box-shadow:0 1px 4px #3333;
+ pointer-events:none;
+}

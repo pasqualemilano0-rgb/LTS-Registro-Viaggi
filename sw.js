@@ -1,6 +1,6 @@
 const BASE = "/LTS-Registro-Viaggi/";
 const PREFIX = "lts-iphone-pages-0aa8d087d02b-";
-const CACHE = PREFIX + '20261127-cnt-v2';
+const CACHE = PREFIX + '20261128-role-documents-v1';
 const CORE = [
   "/LTS-Registro-Viaggi/account-access.mjs",
   "/LTS-Registro-Viaggi/app.css",
@@ -13,6 +13,7 @@ const CORE = [
   "/LTS-Registro-Viaggi/assets/lts-full-photo-hd.webp",
   "/LTS-Registro-Viaggi/assets/lts-scania-s-loader.svg",
   "/LTS-Registro-Viaggi/app.mjs",
+  "/LTS-Registro-Viaggi/shared/payroll-unread.mjs",
   "/LTS-Registro-Viaggi/assets/apple-touch-icon.png",
   "/LTS-Registro-Viaggi/assets/icon-192.png",
   "/LTS-Registro-Viaggi/assets/icon-512.png",
@@ -81,7 +82,7 @@ const PORT_BASE = BASE + 'porti/';
 // not keep serving stale login controls after a secure release. Offline fallback
 // still uses only the current static cache; personal records are never cached.
 const NETWORK_FIRST_CODE = new Set([
-  BASE + 'push-client.mjs',
+  BASE + 'push-client.mjs', BASE + 'shared/payroll-unread.mjs',
   BASE + 'app.css', BASE + 'visual-theme.css',
   BASE + 'app.mjs', BASE + 'driver-session-guard.mjs', BASE + 'porti-access.mjs', BASE + 'account-access.mjs', BASE + 'driver-session-vault.mjs',
   BASE + 'runtime-config.mjs', BASE + 'client-store.mjs', BASE + 'realtime-client.mjs', BASE + 'porti/app.js',
