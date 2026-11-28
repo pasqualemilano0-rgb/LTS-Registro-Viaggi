@@ -1,7 +1,7 @@
 {
   "source": "https://www.salernocontainerterminal.com/ca/an/vessel_schedule.php",
   "source_updated_at": null,
-  "acquired_at": "2026-11-28T08:30:16.193Z",
+  "acquired_at": "2026-11-28T09:00:16.191Z",
   "rows": [
     {
       "vessel": "CONTSHIP ERA",
@@ -70,7 +70,7 @@
       "vessel": "ELYSSA",
       "voyage": "291126E",
       "eta": "29/11/2026 00:00",
-      "closing": "28/11/2026 10:00",
+      "closing": "28/11/2026 10:00 CLOSED",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
@@ -124,7 +124,7 @@
       "vessel": "GRANDE SCANDINAVIA",
       "voyage": "GSC0826",
       "eta": "30/11/2026 00:00",
-      "closing": "28/11/2026 10:00",
+      "closing": "28/11/2026 10:00 CLOSED",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
@@ -205,7 +205,7 @@
       "vessel": "XIN LIAN YUN GANG",
       "voyage": "646N",
       "eta": "01/12/2026 20:00",
-      "closing": "28/11/2026 10:00",
+      "closing": "28/11/2026 10:00 CLOSED",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
       "status": "PENDING"
@@ -319,6 +319,6 @@
       "status": "PENDING"
     }
   ],
-  "updated_at": "2026-11-28T08:30:16.193Z",
-  "data_changed_at": "2026-11-28T07:00:16.218Z"
+  "updated_at": "2026-11-28T09:00:16.191Z",
+  "data_changed_at": "2026-11-28T09:00:16.191Z"
 }
