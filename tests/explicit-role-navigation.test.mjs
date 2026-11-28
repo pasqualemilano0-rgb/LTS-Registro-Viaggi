@@ -50,6 +50,6 @@ test('admin startup preserves the previous driver session and requires explicit 
 });
 test('explicit return route and asset versions stay aligned',()=>{
  assert.match(read('amministratore/index.html'),/href="\.\.\/\?accesso=manuale"/);
- for(const path of ['index.html','viaggi/index.html'])assert.ok(read(path).includes('app.mjs?v=20261128-role-navigation-v1'));
- assert.ok(read('sw.js').includes("const CACHE = PREFIX + '20261128-role-navigation-v1';"));
+ for(const path of ['index.html','viaggi/index.html'])assert.ok(read(path).includes('app.mjs?v=20261128-role-documents-v1'));
+ assert.ok(read('sw.js').includes("const CACHE = PREFIX + '20261128-role-documents-v1';"));
 });
