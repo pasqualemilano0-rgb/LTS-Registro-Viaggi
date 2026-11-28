@@ -1,7 +1,7 @@
 {
   "source": "https://www.salernocontainerterminal.com/ca/an/vessel_schedule.php",
   "source_updated_at": null,
-  "acquired_at": "2026-11-28T06:30:16.287Z",
+  "acquired_at": "2026-11-28T07:00:16.218Z",
   "rows": [
     {
       "vessel": "CONTSHIP ERA",
@@ -42,7 +42,7 @@
     {
       "vessel": "MAIKE D",
       "voyage": "1426W",
-      "eta": "28/11/2026 08:00",
+      "eta": "28/11/2026 07:00",
       "closing": "27/11/2026 17:00 CLOSED",
       "acceptance_dry": "CARGO ACCEPTED",
       "acceptance_reef": "CARGO ACCEPTED",
@@ -319,6 +319,6 @@
       "status": "PENDING"
     }
   ],
-  "updated_at": "2026-11-28T06:30:16.287Z",
-  "data_changed_at": "2026-11-28T06:30:16.287Z"
+  "updated_at": "2026-11-28T07:00:16.218Z",
+  "data_changed_at": "2026-11-28T07:00:16.218Z"
 }
