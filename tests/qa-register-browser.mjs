@@ -125,6 +125,63 @@ try{
  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>window.innerWidth+1),false);
  assert.deepEqual(errors,[]);
  console.log('PASS '+engine+' register V4 390px search, pagination, filters, undo and month controls');
+
+ // Exercise the actual note-history block of the PR, with synthetic transport only.
+ const historyStart=app.indexOf(" if(editingId&&accountAccess.getRole()==='driver'){");
+ const historyEnd=app.indexOf(" adminNoteInput.addEventListener('input'",historyStart);
+ assert.ok(historyStart>=0&&historyEnd>historyStart,'history UI source present');
+ await page.evaluate(source=>{
+  document.querySelector('#app').replaceChildren();
+  let editingId='qa-note-trip',owner='account:qa-owner',verified=true,collects=0,scratch=0;
+  let pendingConfirm=null,requests=0,draft={note:'PRIVATE NOW',adminNote:'ADMIN NOW'};
+  function el(tag,attrs={},...children){
+   const node=document.createElement(tag);
+   for(const [key,val] of Object.entries(attrs)){
+    if(val===null||val===undefined||val===false)continue;
+    if(key==='class')node.className=val;
+    else if(key==='on'){for(const [type,callback] of Object.entries(val))node.addEventListener(type,callback);}
+    else if(['value','disabled','checked','hidden'].includes(key))node[key]=val;
+    else node.setAttribute(key,val===true?'':String(val));
+   }
+   for(const value of children.flat(Infinity))if(value!==null&&value!==undefined&&value!==false)
+    node.append(value instanceof Node?value:document.createTextNode(String(value)));
+   return node;
+  }
+  const form=el('form'),noteEditor=el('section'),noteInput=el('textarea',{id:'qa-note-private',value:draft.note}),adminNoteInput=el('textarea',{id:'qa-note-admin',value:draft.adminNote});
+  noteEditor.append(noteInput,adminNoteInput);form.append(noteEditor);document.querySelector('#app').append(form);
+  const collect=()=>{collects++;draft={note:noteInput.value,adminNote:adminNoteInput.value};};
+  const keepEditorScratchpad=()=>{scratch++;};
+  const confirmAction=(title,message,callback)=>{pendingConfirm=callback;};
+  const accountAccess={getRole:()=> 'driver',getAccountId:()=>owner,isVerified:()=>verified,tripNoteHistory:async(id,before)=>{
+   requests++;if(id!=='qa-note-trip')throw Error('wrong trip');
+   const rows=before?[{note_kind:'note',previous_note:'PRIVATE OLDEST',recorded_at:'2026-11-01T00:00:00Z'}]:[
+    {note_kind:'note',previous_note:'PRIVATE OLD',recorded_at:'2026-11-02T00:00:00Z'},
+    {note_kind:'adminNote',previous_note:'ADMIN OLD',recorded_at:'2026-11-03T00:00:00Z'}];
+   return {rows,nextBefore:before?null:'1'};
+  }};
+  // Run the actual candidate UI with the same local editor dependencies.
+  eval(source);
+  window.qaNotes={draft:()=>({...draft}),confirm:async()=>{const cb=pendingConfirm;pendingConfirm=null;await cb();},stats:()=>({collects,scratch,requests}),switchAccount:()=>{owner='account:other';verified=false;}};
+ },app.slice(historyStart,historyEnd));
+ await page.getByRole('button',{name:'Storico note',exact:true}).click();
+ await page.getByText('PRIVATE OLD',{exact:true}).waitFor();
+ await page.getByText('ADMIN OLD',{exact:true}).waitFor();
+ await page.locator('.trip-note-history-entry').filter({hasText:'ADMIN OLD'}).getByRole('button',{name:'Ripristina',exact:true}).click();
+ assert.deepEqual(await page.evaluate(()=>window.qaNotes.draft()),{note:'PRIVATE NOW',adminNote:'ADMIN NOW'});
+ await page.evaluate(()=>window.qaNotes.confirm());
+ assert.deepEqual(await page.evaluate(()=>window.qaNotes.draft()),{note:'PRIVATE NOW',adminNote:'ADMIN OLD'});
+ await page.locator('.trip-note-history-entry').filter({hasText:'PRIVATE OLD'}).getByRole('button',{name:'Ripristina',exact:true}).click();
+ await page.evaluate(()=>window.qaNotes.confirm());
+ assert.deepEqual(await page.evaluate(()=>window.qaNotes.draft()),{note:'PRIVATE OLD',adminNote:'ADMIN OLD'});
+ await page.getByRole('button',{name:'Altre versioni'}).click();
+ await page.getByText('PRIVATE OLDEST',{exact:true}).waitFor();
+ await page.locator('.trip-note-history-entry').filter({hasText:'PRIVATE OLDEST'}).getByRole('button',{name:'Ripristina',exact:true}).click();
+ await page.evaluate(()=>window.qaNotes.switchAccount());
+ await page.evaluate(()=>window.qaNotes.confirm());
+ assert.deepEqual(await page.evaluate(()=>window.qaNotes.draft()),{note:'PRIVATE OLD',adminNote:'ADMIN OLD'});
+ assert.deepEqual(await page.evaluate(()=>window.qaNotes.stats()),{collects:2,scratch:2,requests:2});
+ assert.deepEqual(errors,[]);
+ console.log('PASS '+engine+' trip note history UI: pagination, confirmation, independent restore, account switch');
  await context.close();
 }finally{
  if(browser)await browser.close();

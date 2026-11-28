@@ -3,7 +3,7 @@ import {setupInsights} from './report-insights.mjs?v=20261111-control-center-v1'
 import {setupCustomerOverview} from './customer-overview.mjs?v=20261111-control-center-v1';
 import {setupCompanyRates} from './company-rates.mjs?v=20261110-atomic-v1';
 import {hasUnsubmittedTariffDraft} from './tariff-draft-guard.mjs?v=20261110-audit-v1';
-import {setupDriverRecords} from './driver-records.mjs?v=20261111-reefer-retired-v3';
+import {setupDriverRecords} from './driver-records.mjs?v=20261127-partial-v1';
 import {setupCompanyExtras} from './company-extras.mjs?v=20261111-reefer-retired-v2';
 const el=id=>document.getElementById(id);
 function node(tag,className='',value=''){
@@ -149,7 +149,7 @@ function tableRow(trip){
  const fields=[
   ['Seconda presa',trip.secondClient?(trip.secondClient+' · '+trip.secondCity):'Non presente'],
   ['Servizi',trip.services?.length?trip.services.join(', '):'Nessuno'],
-  ['Nota',trip.note||'Nessuna'],
+  ['Nota amministrativa',trip.adminNote||'Nessuna'],
   ['Ultima modifica',trip.updatedAt?new Date(trip.updatedAt).toLocaleString('it-IT'):'—'],
  ];
  for(const [k,v] of fields){
@@ -225,7 +225,9 @@ export function setupReport(account){
   return insights.load(context);
  }
  function selectDriver(id){
-  if(driver.value===id&&page)return;
+  // The picker can display a new value before the matching report finishes.
+  // Never skip reload merely because the control already shows that value.
+  if(driver.value===id&&page&&!loading&&(pageDriverId||'')===id)return;
   clearReportScope();driver.value=id;rows=[];focusOnDriver=Boolean(id);void load(false);
  }
  function tabs(view){

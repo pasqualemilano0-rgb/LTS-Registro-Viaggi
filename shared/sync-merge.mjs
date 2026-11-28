@@ -128,10 +128,25 @@ function resolveLogicalCollisions(state, preferred) {
   }
   return { ...state, customers, tariffs };
 }
+// A missing field in a legacy snapshot is not an instruction to clear a note.
+// Use only the common ancestor of the SAME journey, never an unrelated archive.
+function preserveLegacyNotesFromBase(input, base) {
+  if (!Array.isArray(input?.trips)) return input;
+  const known = new Map(base.trips.map(t => [t.id, t]));
+  return { ...input, trips: input.trips.map(t => {
+    if (!object(t) || !['string','number'].includes(typeof t.id)) return t;
+    const previous = known.get(String(t.id).trim());
+    if (!previous) return t;
+    const next = { ...t };
+    for (const field of ['note','adminNote'])
+      if (!Object.hasOwn(t, field)) next[field] = previous[field];
+    return next;
+  }) };
+}
 /** Conservative three-way merge. Deletions remain deletions; incompatible edits never overwrite. */
 export function mergeStates(baseInput, localInput, remoteInput, { prefer = null } = {}) {
   if (![null, 'local', 'remote'].includes(prefer)) throw new Error('Scelta di unione non valida.');
-  const base = validateState(baseInput), local = validateState(localInput), remote = validateState(remoteInput);
+  const base = validateState(baseInput), local = validateState(preserveLegacyNotesFromBase(localInput, base)), remote = validateState(preserveLegacyNotesFromBase(remoteInput, base));
   const conflicts = [];
   const profile = mergeValue(base.profile, local.profile, remote.profile, 'profile', conflicts, prefer);
   const extraRates = mergeValue(base.extraRates, local.extraRates, remote.extraRates, 'extraRates', conflicts, prefer);

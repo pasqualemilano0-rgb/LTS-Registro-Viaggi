@@ -298,11 +298,18 @@ function unknownNoteIds(record) {
   // before offline validation adds note:'' and before saving that local copy.
   return new Set((record.unknownNoteIds ?? record.state.trips.filter(trip => !Object.hasOwn(trip, 'note')).map(trip => trip.id)).map(id => String(id).trim()));
 }
+function unknownAdminNoteIds(record) {
+  const baseline = record.baseState;
+  if (baseline) return new Set(baseline.trips.filter(trip => !Object.hasOwn(trip, 'adminNote')).map(trip => String(trip.id).trim()));
+  return new Set((record.unknownAdminNoteIds ?? record.state.trips.filter(trip => !Object.hasOwn(trip, 'adminNote')).map(trip => trip.id)).map(id => String(id).trim()));
+}
 function newRequestState(state, record = active) {
   const value = structuredClone(state);
   if (runtime.deviceToken) return value;
   const unknown = unknownNoteIds(record);
   for (const trip of value.trips) if (trip.note === '' && unknown.has(trip.id)) delete trip.note;
+  const unknownAdmin = unknownAdminNoteIds(record);
+  for (const trip of value.trips) if (trip.adminNote === '' && unknownAdmin.has(trip.id)) delete trip.adminNote;
   return value;
 }
 function pendingRecord(state, record = active) {
@@ -334,7 +341,7 @@ async function loadRecord(options = {}, source = 'load') {
   catch (error) {
     assertLease(ownerLease);
     if (local && (error.offline || [500, 502, 503, 504].includes(error.status)) && !options.preferRemote && !options.requireOnline) {
-      active = { ...local, unknownNoteIds: [...unknownNoteIds(local)], state: validateState(local.state) }; blocked = Boolean(active.conflict);
+      active = { ...local, unknownNoteIds: [...unknownNoteIds(local)], unknownAdminNoteIds: [...unknownAdminNoteIds(local)], state: validateState(local.state) }; blocked = Boolean(active.conflict);
       status({ status: 'offline', message: 'Modalità offline · copia salvata sul telefono' });
       publish(source);
       return structuredClone(active);

@@ -7,6 +7,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {runInNewContext} from 'node:vm';
+import {validatePayrollPdf} from '../supabase/functions/lts-payroll/pdf-security.mjs';
 
 const src=readFileSync(new URL('../supabase/functions/lts-payroll/index.ts',import.meta.url),'utf8')
  .replace(/^import .+;\s*$/gm,'')
@@ -21,7 +22,14 @@ const docB='10000000-0000-4000-8000-000000000002';
 const draftA='10000000-0000-4000-8000-000000000003';
 const ORIGIN='https://pasqualemilano0-rgb.github.io';
 const endpoint='https://otrqynkscpbeyuvdlgpg.supabase.co/functions/v1/lts-payroll';
-const tokens={a:'a'.repeat(70),b:'b'.repeat(70),admin:'m'.repeat(70),revoked:'r'.repeat(70)};
+const tokens={a:'a'.repeat(70),b:'b'.repeat(70),admin:'m'.repeat(70),
+ revoked:'r'.repeat(70),revokedAdmin:'v'.repeat(70),errorAdmin:'e'.repeat(70)};
+function syntheticPdf(extra=''){
+ const head='%PDF-1.5\n',obj='1 0 obj\n<< /Type /Catalog '+extra+' >>\nendobj\n';
+ const offset=Buffer.byteLength(head+obj,'latin1');
+ return head+obj+'xref\n0 2\n0000000000 65535 f \n0000000009 00000 n \n'+
+  'trailer\n<< /Root 1 0 R /Size 2 >>\nstartxref\n'+offset+'\n%%EOF\n';
+}
 
 function fixture({adminMfa=true,enabled=true,preview=false,allowedUsers=[A,B,M],expiry='2099-01-01T00:00:00Z'}={}){
  const accounts=[
@@ -36,9 +44,9 @@ function fixture({adminMfa=true,enabled=true,preview=false,allowedUsers=[A,B,M],
   {auth_user_id:B,first_name:'Mario',last_name:'Rossi'}
  ];
  const docs=[
-  {id:docA,driver_id:A,category:'cedolino',state:'published',object_path:A+'/2026/'+docA+'.pdf',first_accessed_at:null,acknowledged_at:null},
-  {id:docB,driver_id:B,category:'cedolino',state:'published',object_path:B+'/2026/'+docB+'.pdf',first_accessed_at:null,acknowledged_at:null},
-  {id:draftA,driver_id:A,category:'cedolino',state:'draft',object_path:A+'/2026/'+draftA+'.pdf',first_accessed_at:null,acknowledged_at:null}
+  {id:docA,driver_id:A,document_year:2026,category:'cedolino',state:'published',object_path:A+'/2026/'+docA+'.pdf',first_accessed_at:null,acknowledged_at:null},
+  {id:docB,driver_id:B,document_year:2026,category:'cedolino',state:'published',object_path:B+'/2026/'+docB+'.pdf',first_accessed_at:null,acknowledged_at:null},
+  {id:draftA,driver_id:A,document_year:2026,category:'cedolino',state:'draft',object_path:A+'/2026/'+draftA+'.pdf',first_accessed_at:null,acknowledged_at:null}
  ];
  const audit=[],reads=[],writes=[];
  class Query{
@@ -108,7 +116,8 @@ function fixture({adminMfa=true,enabled=true,preview=false,allowedUsers=[A,B,M],
  };
  const publicClient={
   auth:{getUser:async token=>{
-   const id=token===tokens.a||token===tokens.revoked?A:token===tokens.b?B:token===tokens.admin?M:null;
+   const id=token===tokens.a||token===tokens.revoked?A:token===tokens.b?B:
+    [tokens.admin,tokens.revokedAdmin,tokens.errorAdmin].includes(token)?M:null;
    return {data:{user:id?{id}:null},error:id?null:'bad token'};
   }}
  };
@@ -124,8 +133,12 @@ function fixture({adminMfa=true,enabled=true,preview=false,allowedUsers=[A,B,M],
  };
  runInNewContext(src,{
   createClient:(_url,key)=>key.startsWith('public-key')?publicClient:db,
-  checkLtsSession:async (_db,token)=>{if(token===tokens.revoked)throw {status:403};},
+  checkLtsSession:async (_db,token)=>{
+   if(token===tokens.revoked||token===tokens.revokedAdmin)throw {status:403};
+   if(token===tokens.errorAdmin)throw {status:503,message:'PRIVATE_DATABASE_CONNECTION_STRING_DO_NOT_LEAK'};
+  },
   requireAdminMfa:async()=>({enrolled:adminMfa,verified:adminMfa}),
+  validatePayrollPdf,
   Deno:deno,globalTestPilot:preview,URL,Request,Response,Blob,File,TextDecoder,TextEncoder,crypto,atob,
   console
  },{timeout:2000});
@@ -138,9 +151,9 @@ function fixture({adminMfa=true,enabled=true,preview=false,allowedUsers=[A,B,M],
   return {status:response.status,data:response.headers.get('content-type')?.includes('json')?
     await response.json():await response.arrayBuffer()};
  }
- async function callUpload(token,driverId){
+ async function callUpload(token,driverId,pdf=syntheticPdf()){
   const fields=new FormData();
-  fields.set('file',new File(['%PDF-1.5\n1 0 obj\nendobj\n%%EOF'],'test.pdf',{type:'application/pdf'}));
+  fields.set('file',new File([pdf],'test.pdf',{type:'application/pdf'}));
   fields.set('driverId',driverId);
   fields.set('category','cedolino');
   fields.set('year','2026');
@@ -152,7 +165,17 @@ function fixture({adminMfa=true,enabled=true,preview=false,allowedUsers=[A,B,M],
   const response=await handler(request);
   return {status:response.status,data:await response.json()};
  }
- return {call,callUpload,docs,audit,reads,writes,allowlist,names};
+ async function callRaw({method='POST',origin=ORIGIN,headers={},body}={}){
+  // Direct VM handler call: never a network request or a real credential.
+  const h={...(origin===null?{}:{Origin:origin}),...headers};
+  const request=new Request(endpoint,{method,headers:h,
+   ...(body===undefined?{}:{body})});
+  const response=await handler(request);
+  return {status:response.status,headers:response.headers,
+   data:response.headers.get('content-type')?.includes('json')?
+    await response.json():null};
+ }
+ return {call,callRaw,callUpload,docs,audit,reads,writes,allowlist,names};
 }
 
 test('driver pilot list is owner-scoped; authenticated MFA admin may manage documents',async()=>{
@@ -232,6 +255,15 @@ test('only MILANO PASQUALE may receive uploaded PDF bytes',async()=>{
  assert.equal(x.writes.length,1);
  assert.equal(x.writes[0].startsWith(A+'/2026/'),true);
 });
+test('malformed or active PDF is denied before private Storage upload',async()=>{
+ const x=fixture({allowedUsers:[A]});
+ for(const pdf of [syntheticPdf('/OpenAction'),syntheticPdf().replace('%%EOF',''),syntheticPdf('/J#61vaScript')]){
+  const r=await x.callUpload(tokens.admin,A,pdf);
+  assert.equal(r.status,400);
+  assert.equal(x.writes.length,0,'invalid PDF must never reach Storage');
+ }
+});
+
 test('a reassigned driver_a slot is rejected if its identity is not MILANO PASQUALE',async()=>{
  const x=fixture({allowedUsers:[B]});
  x.allowlist[0].slot='driver_a';
@@ -364,4 +396,128 @@ test('admin without MFA cannot revoke',async()=>{
  const x=fixture({adminMfa:false});
  assert.equal((await x.call(tokens.admin,'revoke',{id:docA})).status,428);
  assert.equal(x.docs[0].state,'published');
+});
+
+
+test('unauthenticated and revoked admin tokens cannot access document roster',async()=>{
+ const x=fixture({allowedUsers:[A]});
+ assert.equal((await x.call('','drivers')).status,401,'missing token');
+ assert.equal((await x.call('z'.repeat(70),'drivers')).status,401,'invalid token');
+ assert.equal((await x.call(tokens.revokedAdmin,'drivers')).status,403,'revoked admin session');
+ assert.equal((await x.call(tokens.revokedAdmin,'list')).status,403,'revoked session cannot read metadata');
+ assert.equal((await x.callUpload(tokens.revokedAdmin,A)).status,403,'revoked session cannot upload');
+ assert.equal(x.reads.length,0);
+ assert.equal(x.writes.length,0);
+});
+
+test('admin MFA is required for PDF upload, not only dashboard navigation',async()=>{
+ const x=fixture({adminMfa:false,allowedUsers:[A]});
+ assert.equal((await x.callUpload(tokens.admin,A)).status,428);
+ assert.equal(x.writes.length,0,'no write before MFA check');
+ assert.equal(x.docs.length,3,'no metadata before MFA check');
+});
+
+test('internal 503 errors never expose database details in the API response',async()=>{
+ const x=fixture({allowedUsers:[A]});
+ const r=await x.call(tokens.errorAdmin,'drivers');
+ assert.equal(r.status,503);
+ assert.equal(r.data.error,'Servizio documenti temporaneamente non disponibile.');
+ assert.equal(JSON.stringify(r.data).includes('PRIVATE_DATABASE_CONNECTION_STRING'),false);
+ assert.equal(x.reads.length,0);
+ assert.equal(x.writes.length,0);
+});
+
+
+test('credential-free raw HTTP cannot read, acknowledge, revoke or upload any PDF',async()=>{
+ const x=fixture({allowedUsers:[A]});
+ const actions=['list','drivers','publish','revoke','download','acknowledge'];
+ for(const action of actions){
+  const payload=JSON.stringify({action,id:docA,driverId:A,confirmed:true});
+  const noToken=await x.callRaw({headers:{'Content-Type':'application/json'},body:payload});
+  assert.equal(noToken.status,401,'missing Authorization: '+action);
+  const fakeToken=await x.callRaw({headers:{
+   Authorization:'Bearer '+('q'.repeat(70)),'Content-Type':'application/json'
+  },body:payload});
+  assert.equal(fakeToken.status,401,'unknown bearer token: '+action);
+ }
+ const fields=new FormData();
+ fields.set('file',new File([syntheticPdf()],'qa-synthetic.pdf',{type:'application/pdf'}));
+ fields.set('driverId',A);
+ fields.set('category','cedolino');
+ fields.set('year','2026');
+ fields.set('month','11');
+ fields.set('label','QA synthetic, never real');
+ const upload=await x.callRaw({body:fields});
+ assert.equal(upload.status,401,'anonymous multipart cannot bypass JWT');
+ assert.equal(x.writes.length,0,'no Storage write without JWT');
+ assert.equal(x.reads.length,0,'no Storage read without JWT');
+ assert.equal(x.audit.length,0,'no audit events from denied calls');
+ assert.equal(x.docs.length,3,'no document metadata created or altered');
+});
+
+test('credential-free CORS checks reject hostile origins and bypass preflights',async()=>{
+ const x=fixture({allowedUsers:[A]});
+ const payload=JSON.stringify({action:'drivers'});
+ for(const origin of ['https://evil.invalid','null',null]){
+  const denied=await x.callRaw({origin,headers:{
+   Authorization:'Bearer '+tokens.admin,'Content-Type':'application/json'
+  },body:payload});
+  assert.equal(denied.status,403,'forbidden origin '+origin);
+  assert.notEqual(denied.headers.get('access-control-allow-origin'),origin);
+ }
+ const preflight=await x.callRaw({method:'OPTIONS',headers:{
+  'Access-Control-Request-Method':'POST',
+  'Access-Control-Request-Headers':'authorization,content-type'
+ }});
+ assert.equal(preflight.status,204,'legitimate preflight needs no login');
+ assert.equal(preflight.headers.get('access-control-allow-origin'),ORIGIN);
+ assert.equal(preflight.headers.get('access-control-allow-methods'),'POST, OPTIONS');
+ assert.match(preflight.headers.get('cache-control'),/no-store/);
+ const forbiddenHeader=await x.callRaw({method:'OPTIONS',headers:{
+  'Access-Control-Request-Method':'POST',
+  'Access-Control-Request-Headers':'authorization,x-admin-bypass'
+ }});
+ assert.equal(forbiddenHeader.status,403);
+ const forbiddenMethod=await x.callRaw({method:'OPTIONS',headers:{
+  'Access-Control-Request-Method':'DELETE',
+  'Access-Control-Request-Headers':'authorization'
+ }});
+ assert.equal(forbiddenMethod.status,403);
+ const getRequest=await x.callRaw({method:'GET'});
+ assert.equal(getRequest.status,405,'GET never dispatches payroll actions');
+ assert.equal(x.writes.length,0);
+ assert.equal(x.reads.length,0);
+ assert.equal(x.docs.length,3);
+ assert.equal(x.audit.length,0);
+});
+
+test('PDF Storage key must match document id, owner and year before any read',async()=>{
+ const invalid=[
+  B+'/2026/'+docA+'.pdf',
+  A+'/2025/'+docA+'.pdf',
+  A+'/2026/'+draftA+'.pdf',
+  A+'/2026/'+docA+'.pdf/extra',
+  A+'/2026/../'+docA+'.pdf',
+  A+'/2026/'+docA+'.pdf?download=1',
+  A+'/%32%30%32%36/'+docA+'.pdf',
+  null
+ ];
+ for(const path of invalid){
+  const x=fixture({preview:false});
+  x.docs[0].acknowledged_at='2026-11-18T10:03:00Z';
+  x.docs[0].object_path=path;
+  for(const token of [tokens.a,tokens.admin]){
+   const result=await x.call(token,'download',{id:docA});
+   assert.equal(result.status,503,'reject mismatched key: '+String(path));
+  }
+  assert.equal(x.reads.length,0,'reject before Storage');
+  assert.equal(x.audit.length,0,'no download audit for rejected document');
+ }
+});
+test('PDF Storage identity cannot be reassigned through a different year',async()=>{
+ const x=fixture({preview:false});
+ x.docs[0].document_year=2025;
+ x.docs[0].acknowledged_at='2026-11-18T10:03:00Z';
+ assert.equal((await x.call(tokens.a,'download',{id:docA})).status,503);
+ assert.equal(x.reads.length,0);
 });
